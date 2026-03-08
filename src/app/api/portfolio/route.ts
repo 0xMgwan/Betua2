@@ -23,7 +23,7 @@ export async function GET() {
     orderBy: { updatedAt: "desc" },
   });
 
-  const enriched = positions.map((p) => {
+  const enriched = positions.map((p: typeof positions[number]) => {
     const price = getPrice(p.market.yesPool, p.market.noPool);
     const yesValue = p.yesShares * price.yes;
     const noValue = p.noShares * price.no;
