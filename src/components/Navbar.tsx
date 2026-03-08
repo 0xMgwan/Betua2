@@ -138,7 +138,7 @@ export function Navbar() {
               </Link>
               <Link
                 href="/auth/register"
-                className="px-3 py-1.5 bg-[var(--foreground)] text-[var(--background)] text-xs font-mono font-bold tracking-wider hover:opacity-90 transition-all uppercase"
+                className="px-3 py-1.5 border-2 border-[var(--foreground)] text-[var(--foreground)] text-xs font-mono font-bold tracking-wider hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all uppercase"
               >
                 Get started
               </Link>

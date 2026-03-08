@@ -274,89 +274,111 @@ export default function HomePage() {
         <div className="absolute right-0 w-8 h-8 lg:w-12 lg:h-12 border-b-2 border-r-2 border-[var(--foreground)]/30 z-20" style={{ bottom: '5vh' }}></div>
 
         <div className="relative z-10 flex min-h-screen items-center pt-20 lg:pt-24">
-          <div className="container mx-auto px-6 lg:px-16 lg:ml-[10%]">
-            <div className="max-w-2xl relative">
-              {/* Top decorative line */}
-              <div className="flex items-center gap-2 mb-3 opacity-60">
-                <div className="w-8 h-px bg-[var(--foreground)]"></div>
-                <span className="text-[var(--foreground)] text-[10px] font-mono tracking-wider">001</span>
-                <div className="flex-1 h-px bg-[var(--foreground)]"></div>
+          <div className="container mx-auto px-6 lg:px-16">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+              {/* Left: Content */}
+              <div className="max-w-2xl relative">
+                {/* Top decorative line */}
+                <div className="flex items-center gap-2 mb-3 opacity-60">
+                  <div className="w-8 h-px bg-[var(--foreground)]"></div>
+                  <span className="text-[var(--foreground)] text-[10px] font-mono tracking-wider">001</span>
+                  <div className="flex-1 h-px bg-[var(--foreground)]"></div>
+                </div>
+
+                {/* Glitch Text Title */}
+                <div className="relative mb-6">
+                  <div className="hidden lg:block absolute -left-3 top-0 bottom-0 w-1 dither-pattern opacity-40"></div>
+                  <GlitchText 
+                    text="PREDICT THE FUTURE"
+                    textClassName="text-3xl lg:text-5xl font-black font-mono tracking-wider"
+                    className="min-h-[120px] lg:min-h-[180px] p-0 justify-start items-start"
+                    containerClassName="text-left"
+                  />
+                </div>
+
+                <motion.h2
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-2xl lg:text-4xl font-bold text-[var(--foreground)] mb-4 leading-tight font-mono tracking-wider"
+                >
+                  EARN <span className="text-[var(--foreground)]/90">GUAP</span>
+                </motion.h2>
+
+                {/* Decorative dots pattern - desktop only */}
+                <div className="hidden lg:flex gap-1 mb-3 opacity-40">
+                  {Array.from({ length: 40 }).map((_, i) => (
+                    <div key={i} className="w-0.5 h-0.5 bg-[var(--foreground)] rounded-full"></div>
+                  ))}
+                </div>
+
+                {/* Description */}
+                <motion.div 
+                  className="relative"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <p className="text-xs lg:text-base text-[var(--muted)] mb-5 lg:mb-6 leading-relaxed font-mono">
+                    Trade YES or NO on African events. Politics, sports, business. Powered by mobile money.
+                  </p>
+                  
+                  {/* Technical corner accent - desktop only */}
+                  <div className="hidden lg:block absolute -right-4 top-1/2 w-3 h-3 border border-[var(--foreground)] opacity-30" style={{ transform: 'translateY(-50%)' }}>
+                    <div className="absolute top-1/2 left-1/2 w-1 h-1 bg-[var(--foreground)]" style={{ transform: 'translate(-50%, -50%)' }}></div>
+                  </div>
+                </motion.div>
+
+                {/* Buttons */}
+                <motion.div 
+                  className="flex flex-col lg:flex-row gap-3 lg:gap-4"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7 }}
+                >
+                  <Link
+                    href="/auth/register"
+                    className="relative px-5 lg:px-6 py-2 lg:py-2.5 bg-transparent text-[var(--foreground)] font-mono text-xs lg:text-sm border border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all duration-200 group"
+                  >
+                    <span className="hidden lg:block absolute -top-1 -left-1 w-2 h-2 border-t border-l border-[var(--foreground)] opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span className="hidden lg:block absolute -bottom-1 -right-1 w-2 h-2 border-b border-r border-[var(--foreground)] opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    CREATE MARKET
+                  </Link>
+                  
+                  <Link
+                    href="/markets"
+                    className="relative px-5 lg:px-6 py-2 lg:py-2.5 bg-transparent border border-[var(--foreground)] text-[var(--foreground)] font-mono text-xs lg:text-sm hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all duration-200"
+                  >
+                    EXPLORE MARKETS
+                  </Link>
+                </motion.div>
+
+                {/* Bottom technical notation - desktop only */}
+                <div className="hidden lg:flex items-center gap-2 mt-6 opacity-40">
+                  <span className="text-[var(--foreground)] text-[9px] font-mono">∞</span>
+                  <div className="flex-1 h-px bg-[var(--foreground)]"></div>
+                  <span className="text-[var(--foreground)] text-[9px] font-mono">GUAP</span>
+                </div>
               </div>
 
-              {/* Glitch Text Title */}
-              <div className="relative mb-6">
-                <div className="hidden lg:block absolute -left-3 top-0 bottom-0 w-1 dither-pattern opacity-40"></div>
-                <GlitchText 
-                  text="PREDICT THE FUTURE"
-                  textClassName="text-3xl lg:text-5xl font-black font-mono tracking-wider"
-                  className="min-h-[120px] lg:min-h-[180px] p-0 justify-start items-start"
-                  containerClassName="text-left"
-                />
-              </div>
-
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="text-2xl lg:text-4xl font-bold text-[var(--foreground)] mb-4 leading-tight font-mono tracking-wider"
+              {/* Right: Live Market Example */}
+              <motion.div
+                initial={{ opacity: 0, x: 40 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4, duration: 0.7 }}
+                className="relative hidden lg:block"
               >
-                EARN <span className="text-[var(--foreground)]/90">GUAP</span>
-              </motion.h2>
-
-              {/* Decorative dots pattern - desktop only */}
-              <div className="hidden lg:flex gap-1 mb-3 opacity-40">
-                {Array.from({ length: 40 }).map((_, i) => (
-                  <div key={i} className="w-0.5 h-0.5 bg-[var(--foreground)] rounded-full"></div>
-                ))}
-              </div>
-
-              {/* Description */}
-              <motion.div 
-                className="relative"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-              >
-                <p className="text-xs lg:text-base text-[var(--muted)] mb-5 lg:mb-6 leading-relaxed font-mono">
-                  Trade YES or NO on African events. Politics, sports, business. Powered by mobile money.
-                </p>
-                
-                {/* Technical corner accent - desktop only */}
-                <div className="hidden lg:block absolute -right-4 top-1/2 w-3 h-3 border border-[var(--foreground)] opacity-30" style={{ transform: 'translateY(-50%)' }}>
-                  <div className="absolute top-1/2 left-1/2 w-1 h-1 bg-[var(--foreground)]" style={{ transform: 'translate(-50%, -50%)' }}></div>
+                <div className="space-y-4">
+                  <LiveMarketCard />
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.7, duration: 0.6 }}
+                  >
+                    <LeaderboardMockup />
+                  </motion.div>
                 </div>
               </motion.div>
-
-              {/* Buttons */}
-              <motion.div 
-                className="flex flex-col lg:flex-row gap-3 lg:gap-4"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 }}
-              >
-                <Link
-                  href="/auth/register"
-                  className="relative px-5 lg:px-6 py-2 lg:py-2.5 bg-transparent text-[var(--foreground)] font-mono text-xs lg:text-sm border border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all duration-200 group"
-                >
-                  <span className="hidden lg:block absolute -top-1 -left-1 w-2 h-2 border-t border-l border-[var(--foreground)] opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                  <span className="hidden lg:block absolute -bottom-1 -right-1 w-2 h-2 border-b border-r border-[var(--foreground)] opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                  CREATE MARKET
-                </Link>
-                
-                <Link
-                  href="/markets"
-                  className="relative px-5 lg:px-6 py-2 lg:py-2.5 bg-transparent border border-[var(--foreground)] text-[var(--foreground)] font-mono text-xs lg:text-sm hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all duration-200"
-                >
-                  EXPLORE MARKETS
-                </Link>
-              </motion.div>
-
-              {/* Bottom technical notation - desktop only */}
-              <div className="hidden lg:flex items-center gap-2 mt-6 opacity-40">
-                <span className="text-[var(--foreground)] text-[9px] font-mono">∞</span>
-                <div className="flex-1 h-px bg-[var(--foreground)]"></div>
-                <span className="text-[var(--foreground)] text-[9px] font-mono">GUAP</span>
-              </div>
             </div>
           </div>
         </div>
