@@ -7,9 +7,9 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "GUAP — Tanzania's Prediction Market",
-  description: "Predict, trade and earn on real-world events with Tanzanian Shillings.",
-  keywords: ["predictions", "Tanzania", "TZS", "markets", "betting"],
+  title: "GUAP — Predict the Future. Earn GUAP.",
+  description: "Trade YES or NO on African events. Politics, sports, business. Powered by mobile money. Tanzania's first prediction market.",
+  keywords: ["predictions", "Tanzania", "TZS", "markets", "GUAP", "M-Pesa", "Africa", "trading"],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
