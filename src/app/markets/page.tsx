@@ -51,7 +51,7 @@ export default function MarketsPage() {
           </div>
           <Link
             href="/markets/create"
-            className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-black rounded-xl font-semibold text-sm hover:opacity-90 transition-all"
+            className="flex items-center gap-2 px-4 py-2 border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold text-sm hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all font-mono tracking-wider uppercase"
           >
             <Plus size={15} />
             Create Market
@@ -80,9 +80,9 @@ export default function MarketsPage() {
                   key={s.value}
                   onClick={() => setStatus(s.value)}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
+                    "px-3 py-1.5 text-sm font-medium transition-all font-mono",
                     status === s.value
-                      ? "bg-[var(--accent)] text-black"
+                      ? "bg-[var(--foreground)] text-[var(--background)]"
                       : "text-[var(--muted)] hover:text-[var(--foreground)]"
                   )}
                 >
@@ -98,9 +98,9 @@ export default function MarketsPage() {
                   key={s.value}
                   onClick={() => setSort(s.value)}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
+                    "px-3 py-1.5 text-sm font-medium transition-all font-mono",
                     sort === s.value
-                      ? "bg-[var(--accent)] text-black"
+                      ? "bg-[var(--foreground)] text-[var(--background)]"
                       : "text-[var(--muted)] hover:text-[var(--foreground)]"
                   )}
                 >
@@ -141,7 +141,7 @@ export default function MarketsPage() {
             <Funnel size={40} weight="duotone" className="mx-auto mb-4 opacity-30" />
             <p className="text-lg font-medium mb-2">No markets found</p>
             <p className="text-sm mb-6">Try adjusting your filters or create the first one</p>
-            <Link href="/markets/create" className="px-6 py-2.5 bg-[var(--accent)] text-black rounded-xl font-semibold text-sm">
+            <Link href="/markets/create" className="px-6 py-2.5 border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold text-sm hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all font-mono tracking-wider uppercase">
               Create Market
             </Link>
           </div>

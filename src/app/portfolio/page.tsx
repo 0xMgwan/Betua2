@@ -59,8 +59,8 @@ export default function PortfolioPage() {
       <div className="min-h-screen">
         <Navbar />
         <div className="text-center py-32">
-          <p className="text-[var(--muted)] mb-4">Sign in to view your portfolio</p>
-          <Link href="/auth/login" className="px-6 py-2.5 bg-[var(--accent)] text-black rounded-xl font-semibold text-sm">
+          <p className="text-[var(--muted)] mb-4 font-mono">Sign in to view your portfolio</p>
+          <Link href="/auth/login" className="px-6 py-2.5 border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold text-sm hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all font-mono tracking-wider uppercase">
             Sign in
           </Link>
         </div>
@@ -125,7 +125,7 @@ export default function PortfolioPage() {
               <TrendUp size={40} className="mx-auto mb-4 opacity-30" weight="duotone" />
               <p className="text-lg font-medium mb-2">No open positions</p>
               <p className="text-sm mb-6">Start trading to build your portfolio</p>
-              <Link href="/markets" className="px-6 py-2.5 bg-[var(--accent)] text-black rounded-xl font-semibold text-sm">
+              <Link href="/markets" className="px-6 py-2.5 border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold text-sm hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all font-mono tracking-wider uppercase">
                 Browse Markets
               </Link>
             </div>

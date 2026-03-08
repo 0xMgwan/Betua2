@@ -801,18 +801,18 @@ export default function HomePage() {
             >
               <Sparkle size={28} weight="fill" className="text-[var(--accent)]" />
             </motion.div>
-            <h2 className="text-3xl sm:text-5xl font-black mb-4 leading-tight">
+            <h2 className="text-3xl sm:text-5xl font-black mb-4 leading-tight font-mono text-[var(--foreground)]">
               Ready to make<br />your first prediction?
             </h2>
-            <p className="text-[var(--muted)] mb-8 max-w-lg mx-auto text-lg leading-relaxed">
-              Join 12,000+ traders across Africa already trading on Betua.
+            <p className="text-[var(--muted)] mb-8 max-w-lg mx-auto text-lg leading-relaxed font-mono">
+              Join 12,000+ traders across Africa already trading on GUAP.
               Create your account in under 60 seconds — completely free.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/auth/register"
-                className="group flex items-center gap-2 px-10 py-4 bg-[var(--accent)] text-black font-black rounded-2xl text-lg hover:opacity-90 active:scale-95 transition-all shadow-2xl shadow-[var(--accent)]/25 w-full sm:w-auto justify-center"
+                className="group flex items-center gap-2 px-10 py-4 border-2 border-[var(--foreground)] text-[var(--foreground)] font-black text-lg hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all w-full sm:w-auto justify-center font-mono tracking-wider uppercase"
               >
                 Create Free Account
                 <ArrowRight size={20} weight="bold" className="group-hover:translate-x-1 transition-transform" />
@@ -836,12 +836,12 @@ export default function HomePage() {
             {/* Brand */}
             <div className="sm:col-span-2 lg:col-span-1">
               <Link href="/" className="flex items-center gap-2 font-black text-xl mb-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00e5a0] to-[#00b4d8] flex items-center justify-center text-black font-black text-sm">
-                  B
+                <div className="w-8 h-8 border-2 border-[var(--foreground)] flex items-center justify-center text-[var(--foreground)] font-black text-sm font-mono">
+                  G
                 </div>
-                <span className="gradient-text">Betua</span>
+                <span className="text-[var(--foreground)] font-mono">GUAP</span>
               </Link>
-              <p className="text-sm text-[var(--muted)] leading-relaxed max-w-xs">
+              <p className="text-sm text-[var(--muted)] leading-relaxed max-w-xs font-mono">
                 Africa&apos;s first prediction market. Trade on local events starting in Tanzania.
               </p>
             </div>
@@ -850,7 +850,7 @@ export default function HomePage() {
             {[
               { title: "Platform", links: [{ href: "/markets", label: "Browse Markets" }, { href: "/markets/create", label: "Create Market" }, { href: "/leaderboard", label: "Leaderboard" }] },
               { title: "Account", links: [{ href: "/auth/register", label: "Sign Up" }, { href: "/auth/login", label: "Sign In" }, { href: "/wallet", label: "Wallet" }] },
-              { title: "About", links: [{ href: "#about", label: "About Betua" }, { href: "#ntzs", label: "nTZS Network" }, { href: "#contact", label: "Contact" }] },
+              { title: "About", links: [{ href: "#about", label: "About GUAP" }, { href: "#ntzs", label: "nTZS Network" }, { href: "#contact", label: "Contact" }] },
             ].map((col) => (
               <div key={col.title}>
                 <h4 className="font-black text-xs uppercase tracking-widest text-[var(--muted)] mb-3">{col.title}</h4>
@@ -868,7 +868,7 @@ export default function HomePage() {
           </div>
 
           <div className="border-t border-[var(--card-border)] pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--muted)]">
-            <p>© 2025 Betua. Powered by <strong className="text-[var(--foreground)]">nTZS</strong> on Base.</p>
+            <p className="font-mono">© 2025 GUAP. Powered by <strong className="text-[var(--foreground)]">nTZS</strong> on Base.</p>
             <p className="flex items-center gap-1.5">
               Made with <Handshake size={13} weight="fill" className="text-[var(--accent)]" /> for Africa 🌍
             </p>
