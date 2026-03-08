@@ -99,15 +99,15 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-[var(--accent)] text-black font-bold rounded-xl hover:opacity-90 transition-all disabled:opacity-50 mt-2"
+              className="w-full py-3 border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold font-mono tracking-wider hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all disabled:opacity-50 mt-2 uppercase"
             >
               {loading ? "Signing in…" : "Sign in"}
             </button>
           </form>
 
-          <p className="text-center text-sm text-[var(--muted)] mt-6">
+          <p className="text-center text-sm text-[var(--muted)] mt-6 font-mono">
             No account?{" "}
-            <Link href="/auth/register" className="text-[var(--accent)] font-medium hover:underline">
+            <Link href="/auth/register" className="text-[var(--foreground)] font-bold hover:underline">
               Create one
             </Link>
           </p>
