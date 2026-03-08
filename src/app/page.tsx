@@ -651,8 +651,8 @@ export default function HomePage() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl sm:text-4xl font-black mb-2">Africa loves Betua</h2>
-            <p className="text-[var(--muted)]">Real traders, real earnings, real stories.</p>
+            <h2 className="text-3xl sm:text-4xl font-black mb-2 font-mono text-[var(--foreground)]">Africa loves GUAP</h2>
+            <p className="text-[var(--muted)] font-mono">Real traders, real earnings, real stories.</p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
