@@ -273,9 +273,9 @@ export default function HomePage() {
         <div className="absolute left-0 w-8 h-8 lg:w-12 lg:h-12 border-b-2 border-l-2 border-[var(--foreground)]/30 z-20" style={{ bottom: '5vh' }}></div>
         <div className="absolute right-0 w-8 h-8 lg:w-12 lg:h-12 border-b-2 border-r-2 border-[var(--foreground)]/30 z-20" style={{ bottom: '5vh' }}></div>
 
-        <div className="relative z-10 flex min-h-screen items-center pt-20 lg:pt-24">
+        <div className="relative z-10 flex min-h-screen items-center pt-12 lg:pt-16">
           <div className="container mx-auto px-6 lg:px-16">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               {/* Left: Content */}
               <div className="max-w-2xl relative">
                 {/* Top decorative line */}
@@ -286,12 +286,12 @@ export default function HomePage() {
                 </div>
 
                 {/* Glitch Text Title */}
-                <div className="relative mb-6">
+                <div className="relative mb-4">
                   <div className="hidden lg:block absolute -left-3 top-0 bottom-0 w-1 dither-pattern opacity-40"></div>
                   <GlitchText 
                     text="PREDICT THE FUTURE"
                     textClassName="text-3xl lg:text-5xl font-black font-mono tracking-wider"
-                    className="min-h-[120px] lg:min-h-[180px] p-0 justify-start items-start"
+                    className="min-h-[100px] lg:min-h-[140px] p-0 justify-start items-start"
                     containerClassName="text-left"
                   />
                 </div>
@@ -300,13 +300,13 @@ export default function HomePage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="text-2xl lg:text-4xl font-bold text-[var(--foreground)] mb-4 leading-tight font-mono tracking-wider"
+                  className="text-2xl lg:text-4xl font-bold text-[var(--foreground)] mb-3 leading-tight font-mono tracking-wider"
                 >
                   EARN <span className="text-[var(--foreground)]/90">GUAP</span>
                 </motion.h2>
 
                 {/* Decorative dots pattern - desktop only */}
-                <div className="hidden lg:flex gap-1 mb-3 opacity-40">
+                <div className="hidden lg:flex gap-1 mb-2 opacity-40">
                   {Array.from({ length: 40 }).map((_, i) => (
                     <div key={i} className="w-0.5 h-0.5 bg-[var(--foreground)] rounded-full"></div>
                   ))}
@@ -319,7 +319,7 @@ export default function HomePage() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.5 }}
                 >
-                  <p className="text-xs lg:text-base text-[var(--muted)] mb-5 lg:mb-6 leading-relaxed font-mono">
+                  <p className="text-xs lg:text-base text-[var(--muted)] mb-4 lg:mb-5 leading-relaxed font-mono">
                     Trade YES or NO on African events. Politics, sports, business. Powered by mobile money.
                   </p>
                   
@@ -354,7 +354,7 @@ export default function HomePage() {
                 </motion.div>
 
                 {/* Bottom technical notation - desktop only */}
-                <div className="hidden lg:flex items-center gap-2 mt-6 opacity-40">
+                <div className="hidden lg:flex items-center gap-2 mt-4 opacity-40">
                   <span className="text-[var(--foreground)] text-[9px] font-mono">∞</span>
                   <div className="flex-1 h-px bg-[var(--foreground)]"></div>
                   <span className="text-[var(--foreground)] text-[9px] font-mono">GUAP</span>
@@ -366,14 +366,15 @@ export default function HomePage() {
                 initial={{ opacity: 0, x: 40 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4, duration: 0.7 }}
-                className="relative hidden lg:block"
+                className="relative"
               >
-                <div className="space-y-4">
+                <div className="space-y-3 lg:space-y-4">
                   <LiveMarketCard />
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.7, duration: 0.6 }}
+                    className="hidden lg:block"
                   >
                     <LeaderboardMockup />
                   </motion.div>
