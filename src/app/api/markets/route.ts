@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     take: 50,
   });
 
-  const enriched = markets.map((m) => ({
+  const enriched = markets.map((m: typeof markets[number]) => ({
     ...m,
     price: getPrice(m.yesPool, m.noPool),
   }));

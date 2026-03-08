@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     if (market.status !== "OPEN") return NextResponse.json({ error: "Market is not open" }, { status: 400 });
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    // Enforce wallet balance — must have enough to trade
+    // Enforce wallet balance
     if (user.ntzsUserId) {
       try {
         const { balanceTzs } = await ntzs.users.getBalance(user.ntzsUserId);
@@ -38,13 +38,18 @@ export async function POST(req: NextRequest) {
           }, { status: 400 });
         }
       } catch (balErr) {
-        // If NTZS is unreachable, block the trade to be safe
+        // If NTZS is unreachable, fall back to local balance check
         if (balErr instanceof NtzsApiError) {
-          return NextResponse.json({ error: "Could not verify balance. Please try again." }, { status: 503 });
+          if ((user.balanceTzs || 0) < amountTzs) {
+            return NextResponse.json({ error: `Insufficient balance.` }, { status: 400 });
+          }
         }
       }
     } else {
-      return NextResponse.json({ error: "Wallet not provisioned. Deposit first." }, { status: 400 });
+      // No nTZS wallet — check local balance
+      if ((user.balanceTzs || 0) < amountTzs) {
+        return NextResponse.json({ error: "Insufficient balance. Deposit funds first." }, { status: 400 });
+      }
     }
 
     // ── 5% platform fee ───────────────────────────────────────────────────
@@ -91,7 +96,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Update market pools + position + record trade atomically
+    // Update market pools + position + record trade + deduct balance atomically
     const [updatedMarket, , trade] = await prisma.$transaction([
       prisma.market.update({
         where: { id: marketId },
@@ -126,6 +131,12 @@ export async function POST(req: NextRequest) {
         },
       }),
     ]);
+
+    // Deduct balance from local user record
+    await prisma.user.update({
+      where: { id: session.userId },
+      data: { balanceTzs: { decrement: amountTzs } },
+    });
 
     return NextResponse.json({
       trade,

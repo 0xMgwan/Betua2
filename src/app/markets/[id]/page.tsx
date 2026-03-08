@@ -10,6 +10,7 @@ import Link from "next/link";
 import {
   Clock, TrendUp, UsersThree, ChatCircle,
   CheckCircle, XCircle, Warning, PaperPlaneTilt,
+  ShareNetwork, WhatsappLogo, XLogo, FacebookLogo, TelegramLogo,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
@@ -197,6 +198,50 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     <UsersThree size={11} />
                     {market._count.trades} trades
                   </span>
+                </div>
+
+                {/* Share buttons */}
+                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[var(--card-border)]">
+                  <span className="flex items-center gap-1 text-xs text-[var(--muted)] font-mono">
+                    <ShareNetwork size={13} />
+                    Share:
+                  </span>
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(`${market.title} - Predict now on GUAP! ${typeof window !== 'undefined' ? window.location.href : ''}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 border border-[var(--card-border)] text-[#25D366] hover:bg-[#25D366]/10 transition-all rounded"
+                    title="Share on WhatsApp"
+                  >
+                    <WhatsappLogo size={16} weight="fill" />
+                  </a>
+                  <a
+                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${market.title} - Predict now on GUAP!`)}&url=${typeof window !== 'undefined' ? encodeURIComponent(window.location.href) : ''}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 border border-[var(--card-border)] text-[var(--foreground)] hover:bg-[var(--foreground)]/10 transition-all rounded"
+                    title="Share on X"
+                  >
+                    <XLogo size={16} weight="fill" />
+                  </a>
+                  <a
+                    href={`https://www.facebook.com/sharer/sharer.php?u=${typeof window !== 'undefined' ? encodeURIComponent(window.location.href) : ''}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 border border-[var(--card-border)] text-[#1877F2] hover:bg-[#1877F2]/10 transition-all rounded"
+                    title="Share on Facebook"
+                  >
+                    <FacebookLogo size={16} weight="fill" />
+                  </a>
+                  <a
+                    href={`https://t.me/share/url?url=${typeof window !== 'undefined' ? encodeURIComponent(window.location.href) : ''}&text=${encodeURIComponent(market.title)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 border border-[var(--card-border)] text-[#0088cc] hover:bg-[#0088cc]/10 transition-all rounded"
+                    title="Share on Telegram"
+                  >
+                    <TelegramLogo size={16} weight="fill" />
+                  </a>
                 </div>
               </div>
             </div>
@@ -505,9 +550,6 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       Add funds →
                     </Link>
                   </div>
-                  <p className="text-xs text-[var(--muted)] text-center">
-                    5% platform fee applies to all trades
-                  </p>
                 </form>
               )}
             </div>
