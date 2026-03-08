@@ -1,0 +1,104 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  username      String   @unique
+  displayName   String?
+  phone         String?
+  bio           String?
+  avatarUrl     String?
+  passwordHash  String
+  ntzsUserId    String?  @unique
+  walletAddress String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  marketsCreated Market[]   @relation("MarketCreator")
+  positions      Position[]
+  trades         Trade[]
+  comments       Comment[]
+}
+
+model Market {
+  id           String       @id @default(cuid())
+  title        String
+  description  String
+  category     String
+  imageUrl     String?
+  creatorId    String
+  creator      User         @relation("MarketCreator", fields: [creatorId], references: [id])
+  status       String       @default("OPEN")
+  outcome      Int?
+  resolvesAt   DateTime
+  resolvedAt   DateTime?
+  totalVolume  Int          @default(0)
+  yesPool      Int          @default(100000)
+  noPool       Int          @default(100000)
+  liquidity    Int          @default(200000)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  positions Position[]
+  trades    Trade[]
+  comments  Comment[]
+}
+
+model Position {
+  id        String   @id @default(cuid())
+  userId    String
+  marketId  String
+  user      User     @relation(fields: [userId], references: [id])
+  market    Market   @relation(fields: [marketId], references: [id])
+  yesShares Int      @default(0)
+  noShares  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, marketId])
+}
+
+model Trade {
+  id             String   @id @default(cuid())
+  userId         String
+  marketId       String
+  user           User     @relation(fields: [userId], references: [id])
+  market         Market   @relation(fields: [marketId], references: [id])
+  side           String
+  amountTzs      Int
+  shares         Int
+  price          Float
+  txHash         String?
+  ntzsTransferId String?
+  createdAt      DateTime @default(now())
+}
+
+model Transaction {
+  id             String   @id @default(cuid())
+  userId         String
+  type           String
+  amountTzs      Int
+  status         String   @default("PENDING")
+  ntzsDepositId  String?
+  ntzsWithdrawId String?
+  phone          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  userId    String
+  marketId  String
+  user      User     @relation(fields: [userId], references: [id])
+  market    Market   @relation(fields: [marketId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+}
