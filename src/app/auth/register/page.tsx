@@ -55,11 +55,11 @@ export default function RegisterPage() {
               <ArrowLeft size={16} className="text-[var(--muted)]" />
               <span className="text-sm text-[var(--muted)]">Back</span>
             </Link>
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#00e5a0] to-[#00b4d8] flex items-center justify-center text-black font-black text-2xl mx-auto mb-4">
-              B
+            <div className="w-14 h-14 border-2 border-[var(--foreground)] flex items-center justify-center text-[var(--foreground)] font-black text-2xl mx-auto mb-4 font-mono">
+              G
             </div>
-            <h1 className="text-2xl font-bold">Join Betua</h1>
-            <p className="text-[var(--muted)] text-sm mt-1">Tanzania's prediction market</p>
+            <h1 className="text-2xl font-bold font-mono">Join GUAP</h1>
+            <p className="text-[var(--muted)] text-sm mt-1 font-mono">Tanzania's prediction market</p>
           </div>
 
           {/* Perks */}

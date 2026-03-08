@@ -473,11 +473,11 @@ export default function HomePage() {
           viewport={{ once: true }}
           className="text-center mb-14"
         >
-          <span className="inline-block px-3 py-1 text-xs font-bold rounded-full bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20 mb-3 uppercase tracking-widest">
+          <span className="inline-block px-3 py-1 text-xs font-bold border border-[var(--foreground)]/30 text-[var(--foreground)] mb-3 uppercase tracking-wider font-mono">
             Simple process
           </span>
-          <h2 className="text-3xl sm:text-4xl font-black mb-3">Up and trading in minutes</h2>
-          <p className="text-[var(--muted)] max-w-md mx-auto">No bank account, no ID upload, no waiting. Just M-Pesa.</p>
+          <h2 className="text-3xl sm:text-4xl font-black mb-3 font-mono text-[var(--foreground)]">Up and trading in minutes</h2>
+          <p className="text-[var(--muted)] max-w-md mx-auto font-mono">No bank account, no ID upload, no waiting. Just M-Pesa.</p>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
@@ -493,10 +493,10 @@ export default function HomePage() {
                 className="flex gap-5 items-start group"
               >
                 <div className="relative shrink-0">
-                  <div className="w-14 h-14 rounded-2xl bg-[var(--card)] border-2 border-[var(--card-border)] group-hover:border-[var(--accent)]/40 transition-all flex items-center justify-center text-2xl shadow-md">
+                  <div className="w-14 h-14 bg-[var(--card)] border-2 border-[var(--card-border)] group-hover:border-[var(--foreground)] transition-all flex items-center justify-center text-2xl shadow-md">
                     {step.icon}
                   </div>
-                  <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[var(--accent)] text-black font-black text-[10px] flex items-center justify-center">
+                  <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[var(--foreground)] text-[var(--background)] font-black text-[10px] flex items-center justify-center font-mono">
                     {i + 1}
                   </div>
                   {i < HOW_IT_WORKS.length - 1 && (
@@ -504,9 +504,9 @@ export default function HomePage() {
                   )}
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-[var(--muted)] uppercase tracking-widest mb-1">Step {step.step}</p>
-                  <h3 className="font-black text-lg mb-1">{step.title}</h3>
-                  <p className="text-sm text-[var(--muted)] leading-relaxed">{step.desc}</p>
+                  <p className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider mb-1 font-mono">Step {step.step}</p>
+                  <h3 className="font-black text-lg mb-1 font-mono text-[var(--foreground)]">{step.title}</h3>
+                  <p className="text-sm text-[var(--muted)] leading-relaxed font-mono">{step.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -519,7 +519,7 @@ export default function HomePage() {
             >
               <Link
                 href="/auth/register"
-                className="inline-flex items-center gap-2 px-7 py-3.5 bg-[var(--accent)] text-black font-black rounded-xl text-sm hover:opacity-90 transition-all shadow-lg shadow-[var(--accent)]/20 mt-2"
+                className="inline-flex items-center gap-2 px-7 py-3.5 border-2 border-[var(--foreground)] text-[var(--foreground)] font-black text-sm hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all mt-2 font-mono tracking-wider uppercase"
               >
                 Create Free Account
                 <ArrowRight size={16} weight="bold" />
