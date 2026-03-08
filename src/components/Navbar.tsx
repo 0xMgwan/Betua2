@@ -32,11 +32,11 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 border-b border-[var(--card-border)] bg-[var(--background)]/80 backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00e5a0] to-[#00b4d8] flex items-center justify-center text-black font-black text-sm">
-            B
+        <Link href="/" className="flex items-center gap-2 font-bold text-xl font-mono">
+          <div className="w-8 h-8 border-2 border-[var(--foreground)] flex items-center justify-center text-[var(--foreground)] font-black text-sm">
+            G
           </div>
-          <span className="gradient-text">Betua</span>
+          <span className="text-[var(--foreground)] tracking-wider">GUAP</span>
         </Link>
 
         {/* Desktop Nav */}
@@ -46,10 +46,10 @@ export function Navbar() {
               key={href}
               href={href}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all",
+                "flex items-center gap-1.5 px-3 py-2 text-xs font-mono font-bold tracking-wider transition-all uppercase",
                 pathname.startsWith(href)
-                  ? "bg-[var(--accent)]/10 text-[var(--accent)]"
-                  : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card)]"
+                  ? "text-[var(--foreground)] border-b-2 border-[var(--foreground)]"
+                  : "text-[var(--muted)] hover:text-[var(--foreground)]"
               )}
             >
               <Icon size={15} />
@@ -63,7 +63,7 @@ export function Navbar() {
           {/* Theme toggle */}
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="p-2 rounded-lg text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card)] transition-all"
+            className="p-2 border border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[var(--foreground)] transition-all"
           >
             {mounted && (theme === "dark" ? <Sun size={17} /> : <Moon size={17} />)}
           </button>
@@ -73,7 +73,7 @@ export function Navbar() {
               {/* Create market */}
               <Link
                 href="/markets/create"
-                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-[var(--accent)] text-black rounded-lg text-sm font-semibold hover:opacity-90 transition-all"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-[var(--foreground)] text-[var(--background)] text-xs font-mono font-bold tracking-wider hover:opacity-90 transition-all uppercase"
               >
                 <Plus size={15} />
                 Create
@@ -90,7 +90,7 @@ export function Navbar() {
                   onClick={() => setProfileOpen(!profileOpen)}
                   className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-[var(--card)] transition-all"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00e5a0] to-[#00b4d8] flex items-center justify-center text-black font-bold text-sm">
+                  <div className="w-8 h-8 border-2 border-[var(--foreground)] flex items-center justify-center text-[var(--foreground)] font-bold text-sm">
                     {user.username?.[0]?.toUpperCase()}
                   </div>
                 </button>
@@ -138,7 +138,7 @@ export function Navbar() {
               </Link>
               <Link
                 href="/auth/register"
-                className="px-3 py-1.5 bg-[var(--accent)] text-black rounded-lg text-sm font-semibold hover:opacity-90 transition-all"
+                className="px-3 py-1.5 bg-[var(--foreground)] text-[var(--background)] text-xs font-mono font-bold tracking-wider hover:opacity-90 transition-all uppercase"
               >
                 Get started
               </Link>

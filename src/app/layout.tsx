@@ -7,7 +7,7 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Betua — Tanzania's Prediction Market",
+  title: "GUAP — Tanzania's Prediction Market",
   description: "Predict, trade and earn on real-world events with Tanzanian Shillings.",
   keywords: ["predictions", "Tanzania", "TZS", "markets", "betting"],
 };

@@ -2,12 +2,12 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #0a0a0a;
-  --card: #f8fafc;
-  --card-border: #e2e8f0;
-  --muted: #64748b;
-  --accent: #00c896;
-  --accent-dark: #00a67d;
+  --foreground: #000000;
+  --card: #fafafa;
+  --card-border: #e5e5e5;
+  --muted: #737373;
+  --accent: #000000;
+  --accent-dark: #1a1a1a;
 }
 
 @theme inline {
@@ -18,13 +18,13 @@
 }
 
 .dark {
-  --background: #0d1117;
-  --foreground: #e6edf3;
-  --card: #161b22;
-  --card-border: #30363d;
-  --muted: #8b949e;
-  --accent: #00e5a0;
-  --accent-dark: #00c896;
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #0a0a0a;
+  --card-border: #1a1a1a;
+  --muted: #a3a3a3;
+  --accent: #ffffff;
+  --accent-dark: #e5e5e5;
 }
 
 * {
@@ -40,8 +40,19 @@ body {
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  font-family: var(--font-geist-mono), 'Courier New', monospace;
+  letter-spacing: 0.02em;
   transition: background-color 0.2s, color 0.2s;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-geist-mono), 'Courier New', monospace;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+
+button, input, textarea, select {
+  font-family: var(--font-geist-mono), 'Courier New', monospace;
 }
 
 a {
@@ -66,25 +77,30 @@ a {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #00e5a0 0%, #00b4d8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--foreground);
 }
 
 .hero-bg {
-  background: radial-gradient(ellipse at 20% 50%, rgba(0, 229, 160, 0.08) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 20%, rgba(0, 180, 216, 0.08) 0%, transparent 60%),
-    var(--background);
+  background: var(--background);
 }
 
 .yes-pill {
-  background: rgba(0, 229, 160, 0.15);
-  color: #00e5a0;
-  border: 1px solid rgba(0, 229, 160, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--foreground);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.dark .yes-pill {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 .no-pill {
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(115, 115, 115, 0.15);
+  color: var(--muted);
+  border: 1px solid rgba(115, 115, 115, 0.3);
+}
+.dark .no-pill {
+  background: rgba(163, 163, 163, 0.15);
+  color: #a3a3a3;
+  border: 1px solid rgba(163, 163, 163, 0.3);
 }

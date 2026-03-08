@@ -153,7 +153,6 @@ export default function CreateMarketPage() {
               </p>
               <p className="text-[var(--muted)]">
                 A one-time fee is deducted from your wallet balance when you create a market.
-                All trades on your market also carry a 5% platform fee.
               </p>
             </div>
           </div>

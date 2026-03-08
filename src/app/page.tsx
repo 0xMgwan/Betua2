@@ -11,6 +11,8 @@ import {
   Handshake, TrendUp, MagnifyingGlass, Trophy,
   Sparkle, Phone, ArrowDownLeft,
 } from "@phosphor-icons/react";
+import HeroAscii from "@/components/ui/hero-ascii";
+import { GlitchText } from "@/components/ui/glitch-text";
 
 /* ─────────────────────────────────────────────────────────
    Live market mockup — animated YES/NO bar
@@ -28,19 +30,19 @@ function LiveMarketCard() {
   }, []);
 
   return (
-    <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl p-5 shadow-2xl w-full">
+    <div className="bg-[var(--card)] border-2 border-[var(--card-border)] p-5 shadow-xl w-full">
       {/* Header */}
       <div className="flex items-start gap-3 mb-4">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/20 flex items-center justify-center text-lg shrink-0">
+        <div className="w-10 h-10 border border-[var(--foreground)]/30 flex items-center justify-center text-lg shrink-0">
           🗳️
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-bold text-sm leading-snug">CCM wins Tanzania 2025 general election?</p>
+          <p className="font-bold text-sm leading-snug font-mono">CCM wins Tanzania 2025 general election?</p>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] font-medium border border-[var(--accent)]/20">Politics</span>
-            <span className="flex items-center gap-1 text-xs text-[var(--muted)]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
-              Live
+            <span className="text-xs px-2 py-0.5 border border-[var(--foreground)]/30 text-[var(--foreground)] font-mono tracking-wider uppercase">POLITICS</span>
+            <span className="flex items-center gap-1 text-xs text-[var(--muted)] font-mono">
+              <span className="w-1.5 h-1.5 bg-[var(--foreground)] animate-pulse" />
+              LIVE
             </span>
           </div>
         </div>
@@ -49,12 +51,12 @@ function LiveMarketCard() {
       {/* Probability */}
       <div className="mb-4">
         <div className="flex justify-between items-center mb-1.5">
-          <span className="text-sm font-bold text-[var(--accent)]">YES {Math.round(pct)}%</span>
-          <span className="text-sm font-bold text-red-400">NO {Math.round(100 - pct)}%</span>
+          <span className="text-sm font-bold text-[var(--foreground)] font-mono">YES {Math.round(pct)}%</span>
+          <span className="text-sm font-bold text-[var(--muted)] font-mono">NO {Math.round(100 - pct)}%</span>
         </div>
-        <div className="h-3 rounded-full bg-red-500/15 border border-red-500/10 overflow-hidden">
+        <div className="h-3 bg-[var(--muted)]/15 border border-[var(--muted)]/10 overflow-hidden">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-[#00e5a0] to-[#00b4d8]"
+            className="h-full bg-[var(--foreground)]"
             animate={{ width: `${pct}%` }}
             transition={{ duration: 1.4, ease: "easeOut" }}
           />
@@ -63,25 +65,25 @@ function LiveMarketCard() {
 
       {/* Buttons */}
       <div className="grid grid-cols-2 gap-2 mb-4">
-        <button className="py-2.5 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/30 text-[var(--accent)] font-bold text-sm hover:bg-[var(--accent)]/20 transition-colors">
-          Buy YES
+        <button className="py-2.5 border border-[var(--foreground)] text-[var(--foreground)] font-mono font-bold text-xs tracking-wider hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all uppercase">
+          BUY YES
         </button>
-        <button className="py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 font-bold text-sm hover:bg-red-500/20 transition-colors">
-          Buy NO
+        <button className="py-2.5 border border-[var(--muted)] text-[var(--muted)] font-mono font-bold text-xs tracking-wider hover:bg-[var(--muted)] hover:text-[var(--background)] transition-all uppercase">
+          BUY NO
         </button>
       </div>
 
       {/* Footer stats */}
-      <div className="flex items-center justify-between pt-3 border-t border-[var(--card-border)] text-xs text-[var(--muted)]">
-        <span className="flex items-center gap-1"><UsersThree size={11} /> 3,241 traders</span>
-        <span className="flex items-center gap-1"><CurrencyDollar size={11} /> 12.5M TZS</span>
+      <div className="flex items-center justify-between pt-3 border-t border-[var(--card-border)] text-xs text-[var(--muted)] font-mono">
+        <span className="flex items-center gap-1"><UsersThree size={11} /> 3.2K</span>
+        <span className="flex items-center gap-1"><CurrencyDollar size={11} /> 12.5M</span>
         <AnimatePresence mode="wait">
           <motion.span
             key={tick}
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="flex items-center gap-1 text-[var(--accent)] font-semibold"
+            className="flex items-center gap-1 text-[var(--foreground)] font-bold"
           >
             <ChartLineUp size={12} weight="fill" />
             {(Math.random() > 0.5 ? "+" : "-")}{Math.floor(Math.random() * 500 + 50)} TZS
@@ -103,22 +105,22 @@ const MOCK_USERS = [
 
 function LeaderboardMockup() {
   return (
-    <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl p-4 shadow-xl w-full">
-      <div className="flex items-center gap-2 mb-3">
-        <Trophy size={16} weight="fill" className="text-yellow-400" />
-        <span className="text-xs font-bold uppercase tracking-wide text-[var(--muted)]">Top Traders</span>
+    <div className="bg-[var(--card)] border-2 border-[var(--card-border)] p-4 shadow-xl w-full">
+      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[var(--card-border)]">
+        <Trophy size={16} weight="fill" className="text-[var(--foreground)]" />
+        <span className="text-xs font-bold uppercase tracking-wider text-[var(--foreground)] font-mono">TOP TRADERS</span>
       </div>
       <div className="space-y-2">
         {MOCK_USERS.map((u, i) => (
-          <div key={u.name} className="flex items-center gap-3">
-            <span className={`text-xs font-black w-4 ${i === 0 ? "text-yellow-400" : i === 1 ? "text-slate-400" : "text-amber-600"}`}>
+          <div key={u.name} className="flex items-center gap-3 font-mono">
+            <span className={`text-xs font-black w-4 ${i === 0 ? "text-[var(--foreground)]" : "text-[var(--muted)]"}`}>
               #{u.rank}
             </span>
-            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#00e5a0] to-[#00b4d8] flex items-center justify-center text-black font-black text-xs">
+            <div className="w-7 h-7 border border-[var(--foreground)] flex items-center justify-center text-[var(--foreground)] font-black text-xs">
               {u.name[0]}
             </div>
-            <span className="flex-1 text-xs font-semibold truncate">{u.name}</span>
-            <span className="text-xs font-bold text-[var(--accent)]">{u.profit}</span>
+            <span className="flex-1 text-xs font-semibold truncate text-[var(--foreground)]">{u.name}</span>
+            <span className="text-xs font-bold text-[var(--foreground)]">{u.profit}</span>
           </div>
         ))}
       </div>
@@ -254,158 +256,160 @@ export default function HomePage() {
       <Navbar />
 
       {/* ══════════════════════════════════════════════
-          HERO — split layout with live mockup + Tanzania photo
+          HERO — Terminal-style GUAP Hero Section
           ══════════════════════════════════════════════ */}
-      <section className="relative min-h-[90vh] flex items-center overflow-hidden">
-        {/* Real photo background — Dar es Salaam skyline (Unsplash) */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1920&q=80&auto=format&fit=crop"
-            alt="Trading platform background"
-            fill
-            className="object-cover object-center opacity-10 dark:opacity-[0.06]"
-            priority
-            unoptimized
-          />
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[var(--background)] via-[var(--background)]/90 to-[var(--background)]/60" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#00e5a0]/5 via-transparent to-[#00b4d8]/5" />
+      <section className="relative min-h-screen overflow-hidden bg-[var(--background)]">
+        {/* Animated ASCII background - only in dark mode */}
+        <div className="dark:block hidden">
+          <HeroAscii />
         </div>
+        
+        {/* Mobile stars background */}
+        <div className="absolute inset-0 w-full h-full lg:hidden stars-bg"></div>
 
-        {/* Animated mesh orbs */}
-        <motion.div
-          animate={{ x: [0, 30, 0], y: [0, -20, 0], scale: [1, 1.1, 1] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-20 left-1/4 w-[500px] h-[500px] rounded-full bg-[#00e5a0]/[0.06] blur-3xl pointer-events-none z-0"
-        />
-        <motion.div
-          animate={{ x: [0, -20, 0], y: [0, 30, 0], scale: [1, 1.15, 1] }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-          className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full bg-[#00b4d8]/[0.07] blur-3xl pointer-events-none z-0"
-        />
+        {/* Corner Frame Accents */}
+        <div className="absolute top-0 left-0 w-8 h-8 lg:w-12 lg:h-12 border-t-2 border-l-2 border-[var(--foreground)]/30 z-20"></div>
+        <div className="absolute top-0 right-0 w-8 h-8 lg:w-12 lg:h-12 border-t-2 border-r-2 border-[var(--foreground)]/30 z-20"></div>
+        <div className="absolute left-0 w-8 h-8 lg:w-12 lg:h-12 border-b-2 border-l-2 border-[var(--foreground)]/30 z-20" style={{ bottom: '5vh' }}></div>
+        <div className="absolute right-0 w-8 h-8 lg:w-12 lg:h-12 border-b-2 border-r-2 border-[var(--foreground)]/30 z-20" style={{ bottom: '5vh' }}></div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 w-full py-20 lg:py-24">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Left: copy */}
-            <motion.div
-              variants={{ hidden: {}, show: { transition: { staggerChildren: 0.1 } } }}
-              initial="hidden"
-              animate="show"
-              className="text-center lg:text-left"
-            >
-              <motion.div variants={fadeUp}>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/25 text-xs sm:text-sm text-[var(--accent)] font-bold mb-5">
-                  <Sparkle size={12} weight="fill" className="shrink-0" />
-                  Africa&apos;s First Prediction Market
-                </span>
-              </motion.div>
-
-              <motion.h1
-                variants={fadeUp}
-                className="text-4xl sm:text-5xl lg:text-[64px] font-black tracking-tight leading-[1.06] mb-5"
-              >
-                Predict the<br />
-                <span className="gradient-text">Future.</span><br />
-                <span className="text-[var(--foreground)]">Earn in TZS.</span>
-              </motion.h1>
-
-              <motion.p variants={fadeUp} className="text-lg text-[var(--muted)] max-w-lg mx-auto lg:mx-0 mb-8 leading-relaxed">
-                Trade YES or NO shares on real African events — politics, football, business and more.
-                Powered by mobile money. Launching in Tanzania, expanding across Africa.
-              </motion.p>
-
-              {/* CTA buttons — full-width stacked on mobile, row on sm+ */}
-              <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 w-full">
-                <Link
-                  href="/auth/register"
-                  className="group flex items-center justify-center gap-2 px-6 py-4 bg-[var(--accent)] text-black font-black rounded-2xl text-sm sm:text-base hover:opacity-90 active:scale-95 transition-all shadow-xl shadow-[var(--accent)]/25 w-full sm:w-auto"
-                >
-                  Start Predicting Free
-                  <ArrowRight size={17} weight="bold" className="group-hover:translate-x-1 transition-transform shrink-0" />
-                </Link>
-                <Link
-                  href="/markets"
-                  className="flex items-center justify-center gap-2 px-6 py-3.5 border border-[var(--card-border)] rounded-2xl text-sm sm:text-base font-semibold hover:bg-[var(--card)] transition-all w-full sm:w-auto"
-                >
-                  Explore Markets
-                  <CaretRight size={16} weight="bold" className="shrink-0" />
-                </Link>
-              </motion.div>
-
-              {/* Social proof — stacked layout for clean mobile rendering */}
-              <motion.div variants={fadeUp} className="mt-7 space-y-3">
-                <div className="flex items-center gap-3 justify-center lg:justify-start">
-                  <div className="flex -space-x-2">
-                    {["A", "J", "S", "M", "K", "T"].map((l, i) => (
-                      <div
-                        key={i}
-                        style={{ background: `hsl(${160 + i * 15}deg 70% 55%)` }}
-                        className="w-7 h-7 rounded-full border-2 border-[var(--background)] flex items-center justify-center text-black font-black text-xs"
-                      >
-                        {l}
-                      </div>
-                    ))}
-                  </div>
-                  <span className="text-sm text-[var(--muted)]">
-                    <strong className="text-[var(--foreground)]">12,000+</strong> traders joined
-                  </span>
-                </div>
-                <div className="flex items-center gap-4 justify-center lg:justify-start flex-wrap">
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => <Star key={`hero-star-${i}`} size={13} weight="fill" className="text-yellow-400" />)}
-                    <span className="text-xs text-[var(--muted)] ml-1.5">4.9 / 5</span>
-                  </div>
-                  <span className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
-                    <CheckCircle size={13} weight="fill" className="text-[var(--accent)] shrink-0" />
-                    No KYC
-                  </span>
-                  <span className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
-                    <CheckCircle size={13} weight="fill" className="text-[var(--accent)] shrink-0" />
-                    M-Pesa supported
-                  </span>
-                </div>
-              </motion.div>
-            </motion.div>
-
-            {/* Right: stacked mockups */}
-            <motion.div
-              initial={{ opacity: 0, x: 40 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              className="relative px-4 sm:px-6 lg:px-0 mt-4 lg:mt-0"
-            >
-              {/* Floating TZS badge — hidden on xs to prevent overflow */}
-              <motion.div
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                className="hidden sm:block absolute -top-4 right-6 lg:right-4 z-20 bg-[var(--accent)] text-black text-xs font-black px-3 py-1.5 rounded-xl shadow-lg shadow-[var(--accent)]/30 whitespace-nowrap"
-              >
-                🚀 +45,000 TZS today
-              </motion.div>
-
-              <div className="space-y-3">
-                <LiveMarketCard />
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.7, duration: 0.6 }}
-                >
-                  <LeaderboardMockup />
-                </motion.div>
+        <div className="relative z-10 flex min-h-screen items-center pt-20 lg:pt-24">
+          <div className="container mx-auto px-6 lg:px-16 lg:ml-[10%]">
+            <div className="max-w-2xl relative">
+              {/* Top decorative line */}
+              <div className="flex items-center gap-2 mb-3 opacity-60">
+                <div className="w-8 h-px bg-[var(--foreground)]"></div>
+                <span className="text-[var(--foreground)] text-[10px] font-mono tracking-wider">001</span>
+                <div className="flex-1 h-px bg-[var(--foreground)]"></div>
               </div>
 
-              {/* Floating M-Pesa badge — hidden on xs */}
-              <motion.div
-                animate={{ y: [0, 8, 0] }}
-                transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                className="hidden sm:flex absolute -bottom-4 left-2 lg:-left-4 z-20 items-center gap-2 bg-[var(--card)] border border-[var(--card-border)] text-xs font-semibold px-3 py-2 rounded-xl shadow-xl whitespace-nowrap"
+              {/* Glitch Text Title */}
+              <div className="relative mb-6">
+                <div className="hidden lg:block absolute -left-3 top-0 bottom-0 w-1 dither-pattern opacity-40"></div>
+                <GlitchText 
+                  text="PREDICT THE FUTURE"
+                  textClassName="text-3xl lg:text-5xl font-black font-mono tracking-wider"
+                  className="min-h-[120px] lg:min-h-[180px] p-0 justify-start items-start"
+                  containerClassName="text-left"
+                />
+              </div>
+
+              <motion.h2
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="text-2xl lg:text-4xl font-bold text-[var(--foreground)] mb-4 leading-tight font-mono tracking-wider"
               >
-                <ArrowDownLeft size={14} weight="bold" className="text-[var(--accent)]" />
-                Deposit via M-Pesa
+                EARN <span className="text-[var(--foreground)]/90">GUAP</span>
+              </motion.h2>
+
+              {/* Decorative dots pattern - desktop only */}
+              <div className="hidden lg:flex gap-1 mb-3 opacity-40">
+                {Array.from({ length: 40 }).map((_, i) => (
+                  <div key={i} className="w-0.5 h-0.5 bg-[var(--foreground)] rounded-full"></div>
+                ))}
+              </div>
+
+              {/* Description */}
+              <motion.div 
+                className="relative"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                <p className="text-xs lg:text-base text-[var(--muted)] mb-5 lg:mb-6 leading-relaxed font-mono">
+                  Trade YES or NO on African events. Politics, sports, business. Powered by mobile money.
+                </p>
+                
+                {/* Technical corner accent - desktop only */}
+                <div className="hidden lg:block absolute -right-4 top-1/2 w-3 h-3 border border-[var(--foreground)] opacity-30" style={{ transform: 'translateY(-50%)' }}>
+                  <div className="absolute top-1/2 left-1/2 w-1 h-1 bg-[var(--foreground)]" style={{ transform: 'translate(-50%, -50%)' }}></div>
+                </div>
               </motion.div>
-            </motion.div>
+
+              {/* Buttons */}
+              <motion.div 
+                className="flex flex-col lg:flex-row gap-3 lg:gap-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+              >
+                <Link
+                  href="/auth/register"
+                  className="relative px-5 lg:px-6 py-2 lg:py-2.5 bg-transparent text-[var(--foreground)] font-mono text-xs lg:text-sm border border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all duration-200 group"
+                >
+                  <span className="hidden lg:block absolute -top-1 -left-1 w-2 h-2 border-t border-l border-[var(--foreground)] opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                  <span className="hidden lg:block absolute -bottom-1 -right-1 w-2 h-2 border-b border-r border-[var(--foreground)] opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                  CREATE MARKET
+                </Link>
+                
+                <Link
+                  href="/markets"
+                  className="relative px-5 lg:px-6 py-2 lg:py-2.5 bg-transparent border border-[var(--foreground)] text-[var(--foreground)] font-mono text-xs lg:text-sm hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all duration-200"
+                >
+                  EXPLORE MARKETS
+                </Link>
+              </motion.div>
+
+              {/* Bottom technical notation - desktop only */}
+              <div className="hidden lg:flex items-center gap-2 mt-6 opacity-40">
+                <span className="text-[var(--foreground)] text-[9px] font-mono">∞</span>
+                <div className="flex-1 h-px bg-[var(--foreground)]"></div>
+                <span className="text-[var(--foreground)] text-[9px] font-mono">GUAP</span>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* Bottom Footer */}
+        <div className="absolute left-0 right-0 z-20 border-t border-[var(--foreground)]/20 bg-[var(--background)]/40 backdrop-blur-sm" style={{ bottom: '5vh' }}>
+          <div className="container mx-auto px-4 lg:px-8 py-2 lg:py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3 lg:gap-6 text-[8px] lg:text-[9px] font-mono text-[var(--foreground)]/50">
+              <span className="hidden lg:inline">SYSTEM.ACTIVE</span>
+              <span className="lg:hidden">SYS.ACT</span>
+              <div className="hidden lg:flex gap-1">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="w-1 h-3 bg-[var(--foreground)]/30" style={{ height: `${Math.random() * 12 + 4}px` }}></div>
+                ))}
+              </div>
+              <span>V1.0.0</span>
+            </div>
+            
+            <div className="flex items-center gap-2 lg:gap-4 text-[8px] lg:text-[9px] font-mono text-[var(--foreground)]/50">
+              <span className="hidden lg:inline">◐ RENDERING</span>
+              <div className="flex gap-1">
+                <div className="w-1 h-1 bg-[var(--foreground)]/60 rounded-full animate-pulse"></div>
+                <div className="w-1 h-1 bg-[var(--foreground)]/40 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-1 h-1 bg-[var(--foreground)]/20 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+              </div>
+              <span className="hidden lg:inline">FRAME: ∞</span>
+            </div>
+          </div>
+        </div>
+
+        <style jsx>{`
+          .dither-pattern {
+            background-image: 
+              repeating-linear-gradient(0deg, transparent 0px, transparent 1px, var(--foreground) 1px, var(--foreground) 2px),
+              repeating-linear-gradient(90deg, transparent 0px, transparent 1px, var(--foreground) 1px, var(--foreground) 2px);
+            background-size: 3px 3px;
+          }
+          
+          .stars-bg {
+            background-image: 
+              radial-gradient(1px 1px at 20% 30%, var(--foreground), transparent),
+              radial-gradient(1px 1px at 60% 70%, var(--foreground), transparent),
+              radial-gradient(1px 1px at 50% 50%, var(--foreground), transparent),
+              radial-gradient(1px 1px at 80% 10%, var(--foreground), transparent),
+              radial-gradient(1px 1px at 90% 60%, var(--foreground), transparent),
+              radial-gradient(1px 1px at 33% 80%, var(--foreground), transparent),
+              radial-gradient(1px 1px at 15% 60%, var(--foreground), transparent),
+              radial-gradient(1px 1px at 70% 40%, var(--foreground), transparent);
+            background-size: 200% 200%, 180% 180%, 250% 250%, 220% 220%, 190% 190%, 240% 240%, 210% 210%, 230% 230%;
+            background-position: 0% 0%, 40% 40%, 60% 60%, 20% 20%, 80% 80%, 30% 30%, 70% 70%, 50% 50%;
+            opacity: 0.3;
+          }
+        `}</style>
       </section>
 
       {/* ══════════════════════════════════════════════
