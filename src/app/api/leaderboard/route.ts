@@ -13,7 +13,7 @@ export async function GET() {
     take: 50,
   });
 
-  const ranked = users
+  const enriched = users
     .map((u: typeof users[number]) => ({
       id: u.id,
       username: u.username,
@@ -23,8 +23,9 @@ export async function GET() {
       totalTrades: u._count.trades,
       marketsCreated: u._count.marketsCreated,
     }))
-    .sort((a: { totalVolume: number }, b: { totalVolume: number }) => b.totalVolume - a.totalVolume)
-    .map((u: typeof ranked[number], i: number) => ({ ...u, rank: i + 1 }));
+    .sort((a: { totalVolume: number }, b: { totalVolume: number }) => b.totalVolume - a.totalVolume);
+
+  const ranked = enriched.map((u: typeof enriched[number], i: number) => ({ ...u, rank: i + 1 }));
 
   return NextResponse.json({ leaderboard: ranked });
 }
