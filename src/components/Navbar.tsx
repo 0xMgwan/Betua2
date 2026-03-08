@@ -73,7 +73,7 @@ export function Navbar() {
               {/* Create market */}
               <Link
                 href="/markets/create"
-                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-black dark:bg-white text-white dark:text-black text-xs font-mono font-bold tracking-wider hover:opacity-90 transition-all uppercase border-2 border-black dark:border-white"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-black text-black dark:text-white text-xs font-mono font-bold tracking-wider hover:opacity-90 transition-all uppercase border-2 border-black dark:border-white"
               >
                 <Plus size={15} />
                 Create
