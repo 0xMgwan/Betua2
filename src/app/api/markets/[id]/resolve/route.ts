@@ -33,7 +33,7 @@ export async function POST(
   });
 
   // Pay out winners
-  const winnerPositions = market.positions.filter((p) =>
+  const winnerPositions = market.positions.filter((p: typeof market.positions[number]) =>
     outcome ? p.yesShares > 0 : p.noShares > 0
   );
 
