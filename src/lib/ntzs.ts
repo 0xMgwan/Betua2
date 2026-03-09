@@ -33,14 +33,16 @@ async function ntzsRequest<T>(
       `[nTZS ✗] ${method} ${path} → ${res.status} ${res.statusText}`,
       rawText || "(empty body)"
     );
-    const code =
+    const code = String(
       body?.code ||
       (typeof body?.error === "string" ? body.error : null) ||
-      "unknown_error";
-    const message =
+      "unknown_error"
+    );
+    const message = String(
       body?.message ||
       (typeof body?.error === "string" ? body.error : null) ||
-      res.statusText;
+      res.statusText
+    );
     throw new NtzsApiError(res.status, code, message, body);
   }
 
@@ -115,12 +117,19 @@ export const ntzs = {
   },
 
   deposits: {
-    // Docs field: 'phone' (not 'phoneNumber')
-    create: (data: { userId: string; amountTzs: number; phone: string }) =>
-      ntzsRequest<NtzsDeposit>("/deposits", {
+    create: (data: { userId: string; amountTzs: number; phone: string }) => {
+      // nTZS API expects 'phoneNumber' not 'phone' despite docs showing 'phone'
+      const payload = {
+        userId: data.userId,
+        amountTzs: data.amountTzs,
+        phoneNumber: data.phone,
+      };
+      console.log("[nTZS] Creating deposit with data:", JSON.stringify(payload, null, 2));
+      return ntzsRequest<NtzsDeposit>("/deposits", {
         method: "POST",
-        body: JSON.stringify(data),
-      }),
+        body: JSON.stringify(payload),
+      });
+    },
 
     get: (depositId: string) =>
       ntzsRequest<NtzsDeposit>(`/deposits/${depositId}`),

@@ -22,6 +22,12 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    console.log("[Deposit] Creating nTZS deposit:", {
+      userId: user.ntzsUserId,
+      amountTzs,
+      phone,
+    });
+    
     const deposit = await ntzs.deposits.create({
       userId: user.ntzsUserId,
       amountTzs,

@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── Check 2,000 TZS market creation fee ───────────────────────────────
+    // ── Check balance & transfer 2,000 TZS creation fee ──────────────────────
     try {
       const { balanceTzs } = await ntzs.users.getBalance(user.ntzsUserId);
       if (balanceTzs < CREATION_FEE_TZS) {
@@ -89,12 +89,11 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Transfer 2,000 TZS creation fee: user → platform → fee wallet ────
-    // Non-fatal: if on-chain transfer fails (e.g. tokens not yet settled on
-    // Base after M-Pesa deposit), we still deduct from local DB and create
-    // the market. Fee is reconciled when tokens settle on-chain.
+    // ENFORCED: Market creation will fail if fee transfer fails
     if (PLATFORM_NTZS_USER_ID) {
+      console.log(`Market creation fee transfer: ${user.ntzsUserId} (${user.walletAddress}) → ${PLATFORM_NTZS_USER_ID} (${CREATION_FEE_TZS} TZS)`);
+      
       try {
-        console.log(`Creation fee transfer: ${user.ntzsUserId} (${user.walletAddress}) → platform (${CREATION_FEE_TZS} TZS)`);
         await ntzs.transfers.create({
           fromUserId: user.ntzsUserId,
           toUserId: PLATFORM_NTZS_USER_ID,
@@ -114,23 +113,24 @@ export async function POST(req: NextRequest) {
             );
         }
       } catch (err) {
-        // Non-fatal: log and continue — market is still created
+        // FATAL: Block market creation if fee transfer fails
         if (err instanceof NtzsApiError) {
           console.error(
-            `Creation fee on-chain transfer skipped [${err.status}/${err.code}]: ${err.message}`,
+            `Market creation fee transfer failed [${err.status}/${err.code}]: ${err.message}`,
             `User: ${user.ntzsUserId} (${user.walletAddress})`
           );
-        } else {
-          console.error("Creation fee transfer error (non-fatal):", err);
+          return NextResponse.json(
+            {
+              error: `Failed to process market creation fee. ${err.message || 'Please try again or contact support.'}`,
+            },
+            { status: 500 }
+          );
         }
+        throw err;
       }
     }
 
-    // Always deduct from local DB balance regardless of on-chain transfer status
-    await prisma.user.update({
-      where: { id: session.userId },
-      data: { balanceTzs: { decrement: CREATION_FEE_TZS } },
-    });
+    // Note: Balance is managed by nTZS, not local DB
     // ─────────────────────────────────────────────────────────────────────
 
     // For Crypto markets with Pyth, store config as metadata in description
