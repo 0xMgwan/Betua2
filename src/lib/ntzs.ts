@@ -6,7 +6,15 @@ async function ntzsRequest<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const res = await fetch(`${NTZS_BASE_URL}/api/v1${path}`, {
+  const method = options.method || "GET";
+  const url = `${NTZS_BASE_URL}/api/v1${path}`;
+
+  // Log every outgoing request so we can see exactly what is sent to nTZS
+  if (options.body) {
+    console.log(`[nTZS →] ${method} ${url}`, options.body);
+  }
+
+  const res = await fetch(url, {
     ...options,
     headers: {
       Authorization: `Bearer ${NTZS_API_KEY}`,
@@ -16,11 +24,14 @@ async function ntzsRequest<T>(
   });
 
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    // Always log the raw nTZS error for server-side debugging
+    const rawText = await res.text().catch(() => "");
+    let body: Record<string, unknown> = {};
+    try { body = JSON.parse(rawText); } catch { /* not JSON */ }
+
+    // Always log the raw nTZS error response for server-side debugging
     console.error(
-      `[nTZS] ${options.method || "GET"} ${path} → ${res.status}`,
-      JSON.stringify(body)
+      `[nTZS ✗] ${method} ${path} → ${res.status} ${res.statusText}`,
+      rawText || "(empty body)"
     );
     const code =
       body?.code ||

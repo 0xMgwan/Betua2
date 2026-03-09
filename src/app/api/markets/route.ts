@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── Check & deduct 2,000 TZS market creation fee ──────────────────────
+    // ── Check 2,000 TZS market creation fee ───────────────────────────────
     try {
       const { balanceTzs } = await ntzs.users.getBalance(user.ntzsUserId);
       if (balanceTzs < CREATION_FEE_TZS) {
@@ -89,55 +89,48 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Transfer 2,000 TZS creation fee: user → platform → fee wallet ────
-    // Step 1: user → platform escrow (same pattern as trades route)
+    // Non-fatal: if on-chain transfer fails (e.g. tokens not yet settled on
+    // Base after M-Pesa deposit), we still deduct from local DB and create
+    // the market. Fee is reconciled when tokens settle on-chain.
     if (PLATFORM_NTZS_USER_ID) {
       try {
-        console.log(`Market creation fee transfer: ${user.ntzsUserId} (${user.walletAddress}) → ${PLATFORM_NTZS_USER_ID} (${CREATION_FEE_TZS} TZS)`);
-        
+        console.log(`Creation fee transfer: ${user.ntzsUserId} (${user.walletAddress}) → platform (${CREATION_FEE_TZS} TZS)`);
         await ntzs.transfers.create({
           fromUserId: user.ntzsUserId,
           toUserId: PLATFORM_NTZS_USER_ID,
           amountTzs: CREATION_FEE_TZS,
         });
+
+        // Step 2: platform escrow → creation fee wallet (non-fatal)
+        if (CREATION_FEE_NTZS_USER_ID) {
+          await ntzs.transfers
+            .create({
+              fromUserId: PLATFORM_NTZS_USER_ID,
+              toUserId: CREATION_FEE_NTZS_USER_ID,
+              amountTzs: CREATION_FEE_TZS,
+            })
+            .catch((err) =>
+              console.error("Creation fee forward transfer failed (non-fatal):", err)
+            );
+        }
       } catch (err) {
+        // Non-fatal: log and continue — market is still created
         if (err instanceof NtzsApiError) {
           console.error(
-            `Creation fee transfer failed [${err.status}/${err.code}]: ${err.message}`
+            `Creation fee on-chain transfer skipped [${err.status}/${err.code}]: ${err.message}`,
+            `User: ${user.ntzsUserId} (${user.walletAddress})`
           );
-          console.error(`User nTZS ID: ${user.ntzsUserId}, Wallet: ${user.walletAddress}`);
-          
-          // Get current balance to show in error
-          let currentBalance = 0;
-          let userWallet = user.walletAddress || 'unknown';
-          try {
-            const userInfo = await ntzs.users.get(user.ntzsUserId);
-            currentBalance = userInfo.balanceTzs;
-            userWallet = userInfo.walletAddress;
-          } catch {}
-          
-          return NextResponse.json(
-            {
-              error: `Insufficient balance. Your wallet (${userWallet}) has ${currentBalance.toLocaleString()} TZS but needs ${CREATION_FEE_TZS.toLocaleString()} TZS to create a market. Please deposit funds first.`,
-            },
-            { status: 400 }
-          );
+        } else {
+          console.error("Creation fee transfer error (non-fatal):", err);
         }
-        throw err;
-      }
-
-      // Step 2: platform escrow → creation fee wallet (non-fatal)
-      if (CREATION_FEE_NTZS_USER_ID) {
-        await ntzs.transfers
-          .create({
-            fromUserId: PLATFORM_NTZS_USER_ID,
-            toUserId: CREATION_FEE_NTZS_USER_ID,
-            amountTzs: CREATION_FEE_TZS,
-          })
-          .catch((err) =>
-            console.error("Creation fee forward transfer failed (non-fatal):", err)
-          );
       }
     }
+
+    // Always deduct from local DB balance regardless of on-chain transfer status
+    await prisma.user.update({
+      where: { id: session.userId },
+      data: { balanceTzs: { decrement: CREATION_FEE_TZS } },
+    });
     // ─────────────────────────────────────────────────────────────────────
 
     // For Crypto markets with Pyth, store config as metadata in description
