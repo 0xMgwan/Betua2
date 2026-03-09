@@ -116,11 +116,13 @@ export const ntzs = {
   },
 
   transfers: {
-    create: (data: { fromUserId: string; toUserId: string; amountTzs: number }) =>
-      ntzsRequest<NtzsTransfer>("/transfers", {
+    create: (data: { fromUserId: string; toUserId: string; amountTzs: number }) => {
+      console.log("[nTZS] Creating transfer with data:", JSON.stringify(data, null, 2));
+      return ntzsRequest<NtzsTransfer>("/transfers", {
         method: "POST",
         body: JSON.stringify(data),
-      }),
+      });
+    },
   },
 
   withdrawals: {

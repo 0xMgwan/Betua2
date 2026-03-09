@@ -92,6 +92,8 @@ export async function POST(req: NextRequest) {
     // Step 1: user → platform escrow (same pattern as trades route)
     if (PLATFORM_NTZS_USER_ID) {
       try {
+        console.log(`Market creation fee transfer: ${user.ntzsUserId} (${user.walletAddress}) → ${PLATFORM_NTZS_USER_ID} (${CREATION_FEE_TZS} TZS)`);
+        
         await ntzs.transfers.create({
           fromUserId: user.ntzsUserId,
           toUserId: PLATFORM_NTZS_USER_ID,
@@ -102,11 +104,20 @@ export async function POST(req: NextRequest) {
           console.error(
             `Creation fee transfer failed [${err.status}/${err.code}]: ${err.message}`
           );
+          console.error(`User nTZS ID: ${user.ntzsUserId}, Wallet: ${user.walletAddress}`);
+          
+          // Get current balance to show in error
+          let currentBalance = 0;
+          let userWallet = user.walletAddress || 'unknown';
+          try {
+            const userInfo = await ntzs.users.get(user.ntzsUserId);
+            currentBalance = userInfo.balanceTzs;
+            userWallet = userInfo.walletAddress;
+          } catch {}
+          
           return NextResponse.json(
             {
-              error:
-                err.message ||
-                `Creation fee transfer failed. Ensure you have at least ${CREATION_FEE_TZS.toLocaleString()} TZS in your wallet.`,
+              error: `Insufficient balance. Your wallet (${userWallet}) has ${currentBalance.toLocaleString()} TZS but needs ${CREATION_FEE_TZS.toLocaleString()} TZS to create a market. Please deposit funds first.`,
             },
             { status: 400 }
           );
@@ -126,12 +137,6 @@ export async function POST(req: NextRequest) {
             console.error("Creation fee forward transfer failed (non-fatal):", err)
           );
       }
-
-      // Reflect deduction in local DB balance
-      await prisma.user.update({
-        where: { id: session.userId },
-        data: { balanceTzs: { decrement: CREATION_FEE_TZS } },
-      });
     }
     // ─────────────────────────────────────────────────────────────────────
 

@@ -26,10 +26,13 @@ export default function HeroAscii() {
       [data-us-project] {
         position: relative !important;
         overflow: hidden !important;
+        background-color: var(--background) !important;
       }
       
       [data-us-project] canvas {
         clip-path: inset(0 0 10% 0) !important;
+        mix-blend-mode: difference !important;
+        opacity: 0.8 !important;
       }
       
       [data-us-project] * {
