@@ -5,8 +5,9 @@ import { getPrice } from "@/lib/amm";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
 
 // Fee configuration
-const CREATION_FEE_TZS = parseInt(process.env.MARKET_CREATION_FEE_TZS || "2000", 10);
+const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
 const CREATION_FEE_NTZS_USER_ID = process.env.CREATION_FEE_NTZS_USER_ID || "";
+const CREATION_FEE_TZS = parseInt(process.env.MARKET_CREATION_FEE_TZS || "2000", 10);
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -87,23 +88,50 @@ export async function POST(req: NextRequest) {
       throw balErr;
     }
 
-    // Transfer creation fee to fee wallet if configured
-    if (CREATION_FEE_NTZS_USER_ID) {
+    // ── Transfer 2,000 TZS creation fee: user → platform → fee wallet ────
+    // Step 1: user → platform escrow (same pattern as trades route)
+    if (PLATFORM_NTZS_USER_ID) {
       try {
         await ntzs.transfers.create({
           fromUserId: user.ntzsUserId,
-          toUserId: CREATION_FEE_NTZS_USER_ID,
+          toUserId: PLATFORM_NTZS_USER_ID,
           amountTzs: CREATION_FEE_TZS,
         });
       } catch (err) {
         if (err instanceof NtzsApiError) {
+          console.error(
+            `Creation fee transfer failed [${err.status}/${err.code}]: ${err.message}`
+          );
           return NextResponse.json(
-            { error: err.message || "Fee transfer failed. Please try again." },
+            {
+              error:
+                err.message ||
+                `Creation fee transfer failed. Ensure you have at least ${CREATION_FEE_TZS.toLocaleString()} TZS in your wallet.`,
+            },
             { status: 400 }
           );
         }
         throw err;
       }
+
+      // Step 2: platform escrow → creation fee wallet (non-fatal)
+      if (CREATION_FEE_NTZS_USER_ID) {
+        await ntzs.transfers
+          .create({
+            fromUserId: PLATFORM_NTZS_USER_ID,
+            toUserId: CREATION_FEE_NTZS_USER_ID,
+            amountTzs: CREATION_FEE_TZS,
+          })
+          .catch((err) =>
+            console.error("Creation fee forward transfer failed (non-fatal):", err)
+          );
+      }
+
+      // Reflect deduction in local DB balance
+      await prisma.user.update({
+        where: { id: session.userId },
+        data: { balanceTzs: { decrement: CREATION_FEE_TZS } },
+      });
     }
     // ─────────────────────────────────────────────────────────────────────
 
