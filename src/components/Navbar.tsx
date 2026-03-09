@@ -70,25 +70,40 @@ export function Navbar() {
 
           {user ? (
             <>
-              {/* Create market */}
+              {/* Mobile: Markets + Create quick links */}
+              <Link
+                href="/markets"
+                className="md:hidden px-2 py-1.5 text-xs font-mono font-bold tracking-wider uppercase text-[var(--foreground)] border border-[var(--card-border)] hover:border-[var(--foreground)] transition-all"
+              >
+                Markets
+              </Link>
               <Link
                 href="/markets/create"
-                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-black text-black dark:text-white text-xs font-mono font-bold tracking-wider hover:opacity-90 transition-all uppercase border-2 border-black dark:border-white"
+                className="md:hidden flex items-center gap-1 px-2 py-1.5 border border-[var(--foreground)] text-[var(--foreground)] text-xs font-mono font-bold tracking-wider hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all uppercase"
+              >
+                <Plus size={13} />
+                Create
+              </Link>
+
+              {/* Create market — desktop only */}
+              <Link
+                href="/markets/create"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 border-2 border-[var(--foreground)] text-[var(--foreground)] text-xs font-mono font-bold tracking-wider hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all uppercase"
               >
                 <Plus size={15} />
                 Create
               </Link>
 
-              {/* Balance */}
+              {/* Balance — desktop only */}
               <div className="hidden md:block px-3 py-1.5 bg-[var(--card)] border border-[var(--card-border)] text-[var(--foreground)] text-sm font-medium font-mono">
                 {formatTZS(user.balanceTzs || 0)}
               </div>
 
-              {/* Profile dropdown */}
+              {/* Profile dropdown — visible on all screen sizes */}
               <div className="relative">
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
-                  className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-[var(--card)] transition-all"
+                  className="flex items-center gap-2 p-1 hover:bg-[var(--card)] transition-all"
                 >
                   <div className="w-8 h-8 border-2 border-[var(--foreground)] flex items-center justify-center text-[var(--foreground)] font-bold text-sm">
                     {user.username?.[0]?.toUpperCase()}
@@ -101,26 +116,51 @@ export function Navbar() {
                       initial={{ opacity: 0, y: -8 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
-                      className="absolute right-0 top-full mt-2 w-52 bg-[var(--card)] border border-[var(--card-border)] rounded-xl shadow-xl overflow-hidden z-50"
+                      className="absolute right-0 top-full mt-2 w-52 bg-[var(--background)] border border-[var(--card-border)] shadow-xl z-50"
                       onMouseLeave={() => setProfileOpen(false)}
                     >
                       <div className="px-4 py-3 border-b border-[var(--card-border)]">
-                        <p className="font-semibold text-sm">{user.displayName || user.username}</p>
-                        <p className="text-xs text-[var(--muted)]">@{user.username}</p>
+                        <p className="font-bold text-sm font-mono">{user.displayName || user.username}</p>
+                        <p className="text-xs text-[var(--muted)] font-mono">@{user.username}</p>
                       </div>
+                      {/* Nav links — shown on all sizes */}
+                      {NAV_LINKS.map(({ href, label, icon: Icon }) => (
+                        <Link
+                          key={href}
+                          href={href}
+                          onClick={() => setProfileOpen(false)}
+                          className={cn(
+                            "flex items-center gap-2 px-4 py-2.5 text-xs font-mono font-bold tracking-wider uppercase border-b border-[var(--card-border)] transition-colors",
+                            pathname.startsWith(href)
+                              ? "text-[var(--foreground)] bg-[var(--card)]"
+                              : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card)]"
+                          )}
+                        >
+                          <Icon size={13} />
+                          {label}
+                        </Link>
+                      ))}
+                      <Link
+                        href="/markets/create"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2.5 text-xs font-mono font-bold tracking-wider uppercase border-b border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card)] transition-colors"
+                      >
+                        <Plus size={13} />
+                        Create Market
+                      </Link>
                       <Link
                         href="/profile"
                         onClick={() => setProfileOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-[var(--background)] transition-colors"
+                        className="flex items-center gap-2 px-4 py-2.5 text-xs font-mono font-bold tracking-wider uppercase border-b border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card)] transition-colors"
                       >
-                        <User size={14} />
+                        <User size={13} />
                         Profile
                       </Link>
                       <button
-                        onClick={logout}
-                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-[var(--background)] transition-colors"
+                        onClick={() => { logout(); setProfileOpen(false); }}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-mono font-bold tracking-wider uppercase text-red-500 hover:bg-[var(--card)] transition-colors"
                       >
-                        <SignOut size={14} />
+                        <SignOut size={13} />
                         Sign out
                       </button>
                     </motion.div>
@@ -145,82 +185,82 @@ export function Navbar() {
             </div>
           )}
 
-          {/* Mobile menu */}
-          <button
-            className="md:hidden p-2 rounded-lg hover:bg-[var(--card)]"
-            onClick={() => setMobileOpen(!mobileOpen)}
-          >
-            {mobileOpen ? <X size={20} /> : <List size={20} />}
-          </button>
+          {/* Mobile menu — only shown when logged out */}
+          <div className={cn("md:hidden relative", user && "hidden")}>
+            <button
+              className="p-2 border border-[var(--card-border)] hover:border-[var(--foreground)] text-[var(--foreground)] transition-all"
+              onClick={() => setMobileOpen(!mobileOpen)}
+            >
+              {mobileOpen ? <X size={18} /> : <List size={18} />}
+            </button>
+
+            <AnimatePresence>
+              {mobileOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="absolute right-0 top-full mt-2 w-52 bg-[var(--background)] border border-[var(--card-border)] shadow-xl z-50"
+                  onMouseLeave={() => setMobileOpen(false)}
+                >
+                  {NAV_LINKS.map(({ href, label, icon: Icon }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setMobileOpen(false)}
+                      className={cn(
+                        "flex items-center gap-2 px-4 py-3 text-xs font-mono font-bold tracking-wider uppercase border-b border-[var(--card-border)] transition-colors",
+                        pathname.startsWith(href)
+                          ? "text-[var(--foreground)] bg-[var(--card)]"
+                          : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card)]"
+                      )}
+                    >
+                      <Icon size={14} />
+                      {label}
+                    </Link>
+                  ))}
+                  {user ? (
+                    <>
+                      <Link
+                        href="/markets/create"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center gap-2 px-4 py-3 text-xs font-mono font-bold tracking-wider uppercase border-b border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card)] transition-colors"
+                      >
+                        <Plus size={14} />
+                        Create Market
+                      </Link>
+                      <button
+                        onClick={() => { logout(); setMobileOpen(false); }}
+                        className="w-full flex items-center gap-2 px-4 py-3 text-xs font-mono font-bold tracking-wider uppercase text-red-500 hover:bg-[var(--card)] transition-colors"
+                      >
+                        <SignOut size={14} />
+                        Sign out
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        href="/auth/login"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center gap-2 px-4 py-3 text-xs font-mono font-bold tracking-wider uppercase border-b border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card)] transition-colors"
+                      >
+                        Sign in
+                      </Link>
+                      <Link
+                        href="/auth/register"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center gap-2 px-4 py-3 text-xs font-mono font-bold tracking-wider uppercase text-[var(--foreground)] hover:bg-[var(--card)] transition-colors"
+                      >
+                        Get started
+                      </Link>
+                    </>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
-
-      {/* Mobile menu */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-[var(--card-border)] bg-[var(--background)]"
-          >
-            <div className="px-4 py-3 space-y-1">
-              {NAV_LINKS.map(({ href, label, icon: Icon }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={() => setMobileOpen(false)}
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium",
-                    pathname.startsWith(href)
-                      ? "bg-[var(--accent)]/10 text-[var(--accent)]"
-                      : "text-[var(--muted)]"
-                  )}
-                >
-                  <Icon size={16} />
-                  {label}
-                </Link>
-              ))}
-              {user ? (
-                <>
-                  <Link
-                    href="/markets/create"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-[var(--accent)]"
-                  >
-                    <Plus size={16} />
-                    Create Market
-                  </Link>
-                  <button
-                    onClick={logout}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-red-500"
-                  >
-                    <SignOut size={16} />
-                    Sign out
-                  </button>
-                </>
-              ) : (
-                <div className="flex gap-2 pt-2">
-                  <Link
-                    href="/auth/login"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex-1 py-2 text-center text-sm font-medium border border-[var(--card-border)] rounded-lg"
-                  >
-                    Sign in
-                  </Link>
-                  <Link
-                    href="/auth/register"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex-1 py-2 text-center text-sm font-semibold bg-[var(--accent)] text-black rounded-lg"
-                  >
-                    Get started
-                  </Link>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </nav>
   );
 }

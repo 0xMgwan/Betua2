@@ -66,14 +66,14 @@ a {
 ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
 .glass {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.03);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 .dark .glass {
-  background: rgba(22, 27, 34, 0.8);
-  border: 1px solid rgba(48, 54, 61, 0.8);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .gradient-text {
@@ -85,9 +85,9 @@ a {
 }
 
 .yes-pill {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.06);
   color: var(--foreground);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.15);
 }
 .dark .yes-pill {
   background: rgba(255, 255, 255, 0.15);
@@ -95,9 +95,9 @@ a {
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 .no-pill {
-  background: rgba(115, 115, 115, 0.15);
+  background: rgba(0, 0, 0, 0.04);
   color: var(--muted);
-  border: 1px solid rgba(115, 115, 115, 0.3);
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 .dark .no-pill {
   background: rgba(163, 163, 163, 0.15);

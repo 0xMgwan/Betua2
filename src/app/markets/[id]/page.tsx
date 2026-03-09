@@ -433,10 +433,10 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                 </div>
               ) : !user ? (
                 <div className="text-center py-6">
-                  <p className="text-[var(--muted)] mb-4 text-sm">Sign in to trade on this market</p>
+                  <p className="text-[var(--muted)] mb-4 text-sm font-mono">Sign in to trade on this market</p>
                   <Link
                     href="/auth/login"
-                    className="block py-3 bg-[var(--foreground)] text-[var(--background)] font-bold rounded-xl hover:opacity-90 transition-all text-sm"
+                    className="block py-3 border-2 border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)] font-mono font-bold tracking-wider uppercase text-sm hover:opacity-90 transition-all"
                   >
                     Sign in to trade
                   </Link>

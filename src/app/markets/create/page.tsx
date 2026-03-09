@@ -143,7 +143,7 @@ export default function CreateMarketPage() {
           </div>
 
           {/* Creation fee notice */}
-          <div className="mb-6 p-4 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/20 flex items-start gap-3">
+          <div className="mb-6 p-4 rounded-xl bg-[var(--card)] border border-[var(--card-border)] flex items-start gap-3">
             <div className="shrink-0 mt-0.5">
               <CurrencyDollar size={18} weight="fill" className="text-[var(--accent)]" />
             </div>
@@ -175,10 +175,10 @@ export default function CreateMarketPage() {
                     type="button"
                     onClick={() => setForm({ ...form, category: c })}
                     className={cn(
-                      "px-4 py-2 rounded-xl text-sm font-medium transition-all border",
+                      "px-4 py-2 rounded-xl text-sm font-mono transition-all",
                       form.category === c
-                        ? "bg-[var(--accent)] text-black border-[var(--accent)]"
-                        : "border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--accent)]/40"
+                        ? "border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold"
+                        : "border border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--foreground)] hover:text-[var(--foreground)]"
                     )}
                   >
                     {c}
@@ -377,7 +377,7 @@ export default function CreateMarketPage() {
                       : "")}
                 </p>
                 <div className="flex gap-3 text-xs">
-                  <span className="px-2 py-0.5 bg-[var(--accent)]/10 text-[var(--accent)] rounded-full border border-[var(--accent)]/20">
+                  <span className="px-2 py-0.5 bg-[var(--card)] text-[var(--foreground)] rounded-full border border-[var(--card-border)]">
                     {form.category}
                   </span>
                   <span className="text-[var(--muted)]">YES 50% • NO 50%</span>
@@ -393,7 +393,7 @@ export default function CreateMarketPage() {
             <button
               type="submit"
               disabled={loading || uploadingImage}
-              className="w-full py-4 bg-[var(--accent)] text-black font-bold rounded-xl hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
+              className="w-full py-4 bg-[var(--foreground)] text-[var(--background)] font-bold font-mono rounded-xl hover:opacity-80 transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-lg tracking-wider uppercase"
             >
               {loading || uploadingImage
                 ? uploadingImage ? "Uploading image…" : "Creating…"

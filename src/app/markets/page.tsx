@@ -117,10 +117,10 @@ export default function MarketsPage() {
                 key={c}
                 onClick={() => setCategory(c)}
                 className={cn(
-                  "px-3 py-1 rounded-full text-sm transition-all border",
+                  "px-3 py-1 rounded-full text-sm transition-all font-mono",
                   category === c
-                    ? "bg-[var(--accent)]/10 border-[var(--accent)]/40 text-[var(--accent)]"
-                    : "border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--accent)]/30"
+                    ? "border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold"
+                    : "border border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--foreground)] hover:text-[var(--foreground)]"
                 )}
               >
                 {c === "all" ? "All Categories" : c}

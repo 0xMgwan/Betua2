@@ -307,7 +307,7 @@ export default function WalletPage() {
                     className={cn(
                       "w-full py-3.5 font-black rounded-xl transition-all disabled:opacity-40 text-sm flex items-center justify-center gap-2",
                       tab === "deposit"
-                        ? "bg-[var(--accent)] text-black hover:opacity-90 shadow-lg shadow-[var(--accent)]/20"
+                        ? "bg-[var(--foreground)] text-[var(--background)] hover:opacity-80"
                         : "bg-red-500 text-white hover:opacity-90"
                     )}
                   >
