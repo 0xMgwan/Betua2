@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     const withdrawal = await ntzs.withdrawals.create({
       userId: user.ntzsUserId,
       amountTzs,
-      phoneNumber: phone, // NTZS API uses 'phoneNumber'
+      phone,
     });
 
     await prisma.transaction.create({

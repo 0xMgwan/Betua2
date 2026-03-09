@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     const deposit = await ntzs.deposits.create({
       userId: user.ntzsUserId,
       amountTzs,
-      phoneNumber: phone, // NTZS API uses 'phoneNumber'
+      phone,
     });
 
     await prisma.transaction.create({

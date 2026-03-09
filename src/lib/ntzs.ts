@@ -1,4 +1,4 @@
-// NTZS REST API client (SDK not yet published)
+// NTZS REST API client
 const NTZS_BASE_URL = process.env.NTZS_BASE_URL || "https://www.ntzs.co.tz";
 const NTZS_API_KEY = process.env.NTZS_API_KEY!;
 
@@ -17,13 +17,20 @@ async function ntzsRequest<T>(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    // NTZS returns errors in different shapes – normalise them
-    const code = body?.error || body?.code || "unknown_error";
+    // Always log the raw nTZS error for server-side debugging
+    console.error(
+      `[nTZS] ${options.method || "GET"} ${path} → ${res.status}`,
+      JSON.stringify(body)
+    );
+    const code =
+      body?.code ||
+      (typeof body?.error === "string" ? body.error : null) ||
+      "unknown_error";
     const message =
       body?.message ||
       (typeof body?.error === "string" ? body.error : null) ||
       res.statusText;
-    throw new NtzsApiError(res.status, code, message);
+    throw new NtzsApiError(res.status, code, message, body);
   }
 
   return res.json();
@@ -33,7 +40,9 @@ export class NtzsApiError extends Error {
   constructor(
     public status: number,
     public code: string,
-    message: string
+    message: string,
+    // Preserve full response body for debugging
+    public body: Record<string, unknown> = {}
   ) {
     super(message);
     this.name = "NtzsApiError";
@@ -54,7 +63,7 @@ export interface NtzsDeposit {
   userId: string;
   amountTzs: number;
   status: "pending" | "minted" | "failed";
-  phoneNumber: string;
+  phone: string;
 }
 
 export interface NtzsTransfer {
@@ -62,6 +71,7 @@ export interface NtzsTransfer {
   fromUserId: string;
   toUserId: string;
   amountTzs: number;
+  // nTZS charges its own network fee; actual amount received may be less
   recipientAmountTzs: number;
   feeAmountTzs: number;
   status: "completed" | "failed";
@@ -72,7 +82,7 @@ export interface NtzsWithdrawal {
   id: string;
   userId: string;
   amountTzs: number;
-  phoneNumber: string;
+  phone: string;
   status: "pending" | "completed" | "failed";
 }
 
@@ -81,7 +91,6 @@ export const ntzs = {
     create: (data: { externalId: string; email: string; phone?: string }) =>
       ntzsRequest<NtzsUser>("/users", {
         method: "POST",
-        // API uses 'phone' for user creation
         body: JSON.stringify(data),
       }),
 
@@ -95,8 +104,8 @@ export const ntzs = {
   },
 
   deposits: {
-    // API requires 'phoneNumber' (not 'phone')
-    create: (data: { userId: string; amountTzs: number; phoneNumber: string }) =>
+    // Docs field: 'phone' (not 'phoneNumber')
+    create: (data: { userId: string; amountTzs: number; phone: string }) =>
       ntzsRequest<NtzsDeposit>("/deposits", {
         method: "POST",
         body: JSON.stringify(data),
@@ -115,8 +124,8 @@ export const ntzs = {
   },
 
   withdrawals: {
-    // API requires 'phoneNumber' (not 'phone')
-    create: (data: { userId: string; amountTzs: number; phoneNumber: string }) =>
+    // Docs field: 'phone' (not 'phoneNumber')
+    create: (data: { userId: string; amountTzs: number; phone: string }) =>
       ntzsRequest<NtzsWithdrawal>("/withdrawals", {
         method: "POST",
         body: JSON.stringify(data),
