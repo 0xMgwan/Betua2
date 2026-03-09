@@ -128,7 +128,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ market });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error("Market creation error:", err);
+    const errorMessage = err instanceof Error ? err.message : "Server error";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

@@ -259,8 +259,8 @@ export default function HomePage() {
           HERO — Terminal-style GUAP Hero Section
           ══════════════════════════════════════════════ */}
       <section className="relative min-h-screen overflow-hidden bg-[var(--background)]">
-        {/* Animated ASCII background - only in dark mode */}
-        <div className="dark:block hidden">
+        {/* Animated ASCII background - visible in all modes */}
+        <div className="block">
           <HeroAscii />
         </div>
         
