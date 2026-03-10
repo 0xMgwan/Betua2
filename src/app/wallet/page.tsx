@@ -402,6 +402,7 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
   const { t, locale } = useLanguage();
   const isDeposit = tx.type === "DEPOSIT";
   const isSend = tx.type === "SEND";
+  const isReceive = tx.type === "RECEIVE";
   const isWithdraw = tx.type === "WITHDRAW";
 
   const statusConfig = {
@@ -420,9 +421,9 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
       <div className="flex items-center gap-3">
         <div className={cn(
           "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-          isDeposit ? "bg-[var(--accent)]/10" : isSend ? "bg-blue-500/10" : "bg-red-500/10"
+          isDeposit || isReceive ? "bg-[var(--accent)]/10" : isSend ? "bg-blue-500/10" : "bg-red-500/10"
         )}>
-          {isDeposit
+          {isDeposit || isReceive
             ? <ArrowDownLeft size={18} weight="bold" className="text-[var(--accent)]" />
             : isSend
             ? <PaperPlaneRight size={18} weight="bold" className="text-blue-400" />
@@ -430,19 +431,20 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
         </div>
         <div>
           <p className="text-sm font-semibold">
-            {isDeposit ? t.wallet.deposit : isSend ? t.wallet.send : t.wallet.withdraw}
+            {isDeposit ? t.wallet.deposit : isReceive ? (locale === "sw" ? "Pokea" : "Receive") : isSend ? t.wallet.send : t.wallet.withdraw}
           </p>
           <p className="text-xs text-[var(--muted)]">
             {new Date(tx.createdAt).toLocaleDateString(locale === "sw" ? "sw-TZ" : "en-TZ", { day: "2-digit", month: "short", year: "numeric" })}
             {tx.phone && <span className="ml-1.5 opacity-70">· {tx.phone}</span>}
-            {tx.recipientUsername && <span className="ml-1.5 opacity-70">→ @{tx.recipientUsername}</span>}
+            {isSend && tx.recipientUsername && <span className="ml-1.5 opacity-70">→ @{tx.recipientUsername}</span>}
+            {isReceive && tx.recipientUsername && <span className="ml-1.5 opacity-70">← @{tx.recipientUsername}</span>}
           </p>
         </div>
       </div>
 
       <div className="text-right">
-        <p className={cn("font-black text-sm tabular-nums", isDeposit ? "text-[var(--accent)]" : isSend ? "text-blue-400" : "text-red-400")}>
-          {isDeposit ? "+" : "−"}{formatTZS(tx.amountTzs)}
+        <p className={cn("font-black text-sm tabular-nums", isDeposit || isReceive ? "text-[var(--accent)]" : isSend ? "text-blue-400" : "text-red-400")}>
+          {isDeposit || isReceive ? "+" : "−"}{formatTZS(tx.amountTzs)}
         </p>
         <div className={cn("flex items-center gap-1 justify-end text-xs font-medium mt-0.5", statusConfig.color)}>
           {statusConfig.icon}
