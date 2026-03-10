@@ -125,22 +125,7 @@ export function Navbar() {
 
           {user ? (
             <>
-              {/* Mobile: Markets + Create quick links */}
-              <Link
-                href="/markets"
-                className="md:hidden px-2 py-1.5 text-xs font-mono font-bold tracking-wider uppercase text-[var(--foreground)] border border-[var(--card-border)] hover:border-[var(--foreground)] transition-all"
-              >
-                Markets
-              </Link>
-              <Link
-                href="/markets/create"
-                className="md:hidden flex items-center gap-1 px-2 py-1.5 border border-[var(--foreground)] text-[var(--foreground)] text-xs font-mono font-bold tracking-wider hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all uppercase"
-              >
-                <Plus size={13} />
-                {locale === "sw" ? "Unda" : "Create"}
-              </Link>
-
-              {/* Create market — desktop only */}
+              {/* Create market — desktop only (hidden on mobile to reduce clutter) */}
               <Link
                 href="/markets/create"
                 className="hidden md:flex items-center gap-1.5 px-3 py-1.5 border-2 border-[var(--foreground)] text-[var(--foreground)] text-xs font-mono font-bold tracking-wider hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all uppercase"
