@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useRef } from "react";
 import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
 import { useUser } from "@/store/useUser";
@@ -12,6 +12,7 @@ import {
   Clock, TrendUp, UsersThree, ChatCircle,
   CheckCircle, XCircle, Warning, PaperPlaneTilt,
   ShareNetwork, WhatsappLogo, XLogo, FacebookLogo, TelegramLogo,
+  PencilSimple,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
@@ -58,6 +59,53 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   // Comment state
   const [comment, setComment] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
+
+  // Edit state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
+    imageUrl: "",
+    resolvesAt: "",
+  });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState("");
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState("");
+  const [editUploading, setEditUploading] = useState(false);
+  const editFileRef = useRef<HTMLInputElement>(null);
+
+  function handleEditFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setEditImageFile(file);
+    setEditImagePreview(URL.createObjectURL(file));
+  }
+
+  function clearEditImage() {
+    setEditImageFile(null);
+    setEditImagePreview("");
+    setEditForm((f) => ({ ...f, imageUrl: "" }));
+    if (editFileRef.current) editFileRef.current.value = "";
+  }
+
+  async function uploadEditImage(): Promise<string | null> {
+    if (!editImageFile) return editForm.imageUrl || null;
+    setEditUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", editImageFile);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+      return data.url;
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : "Image upload failed");
+      return null;
+    } finally {
+      setEditUploading(false);
+    }
+  }
 
   async function loadMarket() {
     const res = await fetch(`/api/markets/${id}`);
@@ -140,6 +188,51 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
       body: JSON.stringify({ optionIndex: optIdx }),
     });
     loadMarket();
+  }
+
+  function openEditModal() {
+    if (!market) return;
+    setEditForm({
+      title: market.title,
+      description: market.description,
+      imageUrl: market.imageUrl || "",
+      resolvesAt: new Date(market.resolvesAt).toISOString().slice(0, 16),
+    });
+    setEditImageFile(null);
+    setEditImagePreview("");
+    setShowEditModal(true);
+    setEditError("");
+  }
+
+  async function handleEdit(e: React.FormEvent) {
+    e.preventDefault();
+    setEditLoading(true);
+    setEditError("");
+    try {
+      let finalImageUrl = editForm.imageUrl;
+      if (editImageFile) {
+        const uploaded = await uploadEditImage();
+        if (uploaded === null) { setEditLoading(false); return; }
+        finalImageUrl = uploaded;
+      }
+
+      const res = await fetch(`/api/markets/${id}/edit`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...editForm, imageUrl: finalImageUrl }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setEditError(data.error || "Failed to update market");
+      } else {
+        setShowEditModal(false);
+        await loadMarket();
+      }
+    } catch {
+      setEditError("Network error");
+    } finally {
+      setEditLoading(false);
+    }
   }
 
   // Estimate shares for current input
@@ -373,10 +466,19 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
             {/* Creator resolve */}
             {user?.id === market.creatorId && !isResolved && (
               <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl p-6">
-                <h2 className="font-semibold mb-2 flex items-center gap-2">
-                  <Warning size={16} className="text-yellow-500" />
-                  {locale === "sw" ? "Tatua Soko (Muundaji tu)" : "Resolve Market (Creator only)"}
-                </h2>
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="font-semibold flex items-center gap-2">
+                    <Warning size={16} className="text-yellow-500" />
+                    {locale === "sw" ? "Tatua Soko (Muundaji tu)" : "Resolve Market (Creator only)"}
+                  </h2>
+                  <button
+                    onClick={openEditModal}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[var(--accent)]/10 hover:bg-[var(--accent)]/20 border border-[var(--accent)]/30 text-[var(--accent)] rounded-lg transition-all"
+                  >
+                    <PencilSimple size={14} />
+                    {locale === "sw" ? "Hariri" : "Edit"}
+                  </button>
+                </div>
                 <p className="text-sm text-[var(--muted)] mb-4">
                   {locale === "sw" ? "Mara ikitaruliwa, washindi watalipwa moja kwa moja." : "Once resolved, winners receive their payouts automatically."}
                 </p>
@@ -681,6 +783,144 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
           </div>
         </div>
       </div>
+
+      {/* Edit Market Modal */}
+      <AnimatePresence>
+        {showEditModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowEditModal(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] sm:w-full max-w-2xl bg-[var(--card)] border-2 border-[var(--accent)] rounded-xl shadow-2xl z-50 max-h-[90vh] overflow-y-auto"
+            >
+              <div className="p-6">
+                <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                  <PencilSimple size={20} className="text-[var(--accent)]" />
+                  {locale === "sw" ? "Hariri Soko" : "Edit Market"}
+                </h2>
+                
+                <form onSubmit={handleEdit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">
+                      {locale === "sw" ? "Swali" : "Question"}
+                    </label>
+                    <textarea
+                      value={editForm.title}
+                      onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                      className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors resize-none"
+                      rows={2}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">
+                      {locale === "sw" ? "Maelezo" : "Description"}
+                    </label>
+                    <textarea
+                      value={editForm.description}
+                      onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                      className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors resize-none"
+                      rows={4}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">
+                      {locale === "sw" ? "Picha ya Jalada" : "Cover Image"}
+                    </label>
+
+                    {(editImagePreview || editForm.imageUrl) && (
+                      <div className="relative mb-3 rounded-xl overflow-hidden border border-[var(--card-border)]">
+                        <img
+                          src={editImagePreview || editForm.imageUrl}
+                          alt="Preview"
+                          className="w-full h-40 object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={clearEditImage}
+                          className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-black/80 rounded-full transition-colors"
+                        >
+                          <XCircle size={18} className="text-white" />
+                        </button>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => editFileRef.current?.click()}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-dashed border-[var(--card-border)] hover:border-[var(--accent)]/50 rounded-xl text-sm font-medium text-[var(--muted)] hover:text-[var(--accent)] transition-colors"
+                    >
+                      <PencilSimple size={14} />
+                      {editImagePreview || editForm.imageUrl
+                        ? (locale === "sw" ? "Badilisha picha" : "Change image")
+                        : (locale === "sw" ? "Pakia picha" : "Upload image")}
+                    </button>
+                    <input
+                      ref={editFileRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      onChange={handleEditFileSelect}
+                      className="hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">
+                      {locale === "sw" ? "Tarehe ya Kutatua" : "Resolution Date"}
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={editForm.resolvesAt}
+                      onChange={(e) => setEditForm({ ...editForm, resolvesAt: e.target.value })}
+                      className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
+                      min={new Date().toISOString().slice(0, 16)}
+                      required
+                    />
+                  </div>
+
+                  {editError && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl">
+                      {editError}
+                    </div>
+                  )}
+
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowEditModal(false)}
+                      className="flex-1 py-3 px-4 border border-[var(--card-border)] rounded-xl font-semibold text-sm hover:bg-[var(--background)] transition-all"
+                    >
+                      {locale === "sw" ? "Ghairi" : "Cancel"}
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={editLoading || editUploading}
+                      className="flex-1 py-3 px-4 bg-[var(--accent)] text-[var(--background)] rounded-xl font-semibold text-sm hover:opacity-90 transition-all disabled:opacity-50"
+                    >
+                      {editUploading
+                        ? (locale === "sw" ? "Inapakia picha..." : "Uploading image...")
+                        : editLoading
+                        ? (locale === "sw" ? "Inahifadhi..." : "Saving...")
+                        : (locale === "sw" ? "Hifadhi" : "Save")}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
