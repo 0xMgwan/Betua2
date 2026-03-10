@@ -142,10 +142,12 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
 
             {/* Terminal-style footer */}
             <div className="flex items-center justify-between text-[10px] font-mono text-[var(--muted)] pt-2 border-t border-[var(--card-border)]">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <span className="flex items-center gap-1">
                   <span className="text-[var(--accent)]">↗</span>
-                  {formatTZS(market.totalVolume)}
+                  <img src="/ntzs.png" alt="nTZS" className="w-3 h-3 inline-block opacity-70" />
+                  <span className="hidden xs:inline">{formatTZS(market.totalVolume)}</span>
+                  <span className="xs:hidden">{market.totalVolume >= 1000 ? `${(market.totalVolume / 1000).toFixed(1)}K` : market.totalVolume}</span>
                 </span>
                 {market._count && (
                   <span className="flex items-center gap-1">
@@ -154,9 +156,10 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                   </span>
                 )}
               </div>
-              <span className={cn("flex items-center gap-1", market.status === "OPEN" ? "" : "text-blue-400")}>
+              <span className={cn("flex items-center gap-1 text-[9px] sm:text-[10px]", market.status === "OPEN" ? "" : "text-blue-400")}>
                 <span>⏱</span>
-                {market.status === "OPEN" ? timeUntil(market.resolvesAt) : (locale === "sw" ? "ENDED" : "ENDED")}
+                <span className="hidden sm:inline">{market.status === "OPEN" ? timeUntil(market.resolvesAt) : (locale === "sw" ? "ENDED" : "ENDED")}</span>
+                <span className="sm:hidden">{market.status === "OPEN" ? timeUntil(market.resolvesAt).split(" ")[0] : "END"}</span>
               </span>
             </div>
           </div>

@@ -101,7 +101,7 @@ export function QuickBuyModal({ isOpen, onClose, market, side }: QuickBuyModalPr
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-[var(--card)] border-2 border-[var(--accent)] rounded-none shadow-[0_0_30px_rgba(0,229,160,0.2)] z-50 overflow-hidden"
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] sm:w-full max-w-md bg-[var(--card)] border-2 border-[var(--accent)] rounded-none shadow-[0_0_30px_rgba(0,229,160,0.2)] z-50 overflow-hidden max-h-[90vh] overflow-y-auto"
           >
             {/* Terminal Header Bar */}
             <div className="bg-[var(--background)] border-b-2 border-[var(--card-border)] px-4 py-3 flex items-center justify-between">
@@ -126,11 +126,11 @@ export function QuickBuyModal({ isOpen, onClose, market, side }: QuickBuyModalPr
             {/* Scanline effect */}
             <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,0,0,0.03)_2px,rgba(0,0,0,0.03)_4px)] pointer-events-none"></div>
 
-            <div className="p-6 relative">
+            <div className="p-4 sm:p-6 relative">
               {/* Market Title with cursor */}
-              <div className="mb-4 font-mono text-sm">
+              <div className="mb-3 sm:mb-4 font-mono text-xs sm:text-sm">
                 <span className="text-[var(--accent)]">$</span> {market.title}
-                <span className="inline-block w-2 h-4 bg-[var(--accent)] ml-1 animate-pulse"></span>
+                <span className="inline-block w-2 h-3 sm:h-4 bg-[var(--accent)] ml-1 animate-pulse"></span>
               </div>
 
               {/* Price Info - Terminal Style */}
@@ -217,17 +217,17 @@ export function QuickBuyModal({ isOpen, onClose, market, side }: QuickBuyModalPr
 
               {/* Actions - Terminal Style */}
               {!success && (
-                <div className="flex gap-3 pt-2 border-t-2 border-[var(--card-border)]">
+                <div className="flex gap-2 sm:gap-3 pt-3 sm:pt-2 border-t-2 border-[var(--card-border)]">
                   <button
                     onClick={onClose}
-                    className="flex-1 py-3 px-4 border-2 border-[var(--card-border)] rounded-none font-mono font-bold text-xs uppercase tracking-wider hover:bg-[var(--background)] hover:border-[var(--accent)]/40 transition-all"
+                    className="flex-1 py-3 sm:py-3 px-3 sm:px-4 border-2 border-[var(--card-border)] rounded-none font-mono font-bold text-[10px] sm:text-xs uppercase tracking-wider hover:bg-[var(--background)] hover:border-[var(--accent)]/40 transition-all active:scale-95"
                   >
                     {locale === "sw" ? "Ghairi" : "Cancel"}
                   </button>
                   <button
                     onClick={handleBuy}
                     disabled={loading || !amount || Number(amount) < 500}
-                    className={`flex-1 py-3 px-4 rounded-none font-mono font-bold text-xs uppercase tracking-wider transition-all disabled:opacity-40 border-2 ${
+                    className={`flex-1 py-3 sm:py-3 px-3 sm:px-4 rounded-none font-mono font-bold text-[10px] sm:text-xs uppercase tracking-wider transition-all disabled:opacity-40 border-2 active:scale-95 ${
                       side === "YES"
                         ? "bg-[#00e5a0]/10 border-[#00e5a0] text-[#00e5a0] hover:bg-[#00e5a0]/20 hover:shadow-[0_0_15px_rgba(0,229,160,0.3)]"
                         : "bg-red-500/10 border-red-500 text-red-400 hover:bg-red-500/20 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]"

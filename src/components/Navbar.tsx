@@ -7,7 +7,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS } from "@/lib/utils";
 import {
   Sun, Moon, TrendUp, ChartBar, Trophy, Wallet,
-  User, Plus, SignOut, List, X, Globe,
+  User, Plus, SignOut, List, X, Globe, Bell,
 } from "@phosphor-icons/react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -71,6 +71,28 @@ export function Navbar() {
             <Globe size={14} weight="duotone" />
             {locale === "en" ? "SW" : "EN"}
           </button>
+
+          {/* Notification Bell - only show when logged in */}
+          {user && (
+            <button
+              onClick={async () => {
+                const { notifications } = await import("@/lib/notifications");
+                const permission = await notifications.requestPermission();
+                if (permission === "granted") {
+                  notifications.showNotification({
+                    title: "🔔 Notifications Enabled!",
+                    body: "You'll now receive updates for trades, resolutions, and more.",
+                  });
+                }
+              }}
+              className="relative p-2 border border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[var(--accent)] transition-all"
+              title="Enable notifications"
+            >
+              <Bell size={17} weight="duotone" />
+              {/* Badge - show if notifications not enabled */}
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-[var(--accent)] rounded-full animate-pulse"></span>
+            </button>
+          )}
 
           {/* Theme toggle */}
           <button
