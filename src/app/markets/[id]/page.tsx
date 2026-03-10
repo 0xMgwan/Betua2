@@ -655,7 +655,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     className={cn(
                       "w-full py-3.5 font-bold rounded-xl transition-all disabled:opacity-50 text-sm",
                       isMultiOption
-                        ? "bg-[var(--accent)] text-black hover:opacity-90"
+                        ? "bg-[var(--accent)] text-[var(--background)] hover:opacity-90"
                         : side === "YES"
                           ? "bg-[#00e5a0] text-black hover:opacity-90"
                           : "bg-red-500 text-white hover:opacity-90"

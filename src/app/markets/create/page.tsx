@@ -499,7 +499,18 @@ export default function CreateMarketPage() {
                   <span className="px-2 py-0.5 bg-[var(--card)] text-[var(--foreground)] rounded-full border border-[var(--card-border)]">
                     {form.category}
                   </span>
-                  <span className="text-[var(--muted)]">YES 50% • NO 50%</span>
+                  {marketType === "multi" && customOptions.filter(o => o.trim()).length >= 2 ? (
+                    <span className="text-[var(--muted)]">
+                      {customOptions.filter(o => o.trim()).map((opt, i) => (
+                        <span key={i}>
+                          {opt.trim().slice(0, 12)}{opt.trim().length > 12 ? "…" : ""} {Math.round(100 / customOptions.filter(o => o.trim()).length)}%
+                          {i < customOptions.filter(o => o.trim()).length - 1 ? " • " : ""}
+                        </span>
+                      ))}
+                    </span>
+                  ) : (
+                    <span className="text-[var(--muted)]">YES 50% • NO 50%</span>
+                  )}
                   {isCrypto && (
                     <span className="px-2 py-0.5 bg-[#00b4d8]/10 text-[#00b4d8] rounded-full border border-[#00b4d8]/20">
                       Pyth Auto-Resolve

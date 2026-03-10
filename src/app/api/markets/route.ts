@@ -149,26 +149,41 @@ export async function POST(req: NextRequest) {
     }
 
     // For multi-option: create equal pools per option
-    const POOL_PER_OPTION = 100000;
+    const POOL_PER_OPTION = 5000;
     const optionPools = isMultiOption
       ? options.map(() => POOL_PER_OPTION)
       : null;
 
-    const market = await prisma.market.create({
-      data: {
-        title: effectiveTitle,
-        description: finalDescription,
-        category,
-        imageUrl,
-        resolvesAt: new Date(resolvesAt),
-        creatorId: session.userId,
-        yesPool: isMultiOption ? 0 : 100000,
-        noPool: isMultiOption ? 0 : 100000,
-        liquidity: isMultiOption ? POOL_PER_OPTION * options.length : 200000,
-        options: isMultiOption ? options : undefined,
-        optionPools: optionPools || undefined,
-      },
-    });
+    const [market] = await prisma.$transaction([
+      prisma.market.create({
+        data: {
+          title: effectiveTitle,
+          description: finalDescription,
+          category,
+          imageUrl,
+          resolvesAt: new Date(resolvesAt),
+          creatorId: session.userId,
+          yesPool: isMultiOption ? 0 : 100000,
+          noPool: isMultiOption ? 0 : 100000,
+          liquidity: isMultiOption ? POOL_PER_OPTION * options.length : 200000,
+          options: isMultiOption ? options : undefined,
+          optionPools: optionPools || undefined,
+        },
+      }),
+      prisma.transaction.create({
+        data: {
+          userId: session.userId,
+          type: "CREATE_MARKET",
+          amountTzs: CREATION_FEE_TZS,
+          status: "COMPLETED",
+          recipientUsername: effectiveTitle,
+        },
+      }),
+      prisma.user.update({
+        where: { id: session.userId },
+        data: { balanceTzs: { decrement: CREATION_FEE_TZS } },
+      }),
+    ]);
 
     return NextResponse.json({ market });
   } catch (err) {

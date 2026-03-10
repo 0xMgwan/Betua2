@@ -30,14 +30,17 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
   const { t, locale } = useLanguage();
   const [imageError, setImageError] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false);
-  const [selectedSide, setSelectedSide] = useState<"YES" | "NO" | null>(null);
+  const [selectedSide, setSelectedSide] = useState<string | null>(null);
+  const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
   const yesPct = Math.round(market.price.yes * 100);
   const noPct = 100 - yesPct;
+  const isMultiOption = market.options && market.options.length >= 2;
 
-  const handleQuickBuy = (e: React.MouseEvent, side: "YES" | "NO") => {
+  const handleQuickBuy = (e: React.MouseEvent, side: string, optionIndex?: number) => {
     e.preventDefault();
     e.stopPropagation();
     setSelectedSide(side);
+    setSelectedOptionIndex(optionIndex ?? null);
     setShowBuyModal(true);
   };
 
@@ -156,22 +159,47 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
               </div>
             )}
 
-            {/* Quick Buy Buttons - Terminal style (only for binary markets) */}
-            {market.status === "OPEN" && !(market.options && market.options.length >= 2) && (
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={(e) => handleQuickBuy(e, "YES")}
-                  className="py-2.5 px-3 bg-[#00e5a0]/10 hover:bg-[#00e5a0]/20 border-2 border-[#00e5a0] text-[#00e5a0] font-mono font-bold text-xs uppercase tracking-wider transition-all hover:shadow-[0_0_10px_rgba(0,229,160,0.3)] active:scale-95"
-                >
-                  &gt; BUY YES
-                </button>
-                <button
-                  onClick={(e) => handleQuickBuy(e, "NO")}
-                  className="py-2.5 px-3 bg-red-500/10 hover:bg-red-500/20 border-2 border-red-500 text-red-400 font-mono font-bold text-xs uppercase tracking-wider transition-all hover:shadow-[0_0_10px_rgba(239,68,68,0.3)] active:scale-95"
-                >
-                  &gt; BUY NO
-                </button>
-              </div>
+            {/* Quick Buy Buttons - Terminal style */}
+            {market.status === "OPEN" && (
+              isMultiOption ? (
+                <div className="grid gap-1.5">
+                  {market.options!.map((option, idx) => {
+                    const colors = [
+                      { bg: "bg-[#00e5a0]/10", hover: "hover:bg-[#00e5a0]/20", border: "border-[#00e5a0]", text: "text-[#00e5a0]", shadow: "hover:shadow-[0_0_10px_rgba(0,229,160,0.3)]" },
+                      { bg: "bg-[#00b4d8]/10", hover: "hover:bg-[#00b4d8]/20", border: "border-[#00b4d8]", text: "text-[#00b4d8]", shadow: "hover:shadow-[0_0_10px_rgba(0,180,216,0.3)]" },
+                      { bg: "bg-orange-500/10", hover: "hover:bg-orange-500/20", border: "border-orange-500", text: "text-orange-400", shadow: "hover:shadow-[0_0_10px_rgba(251,146,60,0.3)]" },
+                    ];
+                    const color = colors[idx % colors.length];
+                    return (
+                      <button
+                        key={idx}
+                        onClick={(e) => handleQuickBuy(e, option, idx)}
+                        className={cn(
+                          "py-2 px-3 border-2 font-mono font-bold text-xs uppercase tracking-wider transition-all active:scale-95",
+                          color.bg, color.hover, color.border, color.text, color.shadow
+                        )}
+                      >
+                        &gt; BUY [{String.fromCharCode(65 + idx)}] {option.slice(0, 15)}{option.length > 15 ? "..." : ""}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={(e) => handleQuickBuy(e, "YES")}
+                    className="py-2.5 px-3 bg-[#00e5a0]/10 hover:bg-[#00e5a0]/20 border-2 border-[#00e5a0] text-[#00e5a0] font-mono font-bold text-xs uppercase tracking-wider transition-all hover:shadow-[0_0_10px_rgba(0,229,160,0.3)] active:scale-95"
+                  >
+                    &gt; BUY YES
+                  </button>
+                  <button
+                    onClick={(e) => handleQuickBuy(e, "NO")}
+                    className="py-2.5 px-3 bg-red-500/10 hover:bg-red-500/20 border-2 border-red-500 text-red-400 font-mono font-bold text-xs uppercase tracking-wider transition-all hover:shadow-[0_0_10px_rgba(239,68,68,0.3)] active:scale-95"
+                  >
+                    &gt; BUY NO
+                  </button>
+                </div>
+              )
             )}
 
             {/* Terminal-style footer */}
@@ -207,13 +235,16 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
           onClose={() => {
             setShowBuyModal(false);
             setSelectedSide(null);
+            setSelectedOptionIndex(null);
           }}
           market={{
             id: market.id,
             title: market.title,
             price: market.price,
+            optionPrices: market.optionPrices || undefined,
           }}
           side={selectedSide}
+          optionIndex={selectedOptionIndex ?? undefined}
         />
       )}
     </motion.div>

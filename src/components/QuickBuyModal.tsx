@@ -15,13 +15,15 @@ interface QuickBuyModalProps {
     id: string;
     title: string;
     price: { yes: number; no: number };
+    optionPrices?: number[];
   };
-  side: "YES" | "NO";
+  side: string;
+  optionIndex?: number;
 }
 
 const QUICK_AMOUNTS = [500, 1000, 2000, 5000];
 
-export function QuickBuyModal({ isOpen, onClose, market, side }: QuickBuyModalProps) {
+export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex }: QuickBuyModalProps) {
   const { t, locale } = useLanguage();
   const { user } = useUser();
   const router = useRouter();
@@ -30,7 +32,10 @@ export function QuickBuyModal({ isOpen, onClose, market, side }: QuickBuyModalPr
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  const price = side === "YES" ? market.price.yes : market.price.no;
+  const isMultiOption = optionIndex !== undefined;
+  const price = isMultiOption && market.optionPrices
+    ? market.optionPrices[optionIndex]
+    : side === "YES" ? market.price.yes : market.price.no;
   const shares = amount ? Math.floor(Number(amount) / price) : 0;
   const cost = shares * price;
 
@@ -54,7 +59,8 @@ export function QuickBuyModal({ isOpen, onClose, market, side }: QuickBuyModalPr
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           marketId: market.id,
-          side,
+          side: isMultiOption ? undefined : side,
+          optionIndex: isMultiOption ? optionIndex : undefined,
           amountTzs: Number(amount),
         }),
       });
@@ -228,14 +234,16 @@ export function QuickBuyModal({ isOpen, onClose, market, side }: QuickBuyModalPr
                     onClick={handleBuy}
                     disabled={loading || !amount || Number(amount) < 500}
                     className={`flex-1 py-3 sm:py-3 px-3 sm:px-4 rounded-none font-mono font-bold text-[10px] sm:text-xs uppercase tracking-wider transition-all disabled:opacity-40 border-2 active:scale-95 ${
-                      side === "YES"
+                      isMultiOption
+                        ? "bg-[var(--accent)]/10 border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)]/20 hover:shadow-[0_0_15px_rgba(0,229,160,0.3)]"
+                        : side === "YES"
                         ? "bg-[#00e5a0]/10 border-[#00e5a0] text-[#00e5a0] hover:bg-[#00e5a0]/20 hover:shadow-[0_0_15px_rgba(0,229,160,0.3)]"
                         : "bg-red-500/10 border-red-500 text-red-400 hover:bg-red-500/20 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]"
                     }`}
                   >
                     {loading
                       ? (locale === "sw" ? "Inaendelea..." : "Processing...")
-                      : `> ${locale === "sw" ? "Nunua" : "Buy"} ${side}`}
+                      : `> ${locale === "sw" ? "Nunua" : "Buy"} ${isMultiOption ? side.slice(0, 10) : side}`}
                   </button>
                 </div>
               )}

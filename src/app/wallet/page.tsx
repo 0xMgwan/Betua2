@@ -407,6 +407,7 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
   const isBuyShares = tx.type === "BUY_SHARES";
   const isSellShares = tx.type === "SELL_SHARES";
   const isRedeem = tx.type === "REDEEM";
+  const isCreateMarket = tx.type === "CREATE_MARKET";
 
   const statusConfig = {
     COMPLETED: { icon: <CheckCircle size={13} weight="fill" className="text-[var(--accent)]" />, label: locale === "sw" ? "Imethibitishwa" : "Confirmed", color: "text-[var(--accent)]" },
@@ -426,10 +427,13 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
           "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
           isDeposit || isReceive || isRedeem ? "bg-[var(--accent)]/10" : 
           isSend || isBuyShares || isSellShares ? "bg-blue-500/10" : 
+          isCreateMarket ? "bg-purple-500/10" :
           "bg-red-500/10"
         )}>
           {isDeposit || isReceive || isRedeem
             ? <ArrowDownLeft size={18} weight="bold" className="text-[var(--accent)]" />
+            : isCreateMarket
+            ? <PaperPlaneRight size={18} weight="bold" className="text-purple-400" />
             : isSend || isBuyShares || isSellShares
             ? <PaperPlaneRight size={18} weight="bold" className="text-blue-400" />
             : <ArrowUpRight size={18} weight="bold" className="text-red-400" />}
@@ -442,6 +446,7 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
              isBuyShares ? (locale === "sw" ? "Nunua Hisa" : "Buy Shares") :
              isSellShares ? (locale === "sw" ? "Uza Hisa" : "Sell Shares") :
              isRedeem ? (locale === "sw" ? "Komboa" : "Redeem") :
+             isCreateMarket ? (locale === "sw" ? "Unda Soko" : "Create Market") :
              t.wallet.withdraw}
           </p>
           <p className="text-xs text-[var(--muted)]">
@@ -449,7 +454,7 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
             {tx.phone && <span className="ml-1.5 opacity-70">· {tx.phone}</span>}
             {isSend && tx.recipientUsername && <span className="ml-1.5 opacity-70">→ @{tx.recipientUsername}</span>}
             {isReceive && tx.recipientUsername && <span className="ml-1.5 opacity-70">← @{tx.recipientUsername}</span>}
-            {(isBuyShares || isSellShares || isRedeem) && tx.recipientUsername && <span className="ml-1.5 opacity-70 line-clamp-1">· {tx.recipientUsername}</span>}
+            {(isBuyShares || isSellShares || isRedeem || isCreateMarket) && tx.recipientUsername && <span className="ml-1.5 opacity-70 line-clamp-1">· {tx.recipientUsername}</span>}
           </p>
         </div>
       </div>
@@ -457,6 +462,7 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
       <div className="text-right">
         <p className={cn("font-black text-sm tabular-nums", 
           isDeposit || isReceive || isRedeem ? "text-[var(--accent)]" : 
+          isCreateMarket ? "text-purple-400" :
           isSend || isBuyShares || isSellShares ? "text-blue-400" : 
           "text-red-400")}>
           {isDeposit || isReceive || isRedeem ? "+" : "−"}{formatTZS(tx.amountTzs)}
