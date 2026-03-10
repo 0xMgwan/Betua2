@@ -18,7 +18,7 @@ interface QuickBuyModalProps {
   side: "YES" | "NO";
 }
 
-const QUICK_AMOUNTS = [1000, 2000, 5000, 10000];
+const QUICK_AMOUNTS = [500, 1000, 2000, 5000];
 
 export function QuickBuyModal({ isOpen, onClose, market, side }: QuickBuyModalProps) {
   const { t, locale } = useLanguage();
@@ -38,8 +38,8 @@ export function QuickBuyModal({ isOpen, onClose, market, side }: QuickBuyModalPr
       return;
     }
 
-    if (!amount || Number(amount) < 1000) {
-      setError(locale === "sw" ? "Kiasi lazima kiwe angalau TZS 1,000" : "Amount must be at least TZS 1,000");
+    if (!amount || Number(amount) < 500) {
+      setError(locale === "sw" ? "Kiasi lazima kiwe angalau TZS 500" : "Amount must be at least TZS 500");
       return;
     }
 
@@ -134,8 +134,8 @@ export function QuickBuyModal({ isOpen, onClose, market, side }: QuickBuyModalPr
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors font-medium"
-                placeholder="e.g. 5,000"
-                min="1000"
+                placeholder="e.g. 500"
+                min="500"
               />
             </div>
 
@@ -188,7 +188,7 @@ export function QuickBuyModal({ isOpen, onClose, market, side }: QuickBuyModalPr
               </button>
               <button
                 onClick={handleBuy}
-                disabled={loading || !amount || Number(amount) < 1000}
+                disabled={loading || !amount || Number(amount) < 500}
                 className={`flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all disabled:opacity-40 ${
                   side === "YES"
                     ? "bg-[#00e5a0] text-black hover:opacity-90"
