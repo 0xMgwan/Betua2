@@ -5,6 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { motion } from "framer-motion";
 import { CATEGORIES } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   CalendarBlank, Image as ImageIcon, CaretRight, Info,
   CurrencyDollar, Upload, X, ChartLine,
@@ -15,6 +16,7 @@ const CREATION_FEE_TZS = 2000;
 
 export default function CreateMarketPage() {
   const router = useRouter();
+  const { t, locale } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
@@ -138,8 +140,8 @@ export default function CreateMarketPage() {
       <div className="max-w-2xl mx-auto px-4 py-10">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="mb-6">
-            <h1 className="text-3xl font-bold mb-2">Create a Market</h1>
-            <p className="text-[var(--muted)]">Ask a yes/no question about anything happening in the world.</p>
+            <h1 className="text-3xl font-bold mb-2">{t.markets.createMarket.title}</h1>
+            <p className="text-[var(--muted)]">{t.markets.createMarket.subtitle}</p>
           </div>
 
           {/* Creation fee notice */}
@@ -149,10 +151,10 @@ export default function CreateMarketPage() {
             </div>
             <div className="text-sm">
               <p className="font-semibold text-[var(--foreground)] mb-0.5">
-                Market creation fee: {CREATION_FEE_TZS.toLocaleString()} TZS
+                {t.markets.createMarket.fee}: {CREATION_FEE_TZS.toLocaleString()} TZS
               </p>
               <p className="text-[var(--muted)]">
-                A one-time fee is deducted from your wallet balance when you create a market.
+                {t.markets.createMarket.feeDescription}
               </p>
             </div>
           </div>
@@ -167,7 +169,7 @@ export default function CreateMarketPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Category first so Pyth can show early */}
             <div>
-              <label className="block font-semibold mb-3">Category</label>
+              <label className="block font-semibold mb-3">{t.markets.createMarket.category}</label>
               <div className="flex flex-wrap gap-2">
                 {CATEGORIES.map((c) => (
                   <button
@@ -253,8 +255,8 @@ export default function CreateMarketPage() {
             {/* Title */}
             <div>
               <label className="block font-semibold mb-2">
-                Market Question <span className="text-red-400">*</span>
-                {isCrypto && <span className="text-xs font-normal text-[var(--muted)] ml-1">(auto-generated for crypto)</span>}
+                {t.markets.createMarket.question} <span className="text-red-400">*</span>
+                {isCrypto && <span className="text-xs font-normal text-[var(--muted)] ml-1">({locale === "sw" ? "inajengwa kiotomatiki kwa crypto" : "auto-generated for crypto"})</span>}
               </label>
               <textarea
                 value={form.title}
@@ -275,7 +277,7 @@ export default function CreateMarketPage() {
             {/* Description */}
             <div>
               <label className="block font-semibold mb-2">
-                Description & Resolution Criteria <span className="text-red-400">*</span>
+                {t.markets.createMarket.description} <span className="text-red-400">*</span>
               </label>
               <textarea
                 value={form.description}
@@ -291,7 +293,7 @@ export default function CreateMarketPage() {
             <div>
               <label className="block font-semibold mb-2">
                 <CalendarBlank size={15} className="inline mr-1" />
-                Resolution Date <span className="text-red-400">*</span>
+                {t.markets.createMarket.resolutionDate} <span className="text-red-400">*</span>
               </label>
               <input
                 type="datetime-local"
@@ -300,14 +302,14 @@ export default function CreateMarketPage() {
                 className="w-full px-4 py-3 bg-[var(--card)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
                 min={new Date().toISOString().slice(0, 16)}
               />
-              <p className="text-xs text-[var(--muted)] mt-1">When this market will be resolved and winners paid out.</p>
+              <p className="text-xs text-[var(--muted)] mt-1">{t.markets.createMarket.resolutionDateHint}</p>
             </div>
 
             {/* Cover image — URL or file upload */}
             <div>
               <label className="block font-semibold mb-2">
                 <ImageIcon size={15} className="inline mr-1" />
-                Cover Image (optional)
+                {t.markets.createMarket.coverImage}
               </label>
 
               {/* Image preview */}
@@ -337,7 +339,7 @@ export default function CreateMarketPage() {
                   className="flex items-center gap-1.5 px-4 py-2.5 border border-[var(--card-border)] rounded-xl text-sm font-medium hover:border-[var(--accent)]/40 transition-colors shrink-0"
                 >
                   <Upload size={14} />
-                  Upload
+                  {locale === "sw" ? "Pakia" : "Upload"}
                 </button>
                 <input
                   ref={fileInputRef}
@@ -359,17 +361,17 @@ export default function CreateMarketPage() {
                     }
                   }}
                   className="flex-1 px-4 py-2.5 bg-[var(--card)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
-                  placeholder="Or paste image URL: https://..."
+                  placeholder={locale === "sw" ? "Au bandika URL ya picha: https://..." : "Or paste image URL: https://..."}
                   disabled={!!imageFile}
                 />
               </div>
-              <p className="text-xs text-[var(--muted)] mt-1">JPEG, PNG, GIF or WebP. Max 5 MB.</p>
+              <p className="text-xs text-[var(--muted)] mt-1">{locale === "sw" ? "JPEG, PNG, GIF au WebP. Hadi 5 MB." : "JPEG, PNG, GIF or WebP. Max 5 MB."}</p>
             </div>
 
             {/* Preview */}
             {(form.title || (isCrypto && pythConfig.targetPrice)) && (
               <div className="p-4 bg-[var(--card)] border border-[var(--card-border)] rounded-xl">
-                <p className="text-xs text-[var(--muted)] mb-2 font-medium uppercase tracking-wider">Preview</p>
+                <p className="text-xs text-[var(--muted)] mb-2 font-medium uppercase tracking-wider">{locale === "sw" ? "Hakiki" : "Preview"}</p>
                 <p className="font-semibold text-sm mb-2">
                   {form.title ||
                     (isCrypto && pythConfig.targetPrice
@@ -396,8 +398,8 @@ export default function CreateMarketPage() {
               className="w-full py-4 bg-[var(--foreground)] text-[var(--background)] font-bold font-mono rounded-xl hover:opacity-80 transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-lg tracking-wider uppercase"
             >
               {loading || uploadingImage
-                ? uploadingImage ? "Uploading image…" : "Creating…"
-                : `Create Market · ${CREATION_FEE_TZS.toLocaleString()} TZS`}
+                ? uploadingImage ? (locale === "sw" ? "Inapakia picha…" : "Uploading image…") : (locale === "sw" ? "Inaunda…" : "Creating…")
+                : `${t.markets.createMarket.submit} · ${CREATION_FEE_TZS.toLocaleString()} TZS`}
               {!loading && !uploadingImage && <CaretRight size={20} />}
             </button>
           </form>

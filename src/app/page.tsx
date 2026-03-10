@@ -13,11 +13,13 @@ import {
 } from "@phosphor-icons/react";
 import HeroAscii from "@/components/ui/hero-ascii";
 import { GlitchText } from "@/components/ui/glitch-text";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 /* ─────────────────────────────────────────────────────────
    Live market mockup — animated YES/NO bar
    ───────────────────────────────────────────────────────── */
 function LiveMarketCard() {
+  const { t } = useLanguage();
   const [pct, setPct] = useState(67);
   const [tick, setTick] = useState(0);
 
@@ -39,10 +41,10 @@ function LiveMarketCard() {
         <div className="min-w-0 flex-1">
           <p className="font-bold text-sm leading-snug font-mono">CCM wins Tanzania 2025 general election?</p>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-xs px-2 py-0.5 border border-[var(--foreground)]/30 text-[var(--foreground)] font-mono tracking-wider uppercase">POLITICS</span>
+            <span className="text-xs px-2 py-0.5 border border-[var(--foreground)]/30 text-[var(--foreground)] font-mono tracking-wider uppercase">{t.landing.liveMarket.politics}</span>
             <span className="flex items-center gap-1 text-xs text-[var(--muted)] font-mono">
               <span className="w-1.5 h-1.5 bg-[var(--foreground)] animate-pulse" />
-              LIVE
+              {t.landing.liveMarket.live}
             </span>
           </div>
         </div>
@@ -66,10 +68,10 @@ function LiveMarketCard() {
       {/* Buttons */}
       <div className="grid grid-cols-2 gap-2 mb-4">
         <button className="py-2.5 border border-[var(--foreground)] text-[var(--foreground)] font-mono font-bold text-xs tracking-wider hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all uppercase">
-          BUY YES
+          {t.landing.liveMarket.buyYes}
         </button>
         <button className="py-2.5 border border-[var(--muted)] text-[var(--muted)] font-mono font-bold text-xs tracking-wider hover:bg-[var(--muted)] hover:text-[var(--background)] transition-all uppercase">
-          BUY NO
+          {t.landing.liveMarket.buyNo}
         </button>
       </div>
 
@@ -104,11 +106,12 @@ const MOCK_USERS = [
 ];
 
 function LeaderboardMockup() {
+  const { t } = useLanguage();
   return (
     <div className="bg-[var(--card)] border-2 border-[var(--card-border)] p-4 shadow-xl w-full">
       <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[var(--card-border)]">
         <Trophy size={16} weight="fill" className="text-[var(--foreground)]" />
-        <span className="text-xs font-bold uppercase tracking-wider text-[var(--foreground)] font-mono">TOP TRADERS</span>
+        <span className="text-xs font-bold uppercase tracking-wider text-[var(--foreground)] font-mono">{t.landing.liveMarket.topTraders}</span>
       </div>
       <div className="space-y-2">
         {MOCK_USERS.map((u, i) => (
@@ -131,101 +134,42 @@ function LeaderboardMockup() {
 /* ─────────────────────────────────────────────────────────
    Features
    ───────────────────────────────────────────────────────── */
-const FEATURES = [
-  {
-    icon: Globe,
-    emoji: "🌍",
-    title: "Built for Africa",
-    desc: "All markets priced in local currencies, starting with Tanzanian Shillings. Built for African events — politics, football, business, entertainment and beyond.",
-    color: "#00e5a0",
-    weight: "fill" as const,
-  },
-  {
-    icon: Phone,
-    emoji: "📱",
-    title: "Mobile Money Native",
-    desc: "Deposit and withdraw instantly with M-Pesa, MTN Mobile Money, Airtel Money, and other African mobile networks. No bank account needed.",
-    color: "#00b4d8",
-    weight: "fill" as const,
-  },
-  {
-    icon: ShieldCheck,
-    emoji: "🔐",
-    title: "Non-Custodial Wallets",
-    desc: "Your TZS lives in your nTZS smart wallet on Base. Betua never holds your funds — you're always in control.",
-    color: "#a78bfa",
-    weight: "fill" as const,
-  },
-  {
-    icon: Lightning,
-    emoji: "⚡",
-    title: "Instant Payouts",
-    desc: "Markets resolve on-chain the moment outcomes are confirmed. Winnings are sent to your wallet automatically.",
-    color: "#fbbf24",
-    weight: "fill" as const,
-  },
-  {
-    icon: ChartLineUp,
-    emoji: "📊",
-    title: "AMM Price Discovery",
-    desc: "Our Automated Market Maker ensures you can always buy or sell. Market prices reflect the true probability a crowd believes.",
-    color: "#f472b6",
-    weight: "fill" as const,
-  },
-  {
-    icon: MagnifyingGlass,
-    emoji: "🎯",
-    title: "Sharp Predictions",
-    desc: "Research your markets, study volume trends, and make informed trades. Information is your edge — use it.",
-    color: "#34d399",
-    weight: "fill" as const,
-  },
+const FEATURES_META = [
+  { icon: Globe, emoji: "🌍", titleKey: "builtForAfrica" as const, descKey: "builtForAfricaDesc" as const, color: "#00e5a0" },
+  { icon: Phone, emoji: "📱", titleKey: "mobileMoney" as const, descKey: "mobileMoneyDesc" as const, color: "#00b4d8" },
+  { icon: ShieldCheck, emoji: "🔐", titleKey: "nonCustodial" as const, descKey: "nonCustodialDesc" as const, color: "#a78bfa" },
+  { icon: Lightning, emoji: "⚡", titleKey: "instantPayouts" as const, descKey: "instantPayoutsDesc" as const, color: "#fbbf24" },
+  { icon: ChartLineUp, emoji: "📊", titleKey: "ammPriceDiscovery" as const, descKey: "ammPriceDiscoveryDesc" as const, color: "#f472b6" },
+  { icon: MagnifyingGlass, emoji: "🎯", titleKey: "sharpPredictions" as const, descKey: "sharpPredictionsDesc" as const, color: "#34d399" },
 ];
 
 /* ─────────────────────────────────────────────────────────
    How it works
    ───────────────────────────────────────────────────────── */
-const HOW_IT_WORKS = [
-  {
-    step: "01",
-    icon: "📲",
-    title: "Create a free account",
-    desc: "Sign up with just your email and pick a username. Your nTZS smart wallet is created automatically in seconds.",
-  },
-  {
-    step: "02",
-    icon: "💰",
-    title: "Deposit via M-Pesa",
-    desc: "Enter any amount above 1,000 TZS and your M-Pesa number. You'll get an STK push to complete the payment.",
-  },
-  {
-    step: "03",
-    icon: "🎯",
-    title: "Pick your markets",
-    desc: "Browse open markets, research the odds, then buy YES or NO shares. Sell anytime. Get paid when you're right.",
-  },
-];
+/* HOW_IT_WORKS icons/steps - text comes from translations */
+const HOW_IT_WORKS_ICONS = ["📲", "💰", "🎯"];
+const HOW_IT_WORKS_STEPS = ["01", "02", "03"];
 
 /* ─────────────────────────────────────────────────────────
    Testimonials
    ───────────────────────────────────────────────────────── */
-const TESTIMONIALS = [
+const TESTIMONIALS_META = [
   {
-    quote: "Made 50,000 TZS on the Simba vs Yanga derby. Betua is genuinely the best thing to happen to sports fans across East Africa.",
+    quoteKey: "quote1" as const,
     name: "Amani Kiondo",
     location: "Dar es Salaam, Tanzania",
     avatar: "https://ui-avatars.com/api/?name=Amani+Kiondo&background=00e5a0&color=0a0a0a&bold=true&size=80",
     stars: 5,
   },
   {
-    quote: "Depositing with M-Pesa took literally 30 seconds. Never thought I'd be trading predictions with my phone this easily in Africa.",
+    quoteKey: "quote2" as const,
     name: "Saida Mwamba",
     location: "Mwanza, Tanzania",
     avatar: "https://ui-avatars.com/api/?name=Saida+Mwamba&background=00b4d8&color=0a0a0a&bold=true&size=80",
     stars: 5,
   },
   {
-    quote: "Finally a platform built for Africa. No USD headaches, no crypto complexity. Just predict, earn, and withdraw via mobile money.",
+    quoteKey: "quote3" as const,
     name: "Kwame Asante",
     location: "Accra, Ghana",
     avatar: "https://ui-avatars.com/api/?name=Kwame+Asante&background=a78bfa&color=0a0a0a&bold=true&size=80",
@@ -237,6 +181,7 @@ const TESTIMONIALS = [
    Page
    ───────────────────────────────────────────────────────── */
 export default function HomePage() {
+  const { t } = useLanguage();
   const [markets, setMarkets] = useState<unknown[]>([]);
 
 
@@ -289,7 +234,7 @@ export default function HomePage() {
                 <div className="relative mb-4">
                   <div className="hidden lg:block absolute -left-3 top-0 bottom-0 w-1 dither-pattern opacity-40"></div>
                   <GlitchText 
-                    text="PREDICT THE FUTURE"
+                    text={t.landing.hero.title}
                     textClassName="text-3xl lg:text-5xl font-black font-mono tracking-wider"
                     className="min-h-[100px] lg:min-h-[140px] p-0 justify-start items-start"
                     containerClassName="text-left"
@@ -302,7 +247,7 @@ export default function HomePage() {
                   transition={{ delay: 0.3 }}
                   className="text-2xl lg:text-4xl font-bold text-[var(--foreground)] mb-3 leading-tight font-mono tracking-wider"
                 >
-                  EARN <span className="text-[var(--foreground)]/90">GUAP</span>
+                  {t.landing.hero.subtitle}
                 </motion.h2>
 
                 {/* Decorative dots pattern - desktop only */}
@@ -320,7 +265,7 @@ export default function HomePage() {
                   transition={{ delay: 0.5 }}
                 >
                   <p className="text-xs lg:text-base text-[var(--muted)] mb-4 lg:mb-5 leading-relaxed font-mono">
-                    Trade YES or NO on African events. Politics, sports, business. Powered by mobile money.
+                    {t.landing.hero.description}
                   </p>
                   
                   {/* Technical corner accent - desktop only */}
@@ -342,14 +287,14 @@ export default function HomePage() {
                   >
                     <span className="hidden lg:block absolute -top-1 -left-1 w-2 h-2 border-t border-l border-[var(--foreground)] opacity-0 group-hover:opacity-100 transition-opacity"></span>
                     <span className="hidden lg:block absolute -bottom-1 -right-1 w-2 h-2 border-b border-r border-[var(--foreground)] opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                    CREATE MARKET
+                    {t.landing.hero.createMarket}
                   </Link>
                   
                   <Link
                     href="/markets"
                     className="relative px-5 lg:px-6 py-2 lg:py-2.5 bg-transparent border border-[var(--foreground)] text-[var(--foreground)] font-mono text-xs lg:text-sm hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all duration-200"
                   >
-                    EXPLORE MARKETS
+                    {t.landing.hero.exploreMarkets}
                   </Link>
                 </motion.div>
 
@@ -442,10 +387,10 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6 text-center">
             {[
-              { label: "Total Volume", value: "2.4B+ TZS", sub: "across all markets" },
-              { label: "Open Markets", value: "340+", sub: "new markets weekly" },
-              { label: "Active Traders", value: "12,000+", sub: "& growing daily" },
-              { label: "Average Payout", value: "94%", sub: "return on winning trades" },
+              { label: t.landing.stats.totalVolume, value: "2.4B+ TZS", sub: t.landing.stats.totalVolumeSub },
+              { label: t.landing.stats.openMarkets, value: "340+", sub: t.landing.stats.openMarketsSub },
+              { label: t.landing.stats.activeTraders, value: "12,000+", sub: t.landing.stats.activeTradersSub },
+              { label: t.landing.stats.avgPayout, value: "94%", sub: t.landing.stats.avgPayoutSub },
             ].map((s, i) => (
               <motion.div
                 key={s.label}
@@ -474,18 +419,20 @@ export default function HomePage() {
           className="text-center mb-14"
         >
           <span className="inline-block px-3 py-1 text-xs font-bold border border-[var(--foreground)]/30 text-[var(--foreground)] mb-3 uppercase tracking-wider font-mono">
-            Simple process
+            {t.landing.howItWorks.badge}
           </span>
-          <h2 className="text-3xl sm:text-4xl font-black mb-3 font-mono text-[var(--foreground)]">Up and trading in minutes</h2>
-          <p className="text-[var(--muted)] max-w-md mx-auto font-mono">No bank account, no ID upload, no waiting. Just M-Pesa.</p>
+          <h2 className="text-3xl sm:text-4xl font-black mb-3 font-mono text-[var(--foreground)]">{t.landing.howItWorks.title}</h2>
+          <p className="text-[var(--muted)] max-w-md mx-auto font-mono">{t.landing.howItWorks.subtitle}</p>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
           {/* Steps */}
           <div className="space-y-6">
-            {HOW_IT_WORKS.map((step, i) => (
+            {HOW_IT_WORKS_STEPS.map((stepNum, i) => {
+              const stepData = [t.landing.howItWorks.step1, t.landing.howItWorks.step2, t.landing.howItWorks.step3][i];
+              return (
               <motion.div
-                key={step.step}
+                key={stepNum}
                 initial={{ opacity: 0, x: -24 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
@@ -494,22 +441,23 @@ export default function HomePage() {
               >
                 <div className="relative shrink-0">
                   <div className="w-14 h-14 bg-[var(--card)] border-2 border-[var(--card-border)] group-hover:border-[var(--foreground)] transition-all flex items-center justify-center text-2xl shadow-md">
-                    {step.icon}
+                    {HOW_IT_WORKS_ICONS[i]}
                   </div>
                   <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[var(--foreground)] text-[var(--background)] font-black text-[10px] flex items-center justify-center font-mono">
                     {i + 1}
                   </div>
-                  {i < HOW_IT_WORKS.length - 1 && (
+                  {i < HOW_IT_WORKS_STEPS.length - 1 && (
                     <div className="absolute top-14 left-1/2 -translate-x-1/2 w-px h-6 bg-gradient-to-b from-[var(--card-border)] to-transparent" />
                   )}
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider mb-1 font-mono">Step {step.step}</p>
-                  <h3 className="font-black text-lg mb-1 font-mono text-[var(--foreground)]">{step.title}</h3>
-                  <p className="text-sm text-[var(--muted)] leading-relaxed font-mono">{step.desc}</p>
+                  <p className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider mb-1 font-mono">{t.landing.howItWorks.step} {stepNum}</p>
+                  <h3 className="font-black text-lg mb-1 font-mono text-[var(--foreground)]">{stepData.title}</h3>
+                  <p className="text-sm text-[var(--muted)] leading-relaxed font-mono">{stepData.desc}</p>
                 </div>
               </motion.div>
-            ))}
+              );
+            })}
 
             <motion.div
               initial={{ opacity: 0 }}
@@ -521,7 +469,7 @@ export default function HomePage() {
                 href="/auth/register"
                 className="inline-flex items-center gap-2 px-7 py-3.5 border-2 border-[var(--foreground)] text-[var(--foreground)] font-black text-sm hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all mt-2 font-mono tracking-wider uppercase"
               >
-                Create Free Account
+                {t.landing.howItWorks.createFreeAccount}
                 <ArrowRight size={16} weight="bold" />
               </Link>
             </motion.div>
@@ -549,12 +497,12 @@ export default function HomePage() {
             <div className="absolute bottom-5 left-5 right-5">
               <div className="bg-[var(--card)]/90 backdrop-blur-md border border-[var(--card-border)] rounded-2xl p-4 flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-[var(--muted)] font-medium">Your last withdrawal</p>
+                  <p className="text-xs text-[var(--muted)] font-medium">{t.landing.howItWorks.lastWithdrawal}</p>
                   <p className="text-lg font-black text-[var(--accent)]">TSh 25,000</p>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--accent)] bg-[var(--accent)]/10 border border-[var(--accent)]/20 px-3 py-1.5 rounded-xl">
                   <CheckCircle size={13} weight="fill" />
-                  Sent to M-Pesa
+                  {t.landing.howItWorks.sentToMpesa}
                 </div>
               </div>
             </div>
@@ -574,11 +522,11 @@ export default function HomePage() {
             className="flex items-end justify-between mb-8"
           >
             <div>
-              <span className="text-xs font-bold uppercase tracking-widest text-[var(--muted)] block mb-1">Live now</span>
-              <h2 className="text-2xl sm:text-3xl font-black">🔥 Trending Markets</h2>
+              <span className="text-xs font-bold uppercase tracking-widest text-[var(--muted)] block mb-1">{t.landing.trending.liveNow}</span>
+              <h2 className="text-2xl sm:text-3xl font-black">🔥 {t.landing.trending.title}</h2>
             </div>
             <Link href="/markets" className="flex items-center gap-1 text-sm text-[var(--accent)] font-bold hover:underline">
-              All markets <CaretRight size={14} weight="bold" />
+              {t.landing.trending.allMarkets} <CaretRight size={14} weight="bold" />
             </Link>
           </motion.div>
 
@@ -605,16 +553,16 @@ export default function HomePage() {
           className="text-center mb-14"
         >
           <span className="inline-block px-3 py-1 text-xs font-bold rounded-full bg-[#00b4d8]/10 text-[#00b4d8] border border-[#00b4d8]/20 mb-3 uppercase tracking-widest">
-            Why Betua
+            {t.landing.features.badge}
           </span>
-          <h2 className="text-3xl sm:text-4xl font-black mb-3">Built for serious predictors</h2>
-          <p className="text-[var(--muted)] max-w-md mx-auto">Every feature designed to give you an edge in African prediction markets.</p>
+          <h2 className="text-3xl sm:text-4xl font-black mb-3">{t.landing.features.title}</h2>
+          <p className="text-[var(--muted)] max-w-md mx-auto">{t.landing.features.subtitle}</p>
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {FEATURES.map(({ icon: Icon, emoji, title, desc, color }, i) => (
+          {FEATURES_META.map(({ icon: Icon, emoji, titleKey, descKey, color }, i) => (
             <motion.div
-              key={title}
+              key={titleKey}
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -633,8 +581,8 @@ export default function HomePage() {
               >
                 {emoji}
               </div>
-              <h3 className="font-black mb-2">{title}</h3>
-              <p className="text-sm text-[var(--muted)] leading-relaxed">{desc}</p>
+              <h3 className="font-black mb-2">{t.landing.features[titleKey]}</h3>
+              <p className="text-sm text-[var(--muted)] leading-relaxed">{t.landing.features[descKey]}</p>
             </motion.div>
           ))}
         </div>
@@ -651,14 +599,14 @@ export default function HomePage() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl sm:text-4xl font-black mb-2 font-mono text-[var(--foreground)]">Africa loves GUAP</h2>
-            <p className="text-[var(--muted)] font-mono">Real traders, real earnings, real stories.</p>
+            <h2 className="text-3xl sm:text-4xl font-black mb-2 font-mono text-[var(--foreground)]">{t.landing.testimonials.title}</h2>
+            <p className="text-[var(--muted)] font-mono">{t.landing.testimonials.subtitle}</p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {TESTIMONIALS.map((t, i) => (
+            {TESTIMONIALS_META.map((tm, i) => (
               <motion.div
-                key={t.name}
+                key={tm.name}
                 initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -666,25 +614,25 @@ export default function HomePage() {
                 className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl p-6 flex flex-col gap-4"
               >
                 <div className="flex gap-0.5">
-                  {[...Array(t.stars)].map((_, si) => (
-                    <Star key={`${t.name}-star-${si}`} size={14} weight="fill" className="text-yellow-400" />
+                  {[...Array(tm.stars)].map((_, si) => (
+                    <Star key={`${tm.name}-star-${si}`} size={14} weight="fill" className="text-yellow-400" />
                   ))}
                 </div>
                 <p className="text-sm text-[var(--foreground)] leading-relaxed flex-1">
-                  &ldquo;{t.quote}&rdquo;
+                  &ldquo;{t.landing.testimonials[tm.quoteKey]}&rdquo;
                 </p>
                 <div className="flex items-center gap-3 pt-2 border-t border-[var(--card-border)]">
                   <Image
-                    src={t.avatar}
-                    alt={t.name}
+                    src={tm.avatar}
+                    alt={tm.name}
                     width={36}
                     height={36}
                     className="rounded-full"
                     unoptimized
                   />
                   <div>
-                    <p className="text-sm font-bold">{t.name}</p>
-                    <p className="text-xs text-[var(--muted)]">{t.location}</p>
+                    <p className="text-sm font-bold">{tm.name}</p>
+                    <p className="text-xs text-[var(--muted)]">{tm.location}</p>
                   </div>
                 </div>
               </motion.div>
@@ -715,7 +663,7 @@ export default function HomePage() {
             <div className="absolute inset-0 bg-gradient-to-tr from-[var(--background)]/60 via-transparent to-transparent" />
             <div className="absolute bottom-5 left-5">
               <span className="inline-flex items-center gap-1.5 bg-[var(--card)]/80 backdrop-blur-sm border border-[var(--card-border)] text-xs font-semibold px-3 py-1.5 rounded-lg">
-                🌍 Made in Africa
+                🌍 {t.landing.mission.madeInAfrica}
               </span>
             </div>
           </motion.div>
@@ -727,24 +675,21 @@ export default function HomePage() {
             transition={{ duration: 0.6, delay: 0.15 }}
           >
             <span className="inline-block px-3 py-1 text-xs font-bold rounded-full bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20 mb-4 uppercase tracking-widest">
-              Our mission
+              {t.landing.mission.badge}
             </span>
             <h2 className="text-3xl sm:text-4xl font-black mb-5 leading-tight">
-              Built for Africa.<br />Starting in Tanzania.
+              {t.landing.mission.title1}<br />{t.landing.mission.title2}
             </h2>
             <p className="text-[var(--muted)] text-base leading-relaxed mb-6">
-              Betua is Africa&apos;s prediction market — built to work with local currencies, mobile money,
-              and the events Africans actually care about. We&apos;re launching in Tanzania with TZS and M-Pesa,
-              then expanding across the continent. No USD conversion. No foreign complexity. Just local
-              knowledge turned into earnings.
+              {t.landing.mission.description}
             </p>
 
             <div className="space-y-3">
               {[
-                "Launching in Tanzania — expanding across all of Africa",
-                "Deposit and withdraw with M-Pesa, MTN, Airtel Money & more",
-                "Trade on African politics, football, business & entertainment",
-                "Non-custodial wallets secured by Base blockchain",
+                t.landing.mission.point1,
+                t.landing.mission.point2,
+                t.landing.mission.point3,
+                t.landing.mission.point4,
               ].map((point, i) => (
                 <motion.div
                   key={i}
@@ -802,11 +747,10 @@ export default function HomePage() {
               <Sparkle size={28} weight="fill" className="text-[var(--accent)]" />
             </motion.div>
             <h2 className="text-3xl sm:text-5xl font-black mb-4 leading-tight font-mono text-[var(--foreground)]">
-              Ready to make<br />your first prediction?
+              {t.landing.cta.title1}<br />{t.landing.cta.title2}
             </h2>
             <p className="text-[var(--muted)] mb-8 max-w-lg mx-auto text-lg leading-relaxed font-mono">
-              Join 12,000+ traders across Africa already trading on GUAP.
-              Create your account in under 60 seconds — completely free.
+              {t.landing.cta.subtitle}
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -814,13 +758,13 @@ export default function HomePage() {
                 href="/auth/register"
                 className="group flex items-center gap-2 px-10 py-4 border-2 border-[var(--foreground)] text-[var(--foreground)] font-black text-lg hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all w-full sm:w-auto justify-center font-mono tracking-wider uppercase"
               >
-                Create Free Account
+                {t.landing.cta.button}
                 <ArrowRight size={20} weight="bold" className="group-hover:translate-x-1 transition-transform" />
               </Link>
               <div className="flex flex-col sm:flex-row items-center gap-3 text-sm text-[var(--muted)]">
-                <span className="flex items-center gap-1.5"><CheckCircle size={14} weight="fill" className="text-[var(--accent)]" /> No KYC required</span>
-                <span className="flex items-center gap-1.5"><CheckCircle size={14} weight="fill" className="text-[var(--accent)]" /> M-Pesa supported</span>
-                <span className="flex items-center gap-1.5"><CheckCircle size={14} weight="fill" className="text-[var(--accent)]" /> Free to join</span>
+                <span className="flex items-center gap-1.5"><CheckCircle size={14} weight="fill" className="text-[var(--accent)]" /> {t.landing.cta.noKyc}</span>
+                <span className="flex items-center gap-1.5"><CheckCircle size={14} weight="fill" className="text-[var(--accent)]" /> {t.landing.cta.mpesaSupported}</span>
+                <span className="flex items-center gap-1.5"><CheckCircle size={14} weight="fill" className="text-[var(--accent)]" /> {t.landing.cta.freeToJoin}</span>
               </div>
             </div>
           </div>
@@ -842,15 +786,15 @@ export default function HomePage() {
                 <span className="text-[var(--foreground)] font-mono">GUAP</span>
               </Link>
               <p className="text-sm text-[var(--muted)] leading-relaxed max-w-xs font-mono">
-                Africa&apos;s first prediction market. Trade on local events starting in Tanzania.
+                {t.landing.footer.description}
               </p>
             </div>
 
             {/* Links */}
             {[
-              { title: "Platform", links: [{ href: "/markets", label: "Browse Markets" }, { href: "/markets/create", label: "Create Market" }, { href: "/leaderboard", label: "Leaderboard" }] },
-              { title: "Account", links: [{ href: "/auth/register", label: "Sign Up" }, { href: "/auth/login", label: "Sign In" }, { href: "/wallet", label: "Wallet" }] },
-              { title: "About", links: [{ href: "#about", label: "About GUAP" }, { href: "#ntzs", label: "nTZS Network" }, { href: "#contact", label: "Contact" }] },
+              { title: t.landing.footer.platform, links: [{ href: "/markets", label: t.landing.footer.browseMarkets }, { href: "/markets/create", label: t.landing.footer.createMarket }, { href: "/leaderboard", label: t.landing.footer.leaderboard }] },
+              { title: t.landing.footer.account, links: [{ href: "/auth/register", label: t.landing.footer.signUp }, { href: "/auth/login", label: t.landing.footer.signIn }, { href: "/wallet", label: t.landing.footer.wallet }] },
+              { title: t.landing.footer.about, links: [{ href: "#about", label: t.landing.footer.aboutGuap }, { href: "#ntzs", label: t.landing.footer.ntzsNetwork }, { href: "#contact", label: t.landing.footer.contact }] },
             ].map((col) => (
               <div key={col.title}>
                 <h4 className="font-black text-xs uppercase tracking-widest text-[var(--muted)] mb-3">{col.title}</h4>
@@ -868,9 +812,9 @@ export default function HomePage() {
           </div>
 
           <div className="border-t border-[var(--card-border)] pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--muted)]">
-            <p className="font-mono">© 2025 GUAP. Powered by <strong className="text-[var(--foreground)]">nTZS</strong> on Base.</p>
+            <p className="font-mono">{t.landing.footer.copyright} <strong className="text-[var(--foreground)]">nTZS</strong> {t.landing.footer.onBase}</p>
             <p className="flex items-center gap-1.5">
-              Made with <Handshake size={13} weight="fill" className="text-[var(--accent)]" /> for Africa 🌍
+              {t.landing.footer.madeWith} <Handshake size={13} weight="fill" className="text-[var(--accent)]" /> {t.landing.footer.forAfrica} 🌍
             </p>
           </div>
         </div>

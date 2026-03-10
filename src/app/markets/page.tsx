@@ -7,19 +7,21 @@ import { MagnifyingGlass, Plus, Funnel } from "@phosphor-icons/react";
 import Link from "next/link";
 import { CATEGORIES } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-
-const STATUSES = [
-  { value: "OPEN", label: "Open" },
-  { value: "RESOLVED", label: "Resolved" },
-  { value: "all", label: "All" },
-];
-
-const SORTS = [
-  { value: "volume", label: "Top Volume" },
-  { value: "new", label: "Newest" },
-];
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function MarketsPage() {
+  const { t, locale } = useLanguage();
+
+  const STATUSES = [
+    { value: "OPEN", label: locale === "sw" ? "Wazi" : "Open" },
+    { value: "RESOLVED", label: t.markets.resolved },
+    { value: "all", label: t.markets.filters.all },
+  ];
+
+  const SORTS = [
+    { value: "volume", label: locale === "sw" ? "Kiasi Kikubwa" : "Top Volume" },
+    { value: "new", label: locale === "sw" ? "Mpya" : "Newest" },
+  ];
   const [markets, setMarkets] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -46,15 +48,15 @@ export default function MarketsPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Markets</h1>
-            <p className="text-[var(--muted)] text-sm mt-1">{markets.length} markets found</p>
+            <h1 className="text-3xl font-bold">{t.markets.title}</h1>
+            <p className="text-[var(--muted)] text-sm mt-1">{markets.length} {locale === "sw" ? "masoko yamepatikana" : "markets found"}</p>
           </div>
           <Link
             href="/markets/create"
             className="flex items-center gap-2 px-4 py-2 border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold text-sm hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all font-mono tracking-wider uppercase"
           >
             <Plus size={15} />
-            Create Market
+            {t.markets.create}
           </Link>
         </div>
 
@@ -66,7 +68,7 @@ export default function MarketsPage() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search markets…"
+              placeholder={locale === "sw" ? "Tafuta masoko…" : "Search markets…"}
               className="w-full pl-11 pr-4 py-3 bg-[var(--card)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
             />
           </div>
@@ -123,7 +125,7 @@ export default function MarketsPage() {
                     : "border border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--foreground)] hover:text-[var(--foreground)]"
                 )}
               >
-                {c === "all" ? "All Categories" : c}
+                {c === "all" ? (locale === "sw" ? "Jamii Zote" : "All Categories") : (locale === "sw" ? (t.markets.categories as Record<string, string>)[c.toLowerCase()] || c : c)}
               </button>
             ))}
           </div>
@@ -139,10 +141,10 @@ export default function MarketsPage() {
         ) : markets.length === 0 ? (
           <div className="text-center py-24 text-[var(--muted)]">
             <Funnel size={40} weight="duotone" className="mx-auto mb-4 opacity-30" />
-            <p className="text-lg font-medium mb-2">No markets found</p>
-            <p className="text-sm mb-6">Try adjusting your filters or create the first one</p>
+            <p className="text-lg font-medium mb-2">{t.markets.empty}</p>
+            <p className="text-sm mb-6">{locale === "sw" ? "Jaribu kubadilisha vichujio au uunde la kwanza" : "Try adjusting your filters or create the first one"}</p>
             <Link href="/markets/create" className="px-6 py-2.5 border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold text-sm hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all font-mono tracking-wider uppercase">
-              Create Market
+              {t.markets.create}
             </Link>
           </div>
         ) : (

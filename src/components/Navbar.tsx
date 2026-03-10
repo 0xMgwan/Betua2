@@ -3,30 +3,32 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useUser } from "@/store/useUser";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS } from "@/lib/utils";
 import {
   Sun, Moon, TrendUp, ChartBar, Trophy, Wallet,
-  User, Plus, SignOut, List, X,
+  User, Plus, SignOut, List, X, Globe,
 } from "@phosphor-icons/react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
-const NAV_LINKS = [
-  { href: "/markets", label: "Markets", icon: ChartBar },
-  { href: "/portfolio", label: "Portfolio", icon: TrendUp },
-  { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
-  { href: "/wallet", label: "Wallet", icon: Wallet },
-];
-
 export function Navbar() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { user, logout } = useUser();
+  const { locale, setLocale, t } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  const NAV_LINKS = [
+    { href: "/markets", label: t.nav.markets, icon: ChartBar },
+    { href: "/portfolio", label: "Portfolio", icon: TrendUp },
+    { href: "/leaderboard", label: t.nav.leaderboard, icon: Trophy },
+    { href: "/wallet", label: t.nav.wallet, icon: Wallet },
+  ];
 
   return (
     <nav className="sticky top-0 z-50 border-b border-[var(--card-border)] bg-[var(--background)]/80 backdrop-blur-xl">
@@ -60,6 +62,16 @@ export function Navbar() {
 
         {/* Right */}
         <div className="flex items-center gap-2">
+          {/* Language toggle */}
+          <button
+            onClick={() => setLocale(locale === "en" ? "sw" : "en")}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 border border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[var(--foreground)] transition-all font-mono text-[10px] font-bold tracking-wider"
+            title={locale === "en" ? "Switch to Kiswahili" : "Switch to English"}
+          >
+            <Globe size={14} weight="duotone" />
+            {locale === "en" ? "SW" : "EN"}
+          </button>
+
           {/* Theme toggle */}
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -82,7 +94,7 @@ export function Navbar() {
                 className="md:hidden flex items-center gap-1 px-2 py-1.5 border border-[var(--foreground)] text-[var(--foreground)] text-xs font-mono font-bold tracking-wider hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all uppercase"
               >
                 <Plus size={13} />
-                Create
+                {locale === "sw" ? "Unda" : "Create"}
               </Link>
 
               {/* Create market — desktop only */}
@@ -91,7 +103,7 @@ export function Navbar() {
                 className="hidden md:flex items-center gap-1.5 px-3 py-1.5 border-2 border-[var(--foreground)] text-[var(--foreground)] text-xs font-mono font-bold tracking-wider hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all uppercase"
               >
                 <Plus size={15} />
-                Create
+                {locale === "sw" ? "Unda" : "Create"}
               </Link>
 
               {/* Balance — desktop only */}
@@ -146,7 +158,7 @@ export function Navbar() {
                         className="flex items-center gap-2 px-4 py-2.5 text-xs font-mono font-bold tracking-wider uppercase border-b border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card)] transition-colors"
                       >
                         <Plus size={13} />
-                        Create Market
+                        {locale === "sw" ? "Unda Soko" : "Create Market"}
                       </Link>
                       <Link
                         href="/profile"
@@ -154,14 +166,14 @@ export function Navbar() {
                         className="flex items-center gap-2 px-4 py-2.5 text-xs font-mono font-bold tracking-wider uppercase border-b border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card)] transition-colors"
                       >
                         <User size={13} />
-                        Profile
+                        {t.nav.profile}
                       </Link>
                       <button
                         onClick={() => { logout(); setProfileOpen(false); }}
                         className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-mono font-bold tracking-wider uppercase text-red-500 hover:bg-[var(--card)] transition-colors"
                       >
                         <SignOut size={13} />
-                        Sign out
+                        {t.nav.signOut}
                       </button>
                     </motion.div>
                   )}
@@ -174,7 +186,7 @@ export function Navbar() {
                 href="/auth/login"
                 className="px-3 py-1.5 text-sm font-medium text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
               >
-                Sign in
+                {t.nav.signIn}
               </Link>
               <Link
                 href="/auth/register"

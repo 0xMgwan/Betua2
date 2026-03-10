@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Navbar } from "@/components/Navbar";
 import { useUser } from "@/store/useUser";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS } from "@/lib/utils";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -17,6 +18,7 @@ interface Stats {
 
 export default function ProfilePage() {
   const { user, setUser, fetchUser } = useUser();
+  const { t, locale } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     displayName: "", bio: "", phone: "", avatarUrl: "",
@@ -117,7 +119,7 @@ export default function ProfilePage() {
         <Navbar />
         <div className="text-center py-32">
           <Link href="/auth/login" className="px-6 py-2.5 bg-[var(--accent)] text-black rounded-xl font-semibold text-sm">
-            Sign in
+            {t.nav.signIn}
           </Link>
         </div>
       </div>
@@ -125,17 +127,17 @@ export default function ProfilePage() {
   }
 
   const STAT_ITEMS = [
-    { label: "Total Trades", value: stats.totalTrades, icon: ChartBar },
-    { label: "Volume Traded", value: formatTZS(stats.totalVolume), icon: TrendUp },
-    { label: "Open Positions", value: stats.openPositions, icon: Medal },
-    { label: "Balance", value: formatTZS(user.balanceTzs || 0), icon: Medal },
+    { label: t.profile.totalTrades, value: stats.totalTrades, icon: ChartBar },
+    { label: t.profile.volumeTraded, value: formatTZS(stats.totalVolume), icon: TrendUp },
+    { label: t.portfolio.openPositions, value: stats.openPositions, icon: Medal },
+    { label: t.profile.balance, value: formatTZS(user.balanceTzs || 0), icon: Medal },
   ];
 
   return (
     <div className="min-h-screen">
       <Navbar />
       <div className="max-w-3xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Profile</h1>
+        <h1 className="text-3xl font-bold mb-8">{t.profile.title}</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Left: Avatar & stats */}
@@ -188,7 +190,7 @@ export default function ProfilePage() {
             {/* Wallet address */}
             {user.walletAddress && (
               <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl p-4">
-                <p className="text-xs font-medium text-[var(--muted)] mb-1">Wallet Address</p>
+                <p className="text-xs font-medium text-[var(--muted)] mb-1">{t.profile.walletAddress}</p>
                 <p className="text-xs font-mono break-all text-[var(--foreground)] opacity-70">
                   {user.walletAddress}
                 </p>
@@ -199,34 +201,34 @@ export default function ProfilePage() {
           {/* Right: Edit form */}
           <div className="md:col-span-2">
             <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl p-6">
-              <h2 className="font-bold mb-6">Edit Profile</h2>
+              <h2 className="font-bold mb-6">{t.profile.editProfile}</h2>
 
               <form onSubmit={handleSave} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">Display Name</label>
+                  <label className="block text-sm font-medium mb-1.5">{t.profile.displayName}</label>
                   <input
                     type="text"
                     value={form.displayName}
                     onChange={(e) => setForm({ ...form, displayName: e.target.value })}
                     className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
-                    placeholder="Your display name"
+                    placeholder={t.profile.displayNamePlaceholder}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">Bio</label>
+                  <label className="block text-sm font-medium mb-1.5">{t.profile.bio}</label>
                   <textarea
                     value={form.bio}
                     onChange={(e) => setForm({ ...form, bio: e.target.value })}
                     className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors resize-none"
-                    placeholder="Tell the community about yourself"
+                    placeholder={t.profile.bioPlaceholder}
                     rows={3}
                     maxLength={200}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">Phone (M-Pesa)</label>
+                  <label className="block text-sm font-medium mb-1.5">{t.profile.phone}</label>
                   <input
                     type="tel"
                     value={form.phone}
@@ -237,7 +239,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">Profile Photo</label>
+                  <label className="block text-sm font-medium mb-1.5">{t.profile.profilePhoto}</label>
                   <div className="flex gap-2">
                     <button
                       type="button"
@@ -245,7 +247,7 @@ export default function ProfilePage() {
                       className="flex items-center gap-1.5 px-3 py-2.5 border border-[var(--card-border)] rounded-xl text-sm font-medium hover:border-[var(--accent)]/40 transition-colors shrink-0 bg-[var(--background)]"
                     >
                       <Upload size={13} />
-                      Upload
+                      {t.profile.upload}
                     </button>
                     <input
                       ref={fileInputRef}
@@ -262,17 +264,17 @@ export default function ProfilePage() {
                         if (e.target.value) { setAvatarFile(null); setAvatarPreview(""); }
                       }}
                       className="flex-1 px-3 py-2.5 bg-[var(--background)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
-                      placeholder="Or paste image URL…"
+                      placeholder={t.profile.orPasteUrl}
                       disabled={!!avatarFile}
                     />
                   </div>
-                  <p className="text-xs text-[var(--muted)] mt-1">JPEG, PNG, GIF or WebP. Max 5 MB.</p>
+                  <p className="text-xs text-[var(--muted)] mt-1">{t.profile.imageFormat}</p>
                 </div>
 
                 {/* Read-only */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium mb-1.5 text-[var(--muted)]">Username</label>
+                    <label className="block text-sm font-medium mb-1.5 text-[var(--muted)]">{t.profile.username}</label>
                     <input
                       value={user.username}
                       disabled
@@ -280,7 +282,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1.5 text-[var(--muted)]">Email</label>
+                    <label className="block text-sm font-medium mb-1.5 text-[var(--muted)]">{t.profile.email}</label>
                     <input
                       value={user.email}
                       disabled
@@ -296,11 +298,11 @@ export default function ProfilePage() {
                     "w-full py-3 font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm",
                     saved
                       ? "bg-[var(--accent)]/10 border border-[var(--accent)]/30 text-[var(--accent)]"
-                      : "bg-[var(--accent)] text-black hover:opacity-90"
+                      : "bg-[var(--foreground)] text-[var(--background)] hover:opacity-90"
                   )}
                 >
                   <FloppyDisk size={16} />
-                  {uploadingAvatar ? "Uploading…" : loading ? "Saving…" : saved ? "Saved!" : "Save Changes"}
+                  {uploadingAvatar ? t.profile.uploading : loading ? t.profile.saving : saved ? t.profile.saved : t.profile.saveChanges}
                 </button>
               </form>
             </div>

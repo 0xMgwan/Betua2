@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import { useUser } from "@/store/useUser";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -26,6 +27,7 @@ const QUICK_AMOUNTS = [5000, 10000, 50000, 100000];
 
 export default function WalletPage() {
   const { user, fetchUser } = useUser();
+  const { t } = useLanguage();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"deposit" | "withdraw">("deposit");
@@ -71,7 +73,7 @@ export default function WalletPage() {
 
   // Auto-poll while any transaction is PENDING
   useEffect(() => {
-    const hasPending = transactions.some((t) => t.status === "PENDING");
+    const hasPending = transactions.some((tx) => tx.status === "PENDING");
     if (hasPending && !pollRef.current) {
       pollRef.current = setInterval(() => syncStatus(true), 4000);
     } else if (!hasPending && pollRef.current) {
@@ -104,8 +106,8 @@ export default function WalletPage() {
         setMessage({
           type: "success",
           text: tab === "deposit"
-            ? "✅ M-Pesa prompt sent! Complete the payment on your phone. Status updates automatically."
-            : "⏳ Withdrawal initiated. Funds will arrive via M-Pesa shortly.",
+            ? `✅ ${t.wallet.depositSuccess}`
+            : `⏳ ${t.wallet.withdrawSuccess}`,
         });
         setAmount("");
         // Refresh immediately, then poll
@@ -133,16 +135,16 @@ export default function WalletPage() {
         <Navbar />
         <div className="flex flex-col items-center justify-center py-32 gap-4">
           <CurrencyCircleDollar size={48} className="text-[var(--muted)]" weight="duotone" />
-          <p className="text-[var(--muted)]">Sign in to view your wallet</p>
+          <p className="text-[var(--muted)]">{t.wallet.signInToView}</p>
           <Link href="/auth/login" className="px-6 py-2.5 bg-[var(--accent)] text-black rounded-xl font-semibold text-sm">
-            Sign in
+            {t.nav.signIn}
           </Link>
         </div>
       </div>
     );
   }
 
-  const pendingCount = transactions.filter((t) => t.status === "PENDING").length;
+  const pendingCount = transactions.filter((tx) => tx.status === "PENDING").length;
 
   return (
     <div className="min-h-screen">
@@ -151,8 +153,8 @@ export default function WalletPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-black">Wallet</h1>
-            <p className="text-sm text-[var(--muted)] mt-0.5">Manage your nTZS balance</p>
+            <h1 className="text-2xl font-black">{t.wallet.title}</h1>
+            <p className="text-sm text-[var(--muted)] mt-0.5">{t.wallet.subtitle}</p>
           </div>
           <button
             onClick={() => syncStatus()}
@@ -160,7 +162,7 @@ export default function WalletPage() {
             className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium border border-[var(--card-border)] rounded-xl hover:bg-[var(--card)] transition-colors text-[var(--muted)] disabled:opacity-50"
           >
             <ArrowsClockwise size={14} className={cn(syncing && "animate-spin")} />
-            {syncing ? "Syncing…" : "Sync status"}
+            {syncing ? `${t.wallet.sync}...` : t.wallet.sync}
           </button>
         </div>
 
@@ -177,14 +179,14 @@ export default function WalletPage() {
                   {pendingCount > 0 && (
                     <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/20 animate-pulse">
                       <Clock size={10} weight="fill" />
-                      {pendingCount} pending
+                      {pendingCount}
                     </span>
                   )}
                 </div>
                 <div className="text-4xl font-black mb-0.5 tabular-nums">
                   {formatTZS(user.balanceTzs || 0)}
                 </div>
-                <p className="text-xs text-[var(--muted)]">Tanzanian Shillings on Base</p>
+                <p className="text-xs text-[var(--muted)]">{t.wallet.tanzanianShillings}</p>
 
                 {user.walletAddress && (
                   <button
@@ -206,21 +208,21 @@ export default function WalletPage() {
             <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl overflow-hidden">
               {/* Tabs */}
               <div className="flex">
-                {(["deposit", "withdraw"] as const).map((t) => (
+                {(["deposit", "withdraw"] as const).map((tb) => (
                   <button
-                    key={t}
-                    onClick={() => { setTab(t); setMessage(null); }}
+                    key={tb}
+                    onClick={() => { setTab(tb); setMessage(null); }}
                     className={cn(
                       "flex-1 py-3.5 text-sm font-semibold capitalize transition-all flex items-center justify-center gap-2",
-                      tab === t
+                      tab === tb
                         ? "bg-[var(--background)] text-[var(--foreground)] border-b-2 border-[var(--accent)]"
                         : "text-[var(--muted)] hover:text-[var(--foreground)]"
                     )}
                   >
-                    {t === "deposit"
+                    {tb === "deposit"
                       ? <ArrowDownLeft size={16} weight="bold" className="text-[var(--accent)]" />
                       : <ArrowUpRight size={16} weight="bold" className="text-red-400" />}
-                    {t === "deposit" ? "Deposit" : "Withdraw"}
+                    {tb === "deposit" ? t.wallet.deposit : t.wallet.withdraw}
                   </button>
                 ))}
               </div>
@@ -228,8 +230,8 @@ export default function WalletPage() {
               <div className="p-5">
                 <p className="text-xs text-[var(--muted)] mb-4 leading-relaxed">
                   {tab === "deposit"
-                    ? "Add TZS via M-Pesa (Vodacom, Tigo, Airtel). Tokens minted to your wallet."
-                    : "Withdraw your nTZS to M-Pesa. Tokens are burned and TZS sent to your phone."}
+                    ? t.wallet.depositDescription
+                    : t.wallet.withdrawDescription}
                 </p>
 
                 <AnimatePresence mode="wait">
@@ -254,7 +256,7 @@ export default function WalletPage() {
                 <form onSubmit={handleAction} className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-[var(--muted)] mb-1.5 uppercase tracking-wide">
-                      Amount (TZS)
+                      {t.wallet.amount}
                     </label>
                     <input
                       type="number"
@@ -288,7 +290,7 @@ export default function WalletPage() {
 
                   <div>
                     <label className="block text-xs font-semibold text-[var(--muted)] mb-1.5 uppercase tracking-wide">
-                      M-Pesa Phone Number
+                      {t.wallet.phone}
                     </label>
                     <input
                       type="tel"
@@ -298,7 +300,7 @@ export default function WalletPage() {
                       placeholder="255712345678"
                       required
                     />
-                    <p className="text-xs text-[var(--muted)] mt-1">Format: 255XXXXXXXXX (include country code)</p>
+                    <p className="text-xs text-[var(--muted)] mt-1">{t.wallet.phoneFormat}</p>
                   </div>
 
                   <button
@@ -315,10 +317,10 @@ export default function WalletPage() {
                       ? <ArrowDownLeft size={16} weight="bold" />
                       : <ArrowUpRight size={16} weight="bold" />}
                     {actionLoading
-                      ? "Processing…"
+                      ? t.wallet.processing
                       : tab === "deposit"
-                      ? "Deposit via M-Pesa"
-                      : "Withdraw to M-Pesa"}
+                      ? t.wallet.depositButton
+                      : t.wallet.withdrawButton}
                   </button>
                 </form>
               </div>
@@ -328,10 +330,10 @@ export default function WalletPage() {
           {/* ── Right: Transaction history ─────────────── */}
           <div className="lg:col-span-3">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-black text-base">Transaction History</h2>
+              <h2 className="font-black text-base">{t.wallet.transactions}</h2>
               {pendingCount > 0 && (
                 <span className="text-xs text-[var(--muted)] animate-pulse">
-                  Auto-updating…
+                  {t.wallet.autoUpdating}
                 </span>
               )}
             </div>
@@ -346,8 +348,8 @@ export default function WalletPage() {
               ) : transactions.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-3 text-[var(--muted)]">
                   <SmileySad size={40} weight="duotone" className="opacity-30" />
-                  <p className="text-sm">No transactions yet</p>
-                  <p className="text-xs opacity-60">Make a deposit to get started</p>
+                  <p className="text-sm">{t.wallet.noTransactions}</p>
+                  <p className="text-xs opacity-60">{tab === "deposit" ? t.wallet.depositDescription : ""}</p>
                 </div>
               ) : (
                 <div className="divide-y divide-[var(--card-border)]">
@@ -365,12 +367,13 @@ export default function WalletPage() {
 }
 
 function TxRow({ tx, index }: { tx: Transaction; index: number }) {
+  const { t, locale } = useLanguage();
   const isDeposit = tx.type === "DEPOSIT";
 
   const statusConfig = {
-    COMPLETED: { icon: <CheckCircle size={13} weight="fill" className="text-[var(--accent)]" />, label: "Confirmed", color: "text-[var(--accent)]" },
-    FAILED: { icon: <XCircle size={13} weight="fill" className="text-red-400" />, label: "Failed", color: "text-red-400" },
-    PENDING: { icon: <Clock size={13} weight="fill" className="text-yellow-400 animate-pulse" />, label: "Pending", color: "text-yellow-400" },
+    COMPLETED: { icon: <CheckCircle size={13} weight="fill" className="text-[var(--accent)]" />, label: locale === "sw" ? "Imethibitishwa" : "Confirmed", color: "text-[var(--accent)]" },
+    FAILED: { icon: <XCircle size={13} weight="fill" className="text-red-400" />, label: locale === "sw" ? "Imeshindwa" : "Failed", color: "text-red-400" },
+    PENDING: { icon: <Clock size={13} weight="fill" className="text-yellow-400 animate-pulse" />, label: locale === "sw" ? "Inasubiri" : "Pending", color: "text-yellow-400" },
   }[tx.status] ?? { icon: <Clock size={13} />, label: tx.status, color: "text-[var(--muted)]" };
 
   return (
@@ -390,9 +393,9 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
             : <ArrowUpRight size={18} weight="bold" className="text-red-400" />}
         </div>
         <div>
-          <p className="text-sm font-semibold">{isDeposit ? "Deposit" : "Withdrawal"}</p>
+          <p className="text-sm font-semibold">{isDeposit ? t.wallet.deposit : t.wallet.withdraw}</p>
           <p className="text-xs text-[var(--muted)]">
-            {new Date(tx.createdAt).toLocaleDateString("en-TZ", { day: "2-digit", month: "short", year: "numeric" })}
+            {new Date(tx.createdAt).toLocaleDateString(locale === "sw" ? "sw-TZ" : "en-TZ", { day: "2-digit", month: "short", year: "numeric" })}
             {tx.phone && <span className="ml-1.5 opacity-70">· {tx.phone}</span>}
           </p>
         </div>

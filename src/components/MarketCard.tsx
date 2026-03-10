@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Clock, TrendUp, UsersThree } from "@phosphor-icons/react";
 import { formatTZS, formatNumber, timeUntil } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Market {
   id: string;
@@ -22,6 +23,7 @@ interface Market {
 }
 
 export function MarketCard({ market, index = 0 }: { market: Market; index?: number }) {
+  const { t, locale } = useLanguage();
   const yesPct = Math.round(market.price.yes * 100);
   const noPct = 100 - yesPct;
 
@@ -56,7 +58,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
             {/* Status */}
             {market.status === "RESOLVED" && (
               <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-2">
-                Resolved
+                {t.market.resolved}
               </span>
             )}
 
@@ -98,7 +100,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
               </div>
               <span className={cn("flex items-center gap-1", market.status === "OPEN" ? "" : "text-blue-400")}>
                 <Clock size={11} />
-                {market.status === "OPEN" ? timeUntil(market.resolvesAt) : "Ended"}
+                {market.status === "OPEN" ? timeUntil(market.resolvesAt) : (locale === "sw" ? "Imemalizika" : "Ended")}
               </span>
             </div>
           </div>

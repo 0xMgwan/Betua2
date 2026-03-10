@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Trophy, Crown, Medal } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/store/useUser";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface LeaderEntry {
   id: string;
@@ -26,6 +27,7 @@ const RANK_ICONS = [
 
 export default function LeaderboardPage() {
   const { user } = useUser();
+  const { t, locale } = useLanguage();
   const [leaders, setLeaders] = useState<LeaderEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -46,8 +48,8 @@ export default function LeaderboardPage() {
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-400/20 to-yellow-600/10 flex items-center justify-center mx-auto mb-4">
             <Trophy size={32} className="text-yellow-400" />
           </div>
-          <h1 className="text-3xl font-bold mb-2">Leaderboard</h1>
-          <p className="text-[var(--muted)]">Top predictors by trading volume</p>
+          <h1 className="text-3xl font-bold mb-2">{t.leaderboard.title}</h1>
+          <p className="text-[var(--muted)]">{t.leaderboard.subtitle}</p>
         </div>
 
         {/* User rank highlight */}
@@ -60,11 +62,11 @@ export default function LeaderboardPage() {
             <div className="flex items-center gap-3">
               <span className="text-2xl font-black text-[var(--accent)]">#{userRank.rank}</span>
               <div>
-                <p className="font-semibold text-sm">Your ranking</p>
-                <p className="text-xs text-[var(--muted)]">{formatTZS(userRank.totalVolume)} volume</p>
+                <p className="font-semibold text-sm">{t.leaderboard.yourRanking}</p>
+                <p className="text-xs text-[var(--muted)]">{formatTZS(userRank.totalVolume)} {t.leaderboard.volume}</p>
               </div>
             </div>
-            <span className="text-sm text-[var(--muted)]">{userRank.totalTrades} trades</span>
+            <span className="text-sm text-[var(--muted)]">{userRank.totalTrades} {t.leaderboard.trades}</span>
           </motion.div>
         )}
 
@@ -118,9 +120,9 @@ export default function LeaderboardPage() {
         ) : (
           <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl overflow-hidden">
             <div className="grid grid-cols-4 px-4 py-2.5 text-xs font-medium text-[var(--muted)] border-b border-[var(--card-border)]">
-              <span>Rank</span>
-              <span className="col-span-2">Trader</span>
-              <span className="text-right">Volume</span>
+              <span>{t.leaderboard.rank}</span>
+              <span className="col-span-2">{t.leaderboard.trader}</span>
+              <span className="text-right">{t.market.volume}</span>
             </div>
             {leaders.map((l, i) => (
               <motion.div
@@ -147,14 +149,14 @@ export default function LeaderboardPage() {
                   <div>
                     <p className="font-semibold text-sm">
                       {l.displayName || l.username}
-                      {l.id === user?.id && <span className="ml-1 text-xs text-[var(--accent)]">(you)</span>}
+                      {l.id === user?.id && <span className="ml-1 text-xs text-[var(--accent)]">({t.leaderboard.you})</span>}
                     </p>
-                    <p className="text-xs text-[var(--muted)]">{l.totalTrades} trades</p>
+                    <p className="text-xs text-[var(--muted)]">{l.totalTrades} {t.leaderboard.trades}</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-sm">{formatTZS(l.totalVolume)}</p>
-                  <p className="text-xs text-[var(--muted)]">{l.marketsCreated} markets</p>
+                  <p className="text-xs text-[var(--muted)]">{l.marketsCreated} {t.leaderboard.markets}</p>
                 </div>
               </motion.div>
             ))}

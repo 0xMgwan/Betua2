@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useUser } from "@/store/useUser";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Eye, EyeSlash, ArrowLeft } from "@phosphor-icons/react";
 
 export default function LoginPage() {
   const router = useRouter();
   const fetchUser = useUser((s) => s.fetchUser);
+  const { t } = useLanguage();
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -47,13 +49,13 @@ export default function LoginPage() {
           <div className="text-center mb-8">
             <Link href="/" className="inline-flex items-center gap-2 mb-6">
               <ArrowLeft size={16} className="text-[var(--muted)]" />
-              <span className="text-sm text-[var(--muted)]">Back</span>
+              <span className="text-sm text-[var(--muted)]">{t.common.back}</span>
             </Link>
             <div className="w-14 h-14 border-2 border-[var(--foreground)] flex items-center justify-center text-[var(--foreground)] font-black text-2xl mx-auto mb-4 font-mono">
               G
             </div>
-            <h1 className="text-2xl font-bold font-mono">Welcome back</h1>
-            <p className="text-[var(--muted)] text-sm mt-1 font-mono">Sign in to your GUAP account</p>
+            <h1 className="text-2xl font-bold font-mono">{t.auth.welcomeBack}</h1>
+            <p className="text-[var(--muted)] text-sm mt-1 font-mono">{t.auth.welcomeBackSub}</p>
           </div>
 
           {error && (
@@ -64,7 +66,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1.5">Email</label>
+              <label className="block text-sm font-medium mb-1.5">{t.auth.email}</label>
               <input
                 type="email"
                 value={form.email}
@@ -76,7 +78,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1.5">Password</label>
+              <label className="block text-sm font-medium mb-1.5">{t.auth.password}</label>
               <div className="relative">
                 <input
                   type={showPw ? "text" : "password"}
@@ -101,14 +103,14 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full py-3 border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold font-mono tracking-wider hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all disabled:opacity-50 mt-2 uppercase"
             >
-              {loading ? "Signing in…" : "Sign in"}
+              {loading ? `${t.auth.signInButton}...` : t.auth.signInButton}
             </button>
           </form>
 
           <p className="text-center text-sm text-[var(--muted)] mt-6 font-mono">
-            No account?{" "}
+            {t.auth.noAccount}{" "}
             <Link href="/auth/register" className="text-[var(--foreground)] font-bold hover:underline">
-              Create one
+              {t.auth.signUpLink}
             </Link>
           </p>
         </motion.div>

@@ -3,6 +3,7 @@ import { useEffect, useState, use } from "react";
 import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
 import { useUser } from "@/store/useUser";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS, formatNumber, timeUntil } from "@/lib/utils";
 import { getSharesOut } from "@/lib/amm";
 import { motion, AnimatePresence } from "framer-motion";
@@ -37,6 +38,7 @@ interface MarketData {
 export default function MarketPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { user, fetchUser } = useUser();
+  const { t, locale } = useLanguage();
   const [market, setMarket] = useState<MarketData | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"trades" | "comments">("trades");
@@ -147,7 +149,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
     return (
       <div className="min-h-screen">
         <Navbar />
-        <div className="text-center py-32 text-[var(--muted)]">Market not found</div>
+        <div className="text-center py-32 text-[var(--muted)]">{locale === "sw" ? "Soko halijapatikana" : "Market not found"}</div>
       </div>
     );
   }
@@ -175,7 +177,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   </span>
                   {isResolved && (
                     <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-xs rounded-full border border-blue-500/20">
-                      Resolved: {market.outcome === 1 ? "YES" : "NO"}
+                      {t.market.resolved}: {market.outcome === 1 ? t.market.yes : t.market.no}
                     </span>
                   )}
                   {!isResolved && (
@@ -192,11 +194,11 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   <span>by @{market.creator.username}</span>
                   <span className="flex items-center gap-1">
                     <TrendUp size={11} />
-                    Vol: {formatTZS(market.totalVolume)}
+                    {t.market.volume}: {formatTZS(market.totalVolume)}
                   </span>
                   <span className="flex items-center gap-1">
                     <UsersThree size={11} />
-                    {market._count.trades} trades
+                    {market._count.trades} {t.market.trades}
                   </span>
                 </div>
 
@@ -204,7 +206,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                 <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[var(--card-border)]">
                   <span className="flex items-center gap-1 text-xs text-[var(--muted)] font-mono">
                     <ShareNetwork size={13} />
-                    Share:
+                    {t.market.share}:
                   </span>
                   <a
                     href={`https://wa.me/?text=${encodeURIComponent(`${market.title} - Predict now on GUAP! ${typeof window !== 'undefined' ? window.location.href : ''}`)}`}
@@ -248,7 +250,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
             {/* Price bars */}
             <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl p-6">
-              <h2 className="font-semibold mb-4">Current Probability</h2>
+              <h2 className="font-semibold mb-4">{t.market.currentProbability}</h2>
               <div className="space-y-3">
                 <div>
                   <div className="flex justify-between text-sm mb-1.5">
@@ -283,15 +285,15 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
               <div className="grid grid-cols-3 gap-3 mt-6 text-center text-sm">
                 <div>
                   <div className="font-bold">{formatTZS(market.totalVolume)}</div>
-                  <div className="text-xs text-[var(--muted)]">Volume</div>
+                  <div className="text-xs text-[var(--muted)]">{t.market.volume}</div>
                 </div>
                 <div>
                   <div className="font-bold">{market._count.trades}</div>
-                  <div className="text-xs text-[var(--muted)]">Trades</div>
+                  <div className="text-xs text-[var(--muted)]">{t.market.trades}</div>
                 </div>
                 <div>
                   <div className="font-bold">{timeUntil(market.resolvesAt)}</div>
-                  <div className="text-xs text-[var(--muted)]">Resolves</div>
+                  <div className="text-xs text-[var(--muted)]">{t.market.resolves}</div>
                 </div>
               </div>
             </div>
@@ -301,10 +303,10 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
               <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl p-6">
                 <h2 className="font-semibold mb-2 flex items-center gap-2">
                   <Warning size={16} className="text-yellow-500" />
-                  Resolve Market (Creator only)
+                  {locale === "sw" ? "Tatua Soko (Muundaji tu)" : "Resolve Market (Creator only)"}
                 </h2>
                 <p className="text-sm text-[var(--muted)] mb-4">
-                  Once resolved, winners receive their payouts automatically.
+                  {locale === "sw" ? "Mara ikitaruliwa, washindi watalipwa moja kwa moja." : "Once resolved, winners receive their payouts automatically."}
                 </p>
                 <div className="flex gap-3">
                   <button
@@ -312,14 +314,14 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#00e5a0]/10 border border-[#00e5a0]/30 text-[#00e5a0] rounded-xl font-semibold text-sm hover:bg-[#00e5a0]/20 transition-all"
                   >
                     <CheckCircle size={16} />
-                    Resolve YES
+                    {locale === "sw" ? "Tatua NDIO" : "Resolve YES"}
                   </button>
                   <button
                     onClick={() => handleResolve(false)}
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl font-semibold text-sm hover:bg-red-500/20 transition-all"
                   >
                     <XCircle size={16} />
-                    Resolve NO
+                    {locale === "sw" ? "Tatua HAPANA" : "Resolve NO"}
                   </button>
                 </div>
               </div>
@@ -328,18 +330,18 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
             {/* Activity tabs */}
             <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl overflow-hidden">
               <div className="flex border-b border-[var(--card-border)]">
-                {(["trades", "comments"] as const).map((t) => (
+                {(["trades", "comments"] as const).map((tb) => (
                   <button
-                    key={t}
-                    onClick={() => setTab(t)}
+                    key={tb}
+                    onClick={() => setTab(tb)}
                     className={cn(
                       "flex-1 py-3.5 text-sm font-medium capitalize transition-all",
-                      tab === t
+                      tab === tb
                         ? "text-[var(--foreground)] border-b-2 border-[var(--accent)]"
                         : "text-[var(--muted)]"
                     )}
                   >
-                    {t === "trades" ? `Trades (${market._count.trades})` : `Comments (${market._count.comments})`}
+                    {tb === "trades" ? `${t.market.trades} (${market._count.trades})` : `${t.market.comments} (${market._count.comments})`}
                   </button>
                 ))}
               </div>
@@ -348,27 +350,27 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                 {tab === "trades" ? (
                   <div className="space-y-2 max-h-96 overflow-y-auto">
                     {market.trades.length === 0 ? (
-                      <p className="text-center text-[var(--muted)] text-sm py-8">No trades yet</p>
+                      <p className="text-center text-[var(--muted)] text-sm py-8">{locale === "sw" ? "Hakuna biashara bado" : "No trades yet"}</p>
                     ) : (
-                      market.trades.map((t) => (
-                        <div key={t.id} className="flex items-center justify-between py-2 text-sm border-b border-[var(--card-border)] last:border-0">
+                      market.trades.map((tr) => (
+                        <div key={tr.id} className="flex items-center justify-between py-2 text-sm border-b border-[var(--card-border)] last:border-0">
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#00e5a0] to-[#00b4d8] flex items-center justify-center text-xs font-bold text-black">
-                              {t.user.username[0].toUpperCase()}
+                              {tr.user.username[0].toUpperCase()}
                             </div>
-                            <span className="font-medium">@{t.user.username}</span>
+                            <span className="font-medium">@{tr.user.username}</span>
                             <span
                               className={cn(
                                 "px-1.5 py-0.5 rounded text-xs font-bold",
-                                t.side === "YES" ? "yes-pill" : "no-pill"
+                                tr.side === "YES" ? "yes-pill" : "no-pill"
                               )}
                             >
-                              {t.side}
+                              {tr.side}
                             </span>
                           </div>
                           <div className="text-right text-xs">
-                            <div className="font-medium">{formatTZS(t.amountTzs)}</div>
-                            <div className="text-[var(--muted)]">{t.shares} shares @ {(t.price).toFixed(3)}</div>
+                            <div className="font-medium">{formatTZS(tr.amountTzs)}</div>
+                            <div className="text-[var(--muted)]">{tr.shares} shares @ {(tr.price).toFixed(3)}</div>
                           </div>
                         </div>
                       ))
@@ -381,7 +383,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                         <input
                           value={comment}
                           onChange={(e) => setComment(e.target.value)}
-                          placeholder="Share your thoughts…"
+                          placeholder={locale === "sw" ? "Shiriki mawazo yako…" : "Share your thoughts…"}
                           className="flex-1 px-3 py-2 bg-[var(--background)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
                         />
                         <button
@@ -395,7 +397,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     )}
                     <div className="max-h-80 overflow-y-auto space-y-3">
                       {market.comments.length === 0 ? (
-                        <p className="text-center text-[var(--muted)] text-sm py-8">No comments yet</p>
+                        <p className="text-center text-[var(--muted)] text-sm py-8">{t.market.noComments}</p>
                       ) : (
                         market.comments.map((c) => (
                           <div key={c.id} className="flex gap-3 py-2 border-b border-[var(--card-border)] last:border-0">
@@ -419,26 +421,26 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
           {/* Right: Trade panel */}
           <div className="space-y-4">
             <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl p-6 sticky top-24">
-              <h2 className="font-bold text-lg mb-4">Place a Trade</h2>
+              <h2 className="font-bold text-lg mb-4">{locale === "sw" ? "Fanya Biashara" : "Place a Trade"}</h2>
 
               {isResolved ? (
                 <div className="text-center py-6 text-[var(--muted)]">
                   <CheckCircle size={32} className="mx-auto mb-2 text-[var(--accent)]" />
-                  <p className="font-medium">Market Resolved</p>
+                  <p className="font-medium">{locale === "sw" ? "Soko Limetatuliwa" : "Market Resolved"}</p>
                   <p className="text-sm mt-1">
-                    Outcome: <strong className={market.outcome === 1 ? "text-[#00e5a0]" : "text-red-400"}>
-                      {market.outcome === 1 ? "YES" : "NO"}
+                    {t.market.outcome}: <strong className={market.outcome === 1 ? "text-[#00e5a0]" : "text-red-400"}>
+                      {market.outcome === 1 ? t.market.yes : t.market.no}
                     </strong>
                   </p>
                 </div>
               ) : !user ? (
                 <div className="text-center py-6">
-                  <p className="text-[var(--muted)] mb-4 text-sm font-mono">Sign in to trade on this market</p>
+                  <p className="text-[var(--muted)] mb-4 text-sm font-mono">{t.market.signInToTrade}</p>
                   <Link
                     href="/auth/login"
                     className="block py-3 border-2 border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)] font-mono font-bold tracking-wider uppercase text-sm hover:opacity-90 transition-all"
                   >
-                    Sign in to trade
+                    {t.market.signInToTrade}
                   </Link>
                 </div>
               ) : (
@@ -466,7 +468,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
                   {/* Amount */}
                   <div>
-                    <label className="block text-sm font-medium mb-1.5">Amount (TZS)</label>
+                    <label className="block text-sm font-medium mb-1.5">{t.market.amount}</label>
                     <div className="relative">
                       <input
                         type="number"
@@ -497,15 +499,15 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   {estimatedShares > 0 && (
                     <div className="p-3 bg-[var(--background)] rounded-xl text-sm space-y-1.5">
                       <div className="flex justify-between">
-                        <span className="text-[var(--muted)]">Estimated shares</span>
+                        <span className="text-[var(--muted)]">{locale === "sw" ? "Hisa zinazokadiriwa" : "Estimated shares"}</span>
                         <span className="font-bold">{formatNumber(estimatedShares)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-[var(--muted)]">Avg price</span>
+                        <span className="text-[var(--muted)]">{locale === "sw" ? "Bei ya wastani" : "Avg price"}</span>
                         <span className="font-medium">{estimatedPrice.toFixed(4)} TZS/share</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-[var(--muted)]">Max payout</span>
+                        <span className="text-[var(--muted)]">{locale === "sw" ? "Malipo ya juu" : "Max payout"}</span>
                         <span className="font-bold text-[var(--accent)]">{formatTZS(estimatedShares)}</span>
                       </div>
                     </div>
@@ -541,13 +543,13 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                         : "bg-red-500 text-white hover:opacity-90"
                     )}
                   >
-                    {tradeLoading ? "Processing…" : `Buy ${side} shares`}
+                    {tradeLoading ? (locale === "sw" ? "Inachakata…" : "Processing…") : `${t.market.buy} ${side === "YES" ? t.market.yes : t.market.no}`}
                   </button>
 
                   <div className="flex items-center justify-between text-xs text-[var(--muted)]">
-                    <span>Balance: {formatTZS(user.balanceTzs || 0)}</span>
+                    <span>{locale === "sw" ? "Salio" : "Balance"}: {formatTZS(user.balanceTzs || 0)}</span>
                     <Link href="/wallet" className="text-[var(--accent)] hover:underline">
-                      Add funds →
+                      {locale === "sw" ? "Ongeza pesa →" : "Add funds →"}
                     </Link>
                   </div>
                 </form>

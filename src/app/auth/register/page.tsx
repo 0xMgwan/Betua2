@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useUser } from "@/store/useUser";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Eye, EyeSlash, ArrowLeft, CheckCircle } from "@phosphor-icons/react";
 
 export default function RegisterPage() {
   const router = useRouter();
   const fetchUser = useUser((s) => s.fetchUser);
+  const { t, locale } = useLanguage();
   const [form, setForm] = useState({
     email: "", username: "", password: "", phone: "",
   });
@@ -40,7 +42,11 @@ export default function RegisterPage() {
     }
   }
 
-  const PERKS = ["Free wallet on Base", "M-Pesa deposits & withdrawals", "Trade with real TZS"];
+  const PERKS = [
+    locale === "sw" ? "Mkoba bure kwenye Base" : "Free wallet on Base",
+    locale === "sw" ? "Kuweka na kutoa pesa kwa M-Pesa" : "M-Pesa deposits & withdrawals",
+    locale === "sw" ? "Fanya biashara kwa TZS halisi" : "Trade with real TZS",
+  ];
 
   return (
     <div className="min-h-screen hero-bg flex items-center justify-center px-4 py-12">
@@ -53,13 +59,13 @@ export default function RegisterPage() {
           <div className="text-center mb-8">
             <Link href="/" className="inline-flex items-center gap-2 mb-6">
               <ArrowLeft size={16} className="text-[var(--muted)]" />
-              <span className="text-sm text-[var(--muted)]">Back</span>
+              <span className="text-sm text-[var(--muted)]">{t.common.back}</span>
             </Link>
             <div className="w-14 h-14 border-2 border-[var(--foreground)] flex items-center justify-center text-[var(--foreground)] font-black text-2xl mx-auto mb-4 font-mono">
               G
             </div>
-            <h1 className="text-2xl font-bold font-mono">Join GUAP</h1>
-            <p className="text-[var(--muted)] text-sm mt-1 font-mono">Tanzania's prediction market</p>
+            <h1 className="text-2xl font-bold font-mono">{t.auth.joinGuap}</h1>
+            <p className="text-[var(--muted)] text-sm mt-1 font-mono">{t.auth.joinGuapSub}</p>
           </div>
 
           {/* Perks */}
@@ -80,7 +86,7 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1.5">Email</label>
+              <label className="block text-sm font-medium mb-1.5">{t.auth.email}</label>
               <input
                 type="email"
                 value={form.email}
@@ -91,7 +97,7 @@ export default function RegisterPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">Username</label>
+              <label className="block text-sm font-medium mb-1.5">{t.auth.username}</label>
               <input
                 type="text"
                 value={form.username}
@@ -104,7 +110,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1.5">Phone (M-Pesa)</label>
+              <label className="block text-sm font-medium mb-1.5">{t.auth.phone}</label>
               <input
                 type="tel"
                 value={form.phone}
@@ -115,7 +121,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1.5">Password</label>
+              <label className="block text-sm font-medium mb-1.5">{t.auth.password}</label>
               <div className="relative">
                 <input
                   type={showPw ? "text" : "password"}
@@ -140,14 +146,14 @@ export default function RegisterPage() {
               disabled={loading}
               className="w-full py-3 border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold font-mono tracking-wider hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all disabled:opacity-50 mt-2 uppercase"
             >
-              {loading ? "Creating account…" : "Create account & get wallet"}
+              {loading ? `${t.auth.signUpButton}...` : t.auth.signUpButton}
             </button>
           </form>
 
           <p className="text-center text-sm text-[var(--muted)] mt-6 font-mono">
-            Already have an account?{" "}
+            {t.auth.hasAccount}{" "}
             <Link href="/auth/login" className="text-[var(--foreground)] font-bold hover:underline">
-              Sign in
+              {t.auth.signInLink}
             </Link>
           </p>
         </motion.div>
