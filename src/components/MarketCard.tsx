@@ -7,6 +7,7 @@ import { Clock, TrendUp, UsersThree } from "@phosphor-icons/react";
 import { formatTZS, formatNumber, timeUntil } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { QuickBuyModal } from "./QuickBuyModal";
 
 interface Market {
   id: string;
@@ -26,8 +27,17 @@ interface Market {
 export function MarketCard({ market, index = 0 }: { market: Market; index?: number }) {
   const { t, locale } = useLanguage();
   const [imageError, setImageError] = useState(false);
+  const [showBuyModal, setShowBuyModal] = useState(false);
+  const [selectedSide, setSelectedSide] = useState<"YES" | "NO" | null>(null);
   const yesPct = Math.round(market.price.yes * 100);
   const noPct = 100 - yesPct;
+
+  const handleQuickBuy = (e: React.MouseEvent, side: "YES" | "NO") => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedSide(side);
+    setShowBuyModal(true);
+  };
 
   return (
     <motion.div
@@ -89,6 +99,24 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
               </div>
             </div>
 
+            {/* Quick Buy Buttons - Only for OPEN markets */}
+            {market.status === "OPEN" && (
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <button
+                  onClick={(e) => handleQuickBuy(e, "YES")}
+                  className="py-2 px-3 bg-[#00e5a0]/10 hover:bg-[#00e5a0]/20 border border-[#00e5a0]/30 rounded-lg text-[#00e5a0] font-semibold text-xs transition-all hover:scale-105 active:scale-95"
+                >
+                  Buy YES
+                </button>
+                <button
+                  onClick={(e) => handleQuickBuy(e, "NO")}
+                  className="py-2 px-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 font-semibold text-xs transition-all hover:scale-105 active:scale-95"
+                >
+                  Buy NO
+                </button>
+              </div>
+            )}
+
             {/* Meta */}
             <div className="flex items-center justify-between text-xs text-[var(--muted)]">
               <div className="flex items-center gap-3">
@@ -111,6 +139,23 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
           </div>
         </div>
       </Link>
+
+      {/* Quick Buy Modal */}
+      {showBuyModal && selectedSide && (
+        <QuickBuyModal
+          isOpen={showBuyModal}
+          onClose={() => {
+            setShowBuyModal(false);
+            setSelectedSide(null);
+          }}
+          market={{
+            id: market.id,
+            title: market.title,
+            price: market.price,
+          }}
+          side={selectedSide}
+        />
+      )}
     </motion.div>
   );
 }
