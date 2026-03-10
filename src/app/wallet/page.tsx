@@ -30,9 +30,10 @@ export default function WalletPage() {
   const { t } = useLanguage();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"deposit" | "withdraw">("deposit");
+  const [tab, setTab] = useState<"deposit" | "withdraw" | "send">("deposit");
   const [amount, setAmount] = useState("");
   const [phone, setPhone] = useState("");
+  const [recipient, setRecipient] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -93,11 +94,14 @@ export default function WalletPage() {
     setActionLoading(true);
     setMessage(null);
     try {
-      const endpoint = tab === "deposit" ? "/api/wallet/deposit" : "/api/wallet/withdraw";
+      const endpoint = tab === "deposit" ? "/api/wallet/deposit" : tab === "withdraw" ? "/api/wallet/withdraw" : "/api/wallet/send";
+      const body = tab === "send" 
+        ? { amountTzs: Number(amount), recipientUsername: recipient }
+        : { amountTzs: Number(amount), phone };
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amountTzs: Number(amount), phone }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -107,9 +111,12 @@ export default function WalletPage() {
           type: "success",
           text: tab === "deposit"
             ? `✅ ${t.wallet.depositSuccess}`
-            : `⏳ ${t.wallet.withdrawSuccess}`,
+            : tab === "withdraw"
+            ? `⏳ ${t.wallet.withdrawSuccess}`
+            : `✅ Transfer successful!`,
         });
         setAmount("");
+        setRecipient("");
         // Refresh immediately, then poll
         await fetchTransactions();
         await fetchUser();
@@ -208,7 +215,7 @@ export default function WalletPage() {
             <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl overflow-hidden">
               {/* Tabs */}
               <div className="flex">
-                {(["deposit", "withdraw"] as const).map((tb) => (
+                {(["deposit", "withdraw", "send"] as const).map((tb) => (
                   <button
                     key={tb}
                     onClick={() => { setTab(tb); setMessage(null); }}
@@ -221,8 +228,10 @@ export default function WalletPage() {
                   >
                     {tb === "deposit"
                       ? <ArrowDownLeft size={16} weight="bold" className="text-[var(--accent)]" />
-                      : <ArrowUpRight size={16} weight="bold" className="text-red-400" />}
-                    {tb === "deposit" ? t.wallet.deposit : t.wallet.withdraw}
+                      : tb === "withdraw"
+                      ? <ArrowUpRight size={16} weight="bold" className="text-red-400" />
+                      : <ArrowUpRight size={16} weight="bold" className="text-blue-400" />}
+                    {tb === "deposit" ? t.wallet.deposit : tb === "withdraw" ? t.wallet.withdraw : t.wallet.send}
                   </button>
                 ))}
               </div>
@@ -231,7 +240,9 @@ export default function WalletPage() {
                 <p className="text-xs text-[var(--muted)] mb-4 leading-relaxed">
                   {tab === "deposit"
                     ? t.wallet.depositDescription
-                    : t.wallet.withdrawDescription}
+                    : tab === "withdraw"
+                    ? t.wallet.withdrawDescription
+                    : t.wallet.sendDescription}
                 </p>
 
                 <AnimatePresence mode="wait">
@@ -288,29 +299,47 @@ export default function WalletPage() {
                     ))}
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-[var(--muted)] mb-1.5 uppercase tracking-wide">
-                      {t.wallet.phone}
-                    </label>
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
-                      placeholder="255712345678"
-                      required
-                    />
-                    <p className="text-xs text-[var(--muted)] mt-1">{t.wallet.phoneFormat}</p>
-                  </div>
+                  {tab === "send" ? (
+                    <div>
+                      <label className="block text-xs font-semibold text-[var(--muted)] mb-1.5 uppercase tracking-wide">
+                        {t.wallet.recipient}
+                      </label>
+                      <input
+                        type="text"
+                        value={recipient}
+                        onChange={(e) => setRecipient(e.target.value)}
+                        className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
+                        placeholder="username"
+                        required
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-xs font-semibold text-[var(--muted)] mb-1.5 uppercase tracking-wide">
+                        {t.wallet.phone}
+                      </label>
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
+                        placeholder="255712345678"
+                        required
+                      />
+                      <p className="text-xs text-[var(--muted)] mt-1">{t.wallet.phoneFormat}</p>
+                    </div>
+                  )}
 
                   <button
                     type="submit"
-                    disabled={actionLoading || !amount || Number(amount) < 1000}
+                    disabled={actionLoading || !amount || Number(amount) < 1000 || (tab === "send" && !recipient)}
                     className={cn(
                       "w-full py-3.5 font-black rounded-xl transition-all disabled:opacity-40 text-sm flex items-center justify-center gap-2",
                       tab === "deposit"
                         ? "bg-[var(--foreground)] text-[var(--background)] hover:opacity-80"
-                        : "bg-red-500 text-white hover:opacity-90"
+                        : tab === "withdraw"
+                        ? "bg-red-500 text-white hover:opacity-90"
+                        : "bg-blue-500 text-white hover:opacity-90"
                     )}
                   >
                     {tab === "deposit"
@@ -320,7 +349,9 @@ export default function WalletPage() {
                       ? t.wallet.processing
                       : tab === "deposit"
                       ? t.wallet.depositButton
-                      : t.wallet.withdrawButton}
+                      : tab === "withdraw"
+                      ? t.wallet.withdrawButton
+                      : t.wallet.sendButton}
                   </button>
                 </form>
               </div>

@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -24,6 +25,7 @@ interface Market {
 
 export function MarketCard({ market, index = 0 }: { market: Market; index?: number }) {
   const { t, locale } = useLanguage();
+  const [imageError, setImageError] = useState(false);
   const yesPct = Math.round(market.price.yes * 100);
   const noPct = 100 - yesPct;
 
@@ -43,15 +45,18 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
           </div>
 
           {/* Image or gradient header */}
-          <div className="h-32 relative overflow-hidden">
-            {market.imageUrl ? (
-              <Image src={market.imageUrl!} alt={market.title} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
+          <div className="h-32 relative overflow-hidden bg-gradient-to-br from-[var(--accent)]/10 to-[#00b4d8]/10 flex items-center justify-center">
+            {market.imageUrl && !imageError ? (
+              <img 
+                src={market.imageUrl} 
+                alt={market.title} 
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                onError={() => setImageError(true)}
+              />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-[var(--accent)]/10 to-[#00b4d8]/10 flex items-center justify-center">
-                <TrendUp size={40} className="text-[var(--accent)]/30" />
-              </div>
+              <TrendUp size={40} className="text-[var(--accent)]/30" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-[var(--card)] to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[var(--card)] to-transparent pointer-events-none" />
           </div>
 
           <div className="px-4 pb-4 -mt-2">
