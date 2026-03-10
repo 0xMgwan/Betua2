@@ -193,7 +193,7 @@ export default function PortfolioPage() {
               </Link>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {positions.map((p, i) => {
                 const isResolved = p.market.status === "RESOLVED";
                 const isMultiOpt = !!(p.market.options && p.market.options.length >= 2);
@@ -208,87 +208,138 @@ export default function PortfolioPage() {
                   ? Object.values(p.optionShares).reduce((s, v) => s + v, 0)
                   : p.yesShares + p.noShares;
 
+                // Value as % of payout for progress bar
+                const valuePct = positionPayout > 0 ? Math.min((p.currentValue / positionPayout) * 100, 100) : 0;
+
+                // Border color based on status
+                const borderColor = isResolved
+                  ? won ? "border-l-[var(--accent)]" : "border-l-red-500"
+                  : "border-l-yellow-400";
+
                 return (
                   <motion.div
                     key={p.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.06 }}
                   >
                     <Link href={`/markets/${p.market.id}`}>
-                      <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl p-5 hover:border-[var(--accent)]/30 transition-all">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--background)] border border-[var(--card-border)] text-[var(--muted)]">
-                                {p.market.category}
-                              </span>
-                              {isResolved && (
-                                <span className={cn("text-xs font-medium", won ? "text-[var(--accent)]" : "text-red-400")}>
-                                  {won ? `✓ ${t.portfolio.won}` : `✗ ${t.portfolio.lost}`}
+                      <div className={cn(
+                        "bg-[var(--card)] border border-[var(--card-border)] rounded-2xl overflow-hidden hover:border-[var(--accent)]/30 hover:shadow-lg hover:shadow-[var(--accent)]/5 transition-all",
+                        "border-l-4", borderColor
+                      )}>
+                        {/* Top section */}
+                        <div className="p-5 pb-3">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--background)] border border-[var(--card-border)] text-[var(--muted)] uppercase tracking-wider">
+                                  {p.market.category}
                                 </span>
-                              )}
-                            </div>
-                            <p className="font-semibold text-sm line-clamp-1">{p.market.title}</p>
-                            <div className="flex flex-wrap gap-2 mt-2 text-xs text-[var(--muted)]">
-                              {isMultiOpt && p.optionShares ? (
-                                Object.entries(p.optionShares).filter(([, s]) => s > 0).map(([idx, shares]) => (
-                                  <span key={idx} className="px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20">
-                                    {formatNumber(shares)} {p.market.options![Number(idx)] || `Option ${idx}`}
+                                {isResolved && (
+                                  <span className={cn(
+                                    "text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider",
+                                    won ? "bg-[var(--accent)]/10 text-[var(--accent)]" : "bg-red-500/10 text-red-400"
+                                  )}>
+                                    {won ? `✓ ${t.portfolio.won}` : `✗ ${t.portfolio.lost}`}
                                   </span>
-                                ))
-                              ) : (
-                                <>
-                                  {p.yesShares > 0 && (
-                                    <span className="yes-pill px-2 py-0.5 rounded-full text-xs font-medium">
-                                      {formatNumber(p.yesShares)} YES
-                                    </span>
-                                  )}
-                                  {p.noShares > 0 && (
-                                    <span className="no-pill px-2 py-0.5 rounded-full text-xs font-medium">
-                                      {formatNumber(p.noShares)} NO
-                                    </span>
-                                  )}
-                                </>
-                              )}
+                                )}
+                                {!isResolved && (
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-yellow-400/10 text-yellow-400 uppercase tracking-wider flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
+                                    {t.portfolio.open}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="font-bold text-sm line-clamp-2 leading-snug">{p.market.title}</p>
                             </div>
                           </div>
-                          <div className="text-right flex-shrink-0">
-                            <div className="font-bold text-sm">{formatTZS(Math.round(p.currentValue))}</div>
-                            <div className="text-xs text-[var(--muted)] mt-0.5">{t.portfolio.currentValue}</div>
-                            {!isResolved && (
-                              <div className="text-xs text-yellow-400 font-semibold mt-1">
-                                → {formatTZS(Math.round(positionPayout))} {locale === "sw" ? "malipo" : "payout"}
-                              </div>
+
+                          {/* Share pills */}
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            {isMultiOpt && p.optionShares ? (
+                              Object.entries(p.optionShares).filter(([, s]) => s > 0).map(([idx, shares]) => {
+                                const optColors = ["bg-[#00e5a0]/10 text-[#00e5a0] border-[#00e5a0]/20", "bg-[#00b4d8]/10 text-[#00b4d8] border-[#00b4d8]/20", "bg-orange-500/10 text-orange-400 border-orange-500/20"];
+                                return (
+                                  <span key={idx} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold border", optColors[Number(idx) % optColors.length])}>
+                                    {formatNumber(shares)} {p.market.options![Number(idx)] || `Option ${idx}`}
+                                  </span>
+                                );
+                              })
+                            ) : (
+                              <>
+                                {p.yesShares > 0 && (
+                                  <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#00e5a0]/10 text-[#00e5a0] border border-[#00e5a0]/20">
+                                    {formatNumber(p.yesShares)} YES
+                                  </span>
+                                )}
+                                {p.noShares > 0 && (
+                                  <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20">
+                                    {formatNumber(p.noShares)} NO
+                                  </span>
+                                )}
+                              </>
                             )}
-                            <div className="flex items-center justify-end gap-1 text-xs mt-1">
-                              <Clock size={10} className="text-[var(--muted)]" />
-                              <span className={isResolved ? "text-blue-400" : "text-[var(--muted)]"}>
-                                {isResolved ? t.portfolio.resolved : t.portfolio.open}
-                              </span>
+                          </div>
+                        </div>
+
+                        {/* Bottom section with value + payout */}
+                        <div className="px-5 pb-4">
+                          {/* Progress bar */}
+                          {!isResolved && (
+                            <div className="mb-3">
+                              <div className="w-full h-1.5 rounded-full bg-[var(--background)] overflow-hidden">
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${valuePct}%` }}
+                                  transition={{ delay: i * 0.06 + 0.3, duration: 0.6, ease: "easeOut" }}
+                                  className="h-full rounded-full bg-gradient-to-r from-[var(--accent)] to-yellow-400"
+                                />
+                              </div>
                             </div>
-                            {isResolved && won && !p.redeemed && (
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  handleRedeem(p.id);
-                                }}
-                                disabled={redeeming === p.id}
-                                className="mt-2 w-full py-1.5 px-3 bg-[var(--accent)] text-[var(--background)] rounded-lg text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
-                              >
-                                {redeeming === p.id
-                                  ? (locale === "sw" ? "Inakomboa..." : "Redeeming...")
-                                  : (locale === "sw" ? "Komboa" : "Redeem")}
-                              </button>
-                            )}
-                            {redeemSuccess === p.id && (
-                              <div className="mt-2 text-xs text-[var(--accent)] font-medium animate-pulse">
-                                ✓ {locale === "sw" ? "Imefanikiwa!" : "Successfully redeemed!"}
+                          )}
+
+                          <div className="flex items-end justify-between">
+                            <div>
+                              <div className="text-xs text-[var(--muted)] mb-0.5">{t.portfolio.currentValue}</div>
+                              <div className="text-lg font-black tabular-nums">{formatTZS(Math.round(p.currentValue))}</div>
+                            </div>
+
+                            {!isResolved ? (
+                              <div className="text-right">
+                                <div className="text-[10px] text-[var(--muted)] uppercase tracking-wider mb-0.5">
+                                  {locale === "sw" ? "Malipo" : "If correct"}
+                                </div>
+                                <div className="text-lg font-black tabular-nums text-yellow-400">
+                                  {formatTZS(Math.round(positionPayout))}
+                                </div>
                               </div>
-                            )}
-                            {p.redeemed && redeemSuccess !== p.id && (
-                              <div className="mt-2 text-xs text-[var(--muted)] font-medium">
-                                ✓ {locale === "sw" ? "Imekombowa" : "Redeemed"}
+                            ) : (
+                              <div className="text-right">
+                                {won && !p.redeemed && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      handleRedeem(p.id);
+                                    }}
+                                    disabled={redeeming === p.id}
+                                    className="py-2 px-5 bg-[var(--accent)] text-[var(--background)] rounded-xl text-xs font-bold hover:opacity-90 transition-all disabled:opacity-50 shadow-lg shadow-[var(--accent)]/20"
+                                  >
+                                    {redeeming === p.id
+                                      ? (locale === "sw" ? "Inakomboa..." : "Redeeming...")
+                                      : (locale === "sw" ? "💰 Komboa" : "💰 Redeem")}
+                                  </button>
+                                )}
+                                {redeemSuccess === p.id && (
+                                  <div className="text-sm text-[var(--accent)] font-bold animate-pulse">
+                                    ✓ {locale === "sw" ? "Imefanikiwa!" : "Redeemed!"}
+                                  </div>
+                                )}
+                                {p.redeemed && redeemSuccess !== p.id && (
+                                  <div className="text-xs text-[var(--muted)] font-medium">
+                                    ✓ {locale === "sw" ? "Imekombowa" : "Redeemed"}
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
