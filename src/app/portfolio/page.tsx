@@ -44,6 +44,7 @@ export default function PortfolioPage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"positions" | "history">("positions");
   const [redeeming, setRedeeming] = useState<string | null>(null);
+  const [redeemSuccess, setRedeemSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/portfolio")
@@ -71,15 +72,24 @@ export default function PortfolioPage() {
         return;
       }
 
-      // Update position in state
+      // Show success message
+      setRedeemSuccess(positionId);
+      
+      // Update position in state to mark as redeemed
       setPositions((prev) =>
         prev.map((p) => (p.id === positionId ? { ...p, redeemed: true } : p))
       );
 
-      // Refresh user balance
-      if (user) {
-        window.location.reload();
-      }
+      // Auto-hide success message after 3 seconds
+      setTimeout(() => setRedeemSuccess(null), 3000);
+
+      // Refresh portfolio data to get updated balance
+      fetch("/api/portfolio")
+        .then((r) => r.json())
+        .then((d) => {
+          setPositions(d.positions || []);
+          setTrades(d.trades || []);
+        });
     } catch (err) {
       alert(locale === "sw" ? "Kosa la mtandao" : "Network error");
     } finally {
@@ -232,8 +242,13 @@ export default function PortfolioPage() {
                                   : (locale === "sw" ? "Komboa" : "Redeem")}
                               </button>
                             )}
-                            {p.redeemed && (
-                              <div className="mt-2 text-xs text-[var(--accent)] font-medium">
+                            {redeemSuccess === p.id && (
+                              <div className="mt-2 text-xs text-[var(--accent)] font-medium animate-pulse">
+                                ✓ {locale === "sw" ? "Imefanikiwa!" : "Successfully redeemed!"}
+                              </div>
+                            )}
+                            {p.redeemed && redeemSuccess !== p.id && (
+                              <div className="mt-2 text-xs text-[var(--muted)] font-medium">
                                 ✓ {locale === "sw" ? "Imekombowa" : "Redeemed"}
                               </div>
                             )}
