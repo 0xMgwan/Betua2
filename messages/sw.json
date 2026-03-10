@@ -37,16 +37,16 @@
     },
     "howItWorks": {
       "badge": "Mchakato rahisi",
-      "title": "Anza biashara kwa dakika",
-      "subtitle": "Hakuna akaunti ya benki, hakuna kupakia kitambulisho, hakuna kusubiri. M-Pesa tu.",
+      "title": "Anzisha Soko ndani ya dakika tu",
+      "subtitle": "Hakuna akaunti ya benki, hakuna kupakia kitambulisho, hakuna kusubiri. Ni simu yako tu!",
       "step": "Hatua",
       "step1": {
         "title": "Fungua akaunti bure",
         "desc": "Jisajili kwa barua pepe yako na uchague jina la mtumiaji. Mkoba wako wa nTZS unaundwa moja kwa moja kwa sekunde."
       },
       "step2": {
-        "title": "Weka pesa kupitia M-Pesa",
-        "desc": "Weka kiasi chochote zaidi ya TZS 1,000 na nambari yako ya M-Pesa. Utapata STK push kukamilisha malipo."
+        "title": "Weka pesa kupitia Pesa za Simu",
+        "desc": "Weka kiasi chochote zaidi ya TZS 1,000 na nambari yako ya pesa za simu. Utapata STK push kukamilisha malipo."
       },
       "step3": {
         "title": "Chagua masoko yako",
@@ -54,7 +54,7 @@
       },
       "createFreeAccount": "Fungua Akaunti Bure",
       "lastWithdrawal": "Utoaji wako wa mwisho",
-      "sentToMpesa": "Imetumwa kwa M-Pesa"
+      "sentToMpesa": "Imetumwa kwa Pesa za Simu"
     },
     "trending": {
       "liveNow": "Hai sasa",
@@ -68,7 +68,7 @@
       "builtForAfrica": "Imeundwa kwa Afrika",
       "builtForAfricaDesc": "Masoko yote yana bei kwa sarafu za ndani, kuanzia Shilingi za Kitanzania. Imeundwa kwa matukio ya Kiafrika \u2014 siasa, mpira, biashara, burudani na zaidi.",
       "mobileMoney": "Pesa za Simu Asili",
-      "mobileMoneyDesc": "Weka na utoe pesa mara moja kwa M-Pesa, MTN Mobile Money, Airtel Money, na mitandao mingine ya simu ya Kiafrika. Hakuna akaunti ya benki inayohitajika.",
+      "mobileMoneyDesc": "Weka na utoe pesa mara moja kwa mitandao ya pesa za simu kama MTN, Airtel Money, Vodacom, na mingine kote Afrika. Hakuna akaunti ya benki inayohitajika.",
       "nonCustodial": "Mikoba Isiyo ya Uhifadhi",
       "nonCustodialDesc": "TZS yako iko kwenye mkoba wako wa nTZS kwenye Base. GUAP haishiki pesa zako kamwe \u2014 wewe uko katika udhibiti daima.",
       "instantPayouts": "Malipo ya Papo Hapo",
@@ -82,16 +82,16 @@
       "title": "Afrika inapenda GUAP",
       "subtitle": "Wafanyabiashara halisi, mapato halisi, hadithi halisi.",
       "quote1": "Nilipata TZS 50,000 kwenye mchezo wa Simba na Yanga. GUAP ni kitu bora zaidi kutokea kwa mashabiki wa michezo Afrika Mashariki.",
-      "quote2": "Kuweka pesa kwa M-Pesa kulichukua sekunde 30 tu. Sikudhani ningeweza kufanya biashara ya utabiri kwa simu yangu kwa urahisi hivi Afrika.",
+      "quote2": "Kuweka pesa kwa Pesa za Simu kulichukua sekunde 30 tu. Sikudhani ningeweza kufanya biashara ya utabiri kwa simu yangu kwa urahisi hivi Afrika.",
       "quote3": "Hatimaye jukwaa limeundwa kwa Afrika. Hakuna matatizo ya USD, hakuna ugumu wa kripto. Tabiri tu, pata, na utoe kupitia pesa za simu."
     },
     "mission": {
       "badge": "Dhamira yetu",
       "title1": "Imeundwa kwa Afrika.",
       "title2": "Kuanzia Tanzania.",
-      "description": "GUAP ni soko la utabiri la Afrika \u2014 limeundwa kufanya kazi na sarafu za ndani, pesa za simu, na matukio ambayo Waafrika wanajali kweli. Tunaanza Tanzania na TZS na M-Pesa, kisha kupanuka bara zima. Hakuna ubadilishaji wa USD. Hakuna ugumu wa kigeni. Maarifa ya ndani tu yanayogeuzwa kuwa mapato.",
-      "point1": "Kuanza Tanzania \u2014 kupanuka Afrika nzima",
-      "point2": "Weka na utoe pesa kwa M-Pesa, MTN, Airtel Money na zaidi",
+      "description": "GUAP ni soko la utabiri la Afrika — limeundwa kufanya kazi na sarafu za ndani, pesa za simu, na matukio ambayo Waafrika wanajali kweli. Tunaanza Tanzania na TZS na Pesa za Simu, kisha kupanuka bara zima. Hakuna ubadilishaji wa USD. Hakuna ugumu wa kigeni. Maarifa ya ndani tu yanayogeuzwa kuwa mapato.",
+      "point1": "Kuanza Tanzania — kupanuka Afrika nzima",
+      "point2": "Weka na utoe pesa kwa mitandao ya Pesa za Simu (MTN, Airtel, Vodacom na zaidi)",
       "point3": "Fanya biashara kwenye siasa, mpira, biashara na burudani ya Kiafrika",
       "point4": "Mikoba isiyo ya uhifadhi iliyolindwa na blockchain ya Base",
       "madeInAfrica": "Imeundwa Afrika"
@@ -102,7 +102,7 @@
       "subtitle": "Jiunge na wafanyabiashara 12,000+ kote Afrika wanaofanya biashara kwenye GUAP. Fungua akaunti yako kwa chini ya sekunde 60 \u2014 bure kabisa.",
       "button": "Fungua Akaunti Bure",
       "noKyc": "Hakuna KYC inayohitajika",
-      "mpesaSupported": "M-Pesa inasaidiwa",
+      "mpesaSupported": "Pesa za Simu zinasaidiwa",
       "freeToJoin": "Bure kujiunga"
     },
     "footer": {
@@ -193,15 +193,15 @@
     "deposit": "Weka Pesa",
     "withdraw": "Toa Pesa",
     "send": "Tuma",
-    "depositDescription": "Ongeza TZS kupitia M-Pesa (Vodacom, Tigo, Airtel). Tokeni zinaundwa kwenye mkoba wako.",
-    "withdrawDescription": "Toa nTZS yako kwenye M-Pesa. Tokeni zinachomwa na TZS zinatumwa kwenye simu yako.",
+    "depositDescription": "Ongeza TZS kupitia Pesa za Simu (Vodacom, Tigo, Airtel). Tokeni zinaundwa kwenye mkoba wako.",
+    "withdrawDescription": "Toa nTZS yako kwenye Pesa za Simu. Tokeni zinachomwa na TZS zinatumwa kwenye simu yako.",
     "sendDescription": "Tuma nTZS kwa mtumiaji mwingine wa GUAP. Ada ya uhamisho inatumika.",
     "amount": "Kiasi (TZS)",
-    "phone": "Nambari ya Simu ya M-Pesa",
+    "phone": "Nambari ya Simu ya Pesa za Simu",
     "phoneFormat": "Muundo: 255XXXXXXXXX (jumuisha nambari ya nchi)",
     "recipient": "Jina la Mtumiaji wa Mpokeaji",
-    "depositButton": "Weka kupitia M-Pesa",
-    "withdrawButton": "Toa kwenye M-Pesa",
+    "depositButton": "Weka kupitia Pesa za Simu",
+    "withdrawButton": "Toa kwenye Pesa za Simu",
     "sendButton": "Tuma nTZS",
     "transactions": "Historia ya Miamala",
     "noTransactions": "Hakuna miamala bado",
@@ -209,8 +209,8 @@
     "copy": "Nakili Anwani",
     "copied": "Imenakiliwa!",
     "signInToView": "Ingia ili kuona mkoba wako",
-    "depositSuccess": "Ombi la M-Pesa limetumwa! Kamilisha malipo kwenye simu yako. Hali inasasishwa moja kwa moja.",
-    "withdrawSuccess": "Utoaji umeanzishwa. Pesa zitafika kupitia M-Pesa hivi karibuni.",
+    "depositSuccess": "Ombi la Pesa za Simu limetumwa! Kamilisha malipo kwenye simu yako. Hali inasasishwa moja kwa moja.",
+    "withdrawSuccess": "Utoaji umeanzishwa. Pesa zitafika kupitia Pesa za Simu hivi karibuni.",
     "minDeposit": "Kiwango cha chini cha kuweka ni TZS 1,000",
     "autoUpdating": "Inasasisha moja kwa moja\u2026",
     "processing": "Inachakata\u2026"
@@ -295,7 +295,7 @@
     "displayNamePlaceholder": "Jina lako la kuonyesha",
     "bio": "Maelezo",
     "bioPlaceholder": "Waambie jamii kuhusu wewe",
-    "phone": "Simu (M-Pesa)",
+    "phone": "Simu (Pesa za Simu)",
     "profilePhoto": "Picha ya Wasifu",
     "upload": "Pakia",
     "orPasteUrl": "Au bandika URL ya picha…",

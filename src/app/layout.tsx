@@ -10,7 +10,7 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 export const metadata: Metadata = {
   title: "GUAP — Predict the Future. Earn GUAP.",
   description: "Trade YES or NO on African events. Politics, sports, business. Powered by mobile money. Tanzania's first prediction market.",
-  keywords: ["predictions", "Tanzania", "TZS", "markets", "GUAP", "M-Pesa", "Africa", "trading"],
+  keywords: ["predictions", "Tanzania", "TZS", "markets", "GUAP", "Mobile Money", "Africa", "trading"],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

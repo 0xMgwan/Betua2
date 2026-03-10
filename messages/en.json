@@ -38,15 +38,15 @@
     "howItWorks": {
       "badge": "Simple process",
       "title": "Up and trading in minutes",
-      "subtitle": "No bank account, no ID upload, no waiting. Just M-Pesa.",
+      "subtitle": "No bank account, no ID upload, no waiting. Just Mobile Money.",
       "step": "Step",
       "step1": {
         "title": "Create a free account",
         "desc": "Sign up with just your email and pick a username. Your nTZS smart wallet is created automatically in seconds."
       },
       "step2": {
-        "title": "Deposit via M-Pesa",
-        "desc": "Enter any amount above 1,000 TZS and your M-Pesa number. You'll get an STK push to complete the payment."
+        "title": "Deposit via Mobile Money",
+        "desc": "Enter any amount above 1,000 TZS and your mobile money number. You'll get an STK push to complete the payment."
       },
       "step3": {
         "title": "Pick your markets",
@@ -54,7 +54,7 @@
       },
       "createFreeAccount": "Create Free Account",
       "lastWithdrawal": "Your last withdrawal",
-      "sentToMpesa": "Sent to M-Pesa"
+      "sentToMpesa": "Sent to Mobile Money"
     },
     "trending": {
       "liveNow": "Live now",
@@ -68,7 +68,7 @@
       "builtForAfrica": "Built for Africa",
       "builtForAfricaDesc": "All markets priced in local currencies, starting with Tanzanian Shillings. Built for African events — politics, football, business, entertainment and beyond.",
       "mobileMoney": "Mobile Money Native",
-      "mobileMoneyDesc": "Deposit and withdraw instantly with M-Pesa, MTN Mobile Money, Airtel Money, and other African mobile networks. No bank account needed.",
+      "mobileMoneyDesc": "Deposit and withdraw instantly with Mobile Money networks like MTN, Airtel Money, Vodacom, and others across Africa. No bank account needed.",
       "nonCustodial": "Non-Custodial Wallets",
       "nonCustodialDesc": "Your TZS lives in your nTZS smart wallet on Base. GUAP never holds your funds — you're always in control.",
       "instantPayouts": "Instant Payouts",
@@ -82,16 +82,16 @@
       "title": "Africa loves GUAP",
       "subtitle": "Real traders, real earnings, real stories.",
       "quote1": "Made 50,000 TZS on the Simba vs Yanga derby. GUAP is genuinely the best thing to happen to sports fans across East Africa.",
-      "quote2": "Depositing with M-Pesa took literally 30 seconds. Never thought I'd be trading predictions with my phone this easily in Africa.",
+      "quote2": "Depositing with Mobile Money took literally 30 seconds. Never thought I'd be trading predictions with my phone this easily in Africa.",
       "quote3": "Finally a platform built for Africa. No USD headaches, no crypto complexity. Just predict, earn, and withdraw via mobile money."
     },
     "mission": {
       "badge": "Our mission",
       "title1": "Built for Africa.",
       "title2": "Starting in Tanzania.",
-      "description": "GUAP is Africa's prediction market — built to work with local currencies, mobile money, and the events Africans actually care about. We're launching in Tanzania with TZS and M-Pesa, then expanding across the continent. No USD conversion. No foreign complexity. Just local knowledge turned into earnings.",
+      "description": "GUAP is Africa's prediction market — built to work with local currencies, mobile money, and the events Africans actually care about. We're launching in Tanzania with TZS and Mobile Money, then expanding across the continent. No USD conversion. No foreign complexity. Just local knowledge turned into earnings.",
       "point1": "Launching in Tanzania — expanding across all of Africa",
-      "point2": "Deposit and withdraw with M-Pesa, MTN, Airtel Money & more",
+      "point2": "Deposit and withdraw with Mobile Money networks (MTN, Airtel, Vodacom & more)",
       "point3": "Trade on African politics, football, business & entertainment",
       "point4": "Non-custodial wallets secured by Base blockchain",
       "madeInAfrica": "Made in Africa"
@@ -102,7 +102,7 @@
       "subtitle": "Join 12,000+ traders across Africa already trading on GUAP. Create your account in under 60 seconds — completely free.",
       "button": "Create Free Account",
       "noKyc": "No KYC required",
-      "mpesaSupported": "M-Pesa supported",
+      "mpesaSupported": "Mobile Money supported",
       "freeToJoin": "Free to join"
     },
     "footer": {
@@ -193,15 +193,15 @@
     "deposit": "Deposit",
     "withdraw": "Withdraw",
     "send": "Send",
-    "depositDescription": "Add TZS via M-Pesa (Vodacom, Tigo, Airtel). Tokens minted to your wallet.",
-    "withdrawDescription": "Withdraw your nTZS to M-Pesa. Tokens are burned and TZS sent to your phone.",
+    "depositDescription": "Add TZS via Mobile Money (Vodacom, Tigo, Airtel). Tokens are minted to your wallet.",
+    "withdrawDescription": "Withdraw your nTZS to Mobile Money. Tokens are burned and TZS is sent to your phone.",
     "sendDescription": "Send nTZS to another GUAP user. Transfer fee applies.",
     "amount": "Amount (TZS)",
-    "phone": "M-Pesa Phone Number",
+    "phone": "Mobile Money Phone Number",
     "phoneFormat": "Format: 255XXXXXXXXX (include country code)",
     "recipient": "Recipient Username",
-    "depositButton": "Deposit via M-Pesa",
-    "withdrawButton": "Withdraw to M-Pesa",
+    "depositButton": "Deposit via Mobile Money",
+    "withdrawButton": "Withdraw to Mobile Money",
     "sendButton": "Send nTZS",
     "transactions": "Transaction History",
     "noTransactions": "No transactions yet",
@@ -209,8 +209,8 @@
     "copy": "Copy Address",
     "copied": "Copied!",
     "signInToView": "Sign in to view your wallet",
-    "depositSuccess": "M-Pesa prompt sent! Complete the payment on your phone. Status updates automatically.",
-    "withdrawSuccess": "Withdrawal initiated. Funds will arrive via M-Pesa shortly.",
+    "depositSuccess": "Mobile Money request sent! Complete the payment on your phone. Status will update automatically.",
+    "withdrawSuccess": "Withdrawal initiated. Funds will arrive via Mobile Money shortly.",
     "minDeposit": "Minimum deposit is 1,000 TZS",
     "autoUpdating": "Auto-updating…",
     "processing": "Processing…"
@@ -295,7 +295,7 @@
     "displayNamePlaceholder": "Your display name",
     "bio": "Bio",
     "bioPlaceholder": "Tell the community about yourself",
-    "phone": "Phone (M-Pesa)",
+    "phone": "Phone (Mobile Money)",
     "profilePhoto": "Profile Photo",
     "upload": "Upload",
     "orPasteUrl": "Or paste image URL…",
