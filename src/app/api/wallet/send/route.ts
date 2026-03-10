@@ -65,6 +65,17 @@ export async function POST(req: NextRequest) {
         amountTzs,
       });
 
+      // Create transaction record
+      await prisma.transaction.create({
+        data: {
+          userId: sender.id,
+          type: "SEND",
+          amountTzs,
+          status: "COMPLETED",
+          recipientUsername: recipient.username,
+        },
+      });
+
       return NextResponse.json({
         success: true,
         transfer: {

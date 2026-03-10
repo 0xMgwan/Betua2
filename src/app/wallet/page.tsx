@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import {
   ArrowDownLeft, ArrowUpRight, Clock, CheckCircle,
   XCircle, Copy, Check, ArrowsClockwise,
-  CurrencyCircleDollar, SmileySad,
+  CurrencyCircleDollar, SmileySad, PaperPlaneRight,
 } from "@phosphor-icons/react";
 
 interface Transaction {
@@ -20,6 +20,7 @@ interface Transaction {
   status: string;
   phone?: string | null;
   ntzsDepositId?: string | null;
+  recipientUsername?: string | null;
   createdAt: string;
 }
 
@@ -400,6 +401,8 @@ export default function WalletPage() {
 function TxRow({ tx, index }: { tx: Transaction; index: number }) {
   const { t, locale } = useLanguage();
   const isDeposit = tx.type === "DEPOSIT";
+  const isSend = tx.type === "SEND";
+  const isWithdraw = tx.type === "WITHDRAW";
 
   const statusConfig = {
     COMPLETED: { icon: <CheckCircle size={13} weight="fill" className="text-[var(--accent)]" />, label: locale === "sw" ? "Imethibitishwa" : "Confirmed", color: "text-[var(--accent)]" },
@@ -417,23 +420,28 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
       <div className="flex items-center gap-3">
         <div className={cn(
           "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-          isDeposit ? "bg-[var(--accent)]/10" : "bg-red-500/10"
+          isDeposit ? "bg-[var(--accent)]/10" : isSend ? "bg-blue-500/10" : "bg-red-500/10"
         )}>
           {isDeposit
             ? <ArrowDownLeft size={18} weight="bold" className="text-[var(--accent)]" />
+            : isSend
+            ? <PaperPlaneRight size={18} weight="bold" className="text-blue-400" />
             : <ArrowUpRight size={18} weight="bold" className="text-red-400" />}
         </div>
         <div>
-          <p className="text-sm font-semibold">{isDeposit ? t.wallet.deposit : t.wallet.withdraw}</p>
+          <p className="text-sm font-semibold">
+            {isDeposit ? t.wallet.deposit : isSend ? t.wallet.send : t.wallet.withdraw}
+          </p>
           <p className="text-xs text-[var(--muted)]">
             {new Date(tx.createdAt).toLocaleDateString(locale === "sw" ? "sw-TZ" : "en-TZ", { day: "2-digit", month: "short", year: "numeric" })}
             {tx.phone && <span className="ml-1.5 opacity-70">· {tx.phone}</span>}
+            {tx.recipientUsername && <span className="ml-1.5 opacity-70">→ @{tx.recipientUsername}</span>}
           </p>
         </div>
       </div>
 
       <div className="text-right">
-        <p className={cn("font-black text-sm tabular-nums", isDeposit ? "text-[var(--accent)]" : "text-red-400")}>
+        <p className={cn("font-black text-sm tabular-nums", isDeposit ? "text-[var(--accent)]" : isSend ? "text-blue-400" : "text-red-400")}>
           {isDeposit ? "+" : "−"}{formatTZS(tx.amountTzs)}
         </p>
         <div className={cn("flex items-center gap-1 justify-end text-xs font-medium mt-0.5", statusConfig.color)}>
