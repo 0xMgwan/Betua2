@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
 import { getSharesOut } from "@/lib/amm";
+import { notifications } from "@/lib/notifications";
 
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
 const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
