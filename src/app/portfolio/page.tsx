@@ -104,6 +104,19 @@ export default function PortfolioPage() {
   const totalValue = positions.reduce((sum, p) => sum + p.currentValue, 0);
   const totalInvested = trades.reduce((sum, t) => sum + t.amountTzs, 0);
 
+  // Total potential payout: sum of shares across all open positions
+  // Each share pays 1 TZS if the outcome is correct
+  const totalPayout = positions
+    .filter((p) => p.market.status === "OPEN")
+    .reduce((sum, p) => {
+      const isMultiOpt = !!(p.market.options && p.market.options.length >= 2);
+      if (isMultiOpt && p.optionShares) {
+        // Sum of all option shares (best case: all correct)
+        return sum + Object.values(p.optionShares).reduce((s, v) => s + v, 0);
+      }
+      return sum + p.yesShares + p.noShares;
+    }, 0);
+
   if (!user) {
     return (
       <div className="min-h-screen">
@@ -130,7 +143,7 @@ export default function PortfolioPage() {
             { label: t.portfolio.walletBalance, value: formatTZS(user.balanceTzs || 0), color: "text-[var(--accent)]" },
             { label: t.portfolio.openPositionsValue, value: formatTZS(Math.round(totalValue)), color: "" },
             { label: t.portfolio.totalInvested, value: formatTZS(totalInvested), color: "" },
-            { label: t.portfolio.openPositions, value: String(positions.length), color: "" },
+            { label: locale === "sw" ? "Malipo Yanayowezekana" : "Potential Payout", value: formatTZS(Math.round(totalPayout)), color: "text-yellow-400" },
           ].map((s, i) => (
             <motion.div
               key={s.label}
@@ -190,6 +203,11 @@ export default function PortfolioPage() {
                     : ((p.market.outcome === 1 && p.yesShares > 0) || (p.market.outcome === 0 && p.noShares > 0))
                 );
 
+                // Potential payout if correct (each share = 1 TZS)
+                const positionPayout = isMultiOpt && p.optionShares
+                  ? Object.values(p.optionShares).reduce((s, v) => s + v, 0)
+                  : p.yesShares + p.noShares;
+
                 return (
                   <motion.div
                     key={p.id}
@@ -238,6 +256,11 @@ export default function PortfolioPage() {
                           <div className="text-right flex-shrink-0">
                             <div className="font-bold text-sm">{formatTZS(Math.round(p.currentValue))}</div>
                             <div className="text-xs text-[var(--muted)] mt-0.5">{t.portfolio.currentValue}</div>
+                            {!isResolved && (
+                              <div className="text-xs text-yellow-400 font-semibold mt-1">
+                                → {formatTZS(Math.round(positionPayout))} {locale === "sw" ? "malipo" : "payout"}
+                              </div>
+                            )}
                             <div className="flex items-center justify-end gap-1 text-xs mt-1">
                               <Clock size={10} className="text-[var(--muted)]" />
                               <span className={isResolved ? "text-blue-400" : "text-[var(--muted)]"}>
