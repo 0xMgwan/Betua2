@@ -47,10 +47,11 @@ export function QuickBuyModal({ isOpen, onClose, market, side }: QuickBuyModalPr
     setError("");
 
     try {
-      const res = await fetch(`/api/markets/${market.id}/trade`, {
+      const res = await fetch("/api/trades", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          marketId: market.id,
           side,
           amountTzs: Number(amount),
         }),
