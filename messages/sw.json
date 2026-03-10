@@ -195,7 +195,7 @@
     "send": "Tuma",
     "depositDescription": "Ongeza TZS kupitia Pesa za Simu (Vodacom, Tigo, Airtel). Tokeni zinaundwa kwenye mkoba wako.",
     "withdrawDescription": "Toa nTZS yako kwenye Pesa za Simu. Tokeni zinachomwa na TZS zinatumwa kwenye simu yako.",
-    "sendDescription": "Tuma nTZS kwa mtumiaji mwingine wa GUAP. Ada ya uhamisho inatumika.",
+    "sendDescription": "Tuma nTZS kwa mtumiaji mwingine wa GUAP.",
     "amount": "Kiasi (TZS)",
     "phone": "Nambari ya Simu ya Pesa za Simu",
     "phoneFormat": "Muundo: 255XXXXXXXXX (jumuisha nambari ya nchi)",

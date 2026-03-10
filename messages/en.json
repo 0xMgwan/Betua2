@@ -195,7 +195,7 @@
     "send": "Send",
     "depositDescription": "Add TZS via Mobile Money (Vodacom, Tigo, Airtel). Tokens are minted to your wallet.",
     "withdrawDescription": "Withdraw your nTZS to Mobile Money. Tokens are burned and TZS is sent to your phone.",
-    "sendDescription": "Send nTZS to another GUAP user. Transfer fee applies.",
+    "sendDescription": "Send nTZS to another GUAP user.",
     "amount": "Amount (TZS)",
     "phone": "Mobile Money Phone Number",
     "phoneFormat": "Format: 255XXXXXXXXX (include country code)",
