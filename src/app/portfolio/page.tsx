@@ -225,7 +225,7 @@ export default function PortfolioPage() {
                                   handleRedeem(p.id);
                                 }}
                                 disabled={redeeming === p.id}
-                                className="mt-2 w-full py-1.5 px-3 bg-[var(--accent)] text-black rounded-lg text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+                                className="mt-2 w-full py-1.5 px-3 bg-[var(--accent)] text-[var(--background)] rounded-lg text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
                               >
                                 {redeeming === p.id
                                   ? (locale === "sw" ? "Inakomboa..." : "Redeeming...")
