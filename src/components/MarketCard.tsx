@@ -72,13 +72,13 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
           </div>
 
           {/* Image section with scanline effect */}
-          <div className="h-32 relative overflow-hidden bg-gradient-to-br from-[var(--accent)]/5 to-[#00b4d8]/5">
+          <div className="aspect-[16/9] relative overflow-hidden bg-black/30">
             {market.imageUrl && !imageError ? (
               <>
                 <img 
                   src={market.imageUrl} 
                   alt={market.title} 
-                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-90"
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   onError={() => setImageError(true)}
                 />
                 {/* Scanline overlay */}

@@ -290,7 +290,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
             {/* Header */}
             <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl overflow-hidden">
               {market.imageUrl && (
-                <Image src={market.imageUrl!} alt={market.title} width={800} height={192} className="w-full h-48 object-cover" />
+                <Image src={market.imageUrl!} alt={market.title} width={800} height={400} className="w-full max-h-64 object-contain bg-black/20" />
               )}
               <div className="p-6">
                 <div className="flex items-center gap-2 mb-3">
