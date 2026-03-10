@@ -54,8 +54,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No winning shares to redeem" }, { status: 400 });
     }
 
-    // Each winning share is worth 1000 TZS (1 TZS per share)
-    const payoutTzs = Math.round(winningShares * 1000);
+    // Each winning share is worth 1 TZS
+    const payoutTzs = Math.round(winningShares);
 
     // Get user
     const user = await prisma.user.findUnique({
