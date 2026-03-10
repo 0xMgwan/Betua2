@@ -12,6 +12,11 @@ export const metadata: Metadata = {
   title: "GUAP — Predict the Future. Earn GUAP.",
   description: "Trade YES or NO on African events. Politics, sports, business. Powered by mobile money. Tanzania's first prediction market.",
   keywords: ["predictions", "Tanzania", "TZS", "markets", "GUAP", "Mobile Money", "Africa", "trading"],
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
