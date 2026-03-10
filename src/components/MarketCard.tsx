@@ -146,8 +146,8 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                 <span className="flex items-center gap-1">
                   <span className="text-[var(--accent)]">↗</span>
                   <img src="/ntzs.png" alt="nTZS" className="w-3 h-3 inline-block opacity-70" />
-                  <span className="hidden xs:inline">{formatTZS(market.totalVolume)}</span>
-                  <span className="xs:hidden">{market.totalVolume >= 1000 ? `${(market.totalVolume / 1000).toFixed(1)}K` : market.totalVolume}</span>
+                  <span className="hidden xs:inline">TSh {formatTZS(market.totalVolume).replace('TSh ', '')}</span>
+                  <span className="xs:hidden">TSh {market.totalVolume >= 1000 ? `${(market.totalVolume / 1000).toFixed(1)}K` : market.totalVolume}</span>
                 </span>
                 {market._count && (
                   <span className="flex items-center gap-1">

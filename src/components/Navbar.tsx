@@ -21,7 +21,15 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default");
+  
+  useEffect(() => {
+    setMounted(true);
+    // Check notification permission status
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setNotificationPermission(Notification.permission);
+    }
+  }, []);
 
   const NAV_LINKS = [
     { href: "/markets", label: t.nav.markets, icon: ChartBar },
@@ -76,21 +84,34 @@ export function Navbar() {
           {user && (
             <button
               onClick={async () => {
-                const { notifications } = await import("@/lib/notifications");
-                const permission = await notifications.requestPermission();
-                if (permission === "granted") {
-                  notifications.showNotification({
-                    title: "🔔 Notifications Enabled!",
-                    body: "You'll now receive updates for trades, resolutions, and more.",
-                  });
+                try {
+                  const { notifications } = await import("@/lib/notifications");
+                  await notifications.initialize();
+                  const permission = await notifications.requestPermission();
+                  setNotificationPermission(permission);
+                  
+                  if (permission === "granted") {
+                    await notifications.showNotification({
+                      title: "🔔 Notifications Enabled!",
+                      body: "You'll now receive updates for trades, resolutions, and more.",
+                    });
+                  } else if (permission === "denied") {
+                    alert(locale === "sw" 
+                      ? "Arifa zimezuiwa. Tafadhali ruhusu arifa katika mipangilio ya kivinjari chako."
+                      : "Notifications blocked. Please enable notifications in your browser settings.");
+                  }
+                } catch (error) {
+                  console.error("Notification error:", error);
                 }
               }}
               className="relative p-2 border border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[var(--accent)] transition-all"
-              title="Enable notifications"
+              title={notificationPermission === "granted" ? "Notifications enabled" : "Enable notifications"}
             >
-              <Bell size={17} weight="duotone" />
-              {/* Badge - show if notifications not enabled */}
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-[var(--accent)] rounded-full animate-pulse"></span>
+              <Bell size={17} weight={notificationPermission === "granted" ? "fill" : "duotone"} />
+              {/* Badge - only show if notifications not granted */}
+              {notificationPermission !== "granted" && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-[var(--accent)] rounded-full animate-pulse"></span>
+              )}
             </button>
           )}
 
