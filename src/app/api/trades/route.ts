@@ -97,55 +97,73 @@ export async function POST(req: NextRequest) {
     }
 
     // Update market pools + position + record trade + transaction + deduct balance atomically
-    const [updatedMarket, , trade] = await prisma.$transaction([
-      prisma.market.update({
-        where: { id: marketId },
-        data: {
-          yesPool: side === "YES" ? Math.round(newPoolOut) : Math.round(newPoolIn),
-          noPool: side === "NO" ? Math.round(newPoolOut) : Math.round(newPoolIn),
-          totalVolume: { increment: amountTzs },
-        },
-      }),
-      prisma.position.upsert({
-        where: { userId_marketId: { userId: session.userId, marketId } },
-        create: {
-          userId: session.userId,
-          marketId,
-          yesShares: side === "YES" ? Math.round(shares) : 0,
-          noShares: side === "NO" ? Math.round(shares) : 0,
-        },
-        update: {
-          yesShares: side === "YES" ? { increment: Math.round(shares) } : undefined,
-          noShares: side === "NO" ? { increment: Math.round(shares) } : undefined,
-        },
-      }),
-      prisma.trade.create({
-        data: {
-          userId: session.userId,
-          marketId,
-          side,
-          amountTzs,
-          shares: Math.round(shares),
-          price: avgPrice,
-          ntzsTransferId,
-        },
-      }),
-      prisma.transaction.create({
-        data: {
-          userId: session.userId,
-          type: "BUY_SHARES",
-          amountTzs,
-          status: "COMPLETED",
-          recipientUsername: `${market.title} (${side})`,
-        },
-      }),
-    ]);
-
-    // Deduct balance from local user record
-    await prisma.user.update({
-      where: { id: session.userId },
-      data: { balanceTzs: { decrement: amountTzs } },
-    });
+    let updatedMarket, trade;
+    try {
+      [updatedMarket, , trade] = await prisma.$transaction([
+        prisma.market.update({
+          where: { id: marketId },
+          data: {
+            yesPool: side === "YES" ? Math.round(newPoolOut) : Math.round(newPoolIn),
+            noPool: side === "NO" ? Math.round(newPoolOut) : Math.round(newPoolIn),
+            totalVolume: { increment: amountTzs },
+          },
+        }),
+        prisma.position.upsert({
+          where: { userId_marketId: { userId: session.userId, marketId } },
+          create: {
+            userId: session.userId,
+            marketId,
+            yesShares: side === "YES" ? Math.round(shares) : 0,
+            noShares: side === "NO" ? Math.round(shares) : 0,
+          },
+          update: {
+            yesShares: side === "YES" ? { increment: Math.round(shares) } : undefined,
+            noShares: side === "NO" ? { increment: Math.round(shares) } : undefined,
+          },
+        }),
+        prisma.trade.create({
+          data: {
+            userId: session.userId,
+            marketId,
+            side,
+            amountTzs,
+            shares: Math.round(shares),
+            price: avgPrice,
+            ntzsTransferId,
+          },
+        }),
+        prisma.transaction.create({
+          data: {
+            userId: session.userId,
+            type: "BUY_SHARES",
+            amountTzs,
+            status: "COMPLETED",
+            recipientUsername: `${market.title} (${side})`,
+          },
+        }),
+        prisma.user.update({
+          where: { id: session.userId },
+          data: { balanceTzs: { decrement: amountTzs } },
+        }),
+      ]);
+    } catch (dbErr) {
+      // Database transaction failed - refund the user via nTZS
+      console.error("Database transaction failed, refunding user:", dbErr);
+      if (PLATFORM_NTZS_USER_ID && ntzsTransferId) {
+        try {
+          await ntzs.transfers.create({
+            fromUserId: PLATFORM_NTZS_USER_ID,
+            toUserId: user.ntzsUserId!,
+            amountTzs,
+          });
+          console.log(`Refunded ${amountTzs} TZS to user ${user.ntzsUserId}`);
+        } catch (refundErr) {
+          console.error("CRITICAL: Refund failed after DB error:", refundErr);
+          // Log this for manual intervention
+        }
+      }
+      throw dbErr; // Re-throw to return error to user
+    }
 
     return NextResponse.json({
       trade,
