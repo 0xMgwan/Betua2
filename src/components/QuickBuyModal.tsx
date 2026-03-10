@@ -27,6 +27,7 @@ export function QuickBuyModal({ isOpen, onClose, market, side }: QuickBuyModalPr
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
   const price = side === "YES" ? market.price.yes : market.price.no;
   const shares = amount ? Math.floor(Number(amount) / price) : 0;
@@ -64,9 +65,12 @@ export function QuickBuyModal({ isOpen, onClose, market, side }: QuickBuyModalPr
         return;
       }
 
-      // Success - redirect to market page
-      router.push(`/markets/${market.id}`);
-      onClose();
+      // Success - show message and redirect after 2 seconds
+      setSuccess(true);
+      setTimeout(() => {
+        router.push(`/markets/${market.id}`);
+        onClose();
+      }, 2000);
     } catch (err) {
       setError(locale === "sw" ? "Kosa la mtandao" : "Network error");
     } finally {
@@ -172,15 +176,35 @@ export function QuickBuyModal({ isOpen, onClose, market, side }: QuickBuyModalPr
               </div>
             )}
 
+            {/* Success Message */}
+            {success && (
+              <div className="mb-4 p-4 bg-[#00e5a0]/10 border border-[#00e5a0]/20 rounded-xl">
+                <div className="flex items-center gap-2 text-[#00e5a0] mb-2">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="font-bold">
+                    {locale === "sw" ? "Imefanikiwa!" : "Success!"}
+                  </span>
+                </div>
+                <p className="text-sm text-[var(--foreground)]">
+                  {locale === "sw" 
+                    ? `Umenunua hisa ${shares} za ${side}. Unaelekezwa...`
+                    : `Bought ${shares} ${side} shares. Redirecting...`}
+                </p>
+              </div>
+            )}
+
             {/* Error */}
-            {error && (
+            {error && !success && (
               <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
                 {error}
               </div>
             )}
 
             {/* Actions */}
-            <div className="flex gap-3">
+            {!success && (
+              <div className="flex gap-3">
               <button
                 onClick={onClose}
                 className="flex-1 py-3 px-4 border border-[var(--card-border)] rounded-xl font-semibold text-sm hover:bg-[var(--background)] transition-colors"
@@ -200,7 +224,8 @@ export function QuickBuyModal({ isOpen, onClose, market, side }: QuickBuyModalPr
                   ? (locale === "sw" ? "Inaendelea..." : "Processing...")
                   : (locale === "sw" ? "Nunua" : "Buy") + ` ${side}`}
               </button>
-            </div>
+              </div>
+            )}
           </motion.div>
         </>
       )}

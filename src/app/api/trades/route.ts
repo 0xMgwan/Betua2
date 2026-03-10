@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Update market pools + position + record trade + deduct balance atomically
+    // Update market pools + position + record trade + transaction + deduct balance atomically
     const [updatedMarket, , trade] = await prisma.$transaction([
       prisma.market.update({
         where: { id: marketId },
@@ -128,6 +128,15 @@ export async function POST(req: NextRequest) {
           shares: Math.round(shares),
           price: avgPrice,
           ntzsTransferId,
+        },
+      }),
+      prisma.transaction.create({
+        data: {
+          userId: session.userId,
+          type: "BUY_SHARES",
+          amountTzs,
+          status: "COMPLETED",
+          recipientUsername: `${market.title} (${side})`,
         },
       }),
     ]);
