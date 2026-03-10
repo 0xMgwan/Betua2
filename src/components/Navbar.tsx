@@ -95,11 +95,8 @@ export function Navbar() {
                       title: "🔔 Notifications Enabled!",
                       body: "You'll now receive updates for trades, resolutions, and more.",
                     });
-                  } else if (permission === "denied") {
-                    alert(locale === "sw" 
-                      ? "Arifa zimezuiwa. Tafadhali ruhusu arifa katika mipangilio ya kivinjari chako."
-                      : "Notifications blocked. Please enable notifications in your browser settings.");
                   }
+                  // If denied, just silently keep the badge visible - user can try again later
                 } catch (error) {
                   console.error("Notification error:", error);
                 }
