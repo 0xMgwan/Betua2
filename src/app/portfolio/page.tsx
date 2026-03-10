@@ -14,6 +14,7 @@ interface Position {
   yesShares: number;
   noShares: number;
   currentValue: number;
+  redeemed: boolean;
   price: { yes: number; no: number };
   market: {
     id: string;
@@ -42,6 +43,7 @@ export default function PortfolioPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"positions" | "history">("positions");
+  const [redeeming, setRedeeming] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/portfolio")
@@ -52,6 +54,38 @@ export default function PortfolioPage() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  const handleRedeem = async (positionId: string) => {
+    setRedeeming(positionId);
+    try {
+      const res = await fetch("/api/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ positionId }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || (locale === "sw" ? "Imeshindwa" : "Failed"));
+        return;
+      }
+
+      // Update position in state
+      setPositions((prev) =>
+        prev.map((p) => (p.id === positionId ? { ...p, redeemed: true } : p))
+      );
+
+      // Refresh user balance
+      if (user) {
+        window.location.reload();
+      }
+    } catch (err) {
+      alert(locale === "sw" ? "Kosa la mtandao" : "Network error");
+    } finally {
+      setRedeeming(null);
+    }
+  };
 
   const totalValue = positions.reduce((sum, p) => sum + p.currentValue, 0);
   const totalInvested = trades.reduce((sum, t) => sum + t.amountTzs, 0);
@@ -184,6 +218,25 @@ export default function PortfolioPage() {
                                 {isResolved ? t.portfolio.resolved : t.portfolio.open}
                               </span>
                             </div>
+                            {isResolved && won && !p.redeemed && (
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleRedeem(p.id);
+                                }}
+                                disabled={redeeming === p.id}
+                                className="mt-2 w-full py-1.5 px-3 bg-[var(--accent)] text-black rounded-lg text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+                              >
+                                {redeeming === p.id
+                                  ? (locale === "sw" ? "Inakomboa..." : "Redeeming...")
+                                  : (locale === "sw" ? "Komboa" : "Redeem")}
+                              </button>
+                            )}
+                            {p.redeemed && (
+                              <div className="mt-2 text-xs text-[var(--accent)] font-medium">
+                                ✓ {locale === "sw" ? "Imekombowa" : "Redeemed"}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>

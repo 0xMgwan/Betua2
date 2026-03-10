@@ -59,6 +59,7 @@ model Position {
   market    Market   @relation(fields: [marketId], references: [id])
   yesShares Int      @default(0)
   noShares  Int      @default(0)
+  redeemed  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
