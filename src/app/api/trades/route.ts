@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
-import { getSharesOut } from "@/lib/amm";
+import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
 import { notifications } from "@/lib/notifications";
 
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
@@ -14,9 +14,9 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const { marketId, side, amountTzs } = await req.json();
+    const { marketId, side, amountTzs, optionIndex } = await req.json();
 
-    if (!marketId || !side || !amountTzs || amountTzs < 100) {
+    if (!marketId || !amountTzs || amountTzs < 100) {
       return NextResponse.json({ error: "Minimum trade is 100 TZS" }, { status: 400 });
     }
 
@@ -28,6 +28,19 @@ export async function POST(req: NextRequest) {
     if (!market) return NextResponse.json({ error: "Market not found" }, { status: 404 });
     if (market.status !== "OPEN") return NextResponse.json({ error: "Market is not open" }, { status: 400 });
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mkt = market as any;
+    const isMultiOption = Array.isArray(mkt.options) && mkt.options.length >= 2;
+
+    // Validate side/optionIndex
+    if (isMultiOption) {
+      if (optionIndex === undefined || optionIndex < 0 || optionIndex >= mkt.options.length) {
+        return NextResponse.json({ error: "Invalid option selected" }, { status: 400 });
+      }
+    } else if (!side || (side !== "YES" && side !== "NO")) {
+      return NextResponse.json({ error: "Invalid side" }, { status: 400 });
+    }
 
     // Enforce wallet balance
     if (user.ntzsUserId) {
@@ -59,10 +72,29 @@ export async function POST(req: NextRequest) {
     // ─────────────────────────────────────────────────────────────────────
 
     // Calculate shares via AMM using net trade amount (after fee)
-    const { shares, newPoolIn, newPoolOut, avgPrice } =
-      side === "YES"
-        ? getSharesOut(tradeAmount, market.noPool, market.yesPool)
-        : getSharesOut(tradeAmount, market.yesPool, market.noPool);
+    let shares: number;
+    let avgPrice: number;
+    let newPoolIn: number | undefined;
+    let newPoolOut: number | undefined;
+    let newPools: number[] | undefined;
+    const tradeSide = isMultiOption ? (mkt.options as string[])[optionIndex] : side;
+
+    if (isMultiOption) {
+      const pools = mkt.optionPools as number[];
+      const result = getMultiOptionSharesOut(tradeAmount, optionIndex, pools);
+      shares = result.shares;
+      avgPrice = result.avgPrice;
+      newPools = result.newPools;
+    } else {
+      const result =
+        side === "YES"
+          ? getSharesOut(tradeAmount, market.noPool, market.yesPool)
+          : getSharesOut(tradeAmount, market.yesPool, market.noPool);
+      shares = result.shares;
+      avgPrice = result.avgPrice;
+      newPoolIn = Math.round(result.newPoolIn);
+      newPoolOut = Math.round(result.newPoolOut);
+    }
 
     let ntzsTransferId: string | undefined;
 
@@ -92,9 +124,55 @@ export async function POST(req: NextRequest) {
           amountTzs: feeAmount,
         });
       } catch (feeErr) {
-        // Non-fatal: log but don't fail the trade
         console.error("Fee transfer failed (non-fatal):", feeErr);
       }
+    }
+
+    // Build market update data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const marketUpdateData: any = { totalVolume: { increment: amountTzs } };
+    if (isMultiOption && newPools) {
+      marketUpdateData.optionPools = newPools;
+    } else {
+      marketUpdateData.yesPool = side === "YES" ? newPoolOut : newPoolIn;
+      marketUpdateData.noPool = side === "NO" ? newPoolOut : newPoolIn;
+    }
+
+    // Build position upsert data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let positionCreate: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let positionUpdate: any;
+
+    if (isMultiOption) {
+      // For multi-option, store shares in optionShares JSON: { "0": 50, "1": 30 }
+      const existingPosition = await prisma.position.findUnique({
+        where: { userId_marketId: { userId: session.userId, marketId } },
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const existingShares = (existingPosition as any)?.optionShares as Record<string, number> || {};
+      const updatedShares = { ...existingShares };
+      updatedShares[String(optionIndex)] = (updatedShares[String(optionIndex)] || 0) + Math.round(shares);
+
+      positionCreate = {
+        userId: session.userId,
+        marketId,
+        optionShares: updatedShares,
+      };
+      positionUpdate = {
+        optionShares: updatedShares,
+      };
+    } else {
+      positionCreate = {
+        userId: session.userId,
+        marketId,
+        yesShares: side === "YES" ? Math.round(shares) : 0,
+        noShares: side === "NO" ? Math.round(shares) : 0,
+      };
+      positionUpdate = {
+        yesShares: side === "YES" ? { increment: Math.round(shares) } : undefined,
+        noShares: side === "NO" ? { increment: Math.round(shares) } : undefined,
+      };
     }
 
     // Update market pools + position + record trade + transaction + deduct balance atomically
@@ -103,30 +181,18 @@ export async function POST(req: NextRequest) {
       [updatedMarket, , trade] = await prisma.$transaction([
         prisma.market.update({
           where: { id: marketId },
-          data: {
-            yesPool: side === "YES" ? Math.round(newPoolOut) : Math.round(newPoolIn),
-            noPool: side === "NO" ? Math.round(newPoolOut) : Math.round(newPoolIn),
-            totalVolume: { increment: amountTzs },
-          },
+          data: marketUpdateData,
         }),
         prisma.position.upsert({
           where: { userId_marketId: { userId: session.userId, marketId } },
-          create: {
-            userId: session.userId,
-            marketId,
-            yesShares: side === "YES" ? Math.round(shares) : 0,
-            noShares: side === "NO" ? Math.round(shares) : 0,
-          },
-          update: {
-            yesShares: side === "YES" ? { increment: Math.round(shares) } : undefined,
-            noShares: side === "NO" ? { increment: Math.round(shares) } : undefined,
-          },
+          create: positionCreate,
+          update: positionUpdate,
         }),
         prisma.trade.create({
           data: {
             userId: session.userId,
             marketId,
-            side,
+            side: tradeSide,
             amountTzs,
             shares: Math.round(shares),
             price: avgPrice,
@@ -139,7 +205,7 @@ export async function POST(req: NextRequest) {
             type: "BUY_SHARES",
             amountTzs,
             status: "COMPLETED",
-            recipientUsername: `${market.title} (${side})`,
+            recipientUsername: `${market.title} (${tradeSide})`,
           },
         }),
         prisma.user.update({
@@ -148,7 +214,6 @@ export async function POST(req: NextRequest) {
         }),
       ]);
     } catch (dbErr) {
-      // Database transaction failed - refund the user via nTZS
       console.error("Database transaction failed, refunding user:", dbErr);
       if (PLATFORM_NTZS_USER_ID && ntzsTransferId) {
         try {
@@ -160,10 +225,9 @@ export async function POST(req: NextRequest) {
           console.log(`Refunded ${amountTzs} TZS to user ${user.ntzsUserId}`);
         } catch (refundErr) {
           console.error("CRITICAL: Refund failed after DB error:", refundErr);
-          // Log this for manual intervention
         }
       }
-      throw dbErr; // Re-throw to return error to user
+      throw dbErr;
     }
 
     return NextResponse.json({
@@ -176,6 +240,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error("Trade error:", err);
-    return NextResponse.json({ error: "Trade failed. Please try again." }, { status: 500 });
+    const msg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: "Trade failed. Please try again.", debug: msg }, { status: 500 });
   }
 }

@@ -37,12 +37,15 @@ model Market {
   creator      User         @relation("MarketCreator", fields: [creatorId], references: [id])
   status       String       @default("OPEN")
   outcome      Int?
+  outcomeLabel String?
   resolvesAt   DateTime
   resolvedAt   DateTime?
   totalVolume  Int          @default(0)
   yesPool      Int          @default(100000)
   noPool       Int          @default(100000)
   liquidity    Int          @default(200000)
+  options      Json?
+  optionPools  Json?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
@@ -52,16 +55,17 @@ model Market {
 }
 
 model Position {
-  id        String   @id @default(cuid())
-  userId    String
-  marketId  String
-  user      User     @relation(fields: [userId], references: [id])
-  market    Market   @relation(fields: [marketId], references: [id])
-  yesShares Int      @default(0)
-  noShares  Int      @default(0)
-  redeemed  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  userId       String
+  marketId     String
+  user         User     @relation(fields: [userId], references: [id])
+  market       Market   @relation(fields: [marketId], references: [id])
+  yesShares    Int      @default(0)
+  noShares     Int      @default(0)
+  optionShares Json?
+  redeemed     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([userId, marketId])
 }

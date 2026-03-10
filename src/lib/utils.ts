@@ -45,5 +45,6 @@ export const CATEGORIES = [
   "Technology",
   "Science",
   "Crypto",
+  "Weather",
   "Other",
 ];

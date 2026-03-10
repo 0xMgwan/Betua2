@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { getPrice } from "@/lib/amm";
+import { getPrice, getMultiOptionPrices } from "@/lib/amm";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
 
 // Fee configuration
@@ -30,9 +30,13 @@ export async function GET(req: NextRequest) {
     take: 50,
   });
 
-  const enriched = markets.map((m: typeof markets[number]) => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const enriched = markets.map((m: any) => ({
     ...m,
     price: getPrice(m.yesPool, m.noPool),
+    optionPrices: m.options && m.optionPools
+      ? getMultiOptionPrices(m.optionPools as number[])
+      : null,
   }));
 
   return NextResponse.json({ markets: enriched });
@@ -44,7 +48,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { title, description, category, resolvesAt, imageUrl, pythSymbol, pythTargetPrice, pythOperator } = body;
+    const { title, description, category, resolvesAt, imageUrl, pythSymbol, pythTargetPrice, pythOperator, options } = body;
 
     // For crypto markets with Pyth config, title can be auto-generated
     const effectiveTitle = title ||
@@ -138,6 +142,18 @@ export async function POST(req: NextRequest) {
       ? `${description}\n\n[PYTH:${pythSymbol}:${pythTargetPrice}:${pythOperator || "above"}]`
       : description;
 
+    // Validate custom options if provided
+    const isMultiOption = Array.isArray(options) && options.length >= 2;
+    if (isMultiOption && options.length > 10) {
+      return NextResponse.json({ error: "Maximum 10 options allowed" }, { status: 400 });
+    }
+
+    // For multi-option: create equal pools per option
+    const POOL_PER_OPTION = 100000;
+    const optionPools = isMultiOption
+      ? options.map(() => POOL_PER_OPTION)
+      : null;
+
     const market = await prisma.market.create({
       data: {
         title: effectiveTitle,
@@ -146,9 +162,11 @@ export async function POST(req: NextRequest) {
         imageUrl,
         resolvesAt: new Date(resolvesAt),
         creatorId: session.userId,
-        yesPool: 100000,
-        noPool: 100000,
-        liquidity: 200000,
+        yesPool: isMultiOption ? 0 : 100000,
+        noPool: isMultiOption ? 0 : 100000,
+        liquidity: isMultiOption ? POOL_PER_OPTION * options.length : 200000,
+        options: isMultiOption ? options : undefined,
+        optionPools: optionPools || undefined,
       },
     });
 

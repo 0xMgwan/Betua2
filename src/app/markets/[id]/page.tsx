@@ -5,7 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS, formatNumber, timeUntil } from "@/lib/utils";
-import { getSharesOut } from "@/lib/amm";
+import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
@@ -27,8 +27,12 @@ interface MarketData {
   resolvesAt: string;
   status: string;
   outcome?: number | null;
+  outcomeLabel?: string | null;
   creatorId: string;
   price: { yes: number; no: number };
+  options?: string[] | null;
+  optionPools?: number[] | null;
+  optionPrices?: number[] | null;
   creator: { username: string; displayName?: string | null };
   _count: { trades: number; comments: number };
   trades: { id: string; side: string; amountTzs: number; shares: number; price: number; createdAt: string; user: { username: string } }[];
@@ -45,6 +49,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
   // Trade state
   const [side, setSide] = useState<"YES" | "NO">("YES");
+  const [selectedOption, setSelectedOption] = useState<number>(0);
   const [amount, setAmount] = useState("");
   const [tradeLoading, setTradeLoading] = useState(false);
   const [tradeError, setTradeError] = useState("");
@@ -63,6 +68,8 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
   useEffect(() => { loadMarket(); }, [id]);
 
+  const isMultiOption = !!(market?.options && market.options.length >= 2);
+
   async function handleTrade(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
@@ -70,16 +77,21 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
     setTradeError("");
     setTradeSuccess("");
     try {
+      const tradeBody = isMultiOption
+        ? { marketId: id, optionIndex: selectedOption, amountTzs: Number(amount) }
+        : { marketId: id, side, amountTzs: Number(amount) };
+
       const res = await fetch("/api/trades", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ marketId: id, side, amountTzs: Number(amount) }),
+        body: JSON.stringify(tradeBody),
       });
       const data = await res.json();
       if (!res.ok) {
         setTradeError(data.error || "Trade failed");
       } else {
-        setTradeSuccess(`Got ${Math.round(data.shares)} ${side} shares!`);
+        const label = isMultiOption ? market!.options![selectedOption] : side;
+        setTradeSuccess(`Got ${Math.round(data.shares)} ${label} shares!`);
         setAmount("");
         await loadMarket();
         fetchUser();
@@ -119,17 +131,34 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
     loadMarket();
   }
 
+  async function handleResolveOption(optIdx: number) {
+    if (!market?.options) return;
+    if (!confirm(`Resolve as "${market.options[optIdx]}"?`)) return;
+    await fetch(`/api/markets/${id}/resolve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ optionIndex: optIdx }),
+    });
+    loadMarket();
+  }
+
   // Estimate shares for current input
   let estimatedShares = 0;
   let estimatedPrice = 0;
   if (market && amount && Number(amount) >= 100) {
     try {
-      const result =
-        side === "YES"
-          ? getSharesOut(Number(amount), market.noPool, market.yesPool)
-          : getSharesOut(Number(amount), market.yesPool, market.noPool);
-      estimatedShares = Math.round(result.shares);
-      estimatedPrice = result.avgPrice;
+      if (isMultiOption && market.optionPools) {
+        const result = getMultiOptionSharesOut(Number(amount), selectedOption, market.optionPools);
+        estimatedShares = Math.round(result.shares);
+        estimatedPrice = result.avgPrice;
+      } else {
+        const result =
+          side === "YES"
+            ? getSharesOut(Number(amount), market.noPool, market.yesPool)
+            : getSharesOut(Number(amount), market.yesPool, market.noPool);
+        estimatedShares = Math.round(result.shares);
+        estimatedPrice = result.avgPrice;
+      }
     } catch {}
   }
 
@@ -177,7 +206,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   </span>
                   {isResolved && (
                     <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-xs rounded-full border border-blue-500/20">
-                      {t.market.resolved}: {market.outcome === 1 ? t.market.yes : t.market.no}
+                      {t.market.resolved}: {isMultiOption ? market.outcomeLabel : (market.outcome === 1 ? t.market.yes : t.market.no)}
                     </span>
                   )}
                   {!isResolved && (
@@ -251,36 +280,79 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
             {/* Price bars */}
             <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl p-6">
               <h2 className="font-semibold mb-4">{t.market.currentProbability}</h2>
-              <div className="space-y-3">
-                <div>
-                  <div className="flex justify-between text-sm mb-1.5">
-                    <span className="font-bold text-[#00e5a0]">YES</span>
-                    <span className="font-bold text-[#00e5a0]">{yesPct}%</span>
+              {isMultiOption && market.options && market.optionPrices ? (
+                <div className="space-y-3">
+                  {market.options.map((opt, i) => {
+                    const pct = Math.round((market.optionPrices![i] || 0) * 100);
+                    const colors = [
+                      "from-[#00e5a0] to-[#00c896]",
+                      "from-[#00b4d8] to-[#0096c7]",
+                      "from-[#f59e0b] to-[#d97706]",
+                      "from-[#ef4444] to-[#dc2626]",
+                      "from-[#8b5cf6] to-[#7c3aed]",
+                      "from-[#ec4899] to-[#db2777]",
+                      "from-[#14b8a6] to-[#0d9488]",
+                      "from-[#f97316] to-[#ea580c]",
+                      "from-[#6366f1] to-[#4f46e5]",
+                      "from-[#84cc16] to-[#65a30d]",
+                    ];
+                    const textColors = [
+                      "text-[#00e5a0]", "text-[#00b4d8]", "text-[#f59e0b]", "text-red-400",
+                      "text-[#8b5cf6]", "text-[#ec4899]", "text-[#14b8a6]", "text-[#f97316]",
+                      "text-[#6366f1]", "text-[#84cc16]",
+                    ];
+                    return (
+                      <div key={i}>
+                        <div className="flex justify-between text-sm mb-1.5">
+                          <span className={cn("font-bold", textColors[i % textColors.length])}>
+                            {String.fromCharCode(65 + i)}. {opt}
+                          </span>
+                          <span className={cn("font-bold", textColors[i % textColors.length])}>{pct}%</span>
+                        </div>
+                        <div className="h-4 bg-[var(--background)] rounded-full overflow-hidden">
+                          <motion.div
+                            className={cn("h-full rounded-full bg-gradient-to-r", colors[i % colors.length])}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${pct}%` }}
+                            transition={{ duration: 0.6, ease: "easeOut" }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1.5">
+                      <span className="font-bold text-[#00e5a0]">YES</span>
+                      <span className="font-bold text-[#00e5a0]">{yesPct}%</span>
+                    </div>
+                    <div className="h-4 bg-[var(--background)] rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full rounded-full bg-gradient-to-r from-[#00e5a0] to-[#00c896]"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${yesPct}%` }}
+                        transition={{ duration: 0.6, ease: "easeOut" }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-4 bg-[var(--background)] rounded-full overflow-hidden">
-                    <motion.div
-                      className="h-full rounded-full bg-gradient-to-r from-[#00e5a0] to-[#00c896]"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${yesPct}%` }}
-                      transition={{ duration: 0.6, ease: "easeOut" }}
-                    />
+                  <div>
+                    <div className="flex justify-between text-sm mb-1.5">
+                      <span className="font-bold text-red-400">NO</span>
+                      <span className="font-bold text-red-400">{noPct}%</span>
+                    </div>
+                    <div className="h-4 bg-[var(--background)] rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full rounded-full bg-gradient-to-r from-red-500 to-red-600"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${noPct}%` }}
+                        transition={{ duration: 0.6, ease: "easeOut" }}
+                      />
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1.5">
-                    <span className="font-bold text-red-400">NO</span>
-                    <span className="font-bold text-red-400">{noPct}%</span>
-                  </div>
-                  <div className="h-4 bg-[var(--background)] rounded-full overflow-hidden">
-                    <motion.div
-                      className="h-full rounded-full bg-gradient-to-r from-red-500 to-red-600"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${noPct}%` }}
-                      transition={{ duration: 0.6, ease: "easeOut" }}
-                    />
-                  </div>
-                </div>
-              </div>
+              )}
 
               <div className="grid grid-cols-3 gap-3 mt-6 text-center text-sm">
                 <div>
@@ -308,22 +380,37 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                 <p className="text-sm text-[var(--muted)] mb-4">
                   {locale === "sw" ? "Mara ikitaruliwa, washindi watalipwa moja kwa moja." : "Once resolved, winners receive their payouts automatically."}
                 </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => handleResolve(true)}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#00e5a0]/10 border border-[#00e5a0]/30 text-[#00e5a0] rounded-xl font-semibold text-sm hover:bg-[#00e5a0]/20 transition-all"
-                  >
-                    <CheckCircle size={16} />
-                    {locale === "sw" ? "Tatua NDIO" : "Resolve YES"}
-                  </button>
-                  <button
-                    onClick={() => handleResolve(false)}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl font-semibold text-sm hover:bg-red-500/20 transition-all"
-                  >
-                    <XCircle size={16} />
-                    {locale === "sw" ? "Tatua HAPANA" : "Resolve NO"}
-                  </button>
-                </div>
+                {isMultiOption && market.options ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {market.options.map((opt, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleResolveOption(i)}
+                        className="flex items-center justify-center gap-2 py-2.5 bg-[var(--accent)]/10 border border-[var(--accent)]/30 text-[var(--accent)] rounded-xl font-semibold text-sm hover:bg-[var(--accent)]/20 transition-all"
+                      >
+                        <CheckCircle size={16} />
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleResolve(true)}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#00e5a0]/10 border border-[#00e5a0]/30 text-[#00e5a0] rounded-xl font-semibold text-sm hover:bg-[#00e5a0]/20 transition-all"
+                    >
+                      <CheckCircle size={16} />
+                      {locale === "sw" ? "Tatua NDIO" : "Resolve YES"}
+                    </button>
+                    <button
+                      onClick={() => handleResolve(false)}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl font-semibold text-sm hover:bg-red-500/20 transition-all"
+                    >
+                      <XCircle size={16} />
+                      {locale === "sw" ? "Tatua HAPANA" : "Resolve NO"}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -428,8 +515,8 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   <CheckCircle size={32} className="mx-auto mb-2 text-[var(--accent)]" />
                   <p className="font-medium">{locale === "sw" ? "Soko Limetatuliwa" : "Market Resolved"}</p>
                   <p className="text-sm mt-1">
-                    {t.market.outcome}: <strong className={market.outcome === 1 ? "text-[#00e5a0]" : "text-red-400"}>
-                      {market.outcome === 1 ? t.market.yes : t.market.no}
+                    {t.market.outcome}: <strong className="text-[#00e5a0]">
+                      {isMultiOption ? market.outcomeLabel : (market.outcome === 1 ? t.market.yes : t.market.no)}
                     </strong>
                   </p>
                 </div>
@@ -446,25 +533,54 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
               ) : (
                 <form onSubmit={handleTrade} className="space-y-4">
                   {/* Side selector */}
-                  <div className="grid grid-cols-2 gap-2">
-                    {(["YES", "NO"] as const).map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => setSide(s)}
-                        className={cn(
-                          "py-3 rounded-xl font-bold text-sm transition-all",
-                          side === s
-                            ? s === "YES"
-                              ? "bg-[#00e5a0] text-black"
-                              : "bg-red-500 text-white"
-                            : "bg-[var(--background)] border border-[var(--card-border)] text-[var(--muted)] hover:border-current"
-                        )}
-                      >
-                        {s} {s === "YES" ? `${yesPct}%` : `${noPct}%`}
-                      </button>
-                    ))}
-                  </div>
+                  {isMultiOption && market.options && market.optionPrices ? (
+                    <div className="space-y-2">
+                      {market.options.map((opt, i) => {
+                        const pct = Math.round((market.optionPrices![i] || 0) * 100);
+                        const bgColors = [
+                          "bg-[#00e5a0]", "bg-[#00b4d8]", "bg-[#f59e0b]", "bg-[#ef4444]",
+                          "bg-[#8b5cf6]", "bg-[#ec4899]", "bg-[#14b8a6]", "bg-[#f97316]",
+                          "bg-[#6366f1]", "bg-[#84cc16]",
+                        ];
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setSelectedOption(i)}
+                            className={cn(
+                              "w-full py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-between px-4",
+                              selectedOption === i
+                                ? `${bgColors[i % bgColors.length]} text-black`
+                                : "bg-[var(--background)] border border-[var(--card-border)] text-[var(--muted)] hover:border-current"
+                            )}
+                          >
+                            <span>{String.fromCharCode(65 + i)}. {opt}</span>
+                            <span>{pct}%</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      {(["YES", "NO"] as const).map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setSide(s)}
+                          className={cn(
+                            "py-3 rounded-xl font-bold text-sm transition-all",
+                            side === s
+                              ? s === "YES"
+                                ? "bg-[#00e5a0] text-black"
+                                : "bg-red-500 text-white"
+                              : "bg-[var(--background)] border border-[var(--card-border)] text-[var(--muted)] hover:border-current"
+                          )}
+                        >
+                          {s} {s === "YES" ? `${yesPct}%` : `${noPct}%`}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Amount */}
                   <div>
@@ -538,12 +654,19 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     disabled={tradeLoading || !amount || Number(amount) < 100}
                     className={cn(
                       "w-full py-3.5 font-bold rounded-xl transition-all disabled:opacity-50 text-sm",
-                      side === "YES"
-                        ? "bg-[#00e5a0] text-black hover:opacity-90"
-                        : "bg-red-500 text-white hover:opacity-90"
+                      isMultiOption
+                        ? "bg-[var(--accent)] text-black hover:opacity-90"
+                        : side === "YES"
+                          ? "bg-[#00e5a0] text-black hover:opacity-90"
+                          : "bg-red-500 text-white hover:opacity-90"
                     )}
                   >
-                    {tradeLoading ? (locale === "sw" ? "Inachakata…" : "Processing…") : `${t.market.buy} ${side === "YES" ? t.market.yes : t.market.no}`}
+                    {tradeLoading
+                      ? (locale === "sw" ? "Inachakata…" : "Processing…")
+                      : isMultiOption
+                        ? `${t.market.buy} ${market.options![selectedOption]}`
+                        : `${t.market.buy} ${side === "YES" ? t.market.yes : t.market.no}`
+                    }
                   </button>
 
                   <div className="flex items-center justify-between text-xs text-[var(--muted)]">

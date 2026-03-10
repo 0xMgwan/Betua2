@@ -12,10 +12,17 @@ export const metadata: Metadata = {
   title: "GUAP — Predict the Future. Earn GUAP.",
   description: "Trade YES or NO on African events. Politics, sports, business. Powered by mobile money. Tanzania's first prediction market.",
   keywords: ["predictions", "Tanzania", "TZS", "markets", "GUAP", "Mobile Money", "Africa", "trading"],
-  icons: {
-    icon: '/favicon.svg',
-    shortcut: '/favicon.svg',
-    apple: '/favicon.svg',
+  metadataBase: new URL("https://guap.gold"),
+  openGraph: {
+    title: "GUAP — Predict the Future. Earn GUAP.",
+    description: "Trade YES or NO on African events. Politics, sports, business. Powered by mobile money.",
+    siteName: "GUAP",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "GUAP — Predict the Future. Earn GUAP.",
+    description: "Trade YES or NO on African events. Politics, sports, business. Powered by mobile money.",
   },
 };
 

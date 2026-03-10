@@ -160,7 +160,18 @@
       "resolutionDate": "Resolution Date",
       "resolutionDateHint": "When this market will be resolved and winners paid out.",
       "coverImage": "Cover Image (optional)",
-      "submit": "Create Market"
+      "submit": "Create Market",
+      "categories": {
+        "politics": "Politics",
+        "sports": "Sports",
+        "business": "Business",
+        "entertainment": "Entertainment",
+        "technology": "Technology",
+        "science": "Science",
+        "crypto": "Crypto",
+        "weather": "Weather",
+        "other": "Other"
+      }
     }
   },
   "market": {

@@ -160,7 +160,18 @@
       "resolutionDate": "Tarehe ya Utatuzi",
       "resolutionDateHint": "Soko hili litatatuliwa lini na washindi walipwe.",
       "coverImage": "Picha ya Jalada (si lazima)",
-      "submit": "Unda Soko"
+      "submit": "Unda Soko",
+      "categories": {
+        "politics": "Siasa",
+        "sports": "Michezo",
+        "business": "Biashara",
+        "entertainment": "Burudani",
+        "technology": "Teknolojia",
+        "science": "Sayansi",
+        "crypto": "Kripto",
+        "weather": "Hali ya Hewa",
+        "other": "Nyingine"
+      }
     }
   },
   "market": {
@@ -255,7 +266,9 @@
       "business": "Biashara",
       "entertainment": "Burudani",
       "technology": "Teknolojia",
-      "crypto": "Kripto"
+      "science": "Sayansi",
+      "crypto": "Kripto",
+      "other": "Nyingine"
     }
   },
   "portfolio": {

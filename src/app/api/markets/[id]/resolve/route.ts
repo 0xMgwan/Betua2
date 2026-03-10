@@ -15,7 +15,9 @@ export async function POST(
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const { outcome } = await req.json();
+  const body = await req.json();
+  // Support both binary (outcome: true/false) and multi-option (optionIndex: number)
+  const { outcome, optionIndex } = body;
 
   const market = await prisma.market.findUnique({
     where: { id },
@@ -30,15 +32,30 @@ export async function POST(
     return NextResponse.json({ error: "Market already resolved" }, { status: 400 });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mkt = market as any;
+  const isMultiOption = Array.isArray(mkt.options) && mkt.options.length >= 2;
+
+  if (isMultiOption) {
+    if (optionIndex === undefined || optionIndex < 0 || optionIndex >= mkt.options.length) {
+      return NextResponse.json({ error: "Invalid winning option" }, { status: 400 });
+    }
+  }
+
+  const winningOutcome = isMultiOption ? optionIndex : (outcome ? 1 : 0);
+  const winningLabel = isMultiOption ? (mkt.options as string[])[optionIndex] : (outcome ? "YES" : "NO");
+
   await prisma.market.update({
     where: { id },
-    data: { status: "RESOLVED", outcome: outcome ? 1 : 0, resolvedAt: new Date() },
+    data: {
+      status: "RESOLVED",
+      outcome: winningOutcome,
+      outcomeLabel: winningLabel,
+      resolvedAt: new Date(),
+    },
   });
 
-  const winnerPositions = market.positions.filter((p: typeof market.positions[number]) =>
-    outcome ? p.yesShares > 0 : p.noShares > 0
-  );
-
+  // Determine winners
   const payoutResults: Array<{
     username: string;
     grossPayout: number;
@@ -48,8 +65,18 @@ export async function POST(
     error?: string;
   }> = [];
 
-  for (const pos of winnerPositions) {
-    const winningShares = outcome ? pos.yesShares : pos.noShares;
+  for (const pos of market.positions) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const p = pos as any;
+    let winningShares = 0;
+
+    if (isMultiOption) {
+      const optShares = (p.optionShares as Record<string, number>) || {};
+      winningShares = optShares[String(optionIndex)] || 0;
+    } else {
+      winningShares = outcome ? pos.yesShares : pos.noShares;
+    }
+
     if (winningShares <= 0) continue;
 
     const grossPayout = winningShares;
@@ -98,8 +125,8 @@ export async function POST(
 
   return NextResponse.json({
     ok: true,
-    outcome: outcome ? "YES" : "NO",
-    winnersCount: winnerPositions.length,
+    outcome: winningLabel,
+    winnersCount: payoutResults.filter(r => r.status === "paid").length,
     totalPaid,
     totalFees,
     feePercent: Math.round(FEE_PERCENT * 100),

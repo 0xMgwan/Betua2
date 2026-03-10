@@ -20,6 +20,8 @@ interface Market {
   resolvesAt: string;
   status: string;
   price: { yes: number; no: number };
+  options?: string[] | null;
+  optionPrices?: number[] | null;
   _count?: { trades: number };
   creator?: { username: string };
 }
@@ -96,34 +98,66 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
             </h3>
 
             {/* Terminal-style price display */}
-            <div className="space-y-2 font-mono text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-[#00e5a0]">[YES]</span>
-                <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
-                <span className="text-[#00e5a0] font-bold tabular-nums">{yesPct}%</span>
+            {market.options && market.optionPrices && market.options.length >= 2 ? (
+              <div className="space-y-1.5 font-mono text-xs">
+                {market.options.map((opt, i) => {
+                  const pct = Math.round((market.optionPrices![i] || 0) * 100);
+                  const textColors = [
+                    "text-[#00e5a0]", "text-[#00b4d8]", "text-[#f59e0b]", "text-red-400",
+                    "text-[#8b5cf6]", "text-[#ec4899]", "text-[#14b8a6]", "text-[#f97316]",
+                    "text-[#6366f1]", "text-[#84cc16]",
+                  ];
+                  const bgColors = [
+                    "bg-[#00e5a0]", "bg-[#00b4d8]", "bg-[#f59e0b]", "bg-red-400",
+                    "bg-[#8b5cf6]", "bg-[#ec4899]", "bg-[#14b8a6]", "bg-[#f97316]",
+                    "bg-[#6366f1]", "bg-[#84cc16]",
+                  ];
+                  return (
+                    <div key={i}>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className={textColors[i % textColors.length]}>[{String.fromCharCode(65 + i)}] {opt.length > 15 ? opt.slice(0, 15) + "…" : opt}</span>
+                        <span className={cn("font-bold tabular-nums", textColors[i % textColors.length])}>{pct}%</span>
+                      </div>
+                      <div className="flex-1 bg-[var(--background)] h-2 border border-[var(--card-border)] overflow-hidden">
+                        <div
+                          className={cn("h-full transition-all duration-500", bgColors[i % bgColors.length])}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              {/* ASCII-style progress bar */}
-              <div className="flex items-center gap-1 text-[10px]">
-                <span className="text-[#00e5a0]">█</span>
-                <div className="flex-1 bg-[var(--background)] h-3 border border-[var(--card-border)] overflow-hidden">
-                  <div
-                    className="h-full bg-[#00e5a0] transition-all duration-500 relative"
-                    style={{ width: `${yesPct}%` }}
-                  >
-                    <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,transparent,transparent_2px,rgba(0,0,0,0.2)_2px,rgba(0,0,0,0.2)_4px)]"></div>
-                  </div>
+            ) : (
+              <div className="space-y-2 font-mono text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[#00e5a0]">[YES]</span>
+                  <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
+                  <span className="text-[#00e5a0] font-bold tabular-nums">{yesPct}%</span>
                 </div>
-                <span className="text-red-400">█</span>
+                {/* ASCII-style progress bar */}
+                <div className="flex items-center gap-1 text-[10px]">
+                  <span className="text-[#00e5a0]">█</span>
+                  <div className="flex-1 bg-[var(--background)] h-3 border border-[var(--card-border)] overflow-hidden">
+                    <div
+                      className="h-full bg-[#00e5a0] transition-all duration-500 relative"
+                      style={{ width: `${yesPct}%` }}
+                    >
+                      <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,transparent,transparent_2px,rgba(0,0,0,0.2)_2px,rgba(0,0,0,0.2)_4px)]"></div>
+                    </div>
+                  </div>
+                  <span className="text-red-400">█</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-red-400">[NO]</span>
+                  <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
+                  <span className="text-red-400 font-bold tabular-nums">{noPct}%</span>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-red-400">[NO]</span>
-                <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
-                <span className="text-red-400 font-bold tabular-nums">{noPct}%</span>
-              </div>
-            </div>
+            )}
 
-            {/* Quick Buy Buttons - Terminal style */}
-            {market.status === "OPEN" && (
+            {/* Quick Buy Buttons - Terminal style (only for binary markets) */}
+            {market.status === "OPEN" && !(market.options && market.options.length >= 2) && (
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={(e) => handleQuickBuy(e, "YES")}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getPrice } from "@/lib/amm";
+import { getPrice, getMultiOptionPrices } from "@/lib/amm";
 
 export async function GET(
   _req: NextRequest,
@@ -28,7 +28,15 @@ export async function GET(
 
   if (!market) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const m = market as any;
   return NextResponse.json({
-    market: { ...market, price: getPrice(market.yesPool, market.noPool) },
+    market: {
+      ...market,
+      price: getPrice(market.yesPool, market.noPool),
+      optionPrices: m.options && m.optionPools
+        ? getMultiOptionPrices(m.optionPools as number[])
+        : null,
+    },
   });
 }

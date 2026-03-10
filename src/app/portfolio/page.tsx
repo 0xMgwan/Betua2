@@ -13,15 +13,19 @@ interface Position {
   id: string;
   yesShares: number;
   noShares: number;
+  optionShares?: Record<string, number> | null;
   currentValue: number;
   redeemed: boolean;
   price: { yes: number; no: number };
+  optionPrices?: number[] | null;
   market: {
     id: string;
     title: string;
     status: string;
     resolvesAt: string;
     outcome?: number | null;
+    outcomeLabel?: string | null;
+    options?: string[] | null;
     category: string;
   };
 }
@@ -179,10 +183,12 @@ export default function PortfolioPage() {
             <div className="space-y-3">
               {positions.map((p, i) => {
                 const isResolved = p.market.status === "RESOLVED";
-                const won =
-                  isResolved &&
-                  ((p.market.outcome === 1 && p.yesShares > 0) ||
-                    (p.market.outcome === 0 && p.noShares > 0));
+                const isMultiOpt = !!(p.market.options && p.market.options.length >= 2);
+                const won = isResolved && (
+                  isMultiOpt
+                    ? !!(p.optionShares && p.market.outcome !== null && p.optionShares[String(p.market.outcome)] > 0)
+                    : ((p.market.outcome === 1 && p.yesShares > 0) || (p.market.outcome === 0 && p.noShares > 0))
+                );
 
                 return (
                   <motion.div
@@ -206,16 +212,26 @@ export default function PortfolioPage() {
                               )}
                             </div>
                             <p className="font-semibold text-sm line-clamp-1">{p.market.title}</p>
-                            <div className="flex gap-4 mt-2 text-xs text-[var(--muted)]">
-                              {p.yesShares > 0 && (
-                                <span className="yes-pill px-2 py-0.5 rounded-full text-xs font-medium">
-                                  {formatNumber(p.yesShares)} YES
-                                </span>
-                              )}
-                              {p.noShares > 0 && (
-                                <span className="no-pill px-2 py-0.5 rounded-full text-xs font-medium">
-                                  {formatNumber(p.noShares)} NO
-                                </span>
+                            <div className="flex flex-wrap gap-2 mt-2 text-xs text-[var(--muted)]">
+                              {isMultiOpt && p.optionShares ? (
+                                Object.entries(p.optionShares).filter(([, s]) => s > 0).map(([idx, shares]) => (
+                                  <span key={idx} className="px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20">
+                                    {formatNumber(shares)} {p.market.options![Number(idx)] || `Option ${idx}`}
+                                  </span>
+                                ))
+                              ) : (
+                                <>
+                                  {p.yesShares > 0 && (
+                                    <span className="yes-pill px-2 py-0.5 rounded-full text-xs font-medium">
+                                      {formatNumber(p.yesShares)} YES
+                                    </span>
+                                  )}
+                                  {p.noShares > 0 && (
+                                    <span className="no-pill px-2 py-0.5 rounded-full text-xs font-medium">
+                                      {formatNumber(p.noShares)} NO
+                                    </span>
+                                  )}
+                                </>
                               )}
                             </div>
                           </div>

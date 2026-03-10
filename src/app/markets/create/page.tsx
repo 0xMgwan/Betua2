@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
   CalendarBlank, Image as ImageIcon, CaretRight, Info,
-  CurrencyDollar, Upload, X, ChartLine,
+  CurrencyDollar, Upload, X, ChartLine, Plus, Trash,
 } from "@phosphor-icons/react";
 import { CRYPTO_SYMBOLS } from "@/lib/pyth";
 
@@ -26,6 +26,26 @@ export default function CreateMarketPage() {
     resolvesAt: "",
     imageUrl: "",
   });
+
+  // Market type: "binary" (YES/NO) or "multi" (custom options)
+  const [marketType, setMarketType] = useState<"binary" | "multi">("binary");
+  const [customOptions, setCustomOptions] = useState<string[]>(["", ""]);
+
+  function addOption() {
+    if (customOptions.length >= 10) return;
+    setCustomOptions([...customOptions, ""]);
+  }
+
+  function removeOption(index: number) {
+    if (customOptions.length <= 2) return;
+    setCustomOptions(customOptions.filter((_, i) => i !== index));
+  }
+
+  function updateOption(index: number, value: string) {
+    const updated = [...customOptions];
+    updated[index] = value;
+    setCustomOptions(updated);
+  }
 
   // Pyth-specific state (only for Crypto markets)
   const [pythConfig, setPythConfig] = useState({
@@ -106,6 +126,16 @@ export default function CreateMarketPage() {
         resolvesAt: form.resolvesAt || defaultDate,
       };
 
+      // Add custom options for multi-option markets
+      if (marketType === "multi") {
+        const validOptions = customOptions.map(o => o.trim()).filter(Boolean);
+        if (validOptions.length < 2) {
+          setLoading(false);
+          return setError(locale === "sw" ? "Ongeza angalau chaguzi 2" : "Add at least 2 options");
+        }
+        body.options = validOptions;
+      }
+
       // Add Pyth data for Crypto markets
       if (form.category === "Crypto" && pythConfig.targetPrice) {
         body.pythSymbol = pythConfig.symbol;
@@ -171,23 +201,110 @@ export default function CreateMarketPage() {
             <div>
               <label className="block font-semibold mb-3">{t.markets.createMarket.category}</label>
               <div className="flex flex-wrap gap-2">
-                {CATEGORIES.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setForm({ ...form, category: c })}
-                    className={cn(
-                      "px-4 py-2 rounded-xl text-sm font-mono transition-all",
-                      form.category === c
-                        ? "border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold"
-                        : "border border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--foreground)] hover:text-[var(--foreground)]"
-                    )}
-                  >
-                    {c}
-                  </button>
-                ))}
+                {CATEGORIES.map((c) => {
+                  const catKey = c.toLowerCase() as keyof typeof t.markets.createMarket.categories;
+                  const label = t.markets.createMarket.categories?.[catKey] || c;
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setForm({ ...form, category: c })}
+                      className={cn(
+                        "px-4 py-2 rounded-xl text-sm font-mono transition-all",
+                        form.category === c
+                          ? "border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold"
+                          : "border border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--foreground)] hover:text-[var(--foreground)]"
+                      )}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
+
+            {/* Market Type Toggle */}
+            <div>
+              <label className="block font-semibold mb-3">
+                {locale === "sw" ? "Aina ya Soko" : "Market Type"}
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMarketType("binary")}
+                  className={cn(
+                    "flex-1 py-3 rounded-xl text-sm font-mono font-bold transition-all",
+                    marketType === "binary"
+                      ? "border-2 border-[var(--foreground)] text-[var(--foreground)]"
+                      : "border border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--foreground)]"
+                  )}
+                >
+                  {locale === "sw" ? "NDIO / HAPANA" : "YES / NO"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMarketType("multi")}
+                  className={cn(
+                    "flex-1 py-3 rounded-xl text-sm font-mono font-bold transition-all",
+                    marketType === "multi"
+                      ? "border-2 border-[var(--foreground)] text-[var(--foreground)]"
+                      : "border border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--foreground)]"
+                  )}
+                >
+                  {locale === "sw" ? "Chaguzi Maalum" : "Custom Options"}
+                </button>
+              </div>
+            </div>
+
+            {/* Custom Options — only for multi-option markets */}
+            {marketType === "multi" && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-3"
+              >
+                <label className="block font-semibold">
+                  {locale === "sw" ? "Chaguzi" : "Options"} <span className="text-red-400">*</span>
+                  <span className="text-xs font-normal text-[var(--muted)] ml-1">
+                    ({locale === "sw" ? "angalau 2, kiwango cha juu 10" : "min 2, max 10"})
+                  </span>
+                </label>
+                {customOptions.map((opt, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="w-8 h-8 flex items-center justify-center bg-[var(--card)] border border-[var(--card-border)] rounded-lg text-xs font-bold font-mono text-[var(--muted)]">
+                      {String.fromCharCode(65 + i)}
+                    </span>
+                    <input
+                      type="text"
+                      value={opt}
+                      onChange={(e) => updateOption(i, e.target.value)}
+                      placeholder={`${locale === "sw" ? "Chaguo" : "Option"} ${String.fromCharCode(65 + i)}...`}
+                      className="flex-1 px-4 py-2.5 bg-[var(--card)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
+                      maxLength={100}
+                    />
+                    {customOptions.length > 2 && (
+                      <button
+                        type="button"
+                        onClick={() => removeOption(i)}
+                        className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                      >
+                        <Trash size={16} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {customOptions.length < 10 && (
+                  <button
+                    type="button"
+                    onClick={addOption}
+                    className="flex items-center gap-1.5 px-4 py-2 border border-dashed border-[var(--card-border)] rounded-xl text-sm text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[var(--foreground)] transition-all w-full justify-center"
+                  >
+                    <Plus size={14} />
+                    {locale === "sw" ? "Ongeza Chaguo" : "Add Option"}
+                  </button>
+                )}
+              </motion.div>
+            )}
 
             {/* Pyth integration — only for Crypto category */}
             {isCrypto && (
