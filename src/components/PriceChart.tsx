@@ -12,7 +12,7 @@ interface PriceChartProps {
   className?: string;
 }
 
-const LINE_COLORS = [
+const COLORS = [
   "#00e5a0",
   "#ff4d6a",
   "#00b4d8",
@@ -23,437 +23,301 @@ const LINE_COLORS = [
   "#f472b6",
 ];
 
-function formatTime(ms: number): string {
+function fmtTime(ms: number): string {
   const d = new Date(ms);
-  const now = new Date();
-  const diffDays = Math.floor((now.getTime() - ms) / 86400000);
-  if (diffDays < 1) return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const diff = (Date.now() - ms) / 86400000;
+  if (diff < 1) return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   return d.toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
-// Build smooth bezier curve path from coordinate array
-function smoothPath(coords: { x: number; y: number }[]): string {
-  if (coords.length < 2) return "";
-  let d = `M${coords[0].x},${coords[0].y}`;
-  for (let i = 1; i < coords.length; i++) {
-    const prev = coords[i - 1];
-    const curr = coords[i];
-    const cpx = (prev.x + curr.x) / 2;
-    d += ` C${cpx},${prev.y} ${cpx},${curr.y} ${curr.x},${curr.y}`;
+function bezier(pts: { x: number; y: number }[]): string {
+  if (pts.length < 2) return "";
+  let d = `M${pts[0].x},${pts[0].y}`;
+  for (let i = 1; i < pts.length; i++) {
+    const cx = (pts[i - 1].x + pts[i].x) / 2;
+    d += ` C${cx},${pts[i - 1].y} ${cx},${pts[i].y} ${pts[i].x},${pts[i].y}`;
   }
   return d;
 }
 
 export function PriceChart({ marketId, className }: PriceChartProps) {
   const [points, setPoints] = useState<ChartPoint[]>([]);
-  const [options, setOptions] = useState<string[]>([]);
+  const [opts, setOpts] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
-  const [visibleLines, setVisibleLines] = useState<Set<string>>(new Set());
-  const [animated, setAnimated] = useState(false);
+  const [hIdx, setHIdx] = useState<number | null>(null);
+  const [visible, setVisible] = useState<Set<string>>(new Set());
+  const [drawn, setDrawn] = useState(false);
+  const [tick, setTick] = useState(0);
   const svgRef = useRef<SVGSVGElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const fetchChart = useCallback(async () => {
     try {
-      const res = await fetch(`/api/markets/${marketId}/chart`);
-      if (!res.ok) return;
-      const data = await res.json();
-      setPoints(data.points || []);
-      setOptions(data.options || []);
-      setVisibleLines(new Set(data.options || []));
-    } catch {
-      // silent
-    } finally {
-      setLoading(false);
-    }
+      const r = await fetch(`/api/markets/${marketId}/chart`);
+      if (!r.ok) return;
+      const d = await r.json();
+      setPoints(d.points || []);
+      setOpts(d.options || []);
+      setVisible(new Set(d.options || []));
+    } catch { /* */ } finally { setLoading(false); }
   }, [marketId]);
 
-  useEffect(() => {
-    fetchChart();
-    const interval = setInterval(fetchChart, 30000);
-    return () => clearInterval(interval);
-  }, [fetchChart]);
+  useEffect(() => { fetchChart(); const i = setInterval(fetchChart, 30000); return () => clearInterval(i); }, [fetchChart]);
+  useEffect(() => { if (!loading && points.length >= 2) { const t = setTimeout(() => setDrawn(true), 80); return () => clearTimeout(t); } }, [loading, points.length]);
 
-  // Trigger draw animation on mount
-  useEffect(() => {
-    if (!loading && points.length >= 2) {
-      const t = setTimeout(() => setAnimated(true), 50);
-      return () => clearTimeout(t);
-    }
-  }, [loading, points.length]);
+  // Blink tick for cursor
+  useEffect(() => { const i = setInterval(() => setTick(t => t + 1), 530); return () => clearInterval(i); }, []);
 
-  const W = 500, H = 260;
-  const PAD = { top: 24, right: 16, bottom: 32, left: 44 };
+  const W = 520, H = 280;
+  const P = { t: 28, r: 20, b: 36, l: 48 };
 
-  const chartData = useMemo(() => {
+  const cd = useMemo(() => {
     if (points.length < 2) return null;
-    const minT = points[0].t;
-    const maxT = points[points.length - 1].t;
-    const timeRange = maxT - minT || 1;
-    let minY = 1, maxY = 0;
-    for (const p of points) {
-      for (const opt of options) {
-        if (!visibleLines.has(opt)) continue;
-        const v = p.prices[opt] ?? 0;
-        if (v < minY) minY = v;
-        if (v > maxY) maxY = v;
-      }
-    }
-    const yPad = Math.max((maxY - minY) * 0.15, 0.03);
-    minY = Math.max(0, minY - yPad);
-    maxY = Math.min(1, maxY + yPad);
-    return { minT, maxT, timeRange, minY, maxY, yRange: maxY - minY || 0.1 };
-  }, [points, options, visibleLines]);
+    const t0 = points[0].t, t1 = points[points.length - 1].t, tr = t1 - t0 || 1;
+    let lo = 1, hi = 0;
+    for (const p of points) for (const o of opts) { if (!visible.has(o)) continue; const v = p.prices[o] ?? 0; if (v < lo) lo = v; if (v > hi) hi = v; }
+    const pad = Math.max((hi - lo) * 0.18, 0.04);
+    lo = Math.max(0, lo - pad); hi = Math.min(1, hi + pad);
+    return { t0, t1, tr, lo, hi, yr: hi - lo || 0.1 };
+  }, [points, opts, visible]);
 
-  const toggleLine = (opt: string) => {
-    setVisibleLines(prev => {
-      const next = new Set(prev);
-      if (next.has(opt)) { if (next.size > 1) next.delete(opt); }
-      else next.add(opt);
-      return next;
-    });
-  };
+  const xy = useCallback((t: number, v: number) => {
+    if (!cd) return { x: 0, y: 0 };
+    return {
+      x: P.l + ((t - cd.t0) / cd.tr) * (W - P.l - P.r),
+      y: P.t + (1 - (v - cd.lo) / cd.yr) * (H - P.t - P.b),
+    };
+  }, [cd]);
 
-  const getCoords = useCallback(
-    (t: number, price: number) => {
-      if (!chartData) return { x: 0, y: 0 };
-      const x = PAD.left + ((t - chartData.minT) / chartData.timeRange) * (W - PAD.left - PAD.right);
-      const y = PAD.top + (1 - (price - chartData.minY) / chartData.yRange) * (H - PAD.top - PAD.bottom);
-      return { x, y };
-    },
-    [chartData]
+  const nearest = useCallback((cx: number) => {
+    if (!svgRef.current || !cd || points.length < 2) return;
+    const r = svgRef.current.getBoundingClientRect();
+    const sx = ((cx - r.left) / r.width) * W;
+    const rel = (sx - P.l) / (W - P.l - P.r);
+    const tgt = cd.t0 + rel * cd.tr;
+    let bi = 0, bd = Infinity;
+    for (let i = 0; i < points.length; i++) { const d = Math.abs(points[i].t - tgt); if (d < bd) { bd = d; bi = i; } }
+    setHIdx(bi);
+  }, [cd, points]);
+
+  const toggle = (o: string) => setVisible(p => {
+    const n = new Set(p); if (n.has(o)) { if (n.size > 1) n.delete(o); } else n.add(o); return n;
+  });
+
+  // ─── LOADING ───
+  if (loading) return (
+    <div className={cn("border border-[var(--card-border)] bg-[var(--card)]", className)}>
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--card-border)]">
+        <span className="text-[10px] font-mono text-[var(--accent)] animate-pulse">█</span>
+        <span className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-widest">SYS.CHART.LOAD</span>
+      </div>
+      <div className="h-[220px] sm:h-[280px] flex items-center justify-center">
+        <span className="text-xs font-mono text-[var(--muted)] animate-pulse">Fetching price data...</span>
+      </div>
+    </div>
   );
 
-  const findNearest = useCallback(
-    (clientX: number) => {
-      if (!svgRef.current || !chartData || points.length < 2) return;
-      const rect = svgRef.current.getBoundingClientRect();
-      const mx = clientX - rect.left;
-      const scaleX = W / rect.width;
-      const svgX = mx * scaleX;
-      const relX = (svgX - PAD.left) / (W - PAD.left - PAD.right);
-      const targetT = chartData.minT + relX * chartData.timeRange;
-      let closest = 0, closestDist = Infinity;
-      for (let i = 0; i < points.length; i++) {
-        const d = Math.abs(points[i].t - targetT);
-        if (d < closestDist) { closestDist = d; closest = i; }
-      }
-      setHoveredIdx(closest);
-    },
-    [chartData, points]
+  // ─── NO DATA ───
+  if (points.length < 2 || !cd) return (
+    <div className={cn("border border-[var(--card-border)] bg-[var(--card)]", className)}>
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--card-border)]">
+        <span className="w-1.5 h-1.5 bg-[var(--muted)]/40" />
+        <span className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-widest">SYS.CHART</span>
+      </div>
+      <div className="h-[140px] flex items-center justify-center">
+        <span className="text-xs font-mono text-[var(--muted)]">
+          <span className="animate-pulse">▌</span> Awaiting trade data...
+        </span>
+      </div>
+    </div>
   );
 
-  // Loading state
-  if (loading) {
-    return (
-      <div className={cn("border border-[var(--card-border)] bg-[var(--card)]", className)}>
-        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--card-border)]">
-          <div className="w-2 h-2 rounded-full bg-[#00e5a0] animate-pulse" />
-          <span className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">LOADING CHART...</span>
-        </div>
-        <div className="h-[200px] sm:h-[260px] flex items-center justify-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-t from-[#00e5a0]/5 to-transparent animate-pulse" />
-          <div className="w-8 h-8 border-2 border-[var(--card-border)] border-t-[#00e5a0] rounded-full animate-spin" />
-        </div>
-      </div>
-    );
-  }
+  const dp = hIdx !== null ? points[hIdx] : points[points.length - 1];
+  const cursorOn = tick % 2 === 0;
 
-  // No data state
-  if (points.length < 2 || !chartData) {
-    return (
-      <div className={cn("border border-[var(--card-border)] bg-[var(--card)]", className)}>
-        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--card-border)]">
-          <div className="w-2 h-2 rounded-full bg-[var(--muted)]/40" />
-          <span className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">PRICE.CHART</span>
-        </div>
-        <div className="h-[140px] flex flex-col items-center justify-center gap-2">
-          <div className="flex gap-1">
-            {[0,1,2,3,4].map(i => (
-              <div key={i} className="w-1 bg-[var(--card-border)] rounded-full animate-pulse" style={{ height: `${20 + Math.random() * 30}px`, animationDelay: `${i * 0.15}s` }} />
-            ))}
-          </div>
-          <span className="text-xs font-mono text-[var(--muted)]">Waiting for trades...</span>
-        </div>
-      </div>
-    );
-  }
+  // Grid
+  const step = cd.yr > 0.3 ? 0.25 : cd.yr > 0.1 ? 0.1 : 0.05;
+  const grids: { y: number; l: string }[] = [];
+  for (let v = Math.ceil(cd.lo / step) * step; v <= cd.hi; v += step) grids.push({ y: xy(cd.t0, v).y, l: `${Math.round(v * 100)}%` });
 
-  const displayPoint = hoveredIdx !== null ? points[hoveredIdx] : points[points.length - 1];
+  // Time
+  const tls: { x: number; l: string }[] = [];
+  for (let i = 0; i <= 4; i++) { const t = cd.t0 + (cd.tr * i) / 4; tls.push({ x: xy(t, cd.lo).x, l: fmtTime(t) }); }
 
-  // Build grid lines
-  const gridLines: { y: number; label: string }[] = [];
-  const step = chartData.yRange > 0.3 ? 0.25 : chartData.yRange > 0.1 ? 0.1 : 0.05;
-  for (let v = Math.ceil(chartData.minY / step) * step; v <= chartData.maxY; v += step) {
-    const { y } = getCoords(chartData.minT, v);
-    gridLines.push({ y, label: `${Math.round(v * 100)}%` });
-  }
-
-  // Build time labels
-  const timeLabels: { x: number; label: string }[] = [];
-  const nLabels = 4;
-  for (let i = 0; i <= nLabels; i++) {
-    const t = chartData.minT + (chartData.timeRange * i) / nLabels;
-    const { x } = getCoords(t, chartData.minY);
-    timeLabels.push({ x, label: formatTime(t) });
-  }
-
-  // Build path data for each line
-  const lineData = options.map((opt, i) => {
-    if (!visibleLines.has(opt)) return null;
-    const color = LINE_COLORS[i % LINE_COLORS.length];
-    const coords = points
-      .map(p => { const v = p.prices[opt]; return v !== undefined ? getCoords(p.t, v) : null; })
-      .filter(Boolean) as { x: number; y: number }[];
-    if (coords.length < 2) return null;
-    const linePath = smoothPath(coords);
-    const last = coords[coords.length - 1];
-    const first = coords[0];
-    const areaPath = linePath + ` L${last.x},${H - PAD.bottom} L${first.x},${H - PAD.bottom} Z`;
-    // Total path length estimate for animation
-    let pathLen = 0;
-    for (let j = 1; j < coords.length; j++) {
-      pathLen += Math.hypot(coords[j].x - coords[j - 1].x, coords[j].y - coords[j - 1].y);
-    }
-    return { opt, color, linePath, areaPath, last, first, coords, pathLen, idx: i };
-  }).filter(Boolean) as Array<{
-    opt: string; color: string; linePath: string; areaPath: string;
-    last: { x: number; y: number }; first: { x: number; y: number };
-    coords: { x: number; y: number }[]; pathLen: number; idx: number;
-  }>;
+  // Lines
+  const lines = opts.map((o, i) => {
+    if (!visible.has(o)) return null;
+    const c = COLORS[i % COLORS.length];
+    const pts = points.map(p => { const v = p.prices[o]; return v != null ? xy(p.t, v) : null; }).filter(Boolean) as { x: number; y: number }[];
+    if (pts.length < 2) return null;
+    const path = bezier(pts);
+    const last = pts[pts.length - 1];
+    const first = pts[0];
+    const area = path + ` L${last.x},${H - P.b} L${first.x},${H - P.b} Z`;
+    let len = 0;
+    for (let j = 1; j < pts.length; j++) len += Math.hypot(pts[j].x - pts[j - 1].x, pts[j].y - pts[j - 1].y);
+    return { o, c, path, area, last, first, pts, len };
+  }).filter(Boolean) as Array<{ o: string; c: string; path: string; area: string; last: { x: number; y: number }; first: { x: number; y: number }; pts: { x: number; y: number }[]; len: number }>;
 
   return (
-    <div className={cn("border border-[var(--card-border)] bg-[var(--card)] overflow-hidden", className)} ref={containerRef}>
-      {/* Inline CSS for animations */}
+    <div className={cn("border border-[var(--card-border)] bg-[var(--card)] overflow-hidden relative", className)}>
       <style>{`
-        @keyframes chartDraw { from { stroke-dashoffset: var(--path-len); } to { stroke-dashoffset: 0; } }
-        @keyframes chartFadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes livePulse {
-          0%, 100% { r: 4; opacity: 1; }
-          50% { r: 8; opacity: 0.3; }
-        }
-        @keyframes glowPulse {
-          0%, 100% { opacity: 0.6; }
-          50% { opacity: 1; }
-        }
-        .chart-line {
-          stroke-dasharray: var(--path-len);
-          stroke-dashoffset: var(--path-len);
-          animation: chartDraw 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }
-        .chart-line.no-anim { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
-        .chart-area {
-          opacity: 0;
-          animation: chartFadeIn 0.8s ease-out 0.6s forwards;
-        }
-        .chart-area.no-anim { opacity: 1; animation: none; }
-        .live-dot { animation: livePulse 2s ease-in-out infinite; }
-        .glow-line { animation: glowPulse 3s ease-in-out infinite; }
+        @keyframes cDraw { from { stroke-dashoffset: var(--len); } to { stroke-dashoffset: 0; } }
+        @keyframes cFade { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scanMove { from { transform: translateY(-100%); } to { transform: translateY(100%); } }
+        .c-line { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: cDraw 1.6s cubic-bezier(0.22,1,0.36,1) forwards; }
+        .c-line.ok { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
+        .c-area { opacity: 0; animation: cFade 0.6s ease 0.8s forwards; }
+        .c-area.ok { opacity: 1; animation: none; }
       `}</style>
 
-      {/* Legend bar (integrated header + legend like Kalshi) */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--card-border)]">
+      {/* Scanline overlay */}
+      <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden opacity-[0.03]">
+        <div className="w-full h-[200%] animate-[scanMove_8s_linear_infinite]"
+          style={{ background: "repeating-linear-gradient(0deg, transparent, transparent 2px, white 2px, white 3px)" }} />
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--card-border)] relative z-20">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          {options.map((opt, i) => {
-            const color = LINE_COLORS[i % LINE_COLORS.length];
-            const isVisible = visibleLines.has(opt);
-            const price = displayPoint.prices[opt];
+          {opts.map((o, i) => {
+            const c = COLORS[i % COLORS.length];
+            const on = visible.has(o);
+            const v = dp.prices[o];
             return (
-              <button
-                key={opt}
-                onClick={() => toggleLine(opt)}
-                className={cn(
-                  "flex items-center gap-1.5 transition-all duration-300",
-                  isVisible ? "opacity-100" : "opacity-25 hover:opacity-50"
-                )}
-              >
-                <div
-                  className="w-2.5 h-2.5 rounded-full transition-transform duration-300"
-                  style={{
-                    backgroundColor: color,
-                    boxShadow: isVisible ? `0 0 8px ${color}60` : "none",
-                    transform: isVisible ? "scale(1)" : "scale(0.7)",
-                  }}
-                />
-                <span className="text-[11px] font-mono text-[var(--foreground)] font-medium">{opt}</span>
-                {price !== undefined && (
-                  <span
-                    className="text-[11px] font-mono font-bold transition-all duration-300"
-                    style={{ color: isVisible ? color : "var(--muted)" }}
-                  >
-                    {(price * 100).toFixed(1)}%
-                  </span>
-                )}
+              <button key={o} onClick={() => toggle(o)}
+                className={cn("flex items-center gap-1.5 transition-opacity duration-200", on ? "opacity-100" : "opacity-25 hover:opacity-50")}>
+                <span className="text-[11px] font-mono" style={{ color: on ? c : "var(--muted)" }}>●</span>
+                <span className="text-[11px] font-mono text-[var(--foreground)]">{o}</span>
+                {v != null && <span className="text-[11px] font-mono font-bold" style={{ color: on ? c : "var(--muted)" }}>{(v * 100).toFixed(1)}%</span>}
               </button>
             );
           })}
         </div>
-        <div className="flex items-center gap-1.5">
-          {hoveredIdx !== null && (
-            <span className="text-[9px] font-mono text-[var(--muted)] animate-in fade-in duration-200">
-              {formatTime(displayPoint.t)}
-            </span>
-          )}
-          <div className="w-1.5 h-1.5 rounded-full bg-[#00e5a0] live-dot" style={{ animationDuration: "2s" }} />
+        <div className="flex items-center gap-2">
+          {hIdx !== null && <span className="text-[8px] font-mono text-[var(--muted)]">{fmtTime(dp.t)}</span>}
+          <span className="text-[10px] font-mono text-[#00e5a0]" style={{ opacity: cursorOn ? 1 : 0 }}>▮</span>
         </div>
       </div>
 
-      {/* Chart SVG */}
-      <div className="relative">
-        <svg
-          ref={svgRef}
-          viewBox={`0 0 ${W} ${H}`}
-          className="w-full h-[200px] sm:h-[280px] cursor-crosshair select-none"
-          onMouseMove={(e) => findNearest(e.clientX)}
-          onMouseLeave={() => setHoveredIdx(null)}
-          onTouchMove={(e) => { e.preventDefault(); findNearest(e.touches[0].clientX); }}
-          onTouchEnd={() => setHoveredIdx(null)}
-        >
+      {/* Chart */}
+      <div className="relative z-20">
+        <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`}
+          className="w-full h-[220px] sm:h-[280px] cursor-crosshair select-none"
+          onMouseMove={e => nearest(e.clientX)} onMouseLeave={() => setHIdx(null)}
+          onTouchMove={e => { e.preventDefault(); nearest(e.touches[0].clientX); }} onTouchEnd={() => setHIdx(null)}>
           <defs>
-            {/* Glow filter for lines */}
-            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-            {/* Gradient fills for each line */}
-            {lineData.map(({ opt, color }) => (
-              <linearGradient key={`g-${opt}`} id={`area-${opt}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={color} stopOpacity="0.25" />
-                <stop offset="60%" stopColor={color} stopOpacity="0.08" />
-                <stop offset="100%" stopColor={color} stopOpacity="0" />
+            {lines.map(({ o, c }) => (
+              <linearGradient key={`g-${o}`} id={`ag-${o}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={c} stopOpacity="0.12" />
+                <stop offset="100%" stopColor={c} stopOpacity="0" />
               </linearGradient>
             ))}
           </defs>
 
-          {/* Grid lines */}
-          {gridLines.map((g, i) => (
+          {/* Dot grid background */}
+          {(() => {
+            const dots: React.JSX.Element[] = [];
+            const sx = (W - P.l - P.r) / 20, sy = (H - P.t - P.b) / 12;
+            for (let ix = 0; ix <= 20; ix++) for (let iy = 0; iy <= 12; iy++) {
+              dots.push(<circle key={`${ix}-${iy}`} cx={P.l + ix * sx} cy={P.t + iy * sy} r="0.5" fill="var(--foreground)" opacity="0.06" />);
+            }
+            return dots;
+          })()}
+
+          {/* Grid lines — thin dashes */}
+          {grids.map((g, i) => (
             <g key={i}>
-              <line
-                x1={PAD.left} y1={g.y} x2={W - PAD.right} y2={g.y}
-                stroke="var(--card-border)" strokeWidth="0.5" opacity="0.5"
-              />
-              <text x={PAD.left - 6} y={g.y + 3.5} fill="var(--muted)"
-                fontSize="9" fontFamily="monospace" textAnchor="end" opacity="0.6">
-                {g.label}
-              </text>
+              <line x1={P.l} y1={g.y} x2={W - P.r} y2={g.y} stroke="var(--foreground)" strokeWidth="0.3" opacity="0.08" strokeDasharray="2,6" />
+              <text x={P.l - 6} y={g.y + 3} fill="var(--foreground)" fontSize="8" fontFamily="monospace" textAnchor="end" opacity="0.3">{g.l}</text>
             </g>
           ))}
 
           {/* Time axis */}
-          {timeLabels.map((tl, i) => (
-            <text key={i} x={tl.x} y={H - 6} fill="var(--muted)"
-              fontSize="8" fontFamily="monospace" textAnchor="middle" opacity="0.5">
-              {tl.label}
-            </text>
-          ))}
-
-          {/* Area fills (animated fade in) */}
-          {lineData.map(({ opt, color, areaPath }) => (
-            <path
-              key={`area-${opt}`}
-              d={areaPath}
-              fill={`url(#area-${opt})`}
-              className={animated ? "chart-area" : "chart-area no-anim"}
-            />
-          ))}
-
-          {/* Lines with glow (animated draw) */}
-          {lineData.map(({ opt, color, linePath, pathLen }) => (
-            <g key={`line-${opt}`}>
-              {/* Glow underline */}
-              <path
-                d={linePath}
-                fill="none"
-                stroke={color}
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                opacity="0.15"
-                className="glow-line"
-                style={{ filter: "blur(4px)" }}
-              />
-              {/* Main line */}
-              <path
-                d={linePath}
-                fill="none"
-                stroke={color}
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className={animated ? "chart-line" : "chart-line no-anim"}
-                style={{ "--path-len": pathLen } as React.CSSProperties}
-              />
+          {tls.map((t, i) => (
+            <g key={i}>
+              <line x1={t.x} y1={H - P.b} x2={t.x} y2={H - P.b + 4} stroke="var(--foreground)" strokeWidth="0.3" opacity="0.15" />
+              <text x={t.x} y={H - 8} fill="var(--foreground)" fontSize="7.5" fontFamily="monospace" textAnchor="middle" opacity="0.3">{t.l}</text>
             </g>
           ))}
 
-          {/* Live pulsing dots at line ends */}
-          {lineData.map(({ opt, color, last }) => (
-            <g key={`dot-${opt}`}>
-              <circle cx={last.x} cy={last.y} r="4" fill={color} opacity="0.3" className="live-dot" />
-              <circle cx={last.x} cy={last.y} r="4" fill={color} />
-              <circle cx={last.x} cy={last.y} r="2" fill="white" opacity="0.8" />
-            </g>
+          {/* Area fills */}
+          {lines.map(({ o, area }) => (
+            <path key={`a-${o}`} d={area} fill={`url(#ag-${o})`} className={drawn ? "c-area ok" : "c-area"} />
           ))}
 
-          {/* Hover crosshair + tooltip */}
-          {hoveredIdx !== null && (() => {
-            const p = points[hoveredIdx];
-            const firstVis = options.find(o => visibleLines.has(o));
-            if (!firstVis) return null;
-            const { x } = getCoords(p.t, p.prices[firstVis] ?? 0.5);
+          {/* Main lines — sharp, 1.5px */}
+          {lines.map(({ o, c, path, len }) => (
+            <path key={`l-${o}`} d={path} fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+              className={drawn ? "c-line ok" : "c-line"} style={{ "--len": len } as React.CSSProperties} />
+          ))}
+
+          {/* Trade tick marks — small vertical dashes at each data point */}
+          {lines.map(({ o, c, pts }) => pts.map((pt, j) => (
+            j > 0 && j < pts.length - 1 ? (
+              <line key={`t-${o}-${j}`} x1={pt.x} y1={pt.y - 3} x2={pt.x} y2={pt.y + 3}
+                stroke={c} strokeWidth="0.8" opacity="0.35" />
+            ) : null
+          )))}
+
+          {/* Live end: blinking cursor block + price label */}
+          {lines.map(({ o, c, last }) => {
+            const val = dp.prices[o];
+            if (val == null) return null;
+            return (
+              <g key={`end-${o}`}>
+                {/* Horizontal dashed line from last point to right edge */}
+                <line x1={last.x} y1={last.y} x2={W - P.r} y2={last.y}
+                  stroke={c} strokeWidth="0.5" strokeDasharray="3,3" opacity="0.3" />
+                {/* Price label at right edge */}
+                <rect x={W - P.r + 1} y={last.y - 7} width="36" height="14" rx="2" fill={c} opacity="0.9" />
+                <text x={W - P.r + 19} y={last.y + 3} fill="#000" fontSize="8" fontFamily="monospace" fontWeight="bold" textAnchor="middle">
+                  {(val * 100).toFixed(1)}%
+                </text>
+                {/* Blinking cursor dot */}
+                <rect x={last.x - 1.5} y={last.y - 5} width="3" height="10" rx="0.5" fill={c}
+                  opacity={cursorOn ? 0.9 : 0.2} />
+              </g>
+            );
+          })}
+
+          {/* Hover crosshair */}
+          {hIdx !== null && (() => {
+            const p = points[hIdx];
+            const fv = opts.find(o => visible.has(o));
+            if (!fv) return null;
+            const { x } = xy(p.t, p.prices[fv] ?? 0.5);
             return (
               <g>
-                {/* Vertical line */}
-                <line
-                  x1={x} y1={PAD.top} x2={x} y2={H - PAD.bottom}
-                  stroke="var(--foreground)" strokeWidth="0.8" opacity="0.2"
-                />
-                {/* Highlight dots */}
-                {lineData.map(({ opt, color }) => {
-                  const val = p.prices[opt];
-                  if (val === undefined) return null;
-                  const c = getCoords(p.t, val);
+                {/* Vertical scan line */}
+                <line x1={x} y1={P.t} x2={x} y2={H - P.b} stroke="var(--foreground)" strokeWidth="0.5" opacity="0.15" />
+                {/* Time label at bottom */}
+                <rect x={x - 24} y={H - P.b + 2} width="48" height="12" rx="2" fill="var(--foreground)" opacity="0.1" />
+                <text x={x} y={H - P.b + 11} fill="var(--foreground)" fontSize="7" fontFamily="monospace" textAnchor="middle" opacity="0.5">
+                  {fmtTime(p.t)}
+                </text>
+                {/* Dots on each line */}
+                {lines.map(({ o, c }) => {
+                  const v = p.prices[o]; if (v == null) return null;
+                  const pt = xy(p.t, v);
                   return (
-                    <g key={`h-${opt}`}>
-                      <circle cx={c.x} cy={c.y} r="6" fill={color} opacity="0.2" />
-                      <circle cx={c.x} cy={c.y} r="4" fill="var(--card)" stroke={color} strokeWidth="2" />
+                    <g key={`h-${o}`}>
+                      <circle cx={pt.x} cy={pt.y} r="3.5" fill="none" stroke={c} strokeWidth="1.5" />
+                      <circle cx={pt.x} cy={pt.y} r="1.5" fill={c} />
                     </g>
                   );
                 })}
-                {/* Floating tooltip card */}
-                {(() => {
-                  const tooltipX = x > W / 2 ? x - 90 : x + 10;
-                  const tooltipY = PAD.top + 5;
-                  return (
-                    <g>
-                      <rect x={tooltipX} y={tooltipY} width="80" height={14 + lineData.length * 14}
-                        rx="4" fill="var(--card)" stroke="var(--card-border)" strokeWidth="0.5" opacity="0.95" />
-                      <text x={tooltipX + 5} y={tooltipY + 11} fill="var(--muted)" fontSize="7" fontFamily="monospace">
-                        {formatTime(p.t)}
-                      </text>
-                      {lineData.map(({ opt, color }, j) => {
-                        const val = p.prices[opt];
-                        if (val === undefined) return null;
-                        return (
-                          <g key={`tt-${opt}`}>
-                            <circle cx={tooltipX + 8} cy={tooltipY + 22 + j * 14} r="2.5" fill={color} />
-                            <text x={tooltipX + 14} y={tooltipY + 25 + j * 14} fill="var(--foreground)" fontSize="8" fontFamily="monospace" fontWeight="bold">
-                              {opt} {(val * 100).toFixed(1)}%
-                            </text>
-                          </g>
-                        );
-                      })}
-                    </g>
-                  );
-                })()}
               </g>
             );
           })()}
         </svg>
+      </div>
+
+      {/* Bottom bar */}
+      <div className="flex items-center justify-between px-3 py-1.5 border-t border-[var(--card-border)] relative z-20">
+        <span className="text-[8px] font-mono text-[var(--foreground)] opacity-20 uppercase tracking-widest">
+          {points.length} TICKS · LIVE
+        </span>
+        <span className="text-[8px] font-mono text-[#00e5a0]" style={{ opacity: cursorOn ? 0.6 : 0.15 }}>▮ STREAMING</span>
       </div>
     </div>
   );
