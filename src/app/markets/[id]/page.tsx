@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { UserAvatar } from "@/components/UserAvatar";
 import { UserProfileModal } from "@/components/UserProfileModal";
 import { Footer } from "@/components/Footer";
+import { PriceChart } from "@/components/PriceChart";
 
 interface MarketData {
   id: string;
@@ -300,111 +301,113 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left: Market info */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Header */}
-            <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl overflow-hidden">
-              {market.imageUrl && (
-                <Image src={market.imageUrl!} alt={market.title} width={800} height={400} className="w-full max-h-64 object-contain bg-black/20" />
-              )}
-              <div className="p-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="px-2 py-0.5 bg-[var(--accent)]/10 text-[var(--accent)] text-xs rounded-full border border-[var(--accent)]/20">
-                    {market.category}
-                  </span>
-                  {isResolved && (
-                    <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-xs rounded-full border border-blue-500/20">
-                      {t.market.resolved}: {isMultiOption ? market.outcomeLabel : (market.outcome === 1 ? t.market.yes : t.market.no)}
-                    </span>
-                  )}
-                  {!isResolved && (
-                    <span className="flex items-center gap-1 text-xs text-[var(--muted)]">
-                      <Clock size={11} />
-                      {timeUntil(market.resolvesAt)}
-                    </span>
-                  )}
-                </div>
-                <h1 className="text-xl md:text-2xl font-bold mb-3">{market.title}</h1>
-                <p className="text-[var(--muted)] text-sm leading-relaxed">{market.description}</p>
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          {/* ═══ Left column: Header + Chart + Options + Activity ═══ */}
+          <div className="lg:col-span-2 space-y-4 sm:space-y-5">
 
-                <div className="flex items-center gap-4 mt-4 text-xs text-[var(--muted)]">
-                  <span>by @{market.creator.username}</span>
-                  <span className="flex items-center gap-1">
-                    <TrendUp size={11} />
-                    {t.market.volume}: {formatTZS(market.totalVolume)}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <UsersThree size={11} />
-                    {market._count.trades} {t.market.trades}
-                  </span>
+            {/* ── Compact header: image + title + meta ── */}
+            <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-xl overflow-hidden">
+              <div className="flex items-start gap-3 sm:gap-4 p-4 sm:p-5">
+                {market.imageUrl ? (
+                  <Image
+                    src={market.imageUrl!}
+                    alt={market.title}
+                    width={80}
+                    height={80}
+                    className="w-14 h-14 sm:w-20 sm:h-20 rounded-lg object-cover flex-shrink-0 border border-[var(--card-border)]"
+                  />
+                ) : (
+                  <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-lg bg-[var(--background)] border border-[var(--card-border)] flex-shrink-0 flex items-center justify-center">
+                    <TrendUp size={24} className="text-[var(--muted)]" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                    <span className="px-1.5 py-0.5 bg-[var(--accent)]/10 text-[var(--accent)] text-[10px] font-mono rounded border border-[var(--accent)]/20">
+                      {market.category}
+                    </span>
+                    {isResolved && (
+                      <span className="px-1.5 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-mono rounded border border-blue-500/20">
+                        {t.market.resolved}: {isMultiOption ? market.outcomeLabel : (market.outcome === 1 ? t.market.yes : t.market.no)}
+                      </span>
+                    )}
+                    {!isResolved && (
+                      <span className="flex items-center gap-1 text-[10px] text-[var(--muted)] font-mono">
+                        <Clock size={10} />
+                        {timeUntil(market.resolvesAt)}
+                      </span>
+                    )}
+                  </div>
+                  <h1 className="text-base sm:text-xl font-bold leading-tight">{market.title}</h1>
+                  <div className="flex items-center gap-3 mt-1.5 text-[10px] text-[var(--muted)] font-mono">
+                    <span>@{market.creator.username}</span>
+                    <span className="flex items-center gap-0.5">
+                      <TrendUp size={10} />
+                      {formatTZS(market.totalVolume)} vol
+                    </span>
+                    <span className="flex items-center gap-0.5">
+                      <UsersThree size={10} />
+                      {market._count.trades}
+                    </span>
+                  </div>
                 </div>
-
-                {/* Share buttons */}
-                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[var(--card-border)]">
-                  <span className="flex items-center gap-1 text-xs text-[var(--muted)] font-mono">
-                    <ShareNetwork size={13} />
-                    {t.market.share}:
-                  </span>
+                {/* Share icons */}
+                <div className="flex gap-1 flex-shrink-0">
                   <a
                     href={`https://wa.me/?text=${encodeURIComponent(`${market.title} - Predict now on GUAP! ${typeof window !== 'undefined' ? window.location.href : ''}`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-1.5 border border-[var(--card-border)] text-[#25D366] hover:bg-[#25D366]/10 transition-all rounded"
-                    title="Share on WhatsApp"
+                    target="_blank" rel="noopener noreferrer"
+                    className="p-1 text-[#25D366] hover:bg-[#25D366]/10 rounded transition-all"
                   >
-                    <WhatsappLogo size={16} weight="fill" />
+                    <WhatsappLogo size={14} weight="fill" />
                   </a>
                   <a
                     href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${market.title} - Predict now on GUAP!`)}&url=${typeof window !== 'undefined' ? encodeURIComponent(window.location.href) : ''}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-1.5 border border-[var(--card-border)] text-[var(--foreground)] hover:bg-[var(--foreground)]/10 transition-all rounded"
-                    title="Share on X"
+                    target="_blank" rel="noopener noreferrer"
+                    className="p-1 text-[var(--foreground)] hover:bg-[var(--foreground)]/10 rounded transition-all"
                   >
-                    <XLogo size={16} weight="fill" />
-                  </a>
-                  <a
-                    href={`https://www.facebook.com/sharer/sharer.php?u=${typeof window !== 'undefined' ? encodeURIComponent(window.location.href) : ''}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-1.5 border border-[var(--card-border)] text-[#1877F2] hover:bg-[#1877F2]/10 transition-all rounded"
-                    title="Share on Facebook"
-                  >
-                    <FacebookLogo size={16} weight="fill" />
+                    <XLogo size={14} weight="fill" />
                   </a>
                   <a
                     href={`https://t.me/share/url?url=${typeof window !== 'undefined' ? encodeURIComponent(window.location.href) : ''}&text=${encodeURIComponent(market.title)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-1.5 border border-[var(--card-border)] text-[#0088cc] hover:bg-[#0088cc]/10 transition-all rounded"
-                    title="Share on Telegram"
+                    target="_blank" rel="noopener noreferrer"
+                    className="p-1 text-[#0088cc] hover:bg-[#0088cc]/10 rounded transition-all"
                   >
-                    <TelegramLogo size={16} weight="fill" />
+                    <TelegramLogo size={14} weight="fill" />
                   </a>
                 </div>
               </div>
             </div>
 
-            {/* Price bars */}
-            <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl p-6">
-              <h2 className="font-semibold mb-4">{t.market.currentProbability}</h2>
+            {/* ── Price Chart (prominent, like Kalshi) ── */}
+            <PriceChart marketId={id} className="rounded-xl" />
+
+            {/* ── Volume + Stats bar ── */}
+            <div className="flex items-center justify-between px-1 text-xs font-mono text-[var(--muted)]">
+              <span>{formatTZS(market.totalVolume)} vol</span>
+              <span>{market._count.trades} {t.market.trades}</span>
+            </div>
+
+            {/* ── Options / Chance table (like Kalshi's list below chart) ── */}
+            <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-xl overflow-hidden">
+              {/* Table header */}
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--card-border)]">
+                <span className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
+                  {isMultiOption ? "OPTIONS" : "OUTCOME"}
+                </span>
+                <span className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
+                  {locale === "sw" ? "NAFASI" : "CHANCE"}
+                </span>
+              </div>
+
               {isMultiOption && market.options && market.optionPrices ? (
-                <div className="space-y-3">
+                <div className="divide-y divide-[var(--card-border)]">
                   {market.options.map((opt, i) => {
                     const pct = Math.round((market.optionPrices![i] || 0) * 100);
-                    const colors = [
-                      "from-[#00e5a0] to-[#00c896]",
-                      "from-[#00b4d8] to-[#0096c7]",
-                      "from-[#f59e0b] to-[#d97706]",
-                      "from-[#ef4444] to-[#dc2626]",
-                      "from-[#8b5cf6] to-[#7c3aed]",
-                      "from-[#ec4899] to-[#db2777]",
-                      "from-[#14b8a6] to-[#0d9488]",
-                      "from-[#f97316] to-[#ea580c]",
-                      "from-[#6366f1] to-[#4f46e5]",
-                      "from-[#84cc16] to-[#65a30d]",
+                    const dotColors = [
+                      "bg-[#00e5a0]", "bg-[#00b4d8]", "bg-[#f59e0b]", "bg-[#ef4444]",
+                      "bg-[#8b5cf6]", "bg-[#ec4899]", "bg-[#14b8a6]", "bg-[#f97316]",
+                      "bg-[#6366f1]", "bg-[#84cc16]",
                     ];
                     const textColors = [
                       "text-[#00e5a0]", "text-[#00b4d8]", "text-[#f59e0b]", "text-red-400",
@@ -412,77 +415,53 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       "text-[#6366f1]", "text-[#84cc16]",
                     ];
                     return (
-                      <div key={i}>
-                        <div className="flex justify-between text-sm mb-1.5">
-                          <span className={cn("font-bold", textColors[i % textColors.length])}>
-                            {String.fromCharCode(65 + i)}. {opt}
-                          </span>
-                          <span className={cn("font-bold", textColors[i % textColors.length])}>{pct}%</span>
+                      <div key={i} className="flex items-center justify-between px-4 py-3 hover:bg-[var(--background)]/50 transition-colors">
+                        <div className="flex items-center gap-2.5">
+                          <div className={cn("w-2.5 h-2.5 rounded-full", dotColors[i % dotColors.length])} />
+                          <span className="text-sm font-medium">{opt}</span>
                         </div>
-                        <div className="h-4 bg-[var(--background)] rounded-full overflow-hidden">
-                          <motion.div
-                            className={cn("h-full rounded-full bg-gradient-to-r", colors[i % colors.length])}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${pct}%` }}
-                            transition={{ duration: 0.6, ease: "easeOut" }}
-                          />
-                        </div>
+                        <span className={cn("text-sm font-bold font-mono", textColors[i % textColors.length])}>
+                          {pct}%
+                        </span>
                       </div>
                     );
                   })}
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex justify-between text-sm mb-1.5">
-                      <span className="font-bold text-[#00e5a0]">YES</span>
-                      <span className="font-bold text-[#00e5a0]">{yesPct}%</span>
+                <div className="divide-y divide-[var(--card-border)]">
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#00e5a0]" />
+                      <span className="text-sm font-medium">YES</span>
                     </div>
-                    <div className="h-4 bg-[var(--background)] rounded-full overflow-hidden">
-                      <motion.div
-                        className="h-full rounded-full bg-gradient-to-r from-[#00e5a0] to-[#00c896]"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${yesPct}%` }}
-                        transition={{ duration: 0.6, ease: "easeOut" }}
-                      />
-                    </div>
+                    <span className="text-sm font-bold font-mono text-[#00e5a0]">{yesPct}%</span>
                   </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-1.5">
-                      <span className="font-bold text-red-400">NO</span>
-                      <span className="font-bold text-red-400">{noPct}%</span>
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#ff4d6a]" />
+                      <span className="text-sm font-medium">NO</span>
                     </div>
-                    <div className="h-4 bg-[var(--background)] rounded-full overflow-hidden">
-                      <motion.div
-                        className="h-full rounded-full bg-gradient-to-r from-red-500 to-red-600"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${noPct}%` }}
-                        transition={{ duration: 0.6, ease: "easeOut" }}
-                      />
-                    </div>
+                    <span className="text-sm font-bold font-mono text-[#ff4d6a]">{noPct}%</span>
                   </div>
                 </div>
               )}
+            </div>
 
-              <div className="grid grid-cols-3 gap-3 mt-6 text-center text-sm">
-                <div>
-                  <div className="font-bold">{formatTZS(market.totalVolume)}</div>
-                  <div className="text-xs text-[var(--muted)]">{t.market.volume}</div>
-                </div>
-                <div>
-                  <div className="font-bold">{market._count.trades}</div>
-                  <div className="text-xs text-[var(--muted)]">{t.market.trades}</div>
-                </div>
-                <div>
-                  <div className="font-bold">{timeUntil(market.resolvesAt)}</div>
-                  <div className="text-xs text-[var(--muted)]">{t.market.resolves}</div>
-                </div>
+            {/* ── Description ── */}
+            <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-xl overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-[var(--card-border)]">
+                <span className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
+                  {locale === "sw" ? "MAELEZO" : "DESCRIPTION"}
+                </span>
+              </div>
+              <div className="px-4 py-3 text-sm text-[var(--muted)] leading-relaxed">
+                {market.description}
               </div>
             </div>
 
             {/* Creator resolve */}
             {user?.id === market.creatorId && !isResolved && (
-              <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl p-6">
+              <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-xl p-4 sm:p-5">
                 <div className="flex items-center justify-between mb-2">
                   <h2 className="font-semibold flex items-center gap-2">
                     <Warning size={16} className="text-yellow-500" />
@@ -543,7 +522,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
             )}
 
             {/* Activity tabs */}
-            <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl overflow-hidden">
+            <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-xl overflow-hidden">
               <div className="flex border-b border-[var(--card-border)]">
                 {(["trades", "comments"] as const).map((tb) => (
                   <button
@@ -631,10 +610,16 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
             </div>
           </div>
 
-          {/* Right: Trade panel */}
+          {/* ═══ Right: Trade panel ═══ */}
           <div className="space-y-4">
-            <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl p-6 sticky top-24">
-              <h2 className="font-bold text-lg mb-4">{locale === "sw" ? "Fanya Biashara" : "Place a Trade"}</h2>
+            <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-xl overflow-hidden sticky top-24">
+              {/* Terminal header */}
+              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--card-border)]">
+                <div className="w-1.5 h-1.5 bg-[#00e5a0]" />
+                <span className="text-[9px] font-mono text-[var(--muted)] uppercase tracking-wider">TRADE.PANEL</span>
+              </div>
+              <div className="p-4 sm:p-5">
+              <h2 className="font-bold text-base mb-3 font-mono">{locale === "sw" ? "Fanya Biashara" : "Place a Trade"}</h2>
 
               {isResolved ? (
                 <div className="text-center py-6 text-[var(--muted)]">
@@ -826,6 +811,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   </div>
                 </form>
               )}
+              </div>
             </div>
           </div>
         </div>
