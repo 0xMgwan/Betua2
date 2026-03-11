@@ -10,6 +10,7 @@ import {
   CaretRight, CheckCircle, Star, UsersThree, CurrencyDollar,
   Handshake, TrendUp, MagnifyingGlass, Trophy,
   Sparkle, Phone, ArrowDownLeft, XLogo, InstagramLogo,
+  UserPlus, Wallet, Crosshair,
 } from "@phosphor-icons/react";
 import HeroAscii from "@/components/ui/hero-ascii";
 import { GlitchText } from "@/components/ui/glitch-text";
@@ -147,7 +148,11 @@ const FEATURES_META = [
    How it works
    ───────────────────────────────────────────────────────── */
 /* HOW_IT_WORKS icons/steps - text comes from translations */
-const HOW_IT_WORKS_ICONS = ["📲", "💰", "🎯"];
+const HOW_IT_WORKS_ICONS = [
+  { icon: UserPlus, color: "#00e5a0" },
+  { icon: Wallet, color: "#00b4d8" },
+  { icon: Crosshair, color: "#fbbf24" },
+];
 const HOW_IT_WORKS_STEPS = ["01", "02", "03"];
 
 /* ─────────────────────────────────────────────────────────
@@ -440,14 +445,45 @@ export default function HomePage() {
                 className="flex gap-5 items-start group"
               >
                 <div className="relative shrink-0">
-                  <div className="w-14 h-14 bg-[var(--card)] border-2 border-[var(--card-border)] group-hover:border-[var(--foreground)] transition-all flex items-center justify-center text-2xl shadow-md">
-                    {HOW_IT_WORKS_ICONS[i]}
-                  </div>
-                  <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[var(--foreground)] text-[var(--background)] font-black text-[10px] flex items-center justify-center font-mono">
+                  <motion.div
+                    whileInView={{ scale: [0.8, 1.1, 1], rotate: [0, -5, 5, 0] }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.2, duration: 0.6, ease: "easeOut" }}
+                    whileHover={{ scale: 1.15, rotate: -3 }}
+                    className="w-14 h-14 border-2 border-[var(--card-border)] group-hover:border-[var(--foreground)] transition-colors flex items-center justify-center shadow-md relative overflow-hidden cursor-pointer"
+                    style={{ background: `${HOW_IT_WORKS_ICONS[i].color}10` }}
+                  >
+                    <motion.div
+                      animate={{ y: [0, -2, 0] }}
+                      transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
+                    >
+                      {(() => { const IconComp = HOW_IT_WORKS_ICONS[i].icon; return <IconComp size={24} weight="fill" style={{ color: HOW_IT_WORKS_ICONS[i].color }} />; })()}
+                    </motion.div>
+                    {/* Glow ring */}
+                    <motion.div
+                      className="absolute inset-0 border-2 opacity-0"
+                      style={{ borderColor: HOW_IT_WORKS_ICONS[i].color }}
+                      whileInView={{ opacity: [0, 0.6, 0], scale: [0.8, 1.2] }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.2 + 0.3, duration: 0.8 }}
+                    />
+                  </motion.div>
+                  <motion.div
+                    whileInView={{ scale: [0, 1.2, 1] }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.2 + 0.15, duration: 0.4, ease: "backOut" }}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[var(--foreground)] text-[var(--background)] font-black text-[10px] flex items-center justify-center font-mono"
+                  >
                     {i + 1}
-                  </div>
+                  </motion.div>
                   {i < HOW_IT_WORKS_STEPS.length - 1 && (
-                    <div className="absolute top-14 left-1/2 -translate-x-1/2 w-px h-6 bg-gradient-to-b from-[var(--card-border)] to-transparent" />
+                    <motion.div
+                      initial={{ height: 0 }}
+                      whileInView={{ height: 24 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.2 + 0.5, duration: 0.4 }}
+                      className="absolute top-14 left-1/2 -translate-x-1/2 w-px bg-gradient-to-b from-[var(--card-border)] to-transparent"
+                    />
                   )}
                 </div>
                 <div>
@@ -475,36 +511,99 @@ export default function HomePage() {
             </motion.div>
           </div>
 
-          {/* Right: Real photo */}
+          {/* Right: Terminal-themed phone mockup */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="relative rounded-3xl overflow-hidden aspect-[4/3] lg:aspect-auto lg:h-[420px]"
+            className="relative flex items-center justify-center"
           >
-            <Image
-              src="https://images.unsplash.com/photo-1556742044-3c52d6e88c62?w=800&q=85&auto=format&fit=crop"
-              alt="Mobile payment on phone"
-              fill
-              className="object-cover"
-              unoptimized
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[var(--background)] via-transparent to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-br from-[#00e5a0]/10 to-[#00b4d8]/10" />
+            {/* Phone frame */}
+            <div className="relative w-[280px] mx-auto">
+              {/* Phone outer shell */}
+              <div className="bg-[var(--card)] border-2 border-[var(--card-border)] p-3 shadow-2xl" style={{ boxShadow: '0 0 40px rgba(0,0,0,0.3)' }}>
+                {/* Status bar */}
+                <div className="flex items-center justify-between px-2 py-1.5 border-b border-[var(--card-border)] mb-2">
+                  <span className="text-[8px] font-mono text-[var(--muted)]">09:41</span>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2.5 h-1.5 border border-[var(--muted)] relative">
+                      <motion.div animate={{ width: ['60%', '90%', '60%'] }} transition={{ duration: 3, repeat: Infinity }} className="h-full bg-[#00e5a0]" />
+                    </div>
+                  </div>
+                </div>
 
-            {/* Overlay stat card */}
-            <div className="absolute bottom-5 left-5 right-5">
-              <div className="bg-[var(--card)]/90 backdrop-blur-md border border-[var(--card-border)] rounded-2xl p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-[var(--muted)] font-medium">{t.landing.howItWorks.lastWithdrawal}</p>
-                  <p className="text-lg font-black text-[var(--accent)]">TSh 25,000</p>
+                {/* App header */}
+                <div className="flex items-center gap-2 px-2 mb-3">
+                  <div className="w-6 h-6 border border-[var(--foreground)] flex items-center justify-center text-[8px] font-mono font-black">G</div>
+                  <span className="text-xs font-mono font-bold text-[var(--foreground)]">GUAP</span>
+                  <div className="ml-auto flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 bg-[#00e5a0] animate-pulse" />
+                    <span className="text-[8px] font-mono text-[#00e5a0]">LIVE</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--accent)] bg-[var(--accent)]/10 border border-[var(--accent)]/20 px-3 py-1.5 rounded-xl">
-                  <CheckCircle size={13} weight="fill" />
-                  {t.landing.howItWorks.sentToMpesa}
+
+                {/* Balance card */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.3 }}
+                  className="bg-[var(--background)] border border-[var(--card-border)] p-3 mb-2"
+                >
+                  <p className="text-[9px] font-mono text-[var(--muted)] uppercase tracking-wider mb-1">BALANCE</p>
+                  <motion.p
+                    className="text-xl font-black font-mono text-[var(--foreground)]"
+                    animate={{ opacity: [1, 0.7, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    TSh 125,400
+                  </motion.p>
+                  <div className="flex items-center gap-1 mt-1">
+                    <TrendUp size={10} weight="bold" className="text-[#00e5a0]" />
+                    <span className="text-[9px] font-mono text-[#00e5a0]">+12,500 today</span>
+                  </div>
+                </motion.div>
+
+                {/* Transaction list */}
+                <div className="space-y-1.5">
+                  {[
+                    { label: "Deposit via M-Pesa", amount: "+50,000", color: "#00e5a0", delay: 0.5 },
+                    { label: "Buy YES · CCM Election", amount: "-5,000", color: "var(--muted)", delay: 0.65 },
+                    { label: "Market Won!", amount: "+9,200", color: "#00e5a0", delay: 0.8 },
+                  ].map((tx, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: -10 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: tx.delay }}
+                      className="flex items-center justify-between bg-[var(--background)] border border-[var(--card-border)] px-2.5 py-2"
+                    >
+                      <span className="text-[9px] font-mono text-[var(--muted)]">{tx.label}</span>
+                      <span className="text-[10px] font-mono font-bold" style={{ color: tx.color }}>{tx.amount}</span>
+                    </motion.div>
+                  ))}
                 </div>
+
+                {/* Withdrawal success notification */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 1 }}
+                  className="mt-2 bg-[#00e5a0]/10 border border-[#00e5a0]/30 p-2.5 flex items-center gap-2"
+                >
+                  <CheckCircle size={14} weight="fill" className="text-[#00e5a0] shrink-0" />
+                  <div>
+                    <p className="text-[9px] font-mono text-[var(--foreground)] font-bold">{t.landing.howItWorks.sentToMpesa}</p>
+                    <p className="text-[10px] font-mono font-black text-[#00e5a0]">TSh 25,000</p>
+                  </div>
+                </motion.div>
               </div>
+
+              {/* Decorative glow */}
+              <div className="absolute -inset-4 bg-gradient-to-br from-[#00e5a0]/5 via-transparent to-[#00b4d8]/5 -z-10 blur-xl" />
             </div>
           </motion.div>
         </div>
@@ -576,10 +675,10 @@ export default function HomePage() {
                 style={{ background: `radial-gradient(circle at 0% 100%, ${color}0a 0%, transparent 70%)` }}
               />
               <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl transition-transform duration-300 group-hover:scale-110"
+                className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110"
                 style={{ background: `${color}15`, border: `1px solid ${color}25` }}
               >
-                {emoji}
+                <Icon size={22} weight="fill" style={{ color }} />
               </div>
               <h3 className="font-black mb-2">{t.landing.features[titleKey]}</h3>
               <p className="text-sm text-[var(--muted)] leading-relaxed">{t.landing.features[descKey]}</p>
