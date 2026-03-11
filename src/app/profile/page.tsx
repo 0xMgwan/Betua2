@@ -260,7 +260,7 @@ export default function ProfilePage() {
                   </button>
                   <button
                     onClick={shareReferralLink}
-                    className="px-2.5 py-2 bg-[var(--accent)] text-black rounded-lg hover:opacity-90 transition-opacity"
+                    className="px-2.5 py-2 bg-[var(--accent)] text-[var(--background)] rounded-lg hover:opacity-90 transition-opacity"
                     title="Share"
                   >
                     <ShareNetwork size={14} weight="bold" />
