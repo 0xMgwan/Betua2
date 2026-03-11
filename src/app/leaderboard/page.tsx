@@ -7,6 +7,8 @@ import { Trophy, Crown, Medal } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { UserAvatar } from "@/components/UserAvatar";
+import { UserProfileModal } from "@/components/UserProfileModal";
 
 interface LeaderEntry {
   id: string;
@@ -30,6 +32,7 @@ export default function LeaderboardPage() {
   const { t, locale } = useLanguage();
   const [leaders, setLeaders] = useState<LeaderEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [profileUsername, setProfileUsername] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/leaderboard")
@@ -91,16 +94,13 @@ export default function LeaderboardPage() {
                   <div className="flex justify-center mb-2">
                     {RANK_ICONS[rank - 1]}
                   </div>
-                  <div
-                    className={cn(
-                      "w-12 h-12 rounded-full bg-gradient-to-br from-[#00e5a0] to-[#00b4d8] flex items-center justify-center text-black font-black text-lg mx-auto mb-2",
-                      visualIdx === 1 && "w-14 h-14 text-xl"
-                    )}
-                  >
-                    {actualLeader.username[0].toUpperCase()}
+                  <div className="mx-auto mb-2">
+                    <UserAvatar username={actualLeader.username} avatarUrl={actualLeader.avatarUrl} size={visualIdx === 1 ? "lg" : "md"} onClick={setProfileUsername} />
                   </div>
-                  <p className="font-bold text-sm">{actualLeader.displayName || actualLeader.username}</p>
-                  <p className="text-xs text-[var(--muted)] mb-1">@{actualLeader.username}</p>
+                  <button onClick={() => setProfileUsername(actualLeader.username)} className="hover:text-[var(--accent)] transition-colors">
+                    <p className="font-bold text-sm">{actualLeader.displayName || actualLeader.username}</p>
+                    <p className="text-xs text-[var(--muted)] mb-1">@{actualLeader.username}</p>
+                  </button>
                   <p className="text-xs font-medium text-[var(--accent)]">
                     {formatTZS(actualLeader.totalVolume)}
                   </p>
@@ -143,14 +143,14 @@ export default function LeaderboardPage() {
                   )}
                 </div>
                 <div className="col-span-2 flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00e5a0] to-[#00b4d8] flex items-center justify-center text-black font-bold text-xs">
-                    {l.username[0].toUpperCase()}
-                  </div>
+                  <UserAvatar username={l.username} avatarUrl={l.avatarUrl} size="sm" onClick={setProfileUsername} />
                   <div>
-                    <p className="font-semibold text-sm">
-                      {l.displayName || l.username}
-                      {l.id === user?.id && <span className="ml-1 text-xs text-[var(--accent)]">({t.leaderboard.you})</span>}
-                    </p>
+                    <button onClick={() => setProfileUsername(l.username)} className="hover:text-[var(--accent)] transition-colors text-left">
+                      <p className="font-semibold text-sm">
+                        {l.displayName || l.username}
+                        {l.id === user?.id && <span className="ml-1 text-xs text-[var(--accent)]">({t.leaderboard.you})</span>}
+                      </p>
+                    </button>
                     <p className="text-xs text-[var(--muted)]">{l.totalTrades} {t.leaderboard.trades}</p>
                   </div>
                 </div>
@@ -163,6 +163,7 @@ export default function LeaderboardPage() {
           </div>
         )}
       </div>
+      <UserProfileModal username={profileUsername} onClose={() => setProfileUsername(null)} />
     </div>
   );
 }

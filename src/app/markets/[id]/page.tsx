@@ -15,6 +15,8 @@ import {
   PencilSimple,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
+import { UserAvatar } from "@/components/UserAvatar";
+import { UserProfileModal } from "@/components/UserProfileModal";
 
 interface MarketData {
   id: string;
@@ -34,9 +36,9 @@ interface MarketData {
   options?: string[] | null;
   optionPools?: number[] | null;
   optionPrices?: number[] | null;
-  creator: { username: string; displayName?: string | null };
+  creator: { username: string; displayName?: string | null; avatarUrl?: string | null };
   _count: { trades: number; comments: number };
-  trades: { id: string; side: string; amountTzs: number; shares: number; price: number; createdAt: string; user: { username: string } }[];
+  trades: { id: string; side: string; amountTzs: number; shares: number; price: number; createdAt: string; user: { username: string; avatarUrl?: string | null } }[];
   comments: { id: string; body: string; createdAt: string; user: { username: string; avatarUrl?: string | null } }[];
 }
 
@@ -59,6 +61,9 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   // Comment state
   const [comment, setComment] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
+
+  // Profile modal state
+  const [profileUsername, setProfileUsername] = useState<string | null>(null);
 
   // Edit state
   const [showEditModal, setShowEditModal] = useState(false);
@@ -561,10 +566,8 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       market.trades.map((tr) => (
                         <div key={tr.id} className="flex items-center justify-between py-2 text-sm border-b border-[var(--card-border)] last:border-0">
                           <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#00e5a0] to-[#00b4d8] flex items-center justify-center text-xs font-bold text-black">
-                              {tr.user.username[0].toUpperCase()}
-                            </div>
-                            <span className="font-medium">@{tr.user.username}</span>
+                            <UserAvatar username={tr.user.username} avatarUrl={tr.user.avatarUrl} size="xs" onClick={setProfileUsername} />
+                            <button onClick={() => setProfileUsername(tr.user.username)} className="font-medium hover:text-[var(--accent)] transition-colors">@{tr.user.username}</button>
                             <span
                               className={cn(
                                 "px-1.5 py-0.5 rounded text-xs font-bold",
@@ -607,11 +610,11 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       ) : (
                         market.comments.map((c) => (
                           <div key={c.id} className="flex gap-3 py-2 border-b border-[var(--card-border)] last:border-0">
-                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#00e5a0] to-[#00b4d8] flex items-center justify-center text-xs font-bold text-black flex-shrink-0">
-                              {c.user.username[0].toUpperCase()}
+                            <div className="flex-shrink-0">
+                              <UserAvatar username={c.user.username} avatarUrl={c.user.avatarUrl} size="sm" onClick={setProfileUsername} />
                             </div>
                             <div>
-                              <span className="font-medium text-sm mr-2">@{c.user.username}</span>
+                              <button onClick={() => setProfileUsername(c.user.username)} className="font-medium text-sm mr-2 hover:text-[var(--accent)] transition-colors">@{c.user.username}</button>
                               <span className="text-sm text-[var(--muted)]">{c.body}</span>
                             </div>
                           </div>
@@ -946,6 +949,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
           </>
         )}
       </AnimatePresence>
+      <UserProfileModal username={profileUsername} onClose={() => setProfileUsername(null)} />
     </div>
   );
 }
