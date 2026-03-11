@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, TrendUp, TrendDown } from "@phosphor-icons/react";
@@ -7,6 +7,7 @@ import { formatTZS } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useUser } from "@/store/useUser";
 import { notifications } from "@/lib/notifications";
+import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
 
 interface QuickBuyModalProps {
   isOpen: boolean;
@@ -16,6 +17,9 @@ interface QuickBuyModalProps {
     title: string;
     price: { yes: number; no: number };
     optionPrices?: number[];
+    yesPool: number;
+    noPool: number;
+    optionPools?: number[];
   };
   side: string;
   optionIndex?: number;
@@ -32,12 +36,66 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex }: Qu
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
+  // Fresh pool data fetched from API
+  const [freshPools, setFreshPools] = useState<{
+    yesPool: number;
+    noPool: number;
+    optionPools?: number[];
+    price: { yes: number; no: number };
+    optionPrices?: number[];
+  } | null>(null);
+
+  // Fetch fresh market data when modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+    (async () => {
+      try {
+        const res = await fetch(`/api/markets/${market.id}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const m = data.market;
+        if (m) {
+          setFreshPools({
+            yesPool: m.yesPool,
+            noPool: m.noPool,
+            optionPools: m.optionPools || undefined,
+            price: m.price,
+            optionPrices: m.optionPrices || undefined,
+          });
+        }
+      } catch { /* use fallback props */ }
+    })();
+  }, [isOpen, market.id]);
+
   const isMultiOption = optionIndex !== undefined;
-  const price = isMultiOption && market.optionPrices
-    ? market.optionPrices[optionIndex]
-    : side === "YES" ? market.price.yes : market.price.no;
-  const shares = amount ? Math.floor(Number(amount) / price) : 0;
-  const cost = shares * price;
+  const pools = freshPools || market;
+  const price = isMultiOption && pools.optionPrices
+    ? pools.optionPrices[optionIndex]
+    : side === "YES" ? pools.price.yes : pools.price.no;
+
+  // Use real AMM formula for accurate share estimates
+  const amountNum = Number(amount) || 0;
+  let shares = 0;
+  let avgPrice = 0;
+  if (amountNum > 0) {
+    if (isMultiOption && pools.optionPools && pools.optionPools.length > 0) {
+      const result = getMultiOptionSharesOut(amountNum, optionIndex!, pools.optionPools);
+      shares = Math.floor(result.shares);
+      avgPrice = result.avgPrice;
+    } else {
+      const poolIn = side === "YES" ? pools.yesPool : pools.noPool;
+      const poolOut = side === "YES" ? pools.noPool : pools.yesPool;
+      if (poolIn > 0 && poolOut > 0) {
+        const result = getSharesOut(amountNum, poolIn, poolOut);
+        shares = Math.floor(result.shares);
+        avgPrice = result.avgPrice;
+      } else {
+        shares = Math.floor(amountNum / price);
+        avgPrice = price;
+      }
+    }
+  }
+  const cost = amountNum;
 
   const handleBuy = async () => {
     if (!user) {

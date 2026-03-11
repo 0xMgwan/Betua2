@@ -250,6 +250,8 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
             title: market.title,
             price: market.price,
             optionPrices: market.optionPrices || undefined,
+            yesPool: market.yesPool,
+            noPool: market.noPool,
           }}
           side={selectedSide}
           optionIndex={selectedOptionIndex ?? undefined}
