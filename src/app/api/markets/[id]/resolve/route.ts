@@ -101,8 +101,9 @@ export async function POST(
         amountTzs: netPayout,
       });
 
+      // Fee transfer (non-blocking)
       if (SETTLEMENT_FEE_NTZS_USER_ID && feeAmount > 0) {
-        await ntzs.transfers.create({
+        ntzs.transfers.create({
           fromUserId: PLATFORM_NTZS_USER_ID,
           toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
           amountTzs: feeAmount,

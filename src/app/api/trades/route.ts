@@ -115,17 +115,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Transfer 5% fee from platform escrow → settlement fee wallet
+    // Transfer 5% fee from platform escrow → settlement fee wallet (non-blocking)
     if (PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID && feeAmount > 0) {
-      try {
-        await ntzs.transfers.create({
-          fromUserId: PLATFORM_NTZS_USER_ID,
-          toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
-          amountTzs: feeAmount,
-        });
-      } catch (feeErr) {
+      ntzs.transfers.create({
+        fromUserId: PLATFORM_NTZS_USER_ID,
+        toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
+        amountTzs: feeAmount,
+      }).catch((feeErr) => {
         console.error("Fee transfer failed (non-fatal):", feeErr);
-      }
+      });
     }
 
     // Build market update data

@@ -104,9 +104,9 @@ export async function POST(req: NextRequest) {
           amountTzs: CREATION_FEE_TZS,
         });
 
-        // Step 2: platform escrow → creation fee wallet (non-fatal)
+        // Step 2: platform escrow → creation fee wallet (non-blocking, non-fatal)
         if (CREATION_FEE_NTZS_USER_ID) {
-          await ntzs.transfers
+          ntzs.transfers
             .create({
               fromUserId: PLATFORM_NTZS_USER_ID,
               toUserId: CREATION_FEE_NTZS_USER_ID,
