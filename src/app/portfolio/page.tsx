@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS, formatNumber, formatPercent } from "@/lib/utils";
@@ -487,6 +488,7 @@ export default function PortfolioPage() {
 
         </motion.div>
       </div>
+      <Footer />
     </div>
   );
 }

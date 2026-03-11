@@ -9,6 +9,7 @@ import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { UserAvatar } from "@/components/UserAvatar";
 import { UserProfileModal } from "@/components/UserProfileModal";
+import { Footer } from "@/components/Footer";
 
 interface LeaderEntry {
   id: string;
@@ -163,6 +164,7 @@ export default function LeaderboardPage() {
           </div>
         )}
       </div>
+      <Footer />
       <UserProfileModal username={profileUsername} onClose={() => setProfileUsername(null)} />
     </div>
   );

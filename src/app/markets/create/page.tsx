@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { CATEGORIES } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Footer } from "@/components/Footer";
 import {
   CalendarBlank, Image as ImageIcon, CaretRight, Info,
   CurrencyDollar, Upload, X, ChartLine, Plus, Trash,
@@ -711,6 +712,7 @@ export default function CreateMarketPage() {
 
         </motion.div>
       </div>
+      <Footer />
     </div>
   );
 }

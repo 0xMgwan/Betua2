@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS } from "@/lib/utils";
@@ -394,6 +395,7 @@ export default function WalletPage() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

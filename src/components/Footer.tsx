@@ -1,0 +1,29 @@
+"use client";
+import { XLogo, InstagramLogo } from "@phosphor-icons/react";
+
+export function Footer() {
+  return (
+    <footer className="border-t border-[var(--card-border)] mt-auto">
+      <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-center gap-5">
+        <a
+          href="https://x.com/youneedguap?s=21&t=hj2iETJ0AG45JhGdjSLNcg"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+          aria-label="Follow us on X"
+        >
+          <XLogo size={18} weight="fill" />
+        </a>
+        <a
+          href="https://instagram.com/youneedguap"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+          aria-label="Follow us on Instagram"
+        >
+          <InstagramLogo size={18} weight="fill" />
+        </a>
+      </div>
+    </footer>
+  );
+}

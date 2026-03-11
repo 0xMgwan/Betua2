@@ -8,6 +8,7 @@ import Link from "next/link";
 import { CATEGORIES } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Footer } from "@/components/Footer";
 
 export default function MarketsPage() {
   const { t, locale } = useLanguage();
@@ -159,6 +160,7 @@ export default function MarketsPage() {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 }

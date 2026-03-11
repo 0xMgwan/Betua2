@@ -17,6 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { UserAvatar } from "@/components/UserAvatar";
 import { UserProfileModal } from "@/components/UserProfileModal";
+import { Footer } from "@/components/Footer";
 
 interface MarketData {
   id: string;
@@ -949,6 +950,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
           </>
         )}
       </AnimatePresence>
+      <Footer />
       <UserProfileModal username={profileUsername} onClose={() => setProfileUsername(null)} />
     </div>
   );
