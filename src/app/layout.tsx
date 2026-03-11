@@ -13,16 +13,28 @@ export const metadata: Metadata = {
   description: "Trade YES or NO on African events. Politics, sports, business. Powered by nTZS. Africa's first prediction market.",
   keywords: ["predictions", "Africa", "TZS", "markets", "GUAP", "Mobile Money", "nTZS", "trading"],
   metadataBase: new URL("https://guap.gold"),
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/icon-192.png",
+    apple: "/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "GUAP",
+    statusBarStyle: "black-translucent",
+  },
   openGraph: {
     title: "GUAP — Predict the Future. Earn GUAP.",
     description: "Trade YES or NO on African events. Politics, sports, business. Powered by nTZS.",
     siteName: "GUAP",
     type: "website",
+    images: [{ url: "/icon-512.png", width: 512, height: 512 }],
   },
   twitter: {
     card: "summary_large_image",
     title: "GUAP — Predict the Future. Earn GUAP.",
     description: "Trade YES or NO on African events. Politics, sports, business. Powered by nTZS.",
+    images: ["/icon-512.png"],
   },
 };
 
