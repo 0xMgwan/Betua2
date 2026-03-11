@@ -23,25 +23,59 @@ export async function GET() {
     return false;
   });
 
+  const FEE_PERCENT = parseFloat(process.env.TRANSACTION_FEE_PERCENT || "5") / 100;
+
+  // Fetch all positions for markets this user is in, to calculate total shares per side
+  const marketIds = positions.map((p) => p.marketId);
+  const allMarketPositions = await prisma.position.findMany({
+    where: { marketId: { in: marketIds } },
+  });
+
+  // Build map: marketId → { totalYesShares, totalNoShares, totalOptionShares }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const marketShareTotals: Record<string, { yes: number; no: number; options: Record<string, number> }> = {};
+  for (const pos of allMarketPositions) {
+    if (!marketShareTotals[pos.marketId]) {
+      marketShareTotals[pos.marketId] = { yes: 0, no: 0, options: {} };
+    }
+    const totals = marketShareTotals[pos.marketId];
+    totals.yes += pos.yesShares;
+    totals.no += pos.noShares;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const optShares = (pos as any).optionShares as Record<string, number> | null;
+    if (optShares) {
+      for (const [idx, shares] of Object.entries(optShares)) {
+        totals.options[idx] = (totals.options[idx] || 0) + shares;
+      }
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const enriched = positions.map((p: any) => {
     const mkt = p.market;
     const isMultiOption = Array.isArray(mkt.options) && mkt.options.length >= 2;
+    const pot = Math.round(mkt.totalVolume * (1 - FEE_PERCENT));
+    const totals = marketShareTotals[mkt.id] || { yes: 0, no: 0, options: {} };
 
     if (isMultiOption && mkt.optionPools) {
       const prices = getMultiOptionPrices(mkt.optionPools as number[]);
       const optShares = (p.optionShares as Record<string, number>) || {};
+      // Expected value = sum over each option: probability × (myShares/totalShares) × pot
       let totalValue = 0;
       for (const [idx, shares] of Object.entries(optShares)) {
-        totalValue += shares * (prices[Number(idx)] || 0);
+        const totalForOption = totals.options[idx] || 1;
+        const payoutIfWin = totalForOption > 0 ? (shares / totalForOption) * pot * (1 - FEE_PERCENT) : 0;
+        totalValue += payoutIfWin * (prices[Number(idx)] || 0);
       }
-      return { ...p, currentValue: totalValue, price: getPrice(mkt.yesPool, mkt.noPool), optionPrices: prices };
+      return { ...p, currentValue: Math.round(totalValue), price: getPrice(mkt.yesPool, mkt.noPool), optionPrices: prices };
     }
 
     const price = getPrice(mkt.yesPool, mkt.noPool);
-    const yesValue = p.yesShares * price.yes;
-    const noValue = p.noShares * price.no;
-    return { ...p, currentValue: yesValue + noValue, price };
+    // Expected value: P(yes) × payoutIfYesWins + P(no) × payoutIfNoWins
+    const yesPayoutIfWin = totals.yes > 0 ? (p.yesShares / totals.yes) * pot * (1 - FEE_PERCENT) : 0;
+    const noPayoutIfWin = totals.no > 0 ? (p.noShares / totals.no) * pot * (1 - FEE_PERCENT) : 0;
+    const currentValue = yesPayoutIfWin * price.yes + noPayoutIfWin * price.no;
+    return { ...p, currentValue: Math.round(currentValue), price };
   });
 
   const trades = await prisma.trade.findMany({

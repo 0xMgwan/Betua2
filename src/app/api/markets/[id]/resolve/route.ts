@@ -58,7 +58,31 @@ export async function POST(
     },
   });
 
-  // Determine winners
+  // ── Proportional pot distribution ─────────────────────────────────────
+  // Winners split the totalVolume proportionally based on their winning shares.
+  // payout_i = (shares_i / totalWinningShares) × pot × (1 - settlementFee)
+  // This guarantees solvency: total payouts ≤ total money deposited.
+
+  // The pot is totalVolume minus the 5% entry fees already taken during trading.
+  // Since trades already deducted FEE_PERCENT at entry, the platform escrow holds:
+  //   pot = totalVolume × (1 - entryFee)
+  // But totalVolume in DB is the FULL amount users paid (before entry fee deduction).
+  // The escrow actually holds totalVolume × (1 - FEE_PERCENT).
+  const pot = Math.round(market.totalVolume * (1 - FEE_PERCENT));
+
+  // Calculate total winning shares
+  let totalWinningShares = 0;
+  for (const pos of market.positions) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const p = pos as any;
+    if (isMultiOption) {
+      const optShares = (p.optionShares as Record<string, number>) || {};
+      totalWinningShares += optShares[String(winningOutcome)] || 0;
+    } else {
+      totalWinningShares += outcome ? pos.yesShares : pos.noShares;
+    }
+  }
+
   const payoutResults: Array<{
     username: string;
     grossPayout: number;
@@ -75,16 +99,22 @@ export async function POST(
 
     if (isMultiOption) {
       const optShares = (p.optionShares as Record<string, number>) || {};
-      winningShares = optShares[String(optionIndex)] || 0;
+      winningShares = optShares[String(winningOutcome)] || 0;
     } else {
       winningShares = outcome ? pos.yesShares : pos.noShares;
     }
 
     if (winningShares <= 0) continue;
 
-    const grossPayout = winningShares;
+    // Proportional share of the pot
+    const grossPayout = totalWinningShares > 0
+      ? Math.round((winningShares / totalWinningShares) * pot)
+      : 0;
+    // Settlement fee on payout
     const feeAmount = Math.round(grossPayout * FEE_PERCENT);
     const netPayout = grossPayout - feeAmount;
+
+    if (netPayout <= 0) continue;
 
     if (!pos.user.ntzsUserId || !PLATFORM_NTZS_USER_ID) {
       await prisma.user.update({

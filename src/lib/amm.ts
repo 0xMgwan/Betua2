@@ -1,5 +1,17 @@
-// Constant Product Market Maker (CPMM) for prediction markets
-// k = yesPool * noPool (invariant)
+// ── Prediction-Market CPMM (Constant Product Market Maker) ──────────────
+//
+// Pools represent virtual liquidity. The ratio determines implied probability.
+// Price YES = noPool / (yesPool + noPool)   (range 0–1)
+// Price NO  = yesPool / (yesPool + noPool)
+//
+// Shares track proportional ownership. When a market resolves:
+//   - totalVolume (all money deposited by all traders, minus platform fees taken at entry)
+//     is the pot to be distributed.
+//   - Winners split the pot proportionally based on their shares.
+//   - payout_i = (shares_i / totalWinningShares) × totalVolume × (1 - settlementFee)
+//
+// This guarantees solvency: total payouts ≤ total deposits.
+// Winners always profit (they get losers' money). Losers get 0.
 
 export function getPrice(yesPool: number, noPool: number): { yes: number; no: number } {
   const total = yesPool + noPool;
@@ -47,14 +59,8 @@ export function getPriceImpact(
 }
 
 // ── Multi-option AMM ────────────────────────────────────────────────────
-// For N-option markets, each option has a pool. Price of option i = (totalPools - pool_i) / ((N-1) * totalPools)
-// Simplified: we use pairwise CPMM — buying option i is like buying against the sum of all other pools.
 
 export function getMultiOptionPrices(pools: number[]): number[] {
-  const total = pools.reduce((s, p) => s + p, 0);
-  // Price of option i is proportional to 1/pool_i (lower pool = higher price)
-  // Normalized: price_i = (total - pool_i) / ((pools.length - 1) * total)
-  // Simpler approach: price_i = (1/pool_i) / sum(1/pool_j)
   const inverses = pools.map(p => 1 / p);
   const sumInverses = inverses.reduce((s, v) => s + v, 0);
   return inverses.map(inv => inv / sumInverses);
@@ -65,18 +71,15 @@ export function getMultiOptionSharesOut(
   optionIndex: number,
   pools: number[]
 ): { shares: number; newPools: number[]; avgPrice: number } {
-  // Buying option i: money goes into all OTHER pools, shares come from pool i
   const otherPoolsTotal = pools.reduce((s, p, idx) => idx !== optionIndex ? s + p : s, 0);
   const targetPool = pools[optionIndex];
-  
-  // Use CPMM: k = targetPool * otherPoolsTotal
+
   const k = targetPool * otherPoolsTotal;
   const newOtherTotal = otherPoolsTotal + amountIn;
   const newTargetPool = k / newOtherTotal;
   const shares = targetPool - newTargetPool;
   const avgPrice = amountIn / shares;
 
-  // Distribute the amountIn proportionally across other pools
   const newPools = pools.map((p, idx) => {
     if (idx === optionIndex) return Math.round(newTargetPool);
     const proportion = p / otherPoolsTotal;

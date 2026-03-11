@@ -39,8 +39,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Already redeemed" }, { status: 400 });
     }
 
-    // Calculate payout
+    // Calculate payout using proportional pot distribution
     const outcome = position.market.outcome;
+    const FEE_PERCENT = parseFloat(process.env.TRANSACTION_FEE_PERCENT || "5") / 100;
     let winningShares = 0;
 
     if (outcome === 1) {
@@ -55,8 +56,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No winning shares to redeem" }, { status: 400 });
     }
 
-    // Each winning share is worth 1 TZS
-    const payoutTzs = Math.round(winningShares);
+    // Fetch all positions to calculate total winning shares
+    const allPositions = await prisma.position.findMany({
+      where: { marketId: position.marketId },
+    });
+
+    let totalWinningShares = 0;
+    for (const pos of allPositions) {
+      totalWinningShares += outcome === 1 ? pos.yesShares : pos.noShares;
+    }
+
+    // Pot = totalVolume minus entry fees already taken
+    const pot = Math.round(position.market.totalVolume * (1 - FEE_PERCENT));
+    // This user's proportional payout
+    const grossPayout = totalWinningShares > 0
+      ? Math.round((winningShares / totalWinningShares) * pot)
+      : 0;
+    // Settlement fee
+    const settlementFee = Math.round(grossPayout * FEE_PERCENT);
+    const payoutTzs = grossPayout - settlementFee;
 
     // Get user
     const user = await prisma.user.findUnique({

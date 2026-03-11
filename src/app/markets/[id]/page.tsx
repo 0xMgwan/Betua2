@@ -37,6 +37,9 @@ interface MarketData {
   options?: string[] | null;
   optionPools?: number[] | null;
   optionPrices?: number[] | null;
+  totalYesShares: number;
+  totalNoShares: number;
+  totalOptionShares: Record<string, number>;
   creator: { username: string; displayName?: string | null; avatarUrl?: string | null };
   _count: { trades: number; comments: number };
   trades: { id: string; side: string; amountTzs: number; shares: number; price: number; createdAt: string; user: { username: string; avatarUrl?: string | null } }[];
@@ -735,7 +738,21 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   </div>
 
                   {/* Estimate */}
-                  {estimatedShares > 0 && (
+                  {estimatedShares > 0 && market && (() => {
+                    const FEE_PCT = 0.05;
+                    const pot = Math.round(market.totalVolume * (1 - FEE_PCT));
+                    const newPot = Math.round((market.totalVolume + Number(amount)) * (1 - FEE_PCT));
+                    let totalSideShares: number;
+                    if (isMultiOption) {
+                      totalSideShares = (market.totalOptionShares?.[String(selectedOption)] || 0) + estimatedShares;
+                    } else {
+                      totalSideShares = (side === "YES" ? market.totalYesShares : market.totalNoShares) + estimatedShares;
+                    }
+                    const payoutIfWin = totalSideShares > 0
+                      ? Math.round((estimatedShares / totalSideShares) * newPot * (1 - FEE_PCT))
+                      : 0;
+                    const netGain = payoutIfWin - Number(amount);
+                    return (
                     <div className="p-3 bg-[var(--background)] rounded-xl text-sm space-y-1.5">
                       <div className="flex justify-between">
                         <span className="text-[var(--muted)]">{locale === "sw" ? "Hisa zinazokadiriwa" : "Estimated shares"}</span>
@@ -747,18 +764,19 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-[var(--muted)]">{locale === "sw" ? "Ukishinda" : "If you win"}</span>
-                        <span className="font-bold text-[#00e5a0]">{formatTZS(estimatedShares)}</span>
+                        <span className="font-bold text-[#00e5a0]">{formatTZS(payoutIfWin)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-[var(--muted)]">{locale === "sw" ? "Faida halisi" : "Net gain"}</span>
-                        <span className={cn("font-bold", estimatedShares - Number(amount) >= 0 ? "text-[var(--accent)]" : "text-yellow-400")}>
-                          {estimatedShares - Number(amount) >= 0
-                            ? `+${formatTZS(estimatedShares - Number(amount))}`
-                            : `${formatTZS(estimatedShares - Number(amount))} (${locale === "sw" ? "ada" : "fee"})`}
+                        <span className={cn("font-bold", netGain >= 0 ? "text-[var(--accent)]" : "text-yellow-400")}>
+                          {netGain >= 0
+                            ? `+${formatTZS(netGain)}`
+                            : `${formatTZS(netGain)} (${locale === "sw" ? "ada" : "fee"})`}
                         </span>
                       </div>
                     </div>
-                  )}
+                    );
+                  })()}
 
                   {tradeError && (
                     <p className="text-red-400 text-sm text-center bg-red-500/10 border border-red-500/20 rounded-xl py-2">

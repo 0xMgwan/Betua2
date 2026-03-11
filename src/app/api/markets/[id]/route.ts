@@ -28,6 +28,25 @@ export async function GET(
 
   if (!market) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  // Aggregate total shares per side for proportional payout calculation
+  const positions = await prisma.position.findMany({
+    where: { marketId: id },
+  });
+  let totalYesShares = 0;
+  let totalNoShares = 0;
+  const totalOptionShares: Record<string, number> = {};
+  for (const pos of positions) {
+    totalYesShares += pos.yesShares;
+    totalNoShares += pos.noShares;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const optShares = (pos as any).optionShares as Record<string, number> | null;
+    if (optShares) {
+      for (const [idx, shares] of Object.entries(optShares)) {
+        totalOptionShares[idx] = (totalOptionShares[idx] || 0) + shares;
+      }
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const m = market as any;
   return NextResponse.json({
@@ -37,6 +56,9 @@ export async function GET(
       optionPrices: m.options && m.optionPools
         ? getMultiOptionPrices(m.optionPools as number[])
         : null,
+      totalYesShares,
+      totalNoShares,
+      totalOptionShares,
     },
   });
 }
