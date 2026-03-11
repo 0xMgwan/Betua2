@@ -62,6 +62,18 @@ export default function PortfolioPage() {
         setTrades(d.trades || []);
       })
       .finally(() => setLoading(false));
+
+    // Silent background refresh every 30s (no loading spinner)
+    const interval = setInterval(() => {
+      fetch("/api/portfolio")
+        .then((r) => r.json())
+        .then((d) => {
+          setPositions(d.positions || []);
+          setTrades(d.trades || []);
+        })
+        .catch(() => {}); // silently ignore errors
+    }, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleRedeem = async (positionId: string) => {
