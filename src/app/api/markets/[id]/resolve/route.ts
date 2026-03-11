@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { ntzs, NtzsApiError } from "@/lib/ntzs";
 import { createNotification, createNotifications } from "@/lib/notify";
 
-const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
-const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
 const FEE_PERCENT = parseFloat(process.env.TRANSACTION_FEE_PERCENT || "5") / 100;
 
 export async function POST(
@@ -58,16 +55,10 @@ export async function POST(
     },
   });
 
-  // ── Proportional pot distribution ─────────────────────────────────────
+  // ── Payout calculation (for response info only — actual transfers happen in /api/redeem) ──
   // Winners split the totalVolume proportionally based on their winning shares.
   // payout_i = (shares_i / totalWinningShares) × pot × (1 - settlementFee)
   // This guarantees solvency: total payouts ≤ total money deposited.
-
-  // The pot is totalVolume minus the 5% entry fees already taken during trading.
-  // Since trades already deducted FEE_PERCENT at entry, the platform escrow holds:
-  //   pot = totalVolume × (1 - entryFee)
-  // But totalVolume in DB is the FULL amount users paid (before entry fee deduction).
-  // The escrow actually holds totalVolume × (1 - FEE_PERCENT).
   const pot = Math.round(market.totalVolume * (1 - FEE_PERCENT));
 
   // Calculate total winning shares
@@ -83,79 +74,27 @@ export async function POST(
     }
   }
 
-  const payoutResults: Array<{
-    username: string;
-    grossPayout: number;
-    fee: number;
-    netPayout: number;
-    status: "paid" | "failed";
-    error?: string;
-  }> = [];
-
-  for (const pos of market.positions) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const p = pos as any;
-    let winningShares = 0;
-
-    if (isMultiOption) {
-      const optShares = (p.optionShares as Record<string, number>) || {};
-      winningShares = optShares[String(winningOutcome)] || 0;
-    } else {
-      winningShares = outcome ? pos.yesShares : pos.noShares;
-    }
-
-    if (winningShares <= 0) continue;
-
-    // Proportional share of the pot
-    const grossPayout = totalWinningShares > 0
-      ? Math.round((winningShares / totalWinningShares) * pot)
-      : 0;
-    // Settlement fee on payout
-    const feeAmount = Math.round(grossPayout * FEE_PERCENT);
-    const netPayout = grossPayout - feeAmount;
-
-    if (netPayout <= 0) continue;
-
-    if (!pos.user.ntzsUserId || !PLATFORM_NTZS_USER_ID) {
-      await prisma.user.update({
-        where: { id: pos.user.id },
-        data: { balanceTzs: { increment: netPayout } },
-      });
-      payoutResults.push({ username: pos.user.username, grossPayout, fee: feeAmount, netPayout, status: "paid" });
-      continue;
-    }
-
-    try {
-      await ntzs.transfers.create({
-        fromUserId: PLATFORM_NTZS_USER_ID,
-        toUserId: pos.user.ntzsUserId,
-        amountTzs: netPayout,
-      });
-
-      // Fee transfer (non-blocking)
-      if (SETTLEMENT_FEE_NTZS_USER_ID && feeAmount > 0) {
-        ntzs.transfers.create({
-          fromUserId: PLATFORM_NTZS_USER_ID,
-          toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
-          amountTzs: feeAmount,
-        }).catch((err) => console.error("Settlement fee transfer failed (non-fatal):", err));
+  // Calculate expected payouts for response (no transfers here — redeem handles that)
+  const payoutSummary = market.positions
+    .map((pos) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const p = pos as any;
+      let winningShares = 0;
+      if (isMultiOption) {
+        const optShares = (p.optionShares as Record<string, number>) || {};
+        winningShares = optShares[String(winningOutcome)] || 0;
+      } else {
+        winningShares = outcome ? pos.yesShares : pos.noShares;
       }
-
-      await prisma.user.update({
-        where: { id: pos.user.id },
-        data: { balanceTzs: { increment: netPayout } },
-      });
-
-      payoutResults.push({ username: pos.user.username, grossPayout, fee: feeAmount, netPayout, status: "paid" });
-    } catch (err) {
-      const errMsg = err instanceof NtzsApiError ? err.message : "Transfer failed";
-      console.error(`Payout failed for ${pos.user.username}:`, err);
-      payoutResults.push({ username: pos.user.username, grossPayout, fee: feeAmount, netPayout, status: "failed", error: errMsg });
-    }
-  }
-
-  const totalPaid = payoutResults.reduce((sum, r) => r.status === "paid" ? sum + r.netPayout : sum, 0);
-  const totalFees = payoutResults.reduce((sum, r) => r.status === "paid" ? sum + r.fee : sum, 0);
+      if (winningShares <= 0) return null;
+      const grossPayout = totalWinningShares > 0
+        ? Math.round((winningShares / totalWinningShares) * pot)
+        : 0;
+      const feeAmount = Math.round(grossPayout * FEE_PERCENT);
+      const netPayout = grossPayout - feeAmount;
+      return { username: pos.user.username, winningShares, grossPayout, fee: feeAmount, netPayout };
+    })
+    .filter(Boolean);
 
   // Notify all position holders about resolution
   const notificationBatch = market.positions.map((pos) => {
@@ -174,7 +113,7 @@ export async function POST(
       type: isWinner ? "WINNINGS" as const : "MARKET_RESOLVED" as const,
       title: isWinner ? "You Won!" : "Market Resolved",
       message: isWinner
-        ? `You won in "${market.title}" — outcome: ${winningLabel}. Check your portfolio to see your payout!`
+        ? `You won in "${market.title}" — outcome: ${winningLabel}. Redeem your winnings from your portfolio!`
         : `"${market.title}" resolved: ${winningLabel}`,
       link: isWinner ? `/portfolio` : `/markets/${id}`,
     };
@@ -196,10 +135,10 @@ export async function POST(
   return NextResponse.json({
     ok: true,
     outcome: winningLabel,
-    winnersCount: payoutResults.filter(r => r.status === "paid").length,
-    totalPaid,
-    totalFees,
+    winnersCount: payoutSummary.length,
+    pot,
+    totalWinningShares,
     feePercent: Math.round(FEE_PERCENT * 100),
-    payouts: payoutResults,
+    payouts: payoutSummary,
   });
 }
