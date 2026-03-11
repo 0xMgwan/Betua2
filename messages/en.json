@@ -14,7 +14,7 @@
     "hero": {
       "title": "PREDICT THE FUTURE",
       "subtitle": "EARN GUAP",
-      "description": "Trade YES or NO on African events. Politics, sports, business. Powered by mobile money.",
+      "description": "Trade YES or NO on African events. Politics, sports, business. Powered by nTZS.",
       "createMarket": "CREATE MARKET",
       "exploreMarkets": "EXPLORE MARKETS"
     },
@@ -88,9 +88,9 @@
     "mission": {
       "badge": "Our mission",
       "title1": "Built for Africa.",
-      "title2": "Starting in Tanzania.",
-      "description": "GUAP is Africa's prediction market — built to work with local currencies, mobile money, and the events Africans actually care about. We're launching in Tanzania with TZS and Mobile Money, then expanding across the continent. No USD conversion. No foreign complexity. Just local knowledge turned into earnings.",
-      "point1": "Launching in Tanzania — expanding across all of Africa",
+      "title2": "",
+      "description": "GUAP is Africa's prediction market — built to work with local currencies, mobile money, and the events Africans actually care about. Trade across the continent with TZS and Mobile Money. No USD conversion. No foreign complexity. Just local knowledge turned into earnings.",
+      "point1": "Expanding across all of Africa",
       "point2": "Deposit and withdraw with Mobile Money networks (MTN, Airtel, Vodacom & more)",
       "point3": "Trade on African politics, football, business & entertainment",
       "point4": "Non-custodial wallets secured by Base blockchain",
@@ -106,7 +106,7 @@
       "freeToJoin": "Free to join"
     },
     "footer": {
-      "description": "Africa's first prediction market. Trade on local events starting in Tanzania.",
+      "description": "Africa's first prediction market. Trade on local events across the continent.",
       "platform": "Platform",
       "browseMarkets": "Browse Markets",
       "createMarket": "Create Market",

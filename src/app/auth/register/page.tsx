@@ -43,7 +43,7 @@ export default function RegisterPage() {
   }
 
   const PERKS = [
-    locale === "sw" ? "Mkoba bure kwenye Base" : "Free wallet on Base",
+    locale === "sw" ? "Mkoba bure" : "Free wallet",
     locale === "sw" ? "Kuweka na kutoa pesa kwa Pesa za Simu" : "Mobile Money deposits & withdrawals",
     locale === "sw" ? "Fanya biashara kwa TZS halisi" : "Trade with real TZS",
   ];

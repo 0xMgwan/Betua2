@@ -10,19 +10,19 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 
 export const metadata: Metadata = {
   title: "GUAP — Predict the Future. Earn GUAP.",
-  description: "Trade YES or NO on African events. Politics, sports, business. Powered by mobile money. Tanzania's first prediction market.",
-  keywords: ["predictions", "Tanzania", "TZS", "markets", "GUAP", "Mobile Money", "Africa", "trading"],
+  description: "Trade YES or NO on African events. Politics, sports, business. Powered by nTZS. Africa's first prediction market.",
+  keywords: ["predictions", "Africa", "TZS", "markets", "GUAP", "Mobile Money", "nTZS", "trading"],
   metadataBase: new URL("https://guap.gold"),
   openGraph: {
     title: "GUAP — Predict the Future. Earn GUAP.",
-    description: "Trade YES or NO on African events. Politics, sports, business. Powered by mobile money.",
+    description: "Trade YES or NO on African events. Politics, sports, business. Powered by nTZS.",
     siteName: "GUAP",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "GUAP — Predict the Future. Earn GUAP.",
-    description: "Trade YES or NO on African events. Politics, sports, business. Powered by mobile money.",
+    description: "Trade YES or NO on African events. Politics, sports, business. Powered by nTZS.",
   },
 };
 

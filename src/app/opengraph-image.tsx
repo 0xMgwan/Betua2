@@ -51,7 +51,7 @@ export default function Image() {
             marginTop: 16,
           }}
         >
-          Trade YES or NO on African events. Powered by mobile money.
+          Trade YES or NO on African events. Powered by nTZS.
         </div>
       </div>
     ),

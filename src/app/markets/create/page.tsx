@@ -14,6 +14,7 @@ import {
   CheckSquare, ListBullets, TextT, AlignLeft, Eye,
 } from "@phosphor-icons/react";
 import { CRYPTO_SYMBOLS } from "@/lib/pyth";
+import { TerminalDatePicker } from "@/components/TerminalDatePicker";
 
 const CREATION_FEE_TZS = 2000;
 
@@ -525,13 +526,14 @@ export default function CreateMarketPage() {
                     <CalendarBlank size={12} weight="bold" />
                     {t.markets.createMarket.resolutionDate}
                   </label>
-                  <input
-                    type="datetime-local"
-                    value={form.resolvesAt || defaultDate}
-                    onChange={(e) => setForm({ ...form, resolvesAt: e.target.value })}
-                    className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--card-border)] text-sm font-mono focus:outline-none focus:border-[var(--accent)]/50 transition-all"
-                    min={new Date().toISOString().slice(0, 16)}
+                  
+                  <TerminalDatePicker
+                    selected={form.resolvesAt ? new Date(form.resolvesAt) : new Date(defaultDate)}
+                    onChange={(date) => setForm({ ...form, resolvesAt: date ? date.toISOString().slice(0, 16) : "" })}
+                    minDate={new Date()}
+                    locale={locale}
                   />
+                  
                   <p className="text-[10px] font-mono text-[var(--muted)] mt-1">{t.markets.createMarket.resolutionDateHint}</p>
                 </motion.div>
 

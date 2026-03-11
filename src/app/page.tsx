@@ -9,7 +9,7 @@ import {
   ChartLineUp, ShieldCheck, Lightning, Globe, ArrowRight,
   CaretRight, CheckCircle, Star, UsersThree, CurrencyDollar,
   Handshake, TrendUp, MagnifyingGlass, Trophy,
-  Sparkle, Phone, ArrowDownLeft,
+  Sparkle, Phone, ArrowDownLeft, XLogo, InstagramLogo,
 } from "@phosphor-icons/react";
 import HeroAscii from "@/components/ui/hero-ascii";
 import { GlitchText } from "@/components/ui/glitch-text";
@@ -812,10 +812,30 @@ export default function HomePage() {
           </div>
 
           <div className="border-t border-[var(--card-border)] pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--muted)]">
-            <p className="font-mono">{t.landing.footer.copyright} <strong className="text-[var(--foreground)]">nTZS</strong> {t.landing.footer.onBase}</p>
-            <p className="flex items-center gap-1.5">
-              {t.landing.footer.madeWith} <Handshake size={13} weight="fill" className="text-[var(--accent)]" /> {t.landing.footer.forAfrica} 🌍
-            </p>
+            <p className="font-mono">{t.landing.footer.copyright} <strong className="text-[var(--foreground)]">nTZS</strong></p>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <a
+                  href="https://x.com/youneedguap?s=21&t=hj2iETJ0AG45JhGdjSLNcg"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[var(--muted)] hover:text-[var(--accent)] transition-colors"
+                  aria-label="Follow us on X"
+                >
+                  <XLogo size={16} weight="fill" />
+                </a>
+                <a
+                  href="#"
+                  className="text-[var(--muted)] hover:text-[var(--accent)] transition-colors cursor-not-allowed opacity-50"
+                  aria-label="Follow us on Instagram (coming soon)"
+                >
+                  <InstagramLogo size={16} weight="fill" />
+                </a>
+              </div>
+              <p className="flex items-center gap-1.5">
+                {t.landing.footer.madeWith} <Handshake size={13} weight="fill" className="text-[var(--accent)]" /> {t.landing.footer.forAfrica} 🌍
+              </p>
+            </div>
           </div>
         </div>
       </footer>

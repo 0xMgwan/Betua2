@@ -14,7 +14,7 @@
     "hero": {
       "title": "TABIRI YAJAYO",
       "subtitle": "SHINDA GUAP",
-      "description": "Fanya biashara ya NDIO au HAPANA kwenye matukio ya Kiafrika. Siasa, michezo, biashara. Inaendeshwa na pesa za simu.",
+      "description": "Fanya biashara ya NDIO au HAPANA kwenye matukio ya Kiafrika. Siasa, michezo, biashara. Inaendeshwa na nTZS.",
       "createMarket": "UNDA SOKO",
       "exploreMarkets": "TAZAMA MASOKO"
     },
@@ -88,9 +88,9 @@
     "mission": {
       "badge": "Dhamira yetu",
       "title1": "Imeundwa kwa Afrika.",
-      "title2": "Kuanzia Tanzania.",
-      "description": "GUAP ni soko la utabiri la Afrika — limeundwa kufanya kazi na sarafu za ndani, pesa za simu, na matukio ambayo Waafrika wanajali kweli. Tunaanza Tanzania na TZS na Pesa za Simu, kisha kupanuka bara zima. Hakuna ubadilishaji wa USD. Hakuna ugumu wa kigeni. Maarifa ya ndani tu yanayogeuzwa kuwa mapato.",
-      "point1": "Kuanza Tanzania — kupanuka Afrika nzima",
+      "title2": "",
+      "description": "GUAP ni soko la utabiri la Afrika — limeundwa kufanya kazi na sarafu za ndani, pesa za simu, na matukio ambayo Waafrika wanajali kweli. Fanya biashara bara zima na TZS na Pesa za Simu. Hakuna ubadilishaji wa USD. Hakuna ugumu wa kigeni. Maarifa ya ndani tu yanayogeuzwa kuwa mapato.",
+      "point1": "Kupanuka Afrika nzima",
       "point2": "Weka na utoe pesa kwa mitandao ya Pesa za Simu (MTN, Airtel, Vodacom na zaidi)",
       "point3": "Fanya biashara kwenye siasa, mpira, biashara na burudani ya Kiafrika",
       "point4": "Mikoba isiyo ya uhifadhi iliyolindwa na blockchain ya Base",
@@ -106,7 +106,7 @@
       "freeToJoin": "Bure kujiunga"
     },
     "footer": {
-      "description": "Soko la kwanza la utabiri la Afrika. Fanya biashara kwenye matukio ya ndani kuanzia Tanzania.",
+      "description": "Soko la kwanza la utabiri la Afrika. Fanya biashara kwenye matukio ya ndani bara zima.",
       "platform": "Jukwaa",
       "browseMarkets": "Tazama Masoko",
       "createMarket": "Unda Soko",
