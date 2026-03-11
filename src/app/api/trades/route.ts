@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
 import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
 import { notifications } from "@/lib/notifications";
+import { createNotification } from "@/lib/notify";
 
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
 const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
@@ -227,6 +228,15 @@ export async function POST(req: NextRequest) {
       }
       throw dbErr;
     }
+
+    // Notification: trade completed
+    createNotification({
+      userId: session.userId,
+      type: "TRADE",
+      title: "Trade Successful",
+      message: `Bought ${tradeSide} shares in "${market.title}" for ${amountTzs.toLocaleString()} TZS`,
+      link: `/markets/${marketId}`,
+    });
 
     return NextResponse.json({
       trade,

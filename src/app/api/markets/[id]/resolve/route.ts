@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
+import { createNotification, createNotifications } from "@/lib/notify";
 
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
 const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
@@ -125,6 +126,42 @@ export async function POST(
 
   const totalPaid = payoutResults.reduce((sum, r) => r.status === "paid" ? sum + r.netPayout : sum, 0);
   const totalFees = payoutResults.reduce((sum, r) => r.status === "paid" ? sum + r.fee : sum, 0);
+
+  // Notify all position holders about resolution
+  const notificationBatch = market.positions.map((pos) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const p = pos as any;
+    let winningShares = 0;
+    if (isMultiOption) {
+      const optShares = (p.optionShares as Record<string, number>) || {};
+      winningShares = optShares[String(winningOutcome)] || 0;
+    } else {
+      winningShares = outcome ? pos.yesShares : pos.noShares;
+    }
+    const isWinner = winningShares > 0;
+    return {
+      userId: pos.userId,
+      type: isWinner ? "WINNINGS" as const : "MARKET_RESOLVED" as const,
+      title: isWinner ? "You Won!" : "Market Resolved",
+      message: isWinner
+        ? `You won in "${market.title}" — outcome: ${winningLabel}. Check your portfolio to see your payout!`
+        : `"${market.title}" resolved: ${winningLabel}`,
+      link: isWinner ? `/portfolio` : `/markets/${id}`,
+    };
+  });
+
+  if (notificationBatch.length > 0) {
+    createNotifications(notificationBatch);
+  }
+
+  // Notify market creator
+  createNotification({
+    userId: session.userId,
+    type: "MARKET_RESOLVED",
+    title: "Market Resolved",
+    message: `Your market "${market.title}" has been resolved: ${winningLabel}`,
+    link: `/markets/${id}`,
+  });
 
   return NextResponse.json({
     ok: true,

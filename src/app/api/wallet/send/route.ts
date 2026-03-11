@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
+import { createNotification } from "@/lib/notify";
 
 export async function POST(req: NextRequest) {
   try {
@@ -83,6 +84,24 @@ export async function POST(req: NextRequest) {
             recipientUsername: sender.username, // Store sender's username for "from" display
           },
         ],
+      });
+
+      // Notify sender
+      createNotification({
+        userId: sender.id,
+        type: "FUNDS_SENT",
+        title: "Transfer Sent",
+        message: `Sent ${amountTzs.toLocaleString()} TZS to @${recipient.username}`,
+        link: `/wallet`,
+      });
+
+      // Notify recipient
+      createNotification({
+        userId: recipient.id,
+        type: "FUNDS_RECEIVED",
+        title: "Money Received!",
+        message: `@${sender.username} sent you ${transfer.recipientAmountTzs.toLocaleString()} TZS`,
+        link: `/wallet`,
       });
 
       return NextResponse.json({

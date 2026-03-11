@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { getPrice, getMultiOptionPrices } from "@/lib/amm";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
+import { createNotification } from "@/lib/notify";
 
 // Fee configuration
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
@@ -184,6 +185,15 @@ export async function POST(req: NextRequest) {
         data: { balanceTzs: { decrement: CREATION_FEE_TZS } },
       }),
     ]);
+
+    // Notification: market created
+    createNotification({
+      userId: session.userId,
+      type: "MARKET_CREATED",
+      title: "Market Created",
+      message: `Your market "${effectiveTitle}" is now live!`,
+      link: `/markets/${market.id}`,
+    });
 
     return NextResponse.json({ market });
   } catch (err) {

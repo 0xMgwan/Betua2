@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ntzs } from "@/lib/ntzs";
+import { createNotification } from "@/lib/notify";
 
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
 
@@ -102,6 +103,15 @@ export async function POST(req: NextRequest) {
         },
       }),
     ]);
+
+    // Notification: redemption successful
+    createNotification({
+      userId: session.userId,
+      type: "REDEEM",
+      title: "Winnings Redeemed!",
+      message: `Redeemed ${payoutTzs.toLocaleString()} TZS from "${position.market.title}"`,
+      link: `/wallet`,
+    });
 
     return NextResponse.json({
       success: true,
