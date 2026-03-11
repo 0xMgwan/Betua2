@@ -238,20 +238,23 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
     }
   }
 
-  // Estimate shares for current input
+  // Estimate shares for current input (matching trade API: 5% fee then AMM)
+  const FEE_PERCENT = 0.05;
   let estimatedShares = 0;
   let estimatedPrice = 0;
   if (market && amount && Number(amount) >= 100) {
     try {
+      const feeAmt = Math.round(Number(amount) * FEE_PERCENT);
+      const tradeAmt = Number(amount) - feeAmt;
       if (isMultiOption && market.optionPools) {
-        const result = getMultiOptionSharesOut(Number(amount), selectedOption, market.optionPools);
+        const result = getMultiOptionSharesOut(tradeAmt, selectedOption, market.optionPools);
         estimatedShares = Math.round(result.shares);
         estimatedPrice = result.avgPrice;
       } else {
         const result =
           side === "YES"
-            ? getSharesOut(Number(amount), market.noPool, market.yesPool)
-            : getSharesOut(Number(amount), market.yesPool, market.noPool);
+            ? getSharesOut(tradeAmt, market.noPool, market.yesPool)
+            : getSharesOut(tradeAmt, market.yesPool, market.noPool);
         estimatedShares = Math.round(result.shares);
         estimatedPrice = result.avgPrice;
       }
@@ -279,8 +282,10 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
     );
   }
 
-  const yesPct = Math.round(market.price.yes * 100);
-  const noPct = 100 - yesPct;
+  const yesPctRaw = market.price.yes * 100;
+  const noPctRaw = market.price.no * 100;
+  const yesPct = yesPctRaw % 1 === 0 ? Math.round(yesPctRaw) : parseFloat(yesPctRaw.toFixed(1));
+  const noPct = noPctRaw % 1 === 0 ? Math.round(noPctRaw) : parseFloat(noPctRaw.toFixed(1));
   const isResolved = market.status === "RESOLVED";
 
   return (
@@ -737,8 +742,16 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                         <span className="font-medium">{estimatedPrice.toFixed(4)} TZS/share</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-[var(--muted)]">{locale === "sw" ? "Malipo ya juu" : "Max payout"}</span>
-                        <span className="font-bold text-[var(--accent)]">{formatTZS(estimatedShares)}</span>
+                        <span className="text-[var(--muted)]">{locale === "sw" ? "Ukishinda" : "If you win"}</span>
+                        <span className="font-bold text-[#00e5a0]">{formatTZS(estimatedShares)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[var(--muted)]">{locale === "sw" ? "Faida halisi" : "Net gain"}</span>
+                        <span className={cn("font-bold", estimatedShares - Number(amount) >= 0 ? "text-[var(--accent)]" : "text-yellow-400")}>
+                          {estimatedShares - Number(amount) >= 0
+                            ? `+${formatTZS(estimatedShares - Number(amount))}`
+                            : `${formatTZS(estimatedShares - Number(amount))} (${locale === "sw" ? "ada" : "fee"})`}
+                        </span>
                       </div>
                     </div>
                   )}

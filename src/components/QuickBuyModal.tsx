@@ -73,25 +73,27 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex }: Qu
     ? pools.optionPrices[optionIndex]
     : side === "YES" ? pools.price.yes : pools.price.no;
 
-  // Use real AMM formula for accurate share estimates
+  // Use real AMM formula for accurate share estimates (matching trade API)
+  const FEE_PERCENT = 0.05;
   const amountNum = Number(amount) || 0;
+  const feeAmount = Math.round(amountNum * FEE_PERCENT);
+  const tradeAmount = amountNum - feeAmount; // Net amount after 5% fee, same as trade API
   let shares = 0;
   let avgPrice = 0;
-  if (amountNum > 0) {
+  if (tradeAmount > 0) {
     if (isMultiOption && pools.optionPools && pools.optionPools.length > 0) {
-      const result = getMultiOptionSharesOut(amountNum, optionIndex!, pools.optionPools);
-      shares = Math.floor(result.shares);
+      const result = getMultiOptionSharesOut(tradeAmount, optionIndex!, pools.optionPools);
+      shares = Math.round(result.shares);
       avgPrice = result.avgPrice;
     } else {
-      const poolIn = side === "YES" ? pools.yesPool : pools.noPool;
-      const poolOut = side === "YES" ? pools.noPool : pools.yesPool;
-      if (poolIn > 0 && poolOut > 0) {
-        const result = getSharesOut(amountNum, poolIn, poolOut);
-        shares = Math.floor(result.shares);
+      // Match trade API pool order: YES => (noPool, yesPool), NO => (yesPool, noPool)
+      const result =
+        side === "YES"
+          ? getSharesOut(tradeAmount, pools.noPool, pools.yesPool)
+          : getSharesOut(tradeAmount, pools.yesPool, pools.noPool);
+      if (result.shares > 0) {
+        shares = Math.round(result.shares);
         avgPrice = result.avgPrice;
-      } else {
-        shares = Math.floor(amountNum / price);
-        avgPrice = price;
       }
     }
   }
@@ -256,25 +258,20 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex }: Qu
                   {/* Divider */}
                   <div className="border-t border-dashed border-[var(--card-border)]"></div>
 
-                  {/* Estimated payout if win */}
+                  {/* Payout if win */}
                   <div className="flex items-center justify-between text-xs font-mono">
-                    <span className="text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Malipo (ukishinda)" : "Payout (if win)"}</span>
+                    <span className="text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Ukishinda" : "If you win"}</span>
                     <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
                     <span className="font-bold tabular-nums text-[#00e5a0]">{formatTZS(shares)}</span>
                   </div>
 
-                  {/* Potential profit */}
+                  {/* Potential net gain */}
                   <div className="flex items-center justify-between text-xs font-mono">
-                    <span className="text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Faida" : "Profit"}</span>
+                    <span className="text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Faida halisi" : "Net gain"}</span>
                     <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
-                    <span className="font-bold tabular-nums text-[#00e5a0]">+{formatTZS(Math.round(shares - cost))}</span>
-                  </div>
-
-                  {/* Multiplier */}
-                  <div className="flex items-center justify-between text-xs font-mono">
-                    <span className="text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Mara" : "Return"}</span>
-                    <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
-                    <span className="font-bold tabular-nums text-yellow-400">{(shares / cost).toFixed(2)}x</span>
+                    <span className={`font-bold tabular-nums ${shares - cost >= 0 ? "text-[#00e5a0]" : "text-yellow-400"}`}>
+                      {shares - cost >= 0 ? `+${formatTZS(shares - cost)}` : `${formatTZS(shares - cost)} (${locale === "sw" ? "ada" : "fee"})`}
+                    </span>
                   </div>
                 </div>
               )}
