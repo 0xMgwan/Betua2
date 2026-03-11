@@ -108,6 +108,16 @@ export function Navbar() {
     } catch { /* silent */ }
   };
 
+  const clearAll = async () => {
+    try {
+      await fetch("/api/notifications", {
+        method: "DELETE",
+      });
+      setNotifications([]);
+      setUnreadCount(0);
+    } catch { /* silent */ }
+  };
+
   const NAV_LINKS = [
     { href: "/markets", label: t.nav.markets, icon: ChartBar },
     { href: "/portfolio", label: "Portfolio", icon: TrendUp },
@@ -186,21 +196,33 @@ export function Navbar() {
                     className="absolute right-0 top-full mt-2 w-80 bg-[var(--background)] border border-[var(--card-border)] shadow-xl z-50 max-h-[70vh] flex flex-col"
                   >
                     {/* Header */}
-                    <div className="flex items-center justify-between px-3 py-2.5 border-b border-[var(--card-border)] bg-[var(--card)]">
-                      <span className="text-xs font-mono font-bold text-[var(--foreground)] uppercase tracking-wider flex items-center gap-1.5">
-                        <Bell size={12} weight="fill" />
-                        Notifications
-                        {unreadCount > 0 && (
-                          <span className="text-[9px] px-1.5 py-0.5 bg-[var(--accent)] text-[var(--background)] font-black">{unreadCount}</span>
-                        )}
-                      </span>
-                      {unreadCount > 0 && (
-                        <button
-                          onClick={markAllRead}
-                          className="text-[10px] font-mono font-bold text-[var(--accent)] hover:underline uppercase tracking-wider"
-                        >
-                          Mark all read
-                        </button>
+                    <div className="px-3 py-2.5 border-b border-[var(--card-border)] bg-[var(--card)]">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-mono font-bold text-[var(--foreground)] uppercase tracking-wider flex items-center gap-1.5">
+                          <Bell size={12} weight="fill" />
+                          Notifications
+                          {unreadCount > 0 && (
+                            <span className="text-[9px] px-1.5 py-0.5 bg-[var(--accent)] text-[var(--background)] font-black">{unreadCount}</span>
+                          )}
+                        </span>
+                      </div>
+                      {notifications.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          {unreadCount > 0 && (
+                            <button
+                              onClick={markAllRead}
+                              className="text-[10px] font-mono font-bold text-[var(--accent)] hover:underline uppercase tracking-wider"
+                            >
+                              Mark all read
+                            </button>
+                          )}
+                          <button
+                            onClick={clearAll}
+                            className="text-[10px] font-mono font-bold text-red-400 hover:underline uppercase tracking-wider"
+                          >
+                            Clear all
+                          </button>
+                        </div>
                       )}
                     </div>
 

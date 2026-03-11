@@ -50,3 +50,15 @@ export async function PATCH(req: NextRequest) {
 
   return NextResponse.json({ ok: true });
 }
+
+// DELETE /api/notifications — clear all notifications
+export async function DELETE(req: NextRequest) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  await prisma.notification.deleteMany({
+    where: { userId: session.userId },
+  });
+
+  return NextResponse.json({ ok: true });
+}
