@@ -44,8 +44,10 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [selectedSide, setSelectedSide] = useState<string | null>(null);
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
-  const yesPct = Math.round(market.price.yes * 100);
-  const noPct = 100 - yesPct;
+  const yesPctRaw = market.price.yes * 100;
+  const noPctRaw = market.price.no * 100;
+  const yesPct = yesPctRaw % 1 === 0 ? Math.round(yesPctRaw) : parseFloat(yesPctRaw.toFixed(1));
+  const noPct = noPctRaw % 1 === 0 ? Math.round(noPctRaw) : parseFloat(noPctRaw.toFixed(1));
   const isMultiOption = market.options && market.options.length >= 2;
   const catColor = CATEGORY_COLORS[market.category] || "#94a3b8";
   const hasImage = market.imageUrl && !imageError;
@@ -116,7 +118,8 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
             {isMultiOption ? (
               <div className="space-y-1.5 mb-3">
                 {market.options!.map((opt, i) => {
-                  const pct = Math.round((market.optionPrices![i] || 0) * 100);
+                  const pctRaw = (market.optionPrices![i] || 0) * 100;
+                  const pct = pctRaw % 1 === 0 ? Math.round(pctRaw) : parseFloat(pctRaw.toFixed(1));
                   const colors = ["#00e5a0", "#00b4d8", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#84cc16"];
                   const c = colors[i % colors.length];
                   return (
