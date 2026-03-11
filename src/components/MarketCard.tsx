@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Clock, TrendUp, UsersThree } from "@phosphor-icons/react";
+import { Clock, TrendUp, UsersThree, Lightning, Timer, ChartLineUp } from "@phosphor-icons/react";
 import { formatTZS, formatNumber, timeUntil } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -26,6 +26,18 @@ interface Market {
   creator?: { username: string };
 }
 
+const CATEGORY_COLORS: Record<string, string> = {
+  Politics: "#f59e0b",
+  Sports: "#00b4d8",
+  Entertainment: "#ec4899",
+  Crypto: "#00e5a0",
+  Business: "#8b5cf6",
+  Science: "#14b8a6",
+  Weather: "#6366f1",
+  Technology: "#f97316",
+  Other: "#94a3b8",
+};
+
 export function MarketCard({ market, index = 0 }: { market: Market; index?: number }) {
   const { t, locale } = useLanguage();
   const [imageError, setImageError] = useState(false);
@@ -35,6 +47,8 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
   const yesPct = Math.round(market.price.yes * 100);
   const noPct = 100 - yesPct;
   const isMultiOption = market.options && market.options.length >= 2;
+  const catColor = CATEGORY_COLORS[market.category] || "#94a3b8";
+  const hasImage = market.imageUrl && !imageError;
 
   const handleQuickBuy = (e: React.MouseEvent, side: string, optionIndex?: number) => {
     e.preventDefault();
@@ -51,178 +65,172 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
       transition={{ delay: index * 0.05, duration: 0.3 }}
     >
       <Link href={`/markets/${market.id}`}>
-        <div className="group relative bg-[var(--card)] border-2 border-[var(--card-border)] rounded-none overflow-hidden hover:border-[var(--accent)] transition-all duration-200 hover:shadow-[0_0_20px_rgba(0,229,160,0.15)]">
-          {/* Terminal-style header bar */}
-          <div className="bg-[var(--background)] border-b-2 border-[var(--card-border)] px-3 py-2 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-500/70"></div>
-                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/70"></div>
-                <div className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]/70"></div>
+        <div className="group relative bg-[var(--card)] border border-[var(--card-border)] overflow-hidden hover:border-[var(--accent)]/60 transition-all duration-200 hover:shadow-[0_0_20px_rgba(0,229,160,0.1)]">
+          {/* Accent top line */}
+          <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, ${catColor}, transparent)` }} />
+
+          <div className="p-3 sm:p-4">
+            {/* Top row: Category + Status + Timer */}
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="flex items-center gap-2">
+                <span
+                  className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 border"
+                  style={{ borderColor: `${catColor}50`, color: catColor, backgroundColor: `${catColor}10` }}
+                >
+                  {market.category}
+                </span>
+                {market.status === "RESOLVED" && (
+                  <span className="text-[9px] font-mono font-bold text-blue-400 uppercase tracking-wider px-1.5 py-0.5 border border-blue-400/30 bg-blue-400/10">
+                    Resolved
+                  </span>
+                )}
               </div>
-              <span className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
-                [{market.category}]
+              <span className={cn(
+                "flex items-center gap-1 text-[9px] font-mono",
+                market.status === "OPEN" ? "text-[var(--muted)]" : "text-blue-400"
+              )}>
+                <Timer size={10} weight="bold" />
+                {market.status === "OPEN" ? timeUntil(market.resolvesAt) : "Ended"}
               </span>
             </div>
-            {market.status === "RESOLVED" && (
-              <span className="text-[10px] font-mono text-blue-400 uppercase tracking-wider border border-blue-400/30 px-2 py-0.5">
-                ● RESOLVED
-              </span>
-            )}
-          </div>
 
-          {/* Image section with scanline effect */}
-          <div className="aspect-[16/9] relative overflow-hidden bg-black/30">
-            {market.imageUrl && !imageError ? (
-              <>
-                <img 
-                  src={market.imageUrl} 
-                  alt={market.title} 
-                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  onError={() => setImageError(true)}
-                />
-                {/* Scanline overlay */}
-                <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,0,0,0.1)_2px,rgba(0,0,0,0.1)_4px)] pointer-events-none"></div>
-              </>
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <TrendUp size={48} className="text-[var(--accent)]/20" weight="duotone" />
-              </div>
-            )}
-            {/* CRT glow effect */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[var(--card)] via-transparent to-transparent pointer-events-none"></div>
-          </div>
+            {/* Title row with optional thumbnail */}
+            <div className="flex gap-3 mb-3">
+              {hasImage && (
+                <div className="shrink-0 w-12 h-12 sm:w-14 sm:h-14 border border-[var(--card-border)] overflow-hidden relative">
+                  <img
+                    src={market.imageUrl!}
+                    alt=""
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    onError={() => setImageError(true)}
+                  />
+                  <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,0,0,0.08)_2px,rgba(0,0,0,0.08)_4px)] pointer-events-none" />
+                </div>
+              )}
+              <h3 className="font-mono text-[13px] sm:text-sm font-bold leading-snug group-hover:text-[var(--accent)] transition-colors line-clamp-2 flex-1">
+                {market.title}
+              </h3>
+            </div>
 
-          <div className="p-4 space-y-3">
-            {/* Title with terminal cursor */}
-            <h3 className="font-mono text-sm font-bold leading-tight group-hover:text-[var(--accent)] transition-colors line-clamp-2">
-              <span className="text-[var(--accent)]">$</span> {market.title}
-              <span className="inline-block w-2 h-4 bg-[var(--accent)] ml-1 animate-pulse"></span>
-            </h3>
-
-            {/* Terminal-style price display */}
-            {market.options && market.optionPrices && market.options.length >= 2 ? (
-              <div className="space-y-1.5 font-mono text-xs">
-                {market.options.map((opt, i) => {
+            {/* Price bars */}
+            {isMultiOption ? (
+              <div className="space-y-1.5 mb-3">
+                {market.options!.map((opt, i) => {
                   const pct = Math.round((market.optionPrices![i] || 0) * 100);
-                  const textColors = [
-                    "text-[#00e5a0]", "text-[#00b4d8]", "text-[#f59e0b]", "text-red-400",
-                    "text-[#8b5cf6]", "text-[#ec4899]", "text-[#14b8a6]", "text-[#f97316]",
-                    "text-[#6366f1]", "text-[#84cc16]",
-                  ];
-                  const bgColors = [
-                    "bg-[#00e5a0]", "bg-[#00b4d8]", "bg-[#f59e0b]", "bg-red-400",
-                    "bg-[#8b5cf6]", "bg-[#ec4899]", "bg-[#14b8a6]", "bg-[#f97316]",
-                    "bg-[#6366f1]", "bg-[#84cc16]",
-                  ];
+                  const colors = ["#00e5a0", "#00b4d8", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#84cc16"];
+                  const c = colors[i % colors.length];
                   return (
-                    <div key={i}>
-                      <div className="flex items-center justify-between mb-0.5">
-                        <span className={textColors[i % textColors.length]}>[{String.fromCharCode(65 + i)}] {opt.length > 15 ? opt.slice(0, 15) + "…" : opt}</span>
-                        <span className={cn("font-bold tabular-nums", textColors[i % textColors.length])}>{pct}%</span>
-                      </div>
-                      <div className="flex-1 bg-[var(--background)] h-2 border border-[var(--card-border)] overflow-hidden">
-                        <div
-                          className={cn("h-full transition-all duration-500", bgColors[i % bgColors.length])}
-                          style={{ width: `${pct}%` }}
+                    <div key={i} className="flex items-center gap-2 font-mono text-[11px]">
+                      <span className="w-[70px] truncate font-bold" style={{ color: c }}>
+                        {opt}
+                      </span>
+                      <div className="flex-1 h-[6px] bg-[var(--background)] border border-[var(--card-border)]/50 overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ duration: 0.6, delay: index * 0.05 + i * 0.1 }}
+                          className="h-full"
+                          style={{ backgroundColor: c }}
                         />
                       </div>
+                      <span className="w-8 text-right font-bold tabular-nums" style={{ color: c }}>{pct}%</span>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <div className="space-y-2 font-mono text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-[#00e5a0]">[YES]</span>
-                  <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
-                  <span className="text-[#00e5a0] font-bold tabular-nums">{yesPct}%</span>
+              <div className="mb-3">
+                {/* Combined YES/NO bar */}
+                <div className="flex items-center justify-between mb-1.5 font-mono text-[11px]">
+                  <span className="text-[#00e5a0] font-bold">YES {yesPct}%</span>
+                  <span className="text-red-400 font-bold">NO {noPct}%</span>
                 </div>
-                {/* ASCII-style progress bar */}
-                <div className="flex items-center gap-1 text-[10px]">
-                  <span className="text-[#00e5a0]">█</span>
-                  <div className="flex-1 bg-[var(--background)] h-3 border border-[var(--card-border)] overflow-hidden">
-                    <div
-                      className="h-full bg-[#00e5a0] transition-all duration-500 relative"
-                      style={{ width: `${yesPct}%` }}
-                    >
-                      <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,transparent,transparent_2px,rgba(0,0,0,0.2)_2px,rgba(0,0,0,0.2)_4px)]"></div>
-                    </div>
-                  </div>
-                  <span className="text-red-400">█</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-red-400">[NO]</span>
-                  <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
-                  <span className="text-red-400 font-bold tabular-nums">{noPct}%</span>
+                <div className="h-2 bg-[var(--background)] border border-[var(--card-border)]/50 overflow-hidden flex">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${yesPct}%` }}
+                    transition={{ duration: 0.6, delay: index * 0.05 }}
+                    className="h-full bg-[#00e5a0] relative"
+                  >
+                    <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,transparent,transparent_3px,rgba(0,0,0,0.15)_3px,rgba(0,0,0,0.15)_4px)]" />
+                  </motion.div>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${noPct}%` }}
+                    transition={{ duration: 0.6, delay: index * 0.05 + 0.1 }}
+                    className="h-full bg-red-400/80 relative"
+                  >
+                    <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,transparent,transparent_3px,rgba(0,0,0,0.15)_3px,rgba(0,0,0,0.15)_4px)]" />
+                  </motion.div>
                 </div>
               </div>
             )}
 
-            {/* Quick Buy Buttons - Terminal style */}
+            {/* Quick Buy Buttons */}
             {market.status === "OPEN" && (
               isMultiOption ? (
-                <div className="grid gap-1.5">
-                  {market.options!.map((option, idx) => {
-                    const colors = [
-                      { bg: "bg-[#00e5a0]/10", hover: "hover:bg-[#00e5a0]/20", border: "border-[#00e5a0]", text: "text-[#00e5a0]", shadow: "hover:shadow-[0_0_10px_rgba(0,229,160,0.3)]" },
-                      { bg: "bg-[#00b4d8]/10", hover: "hover:bg-[#00b4d8]/20", border: "border-[#00b4d8]", text: "text-[#00b4d8]", shadow: "hover:shadow-[0_0_10px_rgba(0,180,216,0.3)]" },
-                      { bg: "bg-orange-500/10", hover: "hover:bg-orange-500/20", border: "border-orange-500", text: "text-orange-400", shadow: "hover:shadow-[0_0_10px_rgba(251,146,60,0.3)]" },
-                    ];
-                    const color = colors[idx % colors.length];
+                <div className="grid grid-cols-2 gap-1.5 mb-3">
+                  {market.options!.slice(0, 4).map((option, idx) => {
+                    const colors = ["#00e5a0", "#00b4d8", "#f59e0b", "#ef4444"];
+                    const c = colors[idx % colors.length];
                     return (
                       <button
                         key={idx}
                         onClick={(e) => handleQuickBuy(e, option, idx)}
-                        className={cn(
-                          "py-2 px-3 border-2 font-mono font-bold text-xs uppercase tracking-wider transition-all active:scale-95",
-                          color.bg, color.hover, color.border, color.text, color.shadow
-                        )}
+                        className="py-2 px-2 border font-mono font-bold text-[10px] uppercase tracking-wider transition-all active:scale-95"
+                        style={{
+                          borderColor: `${c}60`,
+                          color: c,
+                          backgroundColor: `${c}08`,
+                        }}
                       >
-                        &gt; BUY [{String.fromCharCode(65 + idx)}] {option.slice(0, 15)}{option.length > 15 ? "..." : ""}
+                        Buy {option.length > 10 ? option.slice(0, 10) + ".." : option}
                       </button>
                     );
                   })}
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2 mb-3">
                   <button
                     onClick={(e) => handleQuickBuy(e, "YES")}
-                    className="py-2.5 px-3 bg-[#00e5a0]/10 hover:bg-[#00e5a0]/20 border-2 border-[#00e5a0] text-[#00e5a0] font-mono font-bold text-xs uppercase tracking-wider transition-all hover:shadow-[0_0_10px_rgba(0,229,160,0.3)] active:scale-95"
+                    className="py-2 px-3 bg-[#00e5a0]/8 border border-[#00e5a0]/50 text-[#00e5a0] font-mono font-bold text-[11px] uppercase tracking-wider transition-all hover:bg-[#00e5a0]/15 hover:border-[#00e5a0] hover:shadow-[0_0_12px_rgba(0,229,160,0.2)] active:scale-[0.97]"
                   >
-                    &gt; BUY YES
+                    Buy Yes
                   </button>
                   <button
                     onClick={(e) => handleQuickBuy(e, "NO")}
-                    className="py-2.5 px-3 bg-red-500/10 hover:bg-red-500/20 border-2 border-red-500 text-red-400 font-mono font-bold text-xs uppercase tracking-wider transition-all hover:shadow-[0_0_10px_rgba(239,68,68,0.3)] active:scale-95"
+                    className="py-2 px-3 bg-red-500/8 border border-red-500/50 text-red-400 font-mono font-bold text-[11px] uppercase tracking-wider transition-all hover:bg-red-500/15 hover:border-red-500 hover:shadow-[0_0_12px_rgba(239,68,68,0.2)] active:scale-[0.97]"
                   >
-                    &gt; BUY NO
+                    Buy No
                   </button>
                 </div>
               )
             )}
 
-            {/* Terminal-style footer */}
-            <div className="flex items-center justify-between text-[10px] font-mono text-[var(--muted)] pt-2 border-t border-[var(--card-border)]">
-              <div className="flex items-center gap-2 sm:gap-3">
+            {/* Footer stats */}
+            <div className="flex items-center justify-between text-[9px] font-mono text-[var(--muted)] pt-2 border-t border-[var(--card-border)]/50">
+              <div className="flex items-center gap-3">
                 <span className="flex items-center gap-1">
-                  <span className="text-[var(--accent)]">↗</span>
-                  <img src="/ntzs.png" alt="nTZS" className="w-3 h-3 inline-block opacity-70" />
-                  <span className="hidden xs:inline">TSh {formatTZS(market.totalVolume).replace('TSh ', '')}</span>
-                  <span className="xs:hidden">TSh {market.totalVolume >= 1000 ? `${(market.totalVolume / 1000).toFixed(1)}K` : market.totalVolume}</span>
+                  <ChartLineUp size={10} weight="bold" className="text-[var(--accent)]" />
+                  <img src="/ntzs.png" alt="nTZS" className="w-2.5 h-2.5 inline-block opacity-60" />
+                  {market.totalVolume >= 1000000
+                    ? `${(market.totalVolume / 1000000).toFixed(1)}M`
+                    : market.totalVolume >= 1000
+                    ? `${(market.totalVolume / 1000).toFixed(1)}K`
+                    : market.totalVolume}
                 </span>
                 {market._count && (
                   <span className="flex items-center gap-1">
-                    <span className="text-[var(--accent)]">◉</span>
+                    <Lightning size={10} weight="fill" className="text-[var(--accent)]" />
                     {market._count.trades}
                   </span>
                 )}
               </div>
-              <span className={cn("flex items-center gap-1 text-[9px] sm:text-[10px]", market.status === "OPEN" ? "" : "text-blue-400")}>
-                <span>⏱</span>
-                <span className="hidden sm:inline">{market.status === "OPEN" ? timeUntil(market.resolvesAt) : (locale === "sw" ? "ENDED" : "ENDED")}</span>
-                <span className="sm:hidden">{market.status === "OPEN" ? timeUntil(market.resolvesAt).split(" ")[0] : "END"}</span>
-              </span>
+              {market.creator && (
+                <span className="text-[var(--muted)]/70 truncate max-w-[80px]">
+                  @{market.creator.username}
+                </span>
+              )}
             </div>
           </div>
         </div>
