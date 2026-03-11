@@ -78,6 +78,8 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
     imageUrl: "",
     resolvesAt: "",
   });
+  const [resolveConfirm, setResolveConfirm] = useState<string | null>(null);
+  const [resolveLoading, setResolveLoading] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState("");
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
@@ -180,27 +182,38 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   }
 
   async function handleResolve(outcome: boolean) {
-    if (!confirm(`Resolve as ${outcome ? "YES" : "NO"}?`)) return;
-    await fetch(`/api/markets/${id}/resolve`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ outcome }),
-    });
-    loadMarket();
+    const key = outcome ? "YES" : "NO";
+    if (resolveConfirm !== key) { setResolveConfirm(key); return; }
+    setResolveLoading(true);
+    try {
+      await fetch(`/api/markets/${id}/resolve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ outcome }),
+      });
+      loadMarket();
+    } finally {
+      setResolveLoading(false);
+      setResolveConfirm(null);
+    }
   }
 
   async function handleResolveOption(optIdx: number) {
     if (!market?.options) return;
-    const confirmMsg = optIdx === -1
-      ? (locale === "sw" ? "Tatua kama \"Hakuna mshindi\"? Hakuna mtu atalipwa." : "Resolve as \"None\"? No one will receive a payout.")
-      : `Resolve as "${market.options[optIdx]}"?`;
-    if (!confirm(confirmMsg)) return;
-    await fetch(`/api/markets/${id}/resolve`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ optionIndex: optIdx }),
-    });
-    loadMarket();
+    const key = `opt-${optIdx}`;
+    if (resolveConfirm !== key) { setResolveConfirm(key); return; }
+    setResolveLoading(true);
+    try {
+      await fetch(`/api/markets/${id}/resolve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ optionIndex: optIdx }),
+      });
+      loadMarket();
+    } finally {
+      setResolveLoading(false);
+      setResolveConfirm(null);
+    }
   }
 
   function openEditModal() {
@@ -504,17 +517,33 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   <div className="flex gap-3">
                     <button
                       onClick={() => handleResolve(true)}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#00e5a0]/10 border border-[#00e5a0]/30 text-[#00e5a0] rounded-xl font-semibold text-sm hover:bg-[#00e5a0]/20 transition-all"
+                      disabled={resolveLoading}
+                      className={cn(
+                        "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all",
+                        resolveConfirm === "YES"
+                          ? "bg-[#00e5a0] text-black animate-pulse"
+                          : "bg-[#00e5a0]/10 border border-[#00e5a0]/30 text-[#00e5a0] hover:bg-[#00e5a0]/20"
+                      )}
                     >
                       <CheckCircle size={16} />
-                      {locale === "sw" ? "Tatua NDIO" : "Resolve YES"}
+                      {resolveLoading && resolveConfirm === "YES" ? (locale === "sw" ? "Inatatua..." : "Resolving...") :
+                       resolveConfirm === "YES" ? (locale === "sw" ? "Bonyeza tena kuthibitisha" : "Tap again to confirm") :
+                       (locale === "sw" ? "Tatua NDIO" : "Resolve YES")}
                     </button>
                     <button
                       onClick={() => handleResolve(false)}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl font-semibold text-sm hover:bg-red-500/20 transition-all"
+                      disabled={resolveLoading}
+                      className={cn(
+                        "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all",
+                        resolveConfirm === "NO"
+                          ? "bg-red-500 text-white animate-pulse"
+                          : "bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20"
+                      )}
                     >
                       <XCircle size={16} />
-                      {locale === "sw" ? "Tatua HAPANA" : "Resolve NO"}
+                      {resolveLoading && resolveConfirm === "NO" ? (locale === "sw" ? "Inatatua..." : "Resolving...") :
+                       resolveConfirm === "NO" ? (locale === "sw" ? "Bonyeza tena kuthibitisha" : "Tap again to confirm") :
+                       (locale === "sw" ? "Tatua HAPANA" : "Resolve NO")}
                     </button>
                   </div>
                 )}
