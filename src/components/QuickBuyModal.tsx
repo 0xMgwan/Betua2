@@ -25,7 +25,7 @@ interface QuickBuyModalProps {
   optionIndex?: number;
 }
 
-const QUICK_AMOUNTS = [500, 1000, 2000, 5000];
+const QUICK_AMOUNTS = [500, 1000, 2000, 5000, 10000];
 
 export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex }: QuickBuyModalProps) {
   const { t, locale } = useLanguage();
