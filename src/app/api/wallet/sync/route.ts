@@ -7,6 +7,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ntzs } from "@/lib/ntzs";
+import { processReferralReward } from "@/lib/referral";
 
 export async function GET() {
   const session = await getSession();
@@ -37,6 +38,11 @@ export async function GET() {
             data: { status: newStatus },
           });
           updated++;
+
+          // Process referral reward on first completed deposit
+          if (newStatus === "COMPLETED") {
+            processReferralReward(session.userId, tx.id, tx.amountTzs).catch(() => {});
+          }
         }
       }
       // Could add withdrawal polling here too if NTZS exposes GET /withdrawals/:id

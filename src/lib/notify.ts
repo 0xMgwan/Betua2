@@ -9,7 +9,8 @@ export type NotificationType =
   | "DEPOSIT"
   | "WITHDRAW"
   | "WINNINGS"
-  | "REDEEM";
+  | "REDEEM"
+  | "REFERRAL_REWARD";
 
 interface CreateNotificationInput {
   userId: string;

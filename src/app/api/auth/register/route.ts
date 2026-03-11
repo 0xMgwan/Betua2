@@ -6,7 +6,7 @@ import { signToken } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, username, password, phone } = await req.json();
+    const { email, username, password, phone, referralCode } = await req.json();
 
     if (!email || !username || !password) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -19,10 +19,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email or username already taken" }, { status: 409 });
     }
 
+    // Look up referrer if referral code provided
+    let referredById: string | undefined;
+    if (referralCode) {
+      const referrer = await prisma.user.findUnique({
+        where: { referralCode: referralCode.trim().toUpperCase() },
+        select: { id: true },
+      });
+      if (referrer) referredById = referrer.id;
+    }
+
     const passwordHash = await bcrypt.hash(password, 12);
 
     const user = await prisma.user.create({
-      data: { email, username, displayName: username, phone, passwordHash },
+      data: { email, username, displayName: username, phone, passwordHash, referredById },
     });
 
     // Create NTZS wallet

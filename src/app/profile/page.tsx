@@ -7,7 +7,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS } from "@/lib/utils";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { FloppyDisk, ChartBar, TrendUp, Medal, Upload, X } from "@phosphor-icons/react";
+import { FloppyDisk, ChartBar, TrendUp, Medal, Upload, X, Copy, ShareNetwork, Check, Users, Gift } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 interface Stats {
@@ -15,6 +15,14 @@ interface Stats {
   totalVolume: number;
   openPositions: number;
   marketsCreated: number;
+}
+
+interface ReferralData {
+  referralCode: string;
+  totalReferred: number;
+  totalEarned: number;
+  pendingEarnings: number;
+  referrals: { username: string; joinedAt: string }[];
 }
 
 export default function ProfilePage() {
@@ -30,6 +38,8 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [stats, setStats] = useState<Stats>({ totalTrades: 0, totalVolume: 0, openPositions: 0, marketsCreated: 0 });
+  const [referral, setReferral] = useState<ReferralData | null>(null);
+  const [refCopied, setRefCopied] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -53,7 +63,32 @@ export default function ProfilePage() {
           marketsCreated: 0,
         });
       });
+    fetch("/api/referral")
+      .then((r) => r.json())
+      .then((d) => { if (d.referralCode) setReferral(d); })
+      .catch(() => {});
   }, []);
+
+  const referralLink = referral ? `${typeof window !== "undefined" ? window.location.origin : ""}/auth/register?ref=${referral.referralCode}` : "";
+
+  function copyReferralLink() {
+    if (!referralLink) return;
+    navigator.clipboard.writeText(referralLink);
+    setRefCopied(true);
+    setTimeout(() => setRefCopied(false), 2000);
+  }
+
+  function shareReferralLink() {
+    if (!referralLink || typeof navigator.share !== "function") {
+      copyReferralLink();
+      return;
+    }
+    navigator.share({
+      title: locale === "sw" ? "Jiunge na GUAP!" : "Join GUAP!",
+      text: locale === "sw" ? "Jiunge na GUAP na upate mkoba wa bure! Fanya biashara kwa TZS halisi." : "Join GUAP and get a free wallet! Trade with real TZS on prediction markets.",
+      url: referralLink,
+    }).catch(() => {});
+  }
 
   function handleAvatarFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -195,6 +230,86 @@ export default function ProfilePage() {
                 <p className="text-xs font-mono break-all text-[var(--foreground)] opacity-70">
                   {user.walletAddress}
                 </p>
+              </div>
+            )}
+
+            {/* Referral */}
+            {referral && (
+              <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl p-4 space-y-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Gift size={16} className="text-[var(--accent)]" />
+                  <h3 className="font-bold text-sm">{locale === "sw" ? "Referral" : "Refer & Earn"}</h3>
+                </div>
+                <p className="text-xs text-[var(--muted)]">
+                  {locale === "sw"
+                    ? "Shiriki kiungo chako. Pata 1% ya amana ya kwanza ya kila mtu unayemwalika!"
+                    : "Share your link. Earn 1% of every invited user's first deposit!"}
+                </p>
+
+                {/* Referral link */}
+                <div className="flex gap-1.5">
+                  <div className="flex-1 px-2.5 py-2 bg-[var(--background)] border border-[var(--card-border)] rounded-lg text-[10px] font-mono text-[var(--muted)] truncate">
+                    {referralLink}
+                  </div>
+                  <button
+                    onClick={copyReferralLink}
+                    className="px-2.5 py-2 bg-[var(--background)] border border-[var(--card-border)] rounded-lg hover:border-[var(--accent)]/40 transition-colors"
+                    title="Copy"
+                  >
+                    {refCopied ? <Check size={14} className="text-[var(--accent)]" /> : <Copy size={14} />}
+                  </button>
+                  <button
+                    onClick={shareReferralLink}
+                    className="px-2.5 py-2 bg-[var(--accent)] text-black rounded-lg hover:opacity-90 transition-opacity"
+                    title="Share"
+                  >
+                    <ShareNetwork size={14} weight="bold" />
+                  </button>
+                </div>
+
+                {/* Stats */}
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <div className="bg-[var(--background)] rounded-lg p-2.5 text-center">
+                    <div className="flex items-center justify-center gap-1 mb-0.5">
+                      <Users size={12} className="text-[var(--accent)]" />
+                      <span className="text-[10px] text-[var(--muted)]">{locale === "sw" ? "Walioalikwa" : "Invited"}</span>
+                    </div>
+                    <p className="font-bold text-lg">{referral.totalReferred}</p>
+                  </div>
+                  <div className="bg-[var(--background)] rounded-lg p-2.5 text-center">
+                    <div className="flex items-center justify-center gap-1 mb-0.5">
+                      <TrendUp size={12} className="text-[var(--accent)]" />
+                      <span className="text-[10px] text-[var(--muted)]">{locale === "sw" ? "Umeingiza" : "Earned"}</span>
+                    </div>
+                    <p className="font-bold text-lg text-[var(--accent)]">{formatTZS(referral.totalEarned)}</p>
+                  </div>
+                </div>
+
+                {/* Pending */}
+                {referral.pendingEarnings > 0 && (
+                  <p className="text-[10px] text-yellow-400 font-mono text-center">
+                    ⏳ {formatTZS(referral.pendingEarnings)} {locale === "sw" ? "inasubiri" : "pending"}
+                  </p>
+                )}
+
+                {/* Referred users list */}
+                {referral.referrals.length > 0 && (
+                  <div className="pt-1 border-t border-[var(--card-border)]">
+                    <p className="text-[10px] text-[var(--muted)] mb-1.5 font-medium uppercase tracking-wider">
+                      {locale === "sw" ? "Walioalikwa" : "Your Referrals"}
+                    </p>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {referral.referrals.map((r) => (
+                        <div key={r.username} className="flex items-center justify-between text-xs">
+                          <span className="font-mono">@{r.username}</span>
+                          <span className="text-[var(--muted)] text-[10px]">
+                            {new Date(r.joinedAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

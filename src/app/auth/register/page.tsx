@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -9,6 +9,8 @@ import { Eye, EyeSlash, ArrowLeft, CheckCircle } from "@phosphor-icons/react";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const refCode = searchParams.get("ref") || "";
   const fetchUser = useUser((s) => s.fetchUser);
   const { t, locale } = useLanguage();
   const [form, setForm] = useState({
@@ -29,7 +31,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, referralCode: refCode || undefined }),
       });
       const data = await res.json();
       if (!res.ok) return setError(data.error || "Registration failed");

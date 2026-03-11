@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { processReferralReward } from "@/lib/referral";
 
 export async function POST(req: NextRequest) {
   const event = await req.json();
@@ -7,10 +8,18 @@ export async function POST(req: NextRequest) {
   try {
     switch (event.type) {
       case "deposit.completed": {
+        // Find the transaction first so we have userId + amount for referral
+        const tx = await prisma.transaction.findFirst({
+          where: { ntzsDepositId: event.data.id },
+        });
         await prisma.transaction.updateMany({
           where: { ntzsDepositId: event.data.id },
           data: { status: "COMPLETED" },
         });
+        // Process referral reward
+        if (tx) {
+          processReferralReward(tx.userId, tx.id, tx.amountTzs).catch(() => {});
+        }
         break;
       }
       case "withdrawal.completed": {

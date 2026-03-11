@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import {
   ArrowDownLeft, ArrowUpRight, Clock, CheckCircle,
   XCircle, Copy, Check, ArrowsClockwise,
-  CurrencyCircleDollar, SmileySad, PaperPlaneRight,
+  CurrencyCircleDollar, SmileySad, PaperPlaneRight, Gift,
 } from "@phosphor-icons/react";
 
 interface Transaction {
@@ -410,6 +410,7 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
   const isSellShares = tx.type === "SELL_SHARES";
   const isRedeem = tx.type === "REDEEM";
   const isCreateMarket = tx.type === "CREATE_MARKET";
+  const isReferral = tx.type === "REFERRAL_REWARD";
 
   const statusConfig = {
     COMPLETED: { icon: <CheckCircle size={13} weight="fill" className="text-[var(--accent)]" />, label: locale === "sw" ? "Imethibitishwa" : "Confirmed", color: "text-[var(--accent)]" },
@@ -427,12 +428,14 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
       <div className="flex items-center gap-3">
         <div className={cn(
           "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-          isDeposit || isReceive || isRedeem ? "bg-[var(--accent)]/10" : 
+          isDeposit || isReceive || isRedeem || isReferral ? "bg-[var(--accent)]/10" : 
           isSend || isBuyShares || isSellShares ? "bg-blue-500/10" : 
           isCreateMarket ? "bg-purple-500/10" :
           "bg-red-500/10"
         )}>
-          {isDeposit || isReceive || isRedeem
+          {isReferral
+            ? <Gift size={18} weight="bold" className="text-[var(--accent)]" />
+            : isDeposit || isReceive || isRedeem
             ? <ArrowDownLeft size={18} weight="bold" className="text-[var(--accent)]" />
             : isCreateMarket
             ? <PaperPlaneRight size={18} weight="bold" className="text-purple-400" />
@@ -442,7 +445,8 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
         </div>
         <div>
           <p className="text-sm font-semibold">
-            {isDeposit ? t.wallet.deposit : 
+            {isReferral ? (locale === "sw" ? "Bonasi ya Referral" : "Referral Reward") :
+             isDeposit ? t.wallet.deposit : 
              isReceive ? (locale === "sw" ? "Pokea" : "Receive") : 
              isSend ? t.wallet.send : 
              isBuyShares ? (locale === "sw" ? "Nunua Hisa" : "Buy Shares") :
@@ -456,6 +460,7 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
             {tx.phone && <span className="ml-1.5 opacity-70">· {tx.phone}</span>}
             {isSend && tx.recipientUsername && <span className="ml-1.5 opacity-70">→ @{tx.recipientUsername}</span>}
             {isReceive && tx.recipientUsername && <span className="ml-1.5 opacity-70">← @{tx.recipientUsername}</span>}
+            {isReferral && tx.recipientUsername && <span className="ml-1.5 opacity-70">← @{tx.recipientUsername}</span>}
             {(isBuyShares || isSellShares || isRedeem || isCreateMarket) && tx.recipientUsername && <span className="ml-1.5 opacity-70 line-clamp-1">· {tx.recipientUsername}</span>}
           </p>
         </div>
@@ -463,11 +468,11 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
 
       <div className="text-right">
         <p className={cn("font-black text-sm tabular-nums", 
-          isDeposit || isReceive || isRedeem ? "text-[var(--accent)]" : 
+          isDeposit || isReceive || isRedeem || isReferral ? "text-[var(--accent)]" : 
           isCreateMarket ? "text-purple-400" :
           isSend || isBuyShares || isSellShares ? "text-blue-400" : 
           "text-red-400")}>
-          {isDeposit || isReceive || isRedeem ? "+" : "−"}{formatTZS(tx.amountTzs)}
+          {isDeposit || isReceive || isRedeem || isReferral ? "+" : "−"}{formatTZS(tx.amountTzs)}
         </p>
         <div className={cn("flex items-center gap-1 justify-end text-xs font-medium mt-0.5", statusConfig.color)}>
           {statusConfig.icon}
