@@ -48,7 +48,9 @@ export function PriceChart({ marketId, className }: PriceChartProps) {
   const [visible, setVisible] = useState<Set<string>>(new Set());
   const [drawn, setDrawn] = useState(false);
   const [tick, setTick] = useState(0);
+  const [cw, setCw] = useState(560);
   const svgRef = useRef<SVGSVGElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
 
   const fetchChart = useCallback(async () => {
     try {
@@ -63,11 +65,21 @@ export function PriceChart({ marketId, className }: PriceChartProps) {
 
   useEffect(() => { fetchChart(); const i = setInterval(fetchChart, 30000); return () => clearInterval(i); }, [fetchChart]);
   useEffect(() => { if (!loading && points.length >= 2) { const t = setTimeout(() => setDrawn(true), 80); return () => clearTimeout(t); } }, [loading, points.length]);
-
-  // Blink tick for cursor
   useEffect(() => { const i = setInterval(() => setTick(t => t + 1), 530); return () => clearInterval(i); }, []);
 
-  const W = 560, H = 280;
+  // Measure container width so SVG fills edge-to-edge
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(entries => {
+      for (const e of entries) setCw(Math.round(e.contentRect.width));
+    });
+    ro.observe(el);
+    setCw(el.clientWidth);
+    return () => ro.disconnect();
+  }, []);
+
+  const W = cw || 560, H = 280;
   const P = { t: 28, r: 56, b: 36, l: 48 };
 
   const cd = useMemo(() => {
@@ -86,7 +98,7 @@ export function PriceChart({ marketId, className }: PriceChartProps) {
       x: P.l + ((t - cd.t0) / cd.tr) * (W - P.l - P.r),
       y: P.t + (1 - (v - cd.lo) / cd.yr) * (H - P.t - P.b),
     };
-  }, [cd]);
+  }, [cd, W]);
 
   const nearest = useCallback((cx: number) => {
     if (!svgRef.current || !cd || points.length < 2) return;
@@ -97,7 +109,7 @@ export function PriceChart({ marketId, className }: PriceChartProps) {
     let bi = 0, bd = Infinity;
     for (let i = 0; i < points.length; i++) { const d = Math.abs(points[i].t - tgt); if (d < bd) { bd = d; bi = i; } }
     setHIdx(bi);
-  }, [cd, points]);
+  }, [cd, points, W]);
 
   const toggle = (o: string) => setVisible(p => {
     const n = new Set(p); if (n.has(o)) { if (n.size > 1) n.delete(o); } else n.add(o); return n;
@@ -200,7 +212,7 @@ export function PriceChart({ marketId, className }: PriceChartProps) {
       </div>
 
       {/* Chart */}
-      <div className="relative z-20">
+      <div ref={wrapRef} className="relative z-20">
         <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`}
           className="w-full h-[220px] sm:h-[280px] cursor-crosshair select-none"
           onMouseMove={e => nearest(e.clientX)} onMouseLeave={() => setHIdx(null)}
