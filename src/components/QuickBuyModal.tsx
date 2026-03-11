@@ -194,6 +194,30 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex }: Qu
                     <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
                     <span className="font-bold tabular-nums text-[var(--accent)]">{formatTZS(Math.round(cost))}</span>
                   </div>
+
+                  {/* Divider */}
+                  <div className="border-t border-dashed border-[var(--card-border)]"></div>
+
+                  {/* Estimated payout if win */}
+                  <div className="flex items-center justify-between text-xs font-mono">
+                    <span className="text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Malipo (ukishinda)" : "Payout (if win)"}</span>
+                    <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
+                    <span className="font-bold tabular-nums text-[#00e5a0]">{formatTZS(shares)}</span>
+                  </div>
+
+                  {/* Potential profit */}
+                  <div className="flex items-center justify-between text-xs font-mono">
+                    <span className="text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Faida" : "Profit"}</span>
+                    <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
+                    <span className="font-bold tabular-nums text-[#00e5a0]">+{formatTZS(Math.round(shares - cost))}</span>
+                  </div>
+
+                  {/* Multiplier */}
+                  <div className="flex items-center justify-between text-xs font-mono">
+                    <span className="text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Mara" : "Return"}</span>
+                    <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
+                    <span className="font-bold tabular-nums text-yellow-400">{(shares / cost).toFixed(2)}x</span>
+                  </div>
                 </div>
               )}
 
