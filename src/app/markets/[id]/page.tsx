@@ -181,7 +181,10 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
   async function handleResolveOption(optIdx: number) {
     if (!market?.options) return;
-    if (!confirm(`Resolve as "${market.options[optIdx]}"?`)) return;
+    const confirmMsg = optIdx === -1
+      ? (locale === "sw" ? "Tatua kama \"Hakuna mshindi\"? Hakuna mtu atalipwa." : "Resolve as \"None\"? No one will receive a payout.")
+      : `Resolve as "${market.options[optIdx]}"?`;
+    if (!confirm(confirmMsg)) return;
     await fetch(`/api/markets/${id}/resolve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -483,17 +486,26 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   {locale === "sw" ? "Mara ikitaruliwa, washindi watalipwa moja kwa moja." : "Once resolved, winners receive their payouts automatically."}
                 </p>
                 {isMultiOption && market.options ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    {market.options.map((opt, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handleResolveOption(i)}
-                        className="flex items-center justify-center gap-2 py-2.5 bg-[var(--accent)]/10 border border-[var(--accent)]/30 text-[var(--accent)] rounded-xl font-semibold text-sm hover:bg-[var(--accent)]/20 transition-all"
-                      >
-                        <CheckCircle size={16} />
-                        {opt}
-                      </button>
-                    ))}
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      {market.options.map((opt, i) => (
+                        <button
+                          key={i}
+                          onClick={() => handleResolveOption(i)}
+                          className="flex items-center justify-center gap-2 py-2.5 bg-[var(--accent)]/10 border border-[var(--accent)]/30 text-[var(--accent)] rounded-xl font-semibold text-sm hover:bg-[var(--accent)]/20 transition-all"
+                        >
+                          <CheckCircle size={16} />
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => handleResolveOption(-1)}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl font-semibold text-sm hover:bg-red-500/20 transition-all"
+                    >
+                      <XCircle size={16} />
+                      {locale === "sw" ? "Hakuna (Hakuna mshindi)" : "None (No winner)"}
+                    </button>
                   </div>
                 ) : (
                   <div className="flex gap-3">

@@ -37,13 +37,15 @@ export async function POST(
   const isMultiOption = Array.isArray(mkt.options) && mkt.options.length >= 2;
 
   if (isMultiOption) {
-    if (optionIndex === undefined || optionIndex < 0 || optionIndex >= mkt.options.length) {
+    // optionIndex === -1 means "None" — no winner
+    if (optionIndex === undefined || optionIndex < -1 || optionIndex >= mkt.options.length) {
       return NextResponse.json({ error: "Invalid winning option" }, { status: 400 });
     }
   }
 
-  const winningOutcome = isMultiOption ? optionIndex : (outcome ? 1 : 0);
-  const winningLabel = isMultiOption ? (mkt.options as string[])[optionIndex] : (outcome ? "YES" : "NO");
+  const isNoneOutcome = isMultiOption && optionIndex === -1;
+  const winningOutcome = isNoneOutcome ? -1 : (isMultiOption ? optionIndex : (outcome ? 1 : 0));
+  const winningLabel = isNoneOutcome ? "None" : (isMultiOption ? (mkt.options as string[])[optionIndex] : (outcome ? "YES" : "NO"));
 
   await prisma.market.update({
     where: { id },
