@@ -146,11 +146,18 @@ export const ntzs = {
   },
 
   withdrawals: {
-    // Docs field: 'phone' (not 'phoneNumber')
-    create: (data: { userId: string; amountTzs: number; phone: string }) =>
-      ntzsRequest<NtzsWithdrawal>("/withdrawals", {
+    create: (data: { userId: string; amountTzs: number; phone: string }) => {
+      // nTZS API expects 'phoneNumber' not 'phone' (same as deposits)
+      const payload = {
+        userId: data.userId,
+        amountTzs: data.amountTzs,
+        phoneNumber: data.phone,
+      };
+      console.log("[nTZS] Creating withdrawal with data:", JSON.stringify(payload, null, 2));
+      return ntzsRequest<NtzsWithdrawal>("/withdrawals", {
         method: "POST",
-        body: JSON.stringify(data),
-      }),
+        body: JSON.stringify(payload),
+      });
+    },
   },
 };

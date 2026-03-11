@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
+import { createNotification } from "@/lib/notify";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -49,6 +50,15 @@ export async function POST(req: NextRequest) {
         ntzsWithdrawId: withdrawal.id,
         phone,
       },
+    });
+
+    // Notification: withdrawal initiated
+    createNotification({
+      userId: session.userId,
+      type: "WITHDRAW",
+      title: "Withdrawal Initiated",
+      message: `Withdrawal of ${amountTzs.toLocaleString()} TZS initiated. You will receive it on your phone shortly.`,
+      link: `/wallet`,
     });
 
     return NextResponse.json({ withdrawal });
