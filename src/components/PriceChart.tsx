@@ -67,8 +67,8 @@ export function PriceChart({ marketId, className }: PriceChartProps) {
   // Blink tick for cursor
   useEffect(() => { const i = setInterval(() => setTick(t => t + 1), 530); return () => clearInterval(i); }, []);
 
-  const W = 520, H = 280;
-  const P = { t: 28, r: 20, b: 36, l: 48 };
+  const W = 560, H = 280;
+  const P = { t: 28, r: 56, b: 36, l: 48 };
 
   const cd = useMemo(() => {
     if (points.length < 2) return null;
@@ -208,7 +208,8 @@ export function PriceChart({ marketId, className }: PriceChartProps) {
           <defs>
             {lines.map(({ o, c }) => (
               <linearGradient key={`g-${o}`} id={`ag-${o}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={c} stopOpacity="0.12" />
+                <stop offset="0%" stopColor={c} stopOpacity="0.18" />
+                <stop offset="50%" stopColor={c} stopOpacity="0.06" />
                 <stop offset="100%" stopColor={c} stopOpacity="0" />
               </linearGradient>
             ))}
@@ -259,23 +260,25 @@ export function PriceChart({ marketId, className }: PriceChartProps) {
             ) : null
           )))}
 
-          {/* Live end: blinking cursor block + price label */}
+          {/* Live end: blinking cursor + dashed line + price badge */}
           {lines.map(({ o, c, last }) => {
             const val = dp.prices[o];
             if (val == null) return null;
+            const chartRight = W - P.r;
+            const badgeX = chartRight + 4;
             return (
               <g key={`end-${o}`}>
-                {/* Horizontal dashed line from last point to right edge */}
-                <line x1={last.x} y1={last.y} x2={W - P.r} y2={last.y}
-                  stroke={c} strokeWidth="0.5" strokeDasharray="3,3" opacity="0.3" />
-                {/* Price label at right edge */}
-                <rect x={W - P.r + 1} y={last.y - 7} width="36" height="14" rx="2" fill={c} opacity="0.9" />
-                <text x={W - P.r + 19} y={last.y + 3} fill="#000" fontSize="8" fontFamily="monospace" fontWeight="bold" textAnchor="middle">
+                {/* Dashed line → right edge */}
+                <line x1={last.x} y1={last.y} x2={chartRight} y2={last.y}
+                  stroke={c} strokeWidth="0.5" strokeDasharray="2,4" opacity="0.4" />
+                {/* Price badge in right margin */}
+                <rect x={badgeX} y={last.y - 8} width="44" height="16" rx="3" fill={c} />
+                <text x={badgeX + 22} y={last.y + 3.5} fill="#000" fontSize="9" fontFamily="monospace" fontWeight="bold" textAnchor="middle">
                   {(val * 100).toFixed(1)}%
                 </text>
-                {/* Blinking cursor dot */}
-                <rect x={last.x - 1.5} y={last.y - 5} width="3" height="10" rx="0.5" fill={c}
-                  opacity={cursorOn ? 0.9 : 0.2} />
+                {/* Blinking cursor bar at tip */}
+                <rect x={last.x - 1} y={last.y - 6} width="2.5" height="12" rx="0.5" fill={c}
+                  opacity={cursorOn ? 1 : 0.15} />
               </g>
             );
           })}
