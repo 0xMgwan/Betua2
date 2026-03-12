@@ -10,6 +10,12 @@ const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
 const CREATION_FEE_NTZS_USER_ID = process.env.CREATION_FEE_NTZS_USER_ID || "";
 const CREATION_FEE_TZS = parseInt(process.env.MARKET_CREATION_FEE_TZS || "2000", 10);
 
+// Admin users exempt from market creation fee
+const ADMIN_NTZS_USER_IDS = [
+  "3017ff5f-24f0-4063-bb35-4ddbc3cd1987",
+  "994dcdcc-0bc4-4641-9e94-93e658ede56b",
+];
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const category = searchParams.get("category");
@@ -72,67 +78,73 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── Check balance & transfer 2,000 TZS creation fee ──────────────────────
-    try {
-      const { balanceTzs } = await ntzs.users.getBalance(user.ntzsUserId);
-      if (balanceTzs < CREATION_FEE_TZS) {
-        return NextResponse.json(
-          {
-            error: `Insufficient balance. Creating a market costs ${CREATION_FEE_TZS.toLocaleString()} TZS. Your balance: ${balanceTzs.toLocaleString()} TZS.`,
-          },
-          { status: 400 }
-        );
-      }
-    } catch (balErr) {
-      if (balErr instanceof NtzsApiError) {
-        return NextResponse.json(
-          { error: "Could not verify balance. Please try again." },
-          { status: 503 }
-        );
-      }
-      throw balErr;
-    }
+    // ── Check balance & transfer 2,000 TZS creation fee (skip for admins) ────
+    const isAdmin = ADMIN_NTZS_USER_IDS.includes(user.ntzsUserId);
 
-    // ── Transfer 2,000 TZS creation fee: user → platform → fee wallet ────
-    // ENFORCED: Market creation will fail if fee transfer fails
-    if (PLATFORM_NTZS_USER_ID) {
-      console.log(`Market creation fee transfer: ${user.ntzsUserId} (${user.walletAddress}) → ${PLATFORM_NTZS_USER_ID} (${CREATION_FEE_TZS} TZS)`);
-      
+    if (!isAdmin) {
       try {
-        await ntzs.transfers.create({
-          fromUserId: user.ntzsUserId,
-          toUserId: PLATFORM_NTZS_USER_ID,
-          amountTzs: CREATION_FEE_TZS,
-        });
-
-        // Step 2: platform escrow → creation fee wallet (non-blocking, non-fatal)
-        if (CREATION_FEE_NTZS_USER_ID) {
-          ntzs.transfers
-            .create({
-              fromUserId: PLATFORM_NTZS_USER_ID,
-              toUserId: CREATION_FEE_NTZS_USER_ID,
-              amountTzs: CREATION_FEE_TZS,
-            })
-            .catch((err) =>
-              console.error("Creation fee forward transfer failed (non-fatal):", err)
-            );
-        }
-      } catch (err) {
-        // FATAL: Block market creation if fee transfer fails
-        if (err instanceof NtzsApiError) {
-          console.error(
-            `Market creation fee transfer failed [${err.status}/${err.code}]: ${err.message}`,
-            `User: ${user.ntzsUserId} (${user.walletAddress})`
-          );
+        const { balanceTzs } = await ntzs.users.getBalance(user.ntzsUserId);
+        if (balanceTzs < CREATION_FEE_TZS) {
           return NextResponse.json(
             {
-              error: `Failed to process market creation fee. ${err.message || 'Please try again or contact support.'}`,
+              error: `Insufficient balance. Creating a market costs ${CREATION_FEE_TZS.toLocaleString()} TZS. Your balance: ${balanceTzs.toLocaleString()} TZS.`,
             },
-            { status: 500 }
+            { status: 400 }
           );
         }
-        throw err;
+      } catch (balErr) {
+        if (balErr instanceof NtzsApiError) {
+          return NextResponse.json(
+            { error: "Could not verify balance. Please try again." },
+            { status: 503 }
+          );
+        }
+        throw balErr;
       }
+
+      // ── Transfer 2,000 TZS creation fee: user → platform → fee wallet ────
+      // ENFORCED: Market creation will fail if fee transfer fails
+      if (PLATFORM_NTZS_USER_ID) {
+        console.log(`Market creation fee transfer: ${user.ntzsUserId} (${user.walletAddress}) → ${PLATFORM_NTZS_USER_ID} (${CREATION_FEE_TZS} TZS)`);
+        
+        try {
+          await ntzs.transfers.create({
+            fromUserId: user.ntzsUserId,
+            toUserId: PLATFORM_NTZS_USER_ID,
+            amountTzs: CREATION_FEE_TZS,
+          });
+
+          // Step 2: platform escrow → creation fee wallet (non-blocking, non-fatal)
+          if (CREATION_FEE_NTZS_USER_ID) {
+            ntzs.transfers
+              .create({
+                fromUserId: PLATFORM_NTZS_USER_ID,
+                toUserId: CREATION_FEE_NTZS_USER_ID,
+                amountTzs: CREATION_FEE_TZS,
+              })
+              .catch((err) =>
+                console.error("Creation fee forward transfer failed (non-fatal):", err)
+              );
+          }
+        } catch (err) {
+          // FATAL: Block market creation if fee transfer fails
+          if (err instanceof NtzsApiError) {
+            console.error(
+              `Market creation fee transfer failed [${err.status}/${err.code}]: ${err.message}`,
+              `User: ${user.ntzsUserId} (${user.walletAddress})`
+            );
+            return NextResponse.json(
+              {
+                error: `Failed to process market creation fee. ${err.message || 'Please try again or contact support.'}`,
+              },
+              { status: 500 }
+            );
+          }
+          throw err;
+        }
+      }
+    } else {
+      console.log(`Admin user ${user.ntzsUserId} creating market - fee waived`);
     }
 
     // Note: Balance is managed by nTZS, not local DB
@@ -155,36 +167,55 @@ export async function POST(req: NextRequest) {
       ? options.map(() => POOL_PER_OPTION)
       : null;
 
-    const [market] = await prisma.$transaction([
-      prisma.market.create({
-        data: {
-          title: effectiveTitle,
-          description: finalDescription,
-          category,
-          imageUrl,
-          resolvesAt: new Date(resolvesAt),
-          creatorId: session.userId,
-          yesPool: isMultiOption ? 0 : 100000,
-          noPool: isMultiOption ? 0 : 100000,
-          liquidity: isMultiOption ? POOL_PER_OPTION * options.length : 200000,
-          options: isMultiOption ? options : undefined,
-          optionPools: optionPools || undefined,
-        },
-      }),
-      prisma.transaction.create({
-        data: {
-          userId: session.userId,
-          type: "CREATE_MARKET",
-          amountTzs: CREATION_FEE_TZS,
-          status: "COMPLETED",
-          recipientUsername: effectiveTitle,
-        },
-      }),
-      prisma.user.update({
-        where: { id: session.userId },
-        data: { balanceTzs: { decrement: CREATION_FEE_TZS } },
-      }),
-    ]);
+    // Create market and optionally record fee transaction (skip for admins)
+    const market = isAdmin
+      ? await prisma.market.create({
+          data: {
+            title: effectiveTitle,
+            description: finalDescription,
+            category,
+            imageUrl,
+            resolvesAt: new Date(resolvesAt),
+            creatorId: session.userId,
+            yesPool: isMultiOption ? 0 : 100000,
+            noPool: isMultiOption ? 0 : 100000,
+            liquidity: isMultiOption ? POOL_PER_OPTION * options.length : 200000,
+            options: isMultiOption ? options : undefined,
+            optionPools: optionPools || undefined,
+          },
+        })
+      : (
+          await prisma.$transaction([
+            prisma.market.create({
+              data: {
+                title: effectiveTitle,
+                description: finalDescription,
+                category,
+                imageUrl,
+                resolvesAt: new Date(resolvesAt),
+                creatorId: session.userId,
+                yesPool: isMultiOption ? 0 : 100000,
+                noPool: isMultiOption ? 0 : 100000,
+                liquidity: isMultiOption ? POOL_PER_OPTION * options.length : 200000,
+                options: isMultiOption ? options : undefined,
+                optionPools: optionPools || undefined,
+              },
+            }),
+            prisma.transaction.create({
+              data: {
+                userId: session.userId,
+                type: "CREATE_MARKET",
+                amountTzs: CREATION_FEE_TZS,
+                status: "COMPLETED",
+                recipientUsername: effectiveTitle,
+              },
+            }),
+            prisma.user.update({
+              where: { id: session.userId },
+              data: { balanceTzs: { decrement: CREATION_FEE_TZS } },
+            }),
+          ])
+        )[0];
 
     // Notification: market created
     createNotification({
