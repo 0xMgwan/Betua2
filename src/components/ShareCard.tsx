@@ -9,6 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { formatTZS } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ShareCardProps {
   marketTitle: string;
@@ -38,6 +39,8 @@ export function ShareCardButton({
   marketUrl,
 }: ShareCardProps) {
   const [open, setOpen] = useState(false);
+  const { locale } = useLanguage();
+  const isSw = locale === "sw";
 
   return (
     <>
@@ -93,13 +96,19 @@ function ShareCardModal({
 }: ShareCardProps & { onClose: () => void }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
+  const { locale } = useLanguage();
+  const isSw = locale === "sw";
 
   const profitLoss = won ? payout - invested : -invested;
   const profitPct = invested > 0 ? ((profitLoss / invested) * 100).toFixed(0) : "0";
 
   const shareText = won
-    ? `🏆 I predicted "${outcome}" on "${marketTitle}" and WON ${formatTZS(payout)}! (+${profitPct}%) 🔥\n\nMake your predictions on GUAP 👉`
-    : `📊 I predicted "${outcome}" on "${marketTitle}" — better luck next time!\n\nMake your predictions on GUAP 👉`;
+    ? (isSw
+        ? `🏆 Nilitabiri "${outcome}" kwenye "${marketTitle}" na NIKASHINDA ${formatTZS(payout)}! (+${profitPct}%) 🔥\n\nTabiri sasa kwenye GUAP 👉`
+        : `🏆 I predicted "${outcome}" on "${marketTitle}" and WON ${formatTZS(payout)}! (+${profitPct}%) 🔥\n\nMake your predictions on GUAP 👉`)
+    : (isSw
+        ? `📊 Nilitabiri "${outcome}" kwenye "${marketTitle}" — bahati njema wakati ujao!\n\nTabiri sasa kwenye GUAP 👉`
+        : `📊 I predicted "${outcome}" on "${marketTitle}" — better luck next time!\n\nMake your predictions on GUAP 👉`);
 
   const fullShareUrl = typeof window !== "undefined"
     ? `${window.location.origin}${marketUrl}`
@@ -209,7 +218,7 @@ function ShareCardModal({
                     won ? "text-[#00e5a0]" : "text-red-400"
                   )}
                 >
-                  {won ? "PREDICTION WON" : "PREDICTION LOST"}
+                  {won ? (isSw ? "UTABIRI UMESHINDA" : "PREDICTION WON") : (isSw ? "UTABIRI UMESHINDWA" : "PREDICTION LOST")}
                 </div>
                 <div className="text-white/40 text-[10px] font-mono mt-0.5">
                   @{username}
@@ -238,7 +247,7 @@ function ShareCardModal({
             <div className="grid grid-cols-2 gap-2 mb-5">
               <div className="bg-white/5 border border-white/10 p-3">
                 <div className="text-white/40 text-[9px] font-mono uppercase tracking-wider mb-1">
-                  My Pick
+                  {isSw ? "Chaguo Langu" : "My Pick"}
                 </div>
                 <div className={cn(
                   "text-sm font-mono font-black",
@@ -249,7 +258,7 @@ function ShareCardModal({
               </div>
               <div className="bg-white/5 border border-white/10 p-3">
                 <div className="text-white/40 text-[9px] font-mono uppercase tracking-wider mb-1">
-                  Shares
+                  {isSw ? "Hisa" : "Shares"}
                 </div>
                 <div className="text-white text-sm font-mono font-black">
                   {Math.round(shares).toLocaleString()}
@@ -257,7 +266,7 @@ function ShareCardModal({
               </div>
               <div className="bg-white/5 border border-white/10 p-3">
                 <div className="text-white/40 text-[9px] font-mono uppercase tracking-wider mb-1">
-                  {won ? "Payout" : "Invested"}
+                  {won ? (isSw ? "Malipo" : "Payout") : (isSw ? "Uwekezaji" : "Invested")}
                 </div>
                 <div className={cn(
                   "text-sm font-mono font-black",
@@ -284,7 +293,7 @@ function ShareCardModal({
               <div className="flex items-center gap-1.5">
                 <Lightning size={10} weight="fill" className={won ? "text-[#00e5a0]" : "text-red-400"} />
                 <span className="text-white/30 text-[9px] font-mono tracking-wider">
-                  PREDICT · TRADE · WIN
+                  {isSw ? "TABIRI · BIASHARA · SHINDA" : "PREDICT · TRADE · WIN"}
                 </span>
               </div>
               <span className="text-white/20 text-[9px] font-mono">
@@ -332,14 +341,14 @@ function ShareCardModal({
             className="flex items-center gap-1.5 px-4 py-2.5 bg-white/10 text-white text-xs font-mono font-bold rounded-none border border-white/20 hover:bg-white/20 transition-all disabled:opacity-50"
           >
             <DownloadSimple size={16} weight="bold" />
-            {downloading ? "Saving..." : "Save Image"}
+            {downloading ? (isSw ? "Inahifadhi..." : "Saving...") : (isSw ? "Hifadhi Picha" : "Save Image")}
           </button>
           <button
             onClick={onClose}
             className="flex items-center gap-1.5 px-4 py-2.5 bg-white/5 text-white/60 text-xs font-mono font-bold rounded-none border border-white/10 hover:bg-white/10 transition-all"
           >
             <X size={16} weight="bold" />
-            Close
+            {isSw ? "Funga" : "Close"}
           </button>
         </div>
       </motion.div>
