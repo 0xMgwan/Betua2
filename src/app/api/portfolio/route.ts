@@ -57,6 +57,27 @@ export async function GET() {
     const pot = Math.round(mkt.totalVolume * (1 - FEE_PERCENT));
     const totals = marketShareTotals[mkt.id] || { yes: 0, no: 0, options: {} };
 
+    // For resolved markets, use actual outcome — losers get 0, winners get their payout
+    if (mkt.status === "RESOLVED" && mkt.outcome !== null) {
+      if (isMultiOption) {
+        const optShares = (p.optionShares as Record<string, number>) || {};
+        const winningShares = optShares[String(mkt.outcome)] || 0;
+        const totalWinShares = totals.options[String(mkt.outcome)] || 1;
+        const currentValue = winningShares > 0
+          ? Math.round((winningShares / totalWinShares) * pot * (1 - FEE_PERCENT))
+          : 0;
+        const prices = mkt.optionPools ? getMultiOptionPrices(mkt.optionPools as number[]) : [];
+        return { ...p, currentValue, price: getPrice(mkt.yesPool, mkt.noPool), optionPrices: prices };
+      }
+
+      const winningShares = mkt.outcome === 1 ? p.yesShares : p.noShares;
+      const totalWinShares = mkt.outcome === 1 ? totals.yes : totals.no;
+      const currentValue = winningShares > 0 && totalWinShares > 0
+        ? Math.round((winningShares / totalWinShares) * pot * (1 - FEE_PERCENT))
+        : 0;
+      return { ...p, currentValue, price: getPrice(mkt.yesPool, mkt.noPool) };
+    }
+
     if (isMultiOption && mkt.optionPools) {
       const prices = getMultiOptionPrices(mkt.optionPools as number[]);
       const optShares = (p.optionShares as Record<string, number>) || {};
