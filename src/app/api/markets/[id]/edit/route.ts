@@ -12,7 +12,7 @@ export async function PATCH(
   const { id } = await params;
 
   try {
-    const { title, description, imageUrl, resolvesAt, category } = await req.json();
+    const { title, description, imageUrl, resolvesAt, category, subCategory } = await req.json();
 
     // Find the market and verify ownership
     const market = await prisma.market.findUnique({
@@ -41,6 +41,7 @@ export async function PATCH(
         imageUrl: imageUrl !== undefined ? imageUrl : market.imageUrl,
         resolvesAt: resolvesAt ? new Date(resolvesAt) : market.resolvesAt,
         category: category || market.category,
+        subCategory: subCategory !== undefined ? subCategory : market.subCategory,
       },
     });
 

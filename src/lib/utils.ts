@@ -48,3 +48,12 @@ export const CATEGORIES = [
   "Weather",
   "Other",
 ];
+
+export const SPORTS_SUBCATEGORIES = [
+  { value: "EPL", label: "Premier League", icon: "⚽" },
+  { value: "La Liga", label: "La Liga", icon: "⚽" },
+  { value: "Serie A", label: "Serie A", icon: "⚽" },
+  { value: "UCL", label: "Champions League", icon: "🏆" },
+  { value: "NBC PL", label: "NBC PL", icon: "⚽" },
+  { value: "Other Sports", label: "Other", icon: "🏅" },
+];

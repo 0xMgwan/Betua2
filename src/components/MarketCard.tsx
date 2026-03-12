@@ -13,6 +13,7 @@ interface Market {
   id: string;
   title: string;
   category: string;
+  subCategory?: string | null;
   imageUrl?: string | null;
   totalVolume: number;
   yesPool: number;
@@ -84,6 +85,11 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                 {market.status === "RESOLVED" && (
                   <span className="text-[9px] font-mono font-bold text-blue-400 uppercase tracking-wider px-1.5 py-0.5 border border-blue-400/30 bg-blue-400/10">
                     Resolved
+                  </span>
+                )}
+                {market.subCategory && (
+                  <span className="text-[9px] font-mono font-bold text-[var(--accent)] uppercase tracking-wider px-1.5 py-0.5 border border-[var(--accent)]/30 bg-[var(--accent)]/10">
+                    {market.subCategory}
                   </span>
                 )}
               </div>

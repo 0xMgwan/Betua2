@@ -19,6 +19,7 @@ const ADMIN_NTZS_USER_IDS = [
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const category = searchParams.get("category");
+  const subCategory = searchParams.get("subCategory");
   const status = searchParams.get("status") || "OPEN";
   const search = searchParams.get("q");
   const sort = searchParams.get("sort") || "volume";
@@ -27,6 +28,7 @@ export async function GET(req: NextRequest) {
     where: {
       status: status === "all" ? undefined : status,
       category: category && category !== "all" ? category : undefined,
+      subCategory: subCategory && subCategory !== "all" ? subCategory : undefined,
       title: search ? { contains: search } : undefined,
     },
     include: {
@@ -55,7 +57,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { title, description, category, resolvesAt, imageUrl, pythSymbol, pythTargetPrice, pythOperator, options } = body;
+    const { title, description, category, subCategory, resolvesAt, imageUrl, pythSymbol, pythTargetPrice, pythOperator, options } = body;
 
     // For crypto markets with Pyth config, title can be auto-generated
     const effectiveTitle = title ||
@@ -174,6 +176,7 @@ export async function POST(req: NextRequest) {
             title: effectiveTitle,
             description: finalDescription,
             category,
+            subCategory: category === "Sports" ? subCategory || null : null,
             imageUrl,
             resolvesAt: new Date(resolvesAt),
             creatorId: session.userId,
@@ -191,6 +194,7 @@ export async function POST(req: NextRequest) {
                 title: effectiveTitle,
                 description: finalDescription,
                 category,
+                subCategory: category === "Sports" ? subCategory || null : null,
                 imageUrl,
                 resolvesAt: new Date(resolvesAt),
                 creatorId: session.userId,

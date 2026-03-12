@@ -38,6 +38,7 @@ model Market {
   title        String
   description  String
   category     String
+  subCategory  String?
   imageUrl     String?
   creatorId    String
   creator      User         @relation("MarketCreator", fields: [creatorId], references: [id])

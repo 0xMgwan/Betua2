@@ -3,7 +3,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { motion } from "framer-motion";
-import { CATEGORIES } from "@/lib/utils";
+import { CATEGORIES, SPORTS_SUBCATEGORIES } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Footer } from "@/components/Footer";
@@ -28,6 +28,7 @@ export default function CreateMarketPage() {
     title: "",
     description: "",
     category: "Politics",
+    subCategory: "",
     resolvesAt: "",
     imageUrl: "",
   });
@@ -283,7 +284,7 @@ export default function CreateMarketPage() {
                         <button
                           key={c}
                           type="button"
-                          onClick={() => setForm({ ...form, category: c })}
+                          onClick={() => setForm({ ...form, category: c, subCategory: "" })}
                           className={cn(
                             "relative py-2.5 px-3 text-xs font-mono font-bold transition-all flex items-center gap-2",
                             isActive
@@ -304,6 +305,41 @@ export default function CreateMarketPage() {
                     })}
                   </div>
                 </motion.div>
+
+                {/* ── SPORTS SUB-CATEGORY ── */}
+                {form.category === "Sports" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="border border-[#00e5a0]/20 bg-[#00e5a0]/5 p-4"
+                  >
+                    <label className="flex items-center gap-2 text-[10px] font-mono text-[#00e5a0] mb-3 uppercase tracking-wider">
+                      <SoccerBall size={10} weight="bold" />
+                      {locale === "sw" ? "Ligi" : "League"}
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {SPORTS_SUBCATEGORIES.map((sub) => {
+                        const isActive = form.subCategory === sub.value;
+                        return (
+                          <button
+                            key={sub.value}
+                            type="button"
+                            onClick={() => setForm({ ...form, subCategory: sub.value })}
+                            className={cn(
+                              "py-2.5 px-3 text-xs font-mono font-bold transition-all flex items-center gap-2",
+                              isActive
+                                ? "border-2 border-[#00e5a0]/50 bg-[#00e5a0] text-white shadow-[0_0_15px_rgba(0,229,160,0.15)]"
+                                : "border border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[#00e5a0]/30 bg-[var(--background)]"
+                            )}
+                          >
+                            <span>{sub.icon}</span>
+                            {sub.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
 
                 {/* ── MARKET TYPE ── */}
                 <motion.div

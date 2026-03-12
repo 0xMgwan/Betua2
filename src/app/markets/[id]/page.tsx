@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
 import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { formatTZS, formatNumber, timeUntil } from "@/lib/utils";
+import { formatTZS, formatNumber, timeUntil, SPORTS_SUBCATEGORIES } from "@/lib/utils";
 import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -25,6 +25,7 @@ interface MarketData {
   title: string;
   description: string;
   category: string;
+  subCategory?: string | null;
   imageUrl?: string | null;
   totalVolume: number;
   yesPool: number;
@@ -78,6 +79,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
     imageUrl: "",
     resolvesAt: "",
     category: "",
+    subCategory: "",
   });
   const [resolveConfirm, setResolveConfirm] = useState<string | null>(null);
   const [resolveLoading, setResolveLoading] = useState(false);
@@ -225,6 +227,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
       imageUrl: market.imageUrl || "",
       resolvesAt: new Date(market.resolvesAt).toISOString().slice(0, 16),
       category: market.category,
+      subCategory: market.subCategory || "",
     });
     setEditImageFile(null);
     setEditImagePreview("");
@@ -966,6 +969,36 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       <option value="Other">{locale === "sw" ? "Nyingine" : "Other"}</option>
                     </select>
                   </div>
+
+                  {/* Sports Sub-category */}
+                  {editForm.category === "Sports" && (
+                    <div>
+                      <label className="block text-sm font-semibold mb-2">
+                        {locale === "sw" ? "Ligi" : "League"}
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {SPORTS_SUBCATEGORIES.map((sub) => {
+                          const isActive = editForm.subCategory === sub.value;
+                          return (
+                            <button
+                              key={sub.value}
+                              type="button"
+                              onClick={() => setEditForm({ ...editForm, subCategory: sub.value })}
+                              className={cn(
+                                "py-2 px-3 text-xs font-mono font-bold transition-all flex items-center gap-2 rounded-none",
+                                isActive
+                                  ? "border-2 border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
+                                  : "border border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--accent)]/40"
+                              )}
+                            >
+                              <span>{sub.icon}</span>
+                              {sub.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-sm font-semibold mb-2">

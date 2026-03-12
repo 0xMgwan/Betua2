@@ -5,7 +5,7 @@ import { MarketCard } from "@/components/MarketCard";
 import { motion } from "framer-motion";
 import { MagnifyingGlass, Plus, Funnel } from "@phosphor-icons/react";
 import Link from "next/link";
-import { CATEGORIES } from "@/lib/utils";
+import { CATEGORIES, SPORTS_SUBCATEGORIES } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Footer } from "@/components/Footer";
@@ -27,6 +27,7 @@ export default function MarketsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
+  const [subCategory, setSubCategory] = useState("all");
   const [status, setStatus] = useState("OPEN");
   const [sort, setSort] = useState("volume");
 
@@ -34,13 +35,14 @@ export default function MarketsPage() {
     setLoading(true);
     const params = new URLSearchParams({ status, sort });
     if (category !== "all") params.set("category", category);
+    if (category === "Sports" && subCategory !== "all") params.set("subCategory", subCategory);
     if (search) params.set("q", search);
 
     fetch(`/api/markets?${params}`)
       .then((r) => r.json())
       .then((d) => setMarkets(d.markets || []))
       .finally(() => setLoading(false));
-  }, [category, status, sort, search]);
+  }, [category, subCategory, status, sort, search]);
 
   return (
     <div className="min-h-screen">
@@ -118,7 +120,7 @@ export default function MarketsPage() {
             {["all", ...CATEGORIES].map((c) => (
               <button
                 key={c}
-                onClick={() => setCategory(c)}
+                onClick={() => { setCategory(c); setSubCategory("all"); }}
                 className={cn(
                   "px-3 py-1 rounded-full text-sm transition-all font-mono",
                   category === c
@@ -130,6 +132,41 @@ export default function MarketsPage() {
               </button>
             ))}
           </div>
+
+          {/* Sports Sub-categories */}
+          {category === "Sports" && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-wrap gap-2"
+            >
+              <button
+                onClick={() => setSubCategory("all")}
+                className={cn(
+                  "px-3 py-1.5 text-xs font-mono font-bold transition-all flex items-center gap-1.5 border",
+                  subCategory === "all"
+                    ? "border-[var(--accent)] text-[var(--accent)] bg-[var(--accent)]/10"
+                    : "border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--accent)]/40 hover:text-[var(--foreground)]"
+                )}
+              >
+                🏟️ {locale === "sw" ? "Zote" : "All"}
+              </button>
+              {SPORTS_SUBCATEGORIES.map((sub) => (
+                <button
+                  key={sub.value}
+                  onClick={() => setSubCategory(sub.value)}
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-mono font-bold transition-all flex items-center gap-1.5 border",
+                    subCategory === sub.value
+                      ? "border-[var(--accent)] text-[var(--accent)] bg-[var(--accent)]/10"
+                      : "border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--accent)]/40 hover:text-[var(--foreground)]"
+                  )}
+                >
+                  {sub.icon} {sub.label}
+                </button>
+              ))}
+            </motion.div>
+          )}
         </div>
 
         {/* Grid */}
