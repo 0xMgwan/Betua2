@@ -15,6 +15,7 @@ import {
   PencilSimple,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
+import { ShareCardButton } from "@/components/ShareCard";
 import { UserAvatar } from "@/components/UserAvatar";
 import { UserProfileModal } from "@/components/UserProfileModal";
 import { Footer } from "@/components/Footer";
@@ -680,6 +681,23 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       {isMultiOption ? market.outcomeLabel : (market.outcome === 1 ? t.market.yes : t.market.no)}
                     </strong>
                   </p>
+                  {user && (
+                    <div className="mt-4">
+                      <ShareCardButton
+                        marketTitle={market.title}
+                        category={market.category}
+                        subCategory={market.subCategory}
+                        imageUrl={market.imageUrl}
+                        outcome={isMultiOption ? (market.outcomeLabel || "Option") : (market.outcome === 1 ? "YES" : "NO")}
+                        won={true}
+                        payout={0}
+                        invested={0}
+                        username={user.username || ""}
+                        shares={0}
+                        marketUrl={`/markets/${market.id}`}
+                      />
+                    </div>
+                  )}
                 </div>
               ) : !user ? (
                 <div className="text-center py-6">

@@ -10,9 +10,10 @@ import Link from "next/link";
 import {
   TrendUp, Clock, Terminal, Lightning, Wallet, ChartLineUp,
   CurrencyDollar, Trophy, Eye, ArrowRight, CheckCircle, XCircle,
-  Pulse, WarningCircle,
+  Pulse, WarningCircle, ShareNetwork,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
+import { ShareCardButton } from "@/components/ShareCard";
 
 interface Position {
   id: string;
@@ -32,6 +33,7 @@ interface Position {
     outcomeLabel?: string | null;
     options?: string[] | null;
     category: string;
+    imageUrl?: string | null;
   };
 }
 
@@ -389,33 +391,57 @@ export default function PortfolioPage() {
                                       </div>
                                     </div>
                                   ) : (
-                                    <div className="text-right">
-                                      {won && !p.redeemed && (
-                                        <button
-                                          onClick={(e) => {
-                                            e.preventDefault();
-                                            handleRedeem(p.id);
-                                          }}
-                                          disabled={redeeming === p.id}
-                                          className="py-1.5 px-4 border-2 border-[var(--accent)] text-[var(--accent)] font-mono font-bold text-xs hover:bg-[var(--accent)] hover:text-[var(--background)] transition-all disabled:opacity-50 tracking-wider uppercase shadow-[0_0_15px_rgba(0,229,160,0.1)]"
-                                        >
-                                          {redeeming === p.id
-                                            ? (locale === "sw" ? "INAKOMBOA..." : "REDEEMING...")
-                                            : (locale === "sw" ? "KOMBOA" : "REDEEM")}
-                                        </button>
-                                      )}
-                                      {redeemSuccess === p.id && (
-                                        <div className="text-xs font-mono text-[var(--accent)] font-bold animate-pulse flex items-center gap-1 justify-end">
-                                          <CheckCircle size={12} weight="fill" />
-                                          {locale === "sw" ? "IMEFANIKIWA" : "REDEEMED"}
-                                        </div>
-                                      )}
-                                      {p.redeemed && redeemSuccess !== p.id && (
-                                        <div className="text-[10px] font-mono text-[var(--muted)] flex items-center gap-1 justify-end">
-                                          <CheckCircle size={10} weight="fill" />
-                                          {locale === "sw" ? "Imekombowa" : "Redeemed"}
-                                        </div>
-                                      )}
+                                    <div className="flex items-center gap-2">
+                                      <div onClick={(e) => e.preventDefault()}>
+                                        <ShareCardButton
+                                          marketTitle={p.market.title}
+                                          category={p.market.category}
+                                          imageUrl={p.market.imageUrl}
+                                          outcome={
+                                            isMultiOpt && p.optionShares
+                                              ? p.market.options![Number(Object.entries(p.optionShares).sort((a, b) => b[1] - a[1])[0]?.[0] || 0)] || "Option"
+                                              : p.yesShares > p.noShares ? "YES" : "NO"
+                                          }
+                                          won={won}
+                                          payout={p.currentValue}
+                                          invested={0}
+                                          username={user?.username || ""}
+                                          shares={
+                                            isMultiOpt && p.optionShares
+                                              ? Object.values(p.optionShares).reduce((s, v) => s + v, 0)
+                                              : Math.max(p.yesShares, p.noShares)
+                                          }
+                                          marketUrl={`/markets/${p.market.id}`}
+                                        />
+                                      </div>
+                                      <div className="text-right">
+                                        {won && !p.redeemed && (
+                                          <button
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              handleRedeem(p.id);
+                                            }}
+                                            disabled={redeeming === p.id}
+                                            className="py-1.5 px-4 border-2 border-[var(--accent)] text-[var(--accent)] font-mono font-bold text-xs hover:bg-[var(--accent)] hover:text-[var(--background)] transition-all disabled:opacity-50 tracking-wider uppercase shadow-[0_0_15px_rgba(0,229,160,0.1)]"
+                                          >
+                                            {redeeming === p.id
+                                              ? (locale === "sw" ? "INAKOMBOA..." : "REDEEMING...")
+                                              : (locale === "sw" ? "KOMBOA" : "REDEEM")}
+                                          </button>
+                                        )}
+                                        {redeemSuccess === p.id && (
+                                          <div className="text-xs font-mono text-[var(--accent)] font-bold animate-pulse flex items-center gap-1 justify-end">
+                                            <CheckCircle size={12} weight="fill" />
+                                            {locale === "sw" ? "IMEFANIKIWA" : "REDEEMED"}
+                                          </div>
+                                        )}
+                                        {p.redeemed && redeemSuccess !== p.id && (
+                                          <div className="text-[10px] font-mono text-[var(--muted)] flex items-center gap-1 justify-end">
+                                            <CheckCircle size={10} weight="fill" />
+                                            {locale === "sw" ? "Imekombowa" : "Redeemed"}
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
                                   )}
                                 </div>
