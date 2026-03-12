@@ -7,9 +7,9 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS } from "@/lib/utils";
 import {
   Sun, Moon, TrendUp, ChartBar, Trophy, Wallet,
-  User, Plus, SignOut, List, X, Globe, Bell,
+  User,  Plus, SignOut, List, X, Globe, Bell,
   ShoppingCart, Storefront, Target, PaperPlaneTilt,
-  ArrowDownLeft, CurrencyDollar, Gift, CheckCircle,
+  ArrowDownLeft, CurrencyDollar, Gift, CheckCircle, ArrowUpRight,
 } from "@phosphor-icons/react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
@@ -296,13 +296,13 @@ export function Navbar() {
 
           {user ? (
             <>
-              {/* Create market — desktop only (hidden on mobile to reduce clutter) */}
+              {/* Deposit — desktop only (hidden on mobile to reduce clutter) */}
               <Link
-                href="/markets/create"
+                href="/wallet#deposit"
                 className="hidden md:flex items-center gap-1.5 px-3 py-1.5 border-2 border-[var(--foreground)] text-[var(--foreground)] text-xs font-mono font-bold tracking-wider hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all uppercase"
               >
-                <Plus size={15} />
-                {locale === "sw" ? "Unda" : "Create"}
+                <ArrowUpRight size={15} />
+                {locale === "sw" ? "Weka" : "Deposit"}
               </Link>
 
               {/* Balance — desktop only */}
