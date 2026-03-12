@@ -77,6 +77,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
     description: "",
     imageUrl: "",
     resolvesAt: "",
+    category: "",
   });
   const [resolveConfirm, setResolveConfirm] = useState<string | null>(null);
   const [resolveLoading, setResolveLoading] = useState(false);
@@ -223,6 +224,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
       description: market.description,
       imageUrl: market.imageUrl || "",
       resolvesAt: new Date(market.resolvesAt).toISOString().slice(0, 16),
+      category: market.category,
     });
     setEditImageFile(null);
     setEditImagePreview("");
@@ -935,6 +937,28 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       onChange={handleEditFileSelect}
                       className="hidden"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">
+                      {locale === "sw" ? "Jamii" : "Category"}
+                    </label>
+                    <select
+                      value={editForm.category}
+                      onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                      className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
+                      required
+                    >
+                      <option value="Politics">{locale === "sw" ? "Siasa" : "Politics"}</option>
+                      <option value="Sports">{locale === "sw" ? "Michezo" : "Sports"}</option>
+                      <option value="Business">{locale === "sw" ? "Biashara" : "Business"}</option>
+                      <option value="Entertainment">{locale === "sw" ? "Burudani" : "Entertainment"}</option>
+                      <option value="Technology">{locale === "sw" ? "Teknolojia" : "Technology"}</option>
+                      <option value="Crypto">Crypto</option>
+                      <option value="Science">{locale === "sw" ? "Sayansi" : "Science"}</option>
+                      <option value="Weather">{locale === "sw" ? "Hali ya Hewa" : "Weather"}</option>
+                      <option value="Other">{locale === "sw" ? "Nyingine" : "Other"}</option>
+                    </select>
                   </div>
 
                   <div>
