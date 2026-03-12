@@ -309,7 +309,7 @@ function ShareCardModal({
             href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(fullShareUrl)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-black text-white text-xs font-mono font-bold rounded-none border border-white/20 hover:opacity-90 transition-all"
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-gray-800 text-white text-xs font-mono font-bold rounded-none border border-gray-600 hover:bg-gray-700 transition-all"
           >
             <XLogo size={16} weight="fill" />
             Post
