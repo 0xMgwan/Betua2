@@ -681,23 +681,38 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       {isMultiOption ? market.outcomeLabel : (market.outcome === 1 ? t.market.yes : t.market.no)}
                     </strong>
                   </p>
-                  {user && (
-                    <div className="mt-4">
-                      <ShareCardButton
-                        marketTitle={market.title}
-                        category={market.category}
-                        subCategory={market.subCategory}
-                        imageUrl={market.imageUrl}
-                        outcome={isMultiOption ? (market.outcomeLabel || "Option") : (market.outcome === 1 ? "YES" : "NO")}
-                        won={true}
-                        payout={0}
-                        invested={0}
-                        username={user.username || ""}
-                        shares={0}
-                        marketUrl={`/markets/${market.id}`}
-                      />
-                    </div>
-                  )}
+                  {user && (() => {
+                    const myTrades = market.trades.filter(tr => tr.user.username === user.username);
+                    const myInvested = myTrades.reduce((s, tr) => s + tr.amountTzs, 0);
+                    const myYesShares = myTrades.filter(tr => tr.side === "YES").reduce((s, tr) => s + tr.shares, 0);
+                    const myNoShares = myTrades.filter(tr => tr.side === "NO").reduce((s, tr) => s + tr.shares, 0);
+                    const myPick = isMultiOption
+                      ? (market.outcomeLabel || "Option")
+                      : myYesShares >= myNoShares ? "YES" : "NO";
+                    const winningShares = isMultiOption ? 0 : (market.outcome === 1 ? myYesShares : myNoShares);
+                    const totalWinShares = isMultiOption ? 1 : (market.outcome === 1 ? market.totalYesShares : market.totalNoShares);
+                    const pot = Math.round(market.totalVolume * 0.95);
+                    const myPayout = totalWinShares > 0 ? Math.round((winningShares / totalWinShares) * pot * 0.95) : 0;
+                    const didWin = myPayout > 0;
+                    const myShares = Math.max(myYesShares, myNoShares);
+                    return myTrades.length > 0 ? (
+                      <div className="mt-4">
+                        <ShareCardButton
+                          marketTitle={market.title}
+                          category={market.category}
+                          subCategory={market.subCategory}
+                          imageUrl={market.imageUrl}
+                          outcome={myPick}
+                          won={didWin}
+                          payout={myPayout}
+                          invested={myInvested}
+                          username={user.username || ""}
+                          shares={myShares}
+                          marketUrl={`/markets/${market.id}`}
+                        />
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
               ) : !user ? (
                 <div className="text-center py-6">

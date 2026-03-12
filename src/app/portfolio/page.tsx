@@ -21,6 +21,7 @@ interface Position {
   noShares: number;
   optionShares?: Record<string, number> | null;
   currentValue: number;
+  totalInvested: number;
   redeemed: boolean;
   price: { yes: number; no: number };
   optionPrices?: number[] | null;
@@ -404,7 +405,7 @@ export default function PortfolioPage() {
                                           }
                                           won={won}
                                           payout={p.currentValue}
-                                          invested={0}
+                                          invested={p.totalInvested}
                                           username={user?.username || ""}
                                           shares={
                                             isMultiOpt && p.optionShares

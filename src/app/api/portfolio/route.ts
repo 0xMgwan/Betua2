@@ -99,6 +99,23 @@ export async function GET() {
     return { ...p, currentValue: Math.round(currentValue), price };
   });
 
+  // Calculate total invested per market for this user
+  const userTradesForPositions = await prisma.trade.findMany({
+    where: { userId: session.userId, marketId: { in: marketIds } },
+    select: { marketId: true, amountTzs: true },
+  });
+  const investedByMarket: Record<string, number> = {};
+  for (const t of userTradesForPositions) {
+    investedByMarket[t.marketId] = (investedByMarket[t.marketId] || 0) + t.amountTzs;
+  }
+
+  // Attach totalInvested to each position
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const enrichedWithInvested = enriched.map((p: any) => ({
+    ...p,
+    totalInvested: investedByMarket[p.marketId] || 0,
+  }));
+
   const trades = await prisma.trade.findMany({
     where: { userId: session.userId },
     orderBy: { createdAt: "desc" },
@@ -108,5 +125,5 @@ export async function GET() {
     },
   });
 
-  return NextResponse.json({ positions: enriched, trades });
+  return NextResponse.json({ positions: enrichedWithInvested, trades });
 }
