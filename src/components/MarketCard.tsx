@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Clock, TrendUp, UsersThree, Lightning, Timer, ChartLineUp } from "@phosphor-icons/react";
-import { formatTZS, formatNumber, timeUntil } from "@/lib/utils";
+import { formatTZS, formatNumber, timeUntil, SPORTS_SUBCATEGORIES } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { QuickBuyModal } from "./QuickBuyModal";
@@ -88,7 +88,18 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                   </span>
                 )}
                 {market.subCategory && (
-                  <span className="text-[9px] font-mono font-bold text-[var(--accent)] uppercase tracking-wider px-1.5 py-0.5 border border-[var(--accent)]/30 bg-[var(--accent)]/10">
+                  <span className="text-[9px] font-mono font-bold text-[var(--accent)] uppercase tracking-wider px-1.5 py-0.5 border border-[var(--accent)]/30 bg-[var(--accent)]/10 flex items-center gap-1">
+                    {SPORTS_SUBCATEGORIES.find(s => s.value === market.subCategory)?.icon.startsWith('/') ? (
+                      <Image 
+                        src={SPORTS_SUBCATEGORIES.find(s => s.value === market.subCategory)!.icon} 
+                        alt={market.subCategory} 
+                        width={10} 
+                        height={10} 
+                        className="object-contain" 
+                      />
+                    ) : (
+                      <span>{SPORTS_SUBCATEGORIES.find(s => s.value === market.subCategory)?.icon}</span>
+                    )}
                     {market.subCategory}
                   </span>
                 )}

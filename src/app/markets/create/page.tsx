@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
 import { motion } from "framer-motion";
 import { CATEGORIES, SPORTS_SUBCATEGORIES } from "@/lib/utils";
@@ -332,7 +333,11 @@ export default function CreateMarketPage() {
                                 : "border border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[#00e5a0]/30 bg-[var(--background)]"
                             )}
                           >
-                            <span>{sub.icon}</span>
+                            {sub.icon.startsWith('/') ? (
+                              <Image src={sub.icon} alt={sub.label} width={16} height={16} className="object-contain" />
+                            ) : (
+                              <span>{sub.icon}</span>
+                            )}
                             {sub.label}
                           </button>
                         );

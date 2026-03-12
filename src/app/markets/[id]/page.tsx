@@ -345,6 +345,22 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     <span className="px-1.5 py-0.5 bg-[var(--accent)]/10 text-[var(--accent)] text-[10px] font-mono rounded border border-[var(--accent)]/20">
                       {market.category}
                     </span>
+                    {market.subCategory && (
+                      <span className="px-1.5 py-0.5 bg-[var(--accent)]/10 text-[var(--accent)] text-[10px] font-mono rounded border border-[var(--accent)]/20 flex items-center gap-1">
+                        {SPORTS_SUBCATEGORIES.find(s => s.value === market.subCategory)?.icon.startsWith('/') ? (
+                          <Image 
+                            src={SPORTS_SUBCATEGORIES.find(s => s.value === market.subCategory)!.icon} 
+                            alt={market.subCategory} 
+                            width={12} 
+                            height={12} 
+                            className="object-contain" 
+                          />
+                        ) : (
+                          <span>{SPORTS_SUBCATEGORIES.find(s => s.value === market.subCategory)?.icon}</span>
+                        )}
+                        {market.subCategory}
+                      </span>
+                    )}
                     {isResolved && (
                       <span className="px-1.5 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-mono rounded border border-blue-500/20">
                         {t.market.resolved}: {isMultiOption ? market.outcomeLabel : (market.outcome === 1 ? t.market.yes : t.market.no)}
@@ -991,7 +1007,11 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                                   : "border border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--accent)]/40"
                               )}
                             >
-                              <span>{sub.icon}</span>
+                              {sub.icon.startsWith('/') ? (
+                                <Image src={sub.icon} alt={sub.label} width={16} height={16} className="object-contain" />
+                              ) : (
+                                <span>{sub.icon}</span>
+                              )}
                               {sub.label}
                             </button>
                           );

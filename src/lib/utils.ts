@@ -50,10 +50,10 @@ export const CATEGORIES = [
 ];
 
 export const SPORTS_SUBCATEGORIES = [
-  { value: "EPL", label: "Premier League", icon: "⚽" },
-  { value: "La Liga", label: "La Liga", icon: "⚽" },
-  { value: "Serie A", label: "Serie A", icon: "⚽" },
-  { value: "UCL", label: "Champions League", icon: "🏆" },
-  { value: "NBC PL", label: "NBC PL", icon: "⚽" },
+  { value: "EPL", label: "Premier League", icon: "/epl.jpg" },
+  { value: "La Liga", label: "La Liga", icon: "/la liga.jpg" },
+  { value: "Serie A", label: "Serie A", icon: "/serie a.png" },
+  { value: "UCL", label: "Champions League", icon: "/champions league.png" },
+  { value: "NBC PL", label: "NBC PL", icon: "/nbc.png" },
   { value: "Other Sports", label: "Other", icon: "🏅" },
 ];

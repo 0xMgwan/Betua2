@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
 import { MarketCard } from "@/components/MarketCard";
 import { motion } from "framer-motion";
@@ -162,7 +163,12 @@ export default function MarketsPage() {
                       : "border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--accent)]/40 hover:text-[var(--foreground)]"
                   )}
                 >
-                  {sub.icon} {sub.label}
+                  {sub.icon.startsWith('/') ? (
+                    <Image src={sub.icon} alt={sub.label} width={16} height={16} className="object-contain" />
+                  ) : (
+                    <span>{sub.icon}</span>
+                  )}
+                  {sub.label}
                 </button>
               ))}
             </motion.div>
