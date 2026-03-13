@@ -96,8 +96,30 @@ function ShareCardModal({
 }: ShareCardProps & { onClose: () => void }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
+  const [base64Img, setBase64Img] = useState<string | null>(null);
   const { locale } = useLanguage();
   const isSw = locale === "sw";
+
+  // Convert market image to base64 on mount so html-to-image works on mobile
+  useEffect(() => {
+    if (!imageUrl) return;
+    const img = new window.Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          setBase64Img(canvas.toDataURL("image/png"));
+        }
+      } catch { /* CORS blocked — fall back to original URL */ }
+    };
+    img.onerror = () => setBase64Img(null);
+    img.src = imageUrl;
+  }, [imageUrl]);
 
   const profitLoss = won ? payout - invested : -invested;
   const profitPct = invested > 0 ? ((profitLoss / invested) * 100).toFixed(0) : "0";
@@ -235,7 +257,7 @@ function ShareCardModal({
             {imageUrl && (
               <div className="mb-3 rounded overflow-hidden border border-white/10">
                 <img
-                  src={imageUrl}
+                  src={base64Img || imageUrl}
                   alt={marketTitle}
                   className="w-full h-32 object-cover"
                   crossOrigin="anonymous"

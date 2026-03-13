@@ -185,7 +185,7 @@ export function PriceChart({ marketId, className }: PriceChartProps) {
       {/* Scanline overlay */}
       <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden opacity-[0.03]">
         <div className="w-full h-[200%] animate-[scanMove_8s_linear_infinite]"
-          style={{ background: "repeating-linear-gradient(0deg, transparent, transparent 2px, white 2px, white 3px)" }} />
+          style={{ background: "repeating-linear-gradient(0deg, transparent, transparent 2px, var(--foreground) 2px, var(--foreground) 3px)" }} />
       </div>
 
       {/* Legend */}
@@ -220,8 +220,8 @@ export function PriceChart({ marketId, className }: PriceChartProps) {
           <defs>
             {lines.map(({ o, c }) => (
               <linearGradient key={`g-${o}`} id={`ag-${o}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={c} stopOpacity="0.18" />
-                <stop offset="50%" stopColor={c} stopOpacity="0.06" />
+                <stop offset="0%" stopColor={c} stopOpacity="0.08" />
+                <stop offset="50%" stopColor={c} stopOpacity="0.03" />
                 <stop offset="100%" stopColor={c} stopOpacity="0" />
               </linearGradient>
             ))}
@@ -253,8 +253,8 @@ export function PriceChart({ marketId, className }: PriceChartProps) {
             </g>
           ))}
 
-          {/* Area fills */}
-          {lines.map(({ o, area }) => (
+          {/* Area fills — only for single-line charts to avoid black overlap */}
+          {lines.length === 1 && lines.map(({ o, area }) => (
             <path key={`a-${o}`} d={area} fill={`url(#ag-${o})`} className={drawn ? "c-area ok" : "c-area"} />
           ))}
 
