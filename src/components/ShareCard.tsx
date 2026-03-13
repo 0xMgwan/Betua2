@@ -120,17 +120,50 @@ function ShareCardModal({
     try {
       const html2canvas = (await import("html2canvas")).default;
       const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: null,
+        backgroundColor: "#0a0a0a",
         scale: 2,
         useCORS: true,
+        allowTaint: true,
+        logging: false,
+        onclone: (clonedDoc) => {
+          const clonedCard = clonedDoc.querySelector('[data-share-card]');
+          if (clonedCard) {
+            // Force all colors to be standard RGB/hex to avoid oklab parsing issues
+            clonedCard.querySelectorAll('*').forEach((el: any) => {
+              const computedStyle = window.getComputedStyle(el);
+              if (computedStyle.color) {
+                el.style.color = computedStyle.color;
+              }
+              if (computedStyle.backgroundColor) {
+                el.style.backgroundColor = computedStyle.backgroundColor;
+              }
+              if (computedStyle.borderColor) {
+                el.style.borderColor = computedStyle.borderColor;
+              }
+            });
+          }
+        },
       });
-      const link = document.createElement("a");
-      link.download = `guap-prediction-${Date.now()}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          setDownloading(false);
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.download = `guap-prediction-${Date.now()}.png`;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => {
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          setDownloading(false);
+        }, 100);
+      }, "image/png");
     } catch (err) {
       console.error("Download failed:", err);
-    } finally {
       setDownloading(false);
     }
   }, []);
@@ -153,6 +186,7 @@ function ShareCardModal({
         {/* The share card */}
         <div
           ref={cardRef}
+          data-share-card
           className="relative overflow-hidden"
           style={{
             background: won
