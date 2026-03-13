@@ -37,6 +37,23 @@ export function timeUntil(date: Date | string): string {
   return `${mins}m`;
 }
 
+export function timeAgo(date: Date | string): string {
+  const d = new Date(date);
+  const now = new Date();
+  const diff = now.getTime() - d.getTime();
+  if (diff < 0) return "just now";
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  if (days > 30) {
+    const months = Math.floor(days / 30);
+    return `${months}mo ago`;
+  }
+  if (days > 0) return `${days}d ago`;
+  const mins = Math.floor((diff % 3600000) / 60000);
+  if (hours > 0) return `${hours}h ago`;
+  return `${mins}m ago`;
+}
+
 export const CATEGORIES = [
   "Politics",
   "Sports",

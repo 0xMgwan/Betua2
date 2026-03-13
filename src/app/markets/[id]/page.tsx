@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
 import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { formatTZS, formatNumber, timeUntil, SPORTS_SUBCATEGORIES } from "@/lib/utils";
+import { formatTZS, formatNumber, timeUntil, timeAgo, SPORTS_SUBCATEGORIES } from "@/lib/utils";
 import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -32,6 +32,7 @@ interface MarketData {
   yesPool: number;
   noPool: number;
   resolvesAt: string;
+  createdAt: string;
   status: string;
   outcome?: number | null;
   outcomeLabel?: string | null;
@@ -379,6 +380,16 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   <h1 className="text-base sm:text-xl font-bold leading-tight">{market.title}</h1>
                   <div className="flex items-center gap-3 mt-1.5 text-[10px] text-[var(--muted)] font-mono">
                     <span>@{market.creator.username}</span>
+                    <span className="flex items-center gap-0.5">
+                      <Clock size={10} />
+                      Created {timeAgo(market.createdAt)}
+                    </span>
+                    {market.status === "OPEN" && (
+                      <span className="flex items-center gap-0.5 text-[#00e5a0]">
+                        <CheckCircle size={10} weight="fill" />
+                        ACTIVE
+                      </span>
+                    )}
                     <span className="flex items-center gap-0.5">
                       <TrendUp size={10} />
                       {formatTZS(market.totalVolume)} vol

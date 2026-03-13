@@ -100,25 +100,20 @@ function ShareCardModal({
   const { locale } = useLanguage();
   const isSw = locale === "sw";
 
-  // Convert market image to base64 on mount so html-to-image works on mobile
+  // Convert market image to base64 via proxy so html-to-image works on mobile
   useEffect(() => {
     if (!imageUrl) return;
-    const img = new window.Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
+    (async () => {
       try {
-        const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(img, 0, 0);
-          setBase64Img(canvas.toDataURL("image/png"));
-        }
-      } catch { /* CORS blocked — fall back to original URL */ }
-    };
-    img.onerror = () => setBase64Img(null);
-    img.src = imageUrl;
+        const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(imageUrl)}`;
+        const res = await fetch(proxyUrl);
+        if (!res.ok) return;
+        const blob = await res.blob();
+        const reader = new FileReader();
+        reader.onloadend = () => setBase64Img(reader.result as string);
+        reader.readAsDataURL(blob);
+      } catch { /* fall back to original URL */ }
+    })();
   }, [imageUrl]);
 
   const profitLoss = won ? payout - invested : -invested;
