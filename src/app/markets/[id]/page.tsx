@@ -94,6 +94,8 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   const [resolveLoading, setResolveLoading] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState("");
+  const [editMarketType, setEditMarketType] = useState<"binary" | "multi">("binary");
+  const [editCustomOptions, setEditCustomOptions] = useState<string[]>(["", ""]);
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
   const [editImagePreview, setEditImagePreview] = useState("");
   const [editUploading, setEditUploading] = useState(false);
@@ -272,6 +274,10 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
       category: market.category,
       subCategory: market.subCategory || "",
     });
+    // Initialize market type from current market
+    const hasOptions = market.options && market.options.length >= 2;
+    setEditMarketType(hasOptions ? "multi" : "binary");
+    setEditCustomOptions(hasOptions ? [...market.options!] : ["", ""]);
     setEditImageFile(null);
     setEditImagePreview("");
     setShowEditModal(true);
@@ -290,10 +296,19 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
         finalImageUrl = uploaded;
       }
 
+      // Build edit payload with optional market type change
+      const editPayload: Record<string, unknown> = { ...editForm, imageUrl: finalImageUrl };
+      if (editMarketType === "multi") {
+        const validOptions = editCustomOptions.map(o => o.trim()).filter(Boolean);
+        editPayload.options = validOptions;
+      } else {
+        editPayload.options = null;
+      }
+
       const res = await fetch(`/api/markets/${id}/edit`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...editForm, imageUrl: finalImageUrl }),
+        body: JSON.stringify(editPayload),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -1242,6 +1257,101 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       rows={4}
                       required
                     />
+                  </div>
+
+                  {/* Market Type Toggle — only if no trades yet */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">
+                      {locale === "sw" ? "Aina ya Soko" : "Market Type"}
+                    </label>
+                    {market && market._count.trades > 0 ? (
+                      <p className="text-xs font-mono text-[var(--muted)] px-3 py-2 bg-[var(--background)] border border-[var(--card-border)] rounded-xl">
+                        {isMultiOption
+                          ? `${locale === "sw" ? "Chaguzi nyingi" : "Multi-option"}: ${market.options?.join(", ")}`
+                          : (locale === "sw" ? "Ndiyo/Hapana (haiwezi kubadilishwa baada ya biashara)" : "YES/NO (cannot change after trades)")
+                        }
+                      </p>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setEditMarketType("binary")}
+                            className={cn(
+                              "py-3 text-sm font-mono font-bold transition-all rounded-xl",
+                              editMarketType === "binary"
+                                ? "border-2 border-[var(--accent)]/50 bg-[var(--background)]"
+                                : "border border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--foreground)]/30 bg-[var(--background)]"
+                            )}
+                          >
+                            <div className="flex items-center justify-center gap-1.5">
+                              <span className={editMarketType === "binary" ? "text-[#00e5a0]" : ""}>YES</span>
+                              <span className="text-[var(--muted)]">/</span>
+                              <span className={editMarketType === "binary" ? "text-red-400" : ""}>NO</span>
+                            </div>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditMarketType("multi")}
+                            className={cn(
+                              "py-3 text-sm font-mono font-bold transition-all rounded-xl",
+                              editMarketType === "multi"
+                                ? "border-2 border-purple-500/50 bg-[var(--background)]"
+                                : "border border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--foreground)]/30 bg-[var(--background)]"
+                            )}
+                          >
+                            <div className="flex items-center justify-center gap-1.5">
+                              <span className={editMarketType === "multi" ? "text-purple-400" : ""}>
+                                {locale === "sw" ? "CHAGUZI" : "MULTI"}
+                              </span>
+                            </div>
+                          </button>
+                        </div>
+
+                        {editMarketType === "multi" && (
+                          <div className="mt-3 space-y-2">
+                            <label className="text-[10px] font-mono text-purple-400 uppercase tracking-wider">
+                              {locale === "sw" ? "Chaguzi" : "Options"} ({editCustomOptions.filter(o => o.trim()).length}/{editCustomOptions.length})
+                            </label>
+                            {editCustomOptions.map((opt, i) => (
+                              <div key={i} className="flex items-center gap-2">
+                                <span className="text-[10px] font-mono text-[var(--muted)] w-5">{i + 1}.</span>
+                                <input
+                                  type="text"
+                                  value={opt}
+                                  onChange={(e) => {
+                                    const updated = [...editCustomOptions];
+                                    updated[i] = e.target.value;
+                                    setEditCustomOptions(updated);
+                                  }}
+                                  placeholder={`${locale === "sw" ? "Chaguo" : "Option"} ${i + 1}`}
+                                  className="flex-1 px-3 py-2 bg-[var(--background)] border border-[var(--card-border)] rounded-lg text-sm font-mono focus:outline-none focus:border-purple-500/50 transition-colors"
+                                  maxLength={100}
+                                />
+                                {editCustomOptions.length > 2 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditCustomOptions(editCustomOptions.filter((_, j) => j !== i))}
+                                    className="p-1.5 text-red-400 hover:bg-red-500/10 transition-colors rounded"
+                                  >
+                                    <XCircle size={14} />
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                            {editCustomOptions.length < 10 && (
+                              <button
+                                type="button"
+                                onClick={() => setEditCustomOptions([...editCustomOptions, ""])}
+                                className="w-full py-2 border border-dashed border-purple-500/30 text-purple-400 text-xs font-mono hover:bg-purple-500/5 transition-colors rounded-lg"
+                              >
+                                + {locale === "sw" ? "Ongeza chaguo" : "Add option"}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
 
                   <div>
