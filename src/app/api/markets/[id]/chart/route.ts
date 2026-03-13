@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getPrice, getSharesOut, getMultiOptionPrices, getMultiOptionSharesOut } from "@/lib/amm";
+import { getPrice, getSharesOut, getMultiOptionPrices, getMultiOptionSharesOut, getPayoutForShares, getMultiOptionPayoutForShares } from "@/lib/amm";
 
 const FEE_PERCENT = parseFloat(process.env.TRANSACTION_FEE_PERCENT || "5") / 100;
 const INIT_POOL = 100000;
@@ -33,7 +33,7 @@ export async function GET(
   const trades = await prisma.trade.findMany({
     where: { marketId: id },
     orderBy: { createdAt: "asc" },
-    select: { side: true, amountTzs: true, createdAt: true },
+    select: { side: true, amountTzs: true, shares: true, createdAt: true },
   });
 
   const points: Array<{ t: number; prices: Record<string, number> }> = [];
@@ -51,13 +51,21 @@ export async function GET(
 
     // Replay each trade
     for (const trade of trades) {
-      const optIdx = optionNames.indexOf(trade.side);
+      const isSell = trade.side.startsWith("SELL_");
+      const actualSide = isSell ? trade.side.slice(5) : trade.side;
+      const optIdx = optionNames.indexOf(actualSide);
       if (optIdx === -1) continue;
-      const feeAmt = Math.round(trade.amountTzs * FEE_PERCENT);
-      const tradeAmt = trade.amountTzs - feeAmt;
       try {
-        const result = getMultiOptionSharesOut(tradeAmt, optIdx, pools);
-        pools = result.newPools;
+        if (isSell) {
+          const sharesToSell = Math.abs(trade.shares);
+          const result = getMultiOptionPayoutForShares(sharesToSell, optIdx, pools);
+          pools = result.newPools;
+        } else {
+          const feeAmt = Math.round(trade.amountTzs * FEE_PERCENT);
+          const tradeAmt = trade.amountTzs - feeAmt;
+          const result = getMultiOptionSharesOut(tradeAmt, optIdx, pools);
+          pools = result.newPools;
+        }
       } catch { continue; }
       const prices = getMultiOptionPrices(pools);
       const priceMap: Record<string, number> = {};
@@ -81,18 +89,33 @@ export async function GET(
     points.push({ t: market.createdAt.getTime(), prices: { YES: 0.5, NO: 0.5 } });
 
     for (const trade of trades) {
-      const feeAmt = Math.round(trade.amountTzs * FEE_PERCENT);
-      const tradeAmt = trade.amountTzs - feeAmt;
-      const isYes = trade.side === "YES";
+      const isSell = trade.side.startsWith("SELL_");
+      const actualSide = isSell ? trade.side.slice(5) : trade.side;
+      const isYes = actualSide === "YES";
       try {
-        if (isYes) {
-          const r = getSharesOut(tradeAmt, noPool, yesPool);
-          noPool = r.newPoolIn;
-          yesPool = r.newPoolOut;
+        if (isSell) {
+          const sharesToSell = Math.abs(trade.shares);
+          if (isYes) {
+            const r = getPayoutForShares(sharesToSell, yesPool, noPool);
+            yesPool = r.newPoolIn;
+            noPool = r.newPoolOut;
+          } else {
+            const r = getPayoutForShares(sharesToSell, noPool, yesPool);
+            noPool = r.newPoolIn;
+            yesPool = r.newPoolOut;
+          }
         } else {
-          const r = getSharesOut(tradeAmt, yesPool, noPool);
-          yesPool = r.newPoolIn;
-          noPool = r.newPoolOut;
+          const feeAmt = Math.round(trade.amountTzs * FEE_PERCENT);
+          const tradeAmt = trade.amountTzs - feeAmt;
+          if (isYes) {
+            const r = getSharesOut(tradeAmt, noPool, yesPool);
+            noPool = r.newPoolIn;
+            yesPool = r.newPoolOut;
+          } else {
+            const r = getSharesOut(tradeAmt, yesPool, noPool);
+            yesPool = r.newPoolIn;
+            noPool = r.newPoolOut;
+          }
         }
       } catch { continue; }
       const p = getPrice(yesPool, noPool);

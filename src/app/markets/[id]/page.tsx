@@ -5,7 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS, formatNumber, timeUntil, timeAgo, SPORTS_SUBCATEGORIES } from "@/lib/utils";
-import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
+import { getSharesOut, getMultiOptionSharesOut, getPayoutForShares, getMultiOptionPayoutForShares } from "@/lib/amm";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
@@ -59,12 +59,19 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   const [tab, setTab] = useState<"trades" | "comments">("trades");
 
   // Trade state
+  const [tradeMode, setTradeMode] = useState<"buy" | "sell">("buy");
   const [side, setSide] = useState<"YES" | "NO">("YES");
   const [selectedOption, setSelectedOption] = useState<number>(0);
   const [amount, setAmount] = useState("");
   const [tradeLoading, setTradeLoading] = useState(false);
   const [tradeError, setTradeError] = useState("");
   const [tradeSuccess, setTradeSuccess] = useState("");
+
+  // Sell state
+  const [sellShares, setSellShares] = useState("");
+  const [sellLoading, setSellLoading] = useState(false);
+  const [sellError, setSellError] = useState("");
+  const [sellSuccess, setSellSuccess] = useState("");
 
   // Comment state
   const [comment, setComment] = useState("");
@@ -166,6 +173,40 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
       setTradeError("Network error");
     } finally {
       setTradeLoading(false);
+    }
+  }
+
+  async function handleSell(e: React.FormEvent) {
+    e.preventDefault();
+    if (!user) return;
+    setSellLoading(true);
+    setSellError("");
+    setSellSuccess("");
+    try {
+      const sellBody = isMultiOption
+        ? { marketId: id, optionIndex: selectedOption, sharesToSell: Number(sellShares) }
+        : { marketId: id, side, sharesToSell: Number(sellShares) };
+
+      const res = await fetch("/api/sell", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(sellBody),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSellError(data.error || "Sell failed");
+      } else {
+        const label = isMultiOption ? market!.options![selectedOption] : side;
+        setSellSuccess(`Sold ${data.sharesToSell} ${label} shares for ${formatTZS(data.netPayout)}!`);
+        setSellShares("");
+        await loadMarket();
+        fetchUser();
+        setTimeout(() => setSellSuccess(""), 4000);
+      }
+    } catch {
+      setSellError("Network error");
+    } finally {
+      setSellLoading(false);
     }
   }
 
@@ -289,6 +330,47 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
         estimatedPrice = result.avgPrice;
       }
     } catch {}
+  }
+
+  // Estimate sell payout
+  let estimatedPayout = 0;
+  let estimatedSellPrice = 0;
+  let sellFee = 0;
+  if (market && sellShares && Number(sellShares) >= 1) {
+    try {
+      if (isMultiOption && market.optionPools) {
+        const result = getMultiOptionPayoutForShares(Number(sellShares), selectedOption, market.optionPools);
+        const gross = result.payout;
+        sellFee = Math.round(gross * FEE_PERCENT);
+        estimatedPayout = gross - sellFee;
+        estimatedSellPrice = result.avgPrice;
+      } else {
+        const result = side === "YES"
+          ? getPayoutForShares(Number(sellShares), market.yesPool, market.noPool)
+          : getPayoutForShares(Number(sellShares), market.noPool, market.yesPool);
+        const gross = Math.round(result.payout);
+        sellFee = Math.round(gross * FEE_PERCENT);
+        estimatedPayout = gross - sellFee;
+        estimatedSellPrice = result.avgPrice;
+      }
+    } catch {}
+  }
+
+  // Get user's current position shares for the selected side/option
+  let mySharesForSide = 0;
+  if (market && user) {
+    const myTrades = market.trades.filter(tr => tr.user.username === user.username);
+    if (isMultiOption && market.options) {
+      const optName = market.options[selectedOption];
+      mySharesForSide = myTrades
+        .filter(tr => tr.side === optName || tr.side === `SELL_${optName}`)
+        .reduce((s, tr) => s + tr.shares, 0);
+    } else {
+      mySharesForSide = myTrades
+        .filter(tr => tr.side === side || tr.side === `SELL_${side}`)
+        .reduce((s, tr) => s + tr.shares, 0);
+    }
+    mySharesForSide = Math.max(0, mySharesForSide);
   }
 
   if (loading) {
@@ -683,7 +765,33 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                 <span className="text-[9px] font-mono text-[var(--muted)] uppercase tracking-wider">TRADE.PANEL</span>
               </div>
               <div className="p-4 sm:p-5">
-              <h2 className="font-bold text-base mb-3 font-mono">{locale === "sw" ? "Fanya Biashara" : "Place a Trade"}</h2>
+              {/* Buy / Sell toggle */}
+              <div className="flex items-center bg-[var(--background)] rounded-xl p-1 mb-3">
+                <button
+                  type="button"
+                  onClick={() => { setTradeMode("buy"); setSellError(""); setSellSuccess(""); }}
+                  className={cn(
+                    "flex-1 py-2 text-sm font-bold font-mono rounded-lg transition-all",
+                    tradeMode === "buy"
+                      ? "bg-[#00e5a0] text-black"
+                      : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                  )}
+                >
+                  {locale === "sw" ? "Nunua" : "Buy"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setTradeMode("sell"); setTradeError(""); setTradeSuccess(""); }}
+                  className={cn(
+                    "flex-1 py-2 text-sm font-bold font-mono rounded-lg transition-all",
+                    tradeMode === "sell"
+                      ? "bg-[#ff4d6a] text-white"
+                      : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                  )}
+                >
+                  {locale === "sw" ? "Uza" : "Sell"}
+                </button>
+              </div>
 
               {!isTradeable ? (
                 <div className="text-center py-6 text-[var(--muted)]">
@@ -743,7 +851,8 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     {t.market.signInToTrade}
                   </Link>
                 </div>
-              ) : (
+              ) : (<>
+                {tradeMode === "buy" ? (
                 <form onSubmit={handleTrade} className="space-y-4">
                   {/* Side selector */}
                   {isMultiOption && market.options && market.optionPrices ? (
@@ -910,7 +1019,175 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     </Link>
                   </div>
                 </form>
-              )}
+                ) : (
+                /* ═══ SELL FORM ═══ */
+                <form onSubmit={handleSell} className="space-y-4">
+                  {/* Side selector (same as buy) */}
+                  {isMultiOption && market.options && market.optionPrices ? (
+                    <div className="space-y-2">
+                      {market.options.map((opt, i) => {
+                        const pct = Math.round((market.optionPrices![i] || 0) * 100);
+                        const bgColors = [
+                          "bg-[#00e5a0]", "bg-[#00b4d8]", "bg-[#f59e0b]", "bg-[#ef4444]",
+                          "bg-[#8b5cf6]", "bg-[#ec4899]", "bg-[#14b8a6]", "bg-[#f97316]",
+                          "bg-[#6366f1]", "bg-[#84cc16]",
+                        ];
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => { setSelectedOption(i); setSellShares(""); }}
+                            className={cn(
+                              "w-full py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-between px-4",
+                              selectedOption === i
+                                ? `${bgColors[i % bgColors.length]} text-black`
+                                : "bg-[var(--background)] border border-[var(--card-border)] text-[var(--muted)] hover:border-current"
+                            )}
+                          >
+                            <span>{String.fromCharCode(65 + i)}. {opt}</span>
+                            <span>{pct}%</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      {(["YES", "NO"] as const).map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => { setSide(s); setSellShares(""); }}
+                          className={cn(
+                            "py-3 rounded-xl font-bold text-sm transition-all",
+                            side === s
+                              ? s === "YES"
+                                ? "bg-[#00e5a0] text-black"
+                                : "bg-red-500 text-white"
+                              : "bg-[var(--background)] border border-[var(--card-border)] text-[var(--muted)] hover:border-current"
+                          )}
+                        >
+                          {s} {s === "YES" ? `${yesPct}%` : `${noPct}%`}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Your shares */}
+                  <div className="p-3 bg-[var(--background)] rounded-xl text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[var(--muted)]">{locale === "sw" ? "Hisa zako" : "Your shares"}</span>
+                      <span className="font-bold">{formatNumber(mySharesForSide)}</span>
+                    </div>
+                  </div>
+
+                  {mySharesForSide > 0 ? (
+                    <>
+                      {/* Shares to sell */}
+                      <div>
+                        <label className="block text-sm font-medium mb-1.5">
+                          {locale === "sw" ? "Hisa za kuuza" : "Shares to sell"}
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={sellShares}
+                            onChange={(e) => setSellShares(e.target.value)}
+                            className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[#ff4d6a] transition-colors"
+                            placeholder={`Max ${mySharesForSide}`}
+                            min="1"
+                            max={mySharesForSide}
+                            required
+                          />
+                        </div>
+                        {/* Quick sell amounts */}
+                        <div className="flex gap-2 mt-2">
+                          {[25, 50, 75, 100].map((pct) => {
+                            const qty = Math.floor(mySharesForSide * pct / 100);
+                            return (
+                              <button
+                                key={pct}
+                                type="button"
+                                onClick={() => setSellShares(String(qty))}
+                                disabled={qty < 1}
+                                className="flex-1 py-1 text-xs bg-[var(--background)] border border-[var(--card-border)] rounded-lg hover:border-[#ff4d6a] transition-colors disabled:opacity-30"
+                              >
+                                {pct}%
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Sell estimate */}
+                      {estimatedPayout > 0 && (
+                        <div className="p-3 bg-[var(--background)] rounded-xl text-sm space-y-1.5">
+                          <div className="flex justify-between">
+                            <span className="text-[var(--muted)]">{locale === "sw" ? "Utapata" : "You receive"}</span>
+                            <span className="font-bold text-[#00e5a0]">{formatTZS(estimatedPayout)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-[var(--muted)]">{locale === "sw" ? "Bei ya wastani" : "Avg price"}</span>
+                            <span className="font-medium">{estimatedSellPrice.toFixed(4)} TZS/share</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-[var(--muted)]">{locale === "sw" ? "Ada (5%)" : "Fee (5%)"}</span>
+                            <span className="text-[var(--muted)]">-{formatTZS(sellFee)}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {sellError && (
+                        <p className="text-red-400 text-sm text-center bg-red-500/10 border border-red-500/20 rounded-xl py-2">
+                          {sellError}
+                        </p>
+                      )}
+
+                      <AnimatePresence>
+                        {sellSuccess && (
+                          <motion.p
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="text-[#00e5a0] text-sm text-center bg-[#00e5a0]/10 border border-[#00e5a0]/20 rounded-xl py-2 flex items-center justify-center gap-1.5"
+                          >
+                            <CheckCircle size={14} />
+                            {sellSuccess}
+                          </motion.p>
+                        )}
+                      </AnimatePresence>
+
+                      <button
+                        type="submit"
+                        disabled={sellLoading || !sellShares || Number(sellShares) < 1 || Number(sellShares) > mySharesForSide}
+                        className="w-full py-3.5 font-bold rounded-xl transition-all disabled:opacity-50 text-sm bg-[#ff4d6a] text-white hover:opacity-90"
+                      >
+                        {sellLoading
+                          ? (locale === "sw" ? "Inachakata…" : "Processing…")
+                          : locale === "sw"
+                            ? `Uza hisa ${sellShares || 0}`
+                            : `Sell ${sellShares || 0} shares`
+                        }
+                      </button>
+                    </>
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-[var(--muted)] text-sm font-mono">
+                        {locale === "sw"
+                          ? `Huna hisa za ${isMultiOption ? market.options![selectedOption] : side} za kuuza`
+                          : `No ${isMultiOption ? market.options![selectedOption] : side} shares to sell`}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setTradeMode("buy")}
+                        className="mt-2 text-xs text-[var(--accent)] hover:underline font-mono"
+                      >
+                        {locale === "sw" ? "Nunua hisa kwanza →" : "Buy shares first →"}
+                      </button>
+                    </div>
+                  )}
+                </form>
+                )}
+              </>)}
               </div>
             </div>
           </div>

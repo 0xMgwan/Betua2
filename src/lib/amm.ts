@@ -58,6 +58,50 @@ export function getPriceImpact(
   return Math.abs(priceAfter - priceBefore) / priceBefore;
 }
 
+// ── Sell (reverse of buy) ─────────────────────────────────────────────
+// User returns shares → pool absorbs them → user gets TZS payout
+
+export function getPayoutForShares(
+  sharesIn: number,
+  poolIn: number,
+  poolOut: number
+): { payout: number; newPoolIn: number; newPoolOut: number; avgPrice: number } {
+  // poolIn = the pool of the side being sold (e.g. yesPool for selling YES)
+  // poolOut = the other pool
+  // Selling shares increases poolIn (shares go back), decreases poolOut (TZS come out)
+  const k = poolIn * poolOut;
+  const newPoolIn = poolIn + sharesIn;
+  const newPoolOut = k / newPoolIn;
+  const payout = poolOut - newPoolOut;
+  const avgPrice = payout / sharesIn;
+
+  return { payout, newPoolIn: Math.round(newPoolIn), newPoolOut: Math.round(newPoolOut), avgPrice };
+}
+
+export function getMultiOptionPayoutForShares(
+  sharesIn: number,
+  optionIndex: number,
+  pools: number[]
+): { payout: number; newPools: number[]; avgPrice: number } {
+  const targetPool = pools[optionIndex];
+  const otherPoolsTotal = pools.reduce((s, p, idx) => idx !== optionIndex ? s + p : s, 0);
+
+  // Reverse of buy: shares go back into target pool, TZS come out of other pools
+  const k = targetPool * otherPoolsTotal;
+  const newTargetPool = targetPool + sharesIn;
+  const newOtherTotal = k / newTargetPool;
+  const payout = otherPoolsTotal - newOtherTotal;
+  const avgPrice = payout / sharesIn;
+
+  const newPools = pools.map((p, idx) => {
+    if (idx === optionIndex) return Math.round(newTargetPool);
+    const proportion = p / otherPoolsTotal;
+    return Math.round(p - payout * proportion);
+  });
+
+  return { payout: Math.round(payout), newPools, avgPrice };
+}
+
 // ── Multi-option AMM ────────────────────────────────────────────────────
 
 export function getMultiOptionPrices(pools: number[]): number[] {
