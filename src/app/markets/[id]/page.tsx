@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, use, useRef } from "react";
+import { useEffect, useState, use, useRef, useCallback } from "react";
 import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
 import { useUser } from "@/store/useUser";
@@ -123,14 +123,14 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
     }
   }
 
-  async function loadMarket() {
+  const loadMarket = useCallback(async () => {
     const res = await fetch(`/api/markets/${id}`);
     const data = await res.json();
     setMarket(data.market);
     setLoading(false);
-  }
+  }, [id]);
 
-  useEffect(() => { loadMarket(); }, [id]);
+  useEffect(() => { loadMarket(); const i = setInterval(loadMarket, 30000); return () => clearInterval(i); }, [loadMarket]);
 
   const isMultiOption = !!(market?.options && market.options.length >= 2);
 
