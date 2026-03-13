@@ -5,13 +5,14 @@ import { Footer } from "@/components/Footer";
 import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS, formatNumber, formatPercent } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
   TrendUp, Clock, Terminal, Lightning, Wallet, ChartLineUp,
   CurrencyDollar, Trophy, Eye, ArrowRight, CheckCircle, XCircle,
-  Pulse, WarningCircle, ShareNetwork,
+  Pulse, WarningCircle, ShareNetwork, CaretDown,
 } from "@phosphor-icons/react";
+import { getPayoutForShares, getMultiOptionPayoutForShares } from "@/lib/amm";
 import { cn } from "@/lib/utils";
 import { ShareCardButton } from "@/components/ShareCard";
 
@@ -35,6 +36,10 @@ interface Position {
     options?: string[] | null;
     category: string;
     imageUrl?: string | null;
+    yesPool: number;
+    noPool: number;
+    optionPools?: number[] | null;
+    totalVolume: number;
   };
 }
 
@@ -57,6 +62,14 @@ export default function PortfolioPage() {
   const [tab, setTab] = useState<"positions" | "history">("positions");
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [redeemSuccess, setRedeemSuccess] = useState<string | null>(null);
+
+  // Sell state
+  const [sellOpen, setSellOpen] = useState<string | null>(null); // position id
+  const [sellSide, setSellSide] = useState<string>("");
+  const [sellShares, setSellShares] = useState("");
+  const [sellLoading, setSellLoading] = useState(false);
+  const [sellError, setSellError] = useState("");
+  const [sellSuccess, setSellSuccess] = useState("");
 
   useEffect(() => {
     fetch("/api/portfolio")
@@ -121,8 +134,43 @@ export default function PortfolioPage() {
     }
   };
 
+  const handleSell = async (position: Position) => {
+    if (!sellShares || Number(sellShares) < 1) return;
+    setSellLoading(true);
+    setSellError("");
+    setSellSuccess("");
+    try {
+      const isMultiOpt = !!(position.market.options && position.market.options.length >= 2);
+      const body = isMultiOpt
+        ? { marketId: position.market.id, optionIndex: Number(sellSide), sharesToSell: Number(sellShares) }
+        : { marketId: position.market.id, side: sellSide, sharesToSell: Number(sellShares) };
+
+      const res = await fetch("/api/sell", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSellError(data.error || "Sell failed");
+      } else {
+        setSellSuccess(`Sold for ${formatTZS(data.netPayout)}!`);
+        setSellShares("");
+        // Refresh portfolio
+        fetch("/api/portfolio")
+          .then((r) => r.json())
+          .then((d) => { setPositions(d.positions || []); setTrades(d.trades || []); });
+        setTimeout(() => { setSellSuccess(""); setSellOpen(null); }, 3000);
+      }
+    } catch {
+      setSellError("Network error");
+    } finally {
+      setSellLoading(false);
+    }
+  };
+
   const totalValue = positions.reduce((sum, p) => sum + p.currentValue, 0);
-  const totalInvested = trades.reduce((sum, t) => sum + t.amountTzs, 0);
+  const totalInvested = trades.filter(t => !t.side.startsWith("SELL_")).reduce((sum, t) => sum + t.amountTzs, 0);
 
   // Total potential payout: sum of shares across all open positions
   // Each share pays 1 TZS if the outcome is correct
@@ -383,12 +431,37 @@ export default function PortfolioPage() {
                                   </div>
 
                                   {!isResolved ? (
-                                    <div className="text-right">
-                                      <div className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
-                                        {locale === "sw" ? "Malipo" : "If correct"}
-                                      </div>
-                                      <div className="text-base font-mono font-bold tabular-nums text-yellow-400">
-                                        {formatTZS(Math.round(positionPayout))}
+                                    <div className="flex items-end gap-3">
+                                      <button
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          if (sellOpen === p.id) {
+                                            setSellOpen(null);
+                                          } else {
+                                            setSellOpen(p.id);
+                                            setSellError("");
+                                            setSellSuccess("");
+                                            setSellShares("");
+                                            // Auto-select first available side
+                                            if (isMultiOpt && p.optionShares) {
+                                              const firstIdx = Object.entries(p.optionShares).find(([, s]) => s > 0)?.[0] || "0";
+                                              setSellSide(firstIdx);
+                                            } else {
+                                              setSellSide(p.yesShares > 0 ? "YES" : "NO");
+                                            }
+                                          }
+                                        }}
+                                        className="py-1.5 px-3 border-2 border-[#ff4d6a] text-[#ff4d6a] font-mono font-bold text-[10px] hover:bg-[#ff4d6a] hover:text-white transition-all tracking-wider uppercase"
+                                      >
+                                        {locale === "sw" ? "UZA" : "SELL"}
+                                      </button>
+                                      <div className="text-right">
+                                        <div className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
+                                          {locale === "sw" ? "Malipo" : "If correct"}
+                                        </div>
+                                        <div className="text-base font-mono font-bold tabular-nums text-yellow-400">
+                                          {formatTZS(Math.round(positionPayout))}
+                                        </div>
                                       </div>
                                     </div>
                                   ) : (
@@ -449,9 +522,190 @@ export default function PortfolioPage() {
                               </div>
                             </div>
                           </Link>
+
+                          {/* Inline sell panel */}
+                          <AnimatePresence>
+                            {sellOpen === p.id && !isResolved && (() => {
+                              // Determine available shares for selected side
+                              let availShares = 0;
+                              let sideLabel = "";
+                              if (isMultiOpt && p.optionShares) {
+                                availShares = p.optionShares[sellSide] || 0;
+                                sideLabel = p.market.options?.[Number(sellSide)] || `Option ${sellSide}`;
+                              } else {
+                                availShares = sellSide === "YES" ? p.yesShares : p.noShares;
+                                sideLabel = sellSide;
+                              }
+
+                              // Estimate payout
+                              let estPayout = 0;
+                              const FEE = 0.05;
+                              if (sellShares && Number(sellShares) >= 1) {
+                                try {
+                                  if (isMultiOpt && p.market.optionPools) {
+                                    const r = getMultiOptionPayoutForShares(Number(sellShares), Number(sellSide), p.market.optionPools);
+                                    estPayout = Math.round(r.payout * (1 - FEE));
+                                  } else {
+                                    const r = sellSide === "YES"
+                                      ? getPayoutForShares(Number(sellShares), p.market.yesPool, p.market.noPool)
+                                      : getPayoutForShares(Number(sellShares), p.market.noPool, p.market.yesPool);
+                                    estPayout = Math.round(r.payout * (1 - FEE));
+                                  }
+                                } catch {}
+                              }
+
+                              return (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: "auto" }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  className="overflow-hidden"
+                                >
+                                  <div className="bg-[var(--card)] border border-[var(--card-border)] border-t-0 p-4 space-y-3">
+                                    {/* Side selector */}
+                                    {isMultiOpt && p.optionShares ? (
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {Object.entries(p.optionShares).filter(([, s]) => s > 0).map(([idx, shares]) => (
+                                          <button
+                                            key={idx}
+                                            onClick={() => { setSellSide(idx); setSellShares(""); }}
+                                            className={cn(
+                                              "px-3 py-1.5 text-xs font-mono font-bold border transition-all",
+                                              sellSide === idx
+                                                ? "border-[#ff4d6a] text-[#ff4d6a] bg-[#ff4d6a]/10"
+                                                : "border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--foreground)]"
+                                            )}
+                                          >
+                                            {p.market.options?.[Number(idx)] || `Opt ${idx}`} ({shares})
+                                          </button>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div className="flex gap-2">
+                                        {p.yesShares > 0 && (
+                                          <button
+                                            onClick={() => { setSellSide("YES"); setSellShares(""); }}
+                                            className={cn(
+                                              "flex-1 py-1.5 text-xs font-mono font-bold border transition-all",
+                                              sellSide === "YES"
+                                                ? "border-[#00e5a0] text-[#00e5a0] bg-[#00e5a0]/10"
+                                                : "border-[var(--card-border)] text-[var(--muted)]"
+                                            )}
+                                          >
+                                            YES ({p.yesShares})
+                                          </button>
+                                        )}
+                                        {p.noShares > 0 && (
+                                          <button
+                                            onClick={() => { setSellSide("NO"); setSellShares(""); }}
+                                            className={cn(
+                                              "flex-1 py-1.5 text-xs font-mono font-bold border transition-all",
+                                              sellSide === "NO"
+                                                ? "border-red-400 text-red-400 bg-red-500/10"
+                                                : "border-[var(--card-border)] text-[var(--muted)]"
+                                            )}
+                                          >
+                                            NO ({p.noShares})
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Shares input */}
+                                    <div>
+                                      <input
+                                        type="number"
+                                        value={sellShares}
+                                        onChange={(e) => setSellShares(e.target.value)}
+                                        placeholder={`${locale === "sw" ? "Hisa" : "Shares"} (max ${availShares})`}
+                                        min="1"
+                                        max={availShares}
+                                        className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--card-border)] text-sm font-mono focus:outline-none focus:border-[#ff4d6a] transition-colors"
+                                      />
+                                      <div className="flex gap-1.5 mt-1.5">
+                                        {[25, 50, 75, 100].map((pct) => {
+                                          const qty = Math.floor(availShares * pct / 100);
+                                          return (
+                                            <button
+                                              key={pct}
+                                              onClick={() => setSellShares(String(qty))}
+                                              disabled={qty < 1}
+                                              className="flex-1 py-1 text-[10px] font-mono border border-[var(--card-border)] hover:border-[#ff4d6a] transition-colors disabled:opacity-30"
+                                            >
+                                              {pct}%
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+
+                                    {/* Estimate */}
+                                    {estPayout > 0 && (
+                                      <div className="flex justify-between text-xs font-mono">
+                                        <span className="text-[var(--muted)]">{locale === "sw" ? "Utapata" : "You receive"}</span>
+                                        <span className="font-bold text-[#00e5a0]">{formatTZS(estPayout)}</span>
+                                      </div>
+                                    )}
+
+                                    {/* Error / Success */}
+                                    {sellError && <p className="text-red-400 text-xs font-mono text-center">{sellError}</p>}
+                                    {sellSuccess && (
+                                      <p className="text-[#00e5a0] text-xs font-mono text-center flex items-center justify-center gap-1">
+                                        <CheckCircle size={12} weight="fill" />
+                                        {sellSuccess}
+                                      </p>
+                                    )}
+
+                                    {/* Sell button */}
+                                    <button
+                                      onClick={() => handleSell(p)}
+                                      disabled={sellLoading || !sellShares || Number(sellShares) < 1 || Number(sellShares) > availShares}
+                                      className="w-full py-2.5 font-mono font-bold text-xs bg-[#ff4d6a] text-white hover:opacity-90 transition-all disabled:opacity-50 tracking-wider uppercase"
+                                    >
+                                      {sellLoading
+                                        ? (locale === "sw" ? "INACHAKATA..." : "SELLING...")
+                                        : `${locale === "sw" ? "UZA" : "SELL"} ${sellShares || 0} ${sideLabel}`
+                                      }
+                                    </button>
+                                  </div>
+                                </motion.div>
+                              );
+                            })()}
+                          </AnimatePresence>
                         </motion.div>
                       );
                     })}
+
+                    {/* ═══ Total Payout Summary ═══ */}
+                    <div className="mt-4 bg-[var(--background)] border-2 border-[var(--card-border)] p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Trophy size={16} weight="fill" className="text-yellow-400" />
+                        <span className="text-xs font-mono font-bold uppercase tracking-wider text-[var(--muted)]">
+                          {locale === "sw" ? "Muhtasari wa Malipo" : "Payout Summary"}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm font-mono">
+                          <span className="text-[var(--muted)]">{locale === "sw" ? "Jumla uwekezaji" : "Total invested"}</span>
+                          <span className="font-bold">{formatTZS(totalInvested)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm font-mono">
+                          <span className="text-[var(--muted)]">{locale === "sw" ? "Thamani ya sasa" : "Current value"}</span>
+                          <span className="font-bold">{formatTZS(Math.round(totalValue))}</span>
+                        </div>
+                        <div className="flex justify-between text-sm font-mono">
+                          <span className="text-[var(--muted)]">{locale === "sw" ? "Malipo yakiwezekana" : "Max payout (if all correct)"}</span>
+                          <span className="font-bold text-yellow-400">{formatTZS(Math.round(totalPayout))}</span>
+                        </div>
+                        <div className="h-px bg-[var(--card-border)] my-1" />
+                        <div className="flex justify-between text-sm font-mono">
+                          <span className="text-[var(--muted)]">{locale === "sw" ? "P&L" : "Unrealized P&L"}</span>
+                          <span className={cn("font-bold", totalValue - totalInvested >= 0 ? "text-[#00e5a0]" : "text-red-400")}>
+                            {totalValue - totalInvested >= 0 ? "+" : ""}{formatTZS(Math.round(totalValue - totalInvested))}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )
               ) : (
@@ -467,7 +721,12 @@ export default function PortfolioPage() {
                         <span>Side / Market</span>
                         <span>Amount / Shares</span>
                       </div>
-                      {trades.map((tr, i) => (
+                      {trades.map((tr, i) => {
+                        const isSell = tr.side.startsWith("SELL_");
+                        const displaySide = isSell ? tr.side.slice(5) : tr.side;
+                        const displayAmount = isSell ? Math.abs(tr.amountTzs) : tr.amountTzs;
+                        const displayShares = Math.abs(tr.shares);
+                        return (
                         <motion.div
                           key={tr.id}
                           initial={{ opacity: 0, x: -8 }}
@@ -477,24 +736,34 @@ export default function PortfolioPage() {
                           <Link href={`/markets/${tr.market.id}`}>
                             <div className="flex items-center justify-between py-2.5 px-4 bg-[var(--background)] border border-[var(--card-border)] hover:border-[var(--accent)]/30 transition-all">
                               <div className="flex items-center gap-3 min-w-0">
-                                <span
-                                  className={cn(
-                                    "px-2 py-0.5 text-[10px] font-mono font-bold border",
-                                    tr.side === "YES" ? "text-[#00e5a0] border-[#00e5a0]/30" : tr.side === "NO" ? "text-red-400 border-red-500/30" : "text-purple-400 border-purple-500/30"
+                                <div className="flex items-center gap-1.5">
+                                  {isSell && (
+                                    <span className="px-1.5 py-0.5 text-[9px] font-mono font-bold border border-[#ff4d6a]/30 text-[#ff4d6a]">
+                                      SELL
+                                    </span>
                                   )}
-                                >
-                                  {tr.side}
-                                </span>
+                                  <span
+                                    className={cn(
+                                      "px-2 py-0.5 text-[10px] font-mono font-bold border",
+                                      displaySide === "YES" ? "text-[#00e5a0] border-[#00e5a0]/30" : displaySide === "NO" ? "text-red-400 border-red-500/30" : "text-purple-400 border-purple-500/30"
+                                    )}
+                                  >
+                                    {displaySide}
+                                  </span>
+                                </div>
                                 <span className="text-sm font-medium line-clamp-1">{tr.market.title}</span>
                               </div>
                               <div className="text-right shrink-0 ml-4">
-                                <div className="text-sm font-mono font-bold tabular-nums">{formatTZS(tr.amountTzs)}</div>
-                                <div className="text-[10px] font-mono text-[var(--muted)]">{tr.shares} {t.portfolio.shares}</div>
+                                <div className={cn("text-sm font-mono font-bold tabular-nums", isSell ? "text-[#ff4d6a]" : "")}>
+                                  {isSell ? `+${formatTZS(displayAmount)}` : formatTZS(displayAmount)}
+                                </div>
+                                <div className="text-[10px] font-mono text-[var(--muted)]">{displayShares} {t.portfolio.shares}</div>
                               </div>
                             </div>
                           </Link>
                         </motion.div>
-                      ))}
+                        );
+                      })}
                     </>
                   )}
                 </div>
