@@ -135,12 +135,37 @@ function ShareCardModal({
     if (!cardRef.current) return;
     setDownloading(true);
     try {
+      // Convert all images inside the card to base64 before capture
+      const imgs = cardRef.current.querySelectorAll("img");
+      const origSrcs: { el: HTMLImageElement; src: string }[] = [];
+      await Promise.all(
+        Array.from(imgs).map(async (img) => {
+          if (img.src.startsWith("data:")) return; // already base64
+          origSrcs.push({ el: img, src: img.src });
+          try {
+            const res = await fetch(`/api/proxy-image?url=${encodeURIComponent(img.src)}`);
+            if (!res.ok) return;
+            const blob = await res.blob();
+            const b64 = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(blob);
+            });
+            img.src = b64;
+          } catch { /* keep original src */ }
+        })
+      );
+
       const { toPng } = await import("html-to-image");
       const dataUrl = await toPng(cardRef.current, {
         backgroundColor: "#0a0a0a",
         pixelRatio: 2,
         cacheBust: true,
       });
+
+      // Restore original srcs
+      origSrcs.forEach(({ el, src }) => { el.src = src; });
+
       const link = document.createElement("a");
       link.download = `guap-prediction-${Date.now()}.png`;
       link.href = dataUrl;

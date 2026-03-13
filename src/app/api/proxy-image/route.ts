@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-  const url = req.nextUrl.searchParams.get("url");
+  let url = req.nextUrl.searchParams.get("url");
   if (!url) return NextResponse.json({ error: "Missing url" }, { status: 400 });
 
+  // Resolve relative URLs against request origin
+  if (url.startsWith("/")) {
+    url = `${req.nextUrl.origin}${url}`;
+  }
+
   try {
-    const res = await fetch(url);
-    if (!res.ok) return NextResponse.json({ error: "Fetch failed" }, { status: 502 });
+    const res = await fetch(url, {
+      headers: { "User-Agent": "GUAP-ImageProxy/1.0" },
+    });
+    if (!res.ok) return NextResponse.json({ error: `Fetch failed: ${res.status}` }, { status: 502 });
 
     const buffer = await res.arrayBuffer();
     const contentType = res.headers.get("content-type") || "image/png";
@@ -15,9 +22,11 @@ export async function GET(req: NextRequest) {
       headers: {
         "Content-Type": contentType,
         "Cache-Control": "public, max-age=86400",
+        "Access-Control-Allow-Origin": "*",
       },
     });
-  } catch {
+  } catch (err) {
+    console.error("Proxy image error:", err);
     return NextResponse.json({ error: "Proxy error" }, { status: 500 });
   }
 }
