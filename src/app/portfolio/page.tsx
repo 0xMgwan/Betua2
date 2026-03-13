@@ -701,13 +701,6 @@ export default function PortfolioPage() {
                           <span className="text-[var(--muted)]">{locale === "sw" ? "Malipo yakiwezekana" : "Max payout (if all correct)"}</span>
                           <span className="font-bold text-yellow-400">{formatTZS(Math.round(totalPayout))}</span>
                         </div>
-                        <div className="h-px bg-[var(--card-border)] my-1" />
-                        <div className="flex justify-between text-sm font-mono">
-                          <span className="text-[var(--muted)]">{locale === "sw" ? "P&L" : "Unrealized P&L"}</span>
-                          <span className={cn("font-bold", totalValue - totalInvested >= 0 ? "text-[#00e5a0]" : "text-red-400")}>
-                            {totalValue - totalInvested >= 0 ? "+" : ""}{formatTZS(Math.round(totalValue - totalInvested))}
-                          </span>
-                        </div>
                       </div>
                     </div>
                   </div>
