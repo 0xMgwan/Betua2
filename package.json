@@ -23,6 +23,7 @@
     "framer-motion": "^12.35.1",
     "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",
+    "html2canvas-pro": "^2.0.2",
     "jose": "^6.2.0",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.577.0",

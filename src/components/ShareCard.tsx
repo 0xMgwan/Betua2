@@ -131,45 +131,16 @@ function ShareCardModal({
     ? `${window.location.origin}${marketUrl}`
     : marketUrl;
 
-  // Helper: convert any CSS color string to rgb/rgba via canvas
-  const toRgb = useCallback((color: string): string => {
-    try {
-      const ctx = document.createElement("canvas").getContext("2d");
-      if (!ctx) return color;
-      ctx.fillStyle = color;
-      return ctx.fillStyle; // always returns #hex or rgb/rgba
-    } catch { return color; }
-  }, []);
-
   const handleDownload = useCallback(async () => {
     if (!cardRef.current) return;
     setDownloading(true);
     try {
-      const html2canvas = (await import("html2canvas")).default;
+      const { default: html2canvas } = await import("html2canvas-pro");
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: "#0a0a0a",
         scale: 2,
         useCORS: true,
-        allowTaint: false,
         logging: false,
-        proxy: "/api/proxy-image?url=",
-        onclone: (clonedDoc) => {
-          // Fix oklab colors: convert all computed colors to rgb via canvas
-          const card = clonedDoc.querySelector("[data-share-card]");
-          if (!card) return;
-          card.querySelectorAll("*").forEach((el) => {
-            const s = (el as HTMLElement).style;
-            const cs = clonedDoc.defaultView?.getComputedStyle(el);
-            if (!cs) return;
-            const props = ["color", "backgroundColor", "borderColor", "borderTopColor", "borderBottomColor", "borderLeftColor", "borderRightColor"];
-            props.forEach((p) => {
-              const v = cs.getPropertyValue(p === "backgroundColor" ? "background-color" : p === "borderColor" ? "border-color" : p === "borderTopColor" ? "border-top-color" : p === "borderBottomColor" ? "border-bottom-color" : p === "borderLeftColor" ? "border-left-color" : p === "borderRightColor" ? "border-right-color" : p);
-              if (v && v !== "transparent" && v !== "rgba(0, 0, 0, 0)") {
-                (s as any)[p] = toRgb(v);
-              }
-            });
-          });
-        },
       });
 
       canvas.toBlob((blob) => {
@@ -190,7 +161,7 @@ function ShareCardModal({
       console.error("Download failed:", err);
       setDownloading(false);
     }
-  }, [toRgb]);
+  }, []);
 
   return (
     <motion.div
