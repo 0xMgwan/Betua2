@@ -842,6 +842,12 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                         <span className="text-[var(--muted)]">{locale === "sw" ? "Ukishinda" : "If you win"}</span>
                         <span className="font-bold text-[#00e5a0]">{formatTZS(payoutIfWin)}</span>
                       </div>
+                      <div className="flex justify-between">
+                        <span className="text-[var(--muted)]">{locale === "sw" ? "Faida halisi" : "Net gain"}</span>
+                        <span className={cn("font-bold", netGain >= 0 ? "text-[var(--accent)]" : "text-yellow-400")}>
+                          {netGain >= 0 ? `+${formatTZS(netGain)}` : formatTZS(netGain)}
+                        </span>
+                      </div>
                     </div>
                     );
                   })()}
