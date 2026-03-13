@@ -193,7 +193,7 @@ function formatVolume(v: number): string {
 }
 
 export default function HomePage() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [markets, setMarkets] = useState<unknown[]>([]);
   const [stats, setStats] = useState({ totalVolume: 0, openMarkets: 0, totalTraders: 0, totalTrades: 0, resolvedMarkets: 0 });
 
