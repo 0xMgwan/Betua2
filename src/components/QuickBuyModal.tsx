@@ -164,14 +164,13 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex }: Qu
         return;
       }
 
-      // Success - show message, send notification, and redirect after 2 seconds
+      // Success - show message, send notification, and close modal after 2 seconds
       setSuccess(true);
       
       // Send push notification
       notifications.notifyTrade(market.title, side, Number(amount), market.id);
       
       setTimeout(() => {
-        router.push(`/markets/${market.id}`);
         onClose();
       }, 2000);
     } catch (err) {
@@ -319,8 +318,8 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex }: Qu
                   </div>
                   <p className="text-xs font-mono text-[var(--foreground)]">
                     {locale === "sw" 
-                      ? `Umenunua hisa ${shares} za ${side}. Unaelekezwa...`
-                      : `Bought ${shares} ${side} shares. Redirecting...`}
+                      ? `Umenunua hisa ${shares} za ${side}!`
+                      : `Bought ${shares} ${side} shares!`}
                   </p>
                 </div>
               )}
