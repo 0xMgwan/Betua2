@@ -297,7 +297,7 @@ export default function HomePage() {
                   transition={{ delay: 0.7 }}
                 >
                   <Link
-                    href="/auth/register"
+                    href="/markets/create"
                     className="relative px-5 lg:px-6 py-2 lg:py-2.5 bg-transparent text-[var(--foreground)] font-mono text-xs lg:text-sm border border-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all duration-200 group"
                   >
                     <span className="hidden lg:block absolute -top-1 -left-1 w-2 h-2 border-t border-l border-[var(--foreground)] opacity-0 group-hover:opacity-100 transition-opacity"></span>
