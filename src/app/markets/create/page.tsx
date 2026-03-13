@@ -571,7 +571,16 @@ export default function CreateMarketPage() {
                   
                   <TerminalDatePicker
                     selected={form.resolvesAt ? new Date(form.resolvesAt) : new Date(defaultDate)}
-                    onChange={(date) => setForm({ ...form, resolvesAt: date ? date.toISOString().slice(0, 16) : "" })}
+                    onChange={(date) => {
+                      if (!date) { setForm({ ...form, resolvesAt: "" }); return; }
+                      // Format as local time (YYYY-MM-DDTHH:mm) — don't use toISOString() which converts to UTC
+                      const y = date.getFullYear();
+                      const m = String(date.getMonth() + 1).padStart(2, "0");
+                      const d = String(date.getDate()).padStart(2, "0");
+                      const h = String(date.getHours()).padStart(2, "0");
+                      const min = String(date.getMinutes()).padStart(2, "0");
+                      setForm({ ...form, resolvesAt: `${y}-${m}-${d}T${h}:${min}` });
+                    }}
                     minDate={new Date()}
                     locale={locale}
                   />
