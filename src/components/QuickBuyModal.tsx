@@ -20,6 +20,8 @@ interface QuickBuyModalProps {
     yesPool: number;
     noPool: number;
     optionPools?: number[];
+    resolvesAt?: string;
+    status?: string;
   };
   side: string;
   optionIndex?: number;
@@ -35,6 +37,10 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex }: Qu
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  
+  const isExpired = market.resolvesAt ? new Date(market.resolvesAt) < new Date() : false;
+  const isResolved = market.status === "RESOLVED";
+  const isTradeable = !isExpired && !isResolved;
 
   // Fresh pool data fetched from API
   const [freshPools, setFreshPools] = useState<{
@@ -302,7 +308,7 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex }: Qu
                   </button>
                   <button
                     onClick={handleBuy}
-                    disabled={loading || !amount || Number(amount) < 500}
+                    disabled={loading || !amount || Number(amount) < 500 || !isTradeable}
                     className={`flex-1 py-3 sm:py-3 px-3 sm:px-4 rounded-none font-mono font-bold text-[10px] sm:text-xs uppercase tracking-wider transition-all disabled:opacity-40 border-2 active:scale-95 ${
                       isMultiOption
                         ? "bg-[var(--accent)]/10 border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)]/20 hover:shadow-[0_0_15px_rgba(0,229,160,0.3)]"
@@ -311,7 +317,11 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex }: Qu
                         : "bg-red-500/10 border-red-500 text-red-400 hover:bg-red-500/20 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]"
                     }`}
                   >
-                    {loading
+                    {!isTradeable
+                      ? (isResolved 
+                          ? (locale === "sw" ? "Limetatuliwa" : "Resolved")
+                          : (locale === "sw" ? "Limeisha" : "Expired"))
+                      : loading
                       ? (locale === "sw" ? "Inaendelea..." : "Processing...")
                       : `> ${locale === "sw" ? "Nunua" : "Buy"} ${isMultiOption ? side.slice(0, 10) : side}`}
                   </button>

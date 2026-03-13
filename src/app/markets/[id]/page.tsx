@@ -316,6 +316,8 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   const yesPct = yesPctRaw % 1 === 0 ? Math.round(yesPctRaw) : parseFloat(yesPctRaw.toFixed(1));
   const noPct = noPctRaw % 1 === 0 ? Math.round(noPctRaw) : parseFloat(noPctRaw.toFixed(1));
   const isResolved = market.status === "RESOLVED";
+  const isExpired = new Date(market.resolvesAt) < new Date();
+  const isTradeable = !isResolved && !isExpired;
 
   return (
     <div className="min-h-screen">
@@ -672,15 +674,21 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
               <div className="p-4 sm:p-5">
               <h2 className="font-bold text-base mb-3 font-mono">{locale === "sw" ? "Fanya Biashara" : "Place a Trade"}</h2>
 
-              {isResolved ? (
+              {!isTradeable ? (
                 <div className="text-center py-6 text-[var(--muted)]">
                   <CheckCircle size={32} className="mx-auto mb-2 text-[var(--accent)]" />
-                  <p className="font-medium">{locale === "sw" ? "Soko Limetatuliwa" : "Market Resolved"}</p>
-                  <p className="text-sm mt-1">
-                    {t.market.outcome}: <strong className="text-[#00e5a0]">
-                      {isMultiOption ? market.outcomeLabel : (market.outcome === 1 ? t.market.yes : t.market.no)}
-                    </strong>
+                  <p className="font-medium">
+                    {isResolved 
+                      ? (locale === "sw" ? "Soko Limetatuliwa" : "Market Resolved")
+                      : (locale === "sw" ? "Soko Limeisha" : "Market Expired")}
                   </p>
+                  {isResolved && (
+                    <p className="text-sm mt-1">
+                      {t.market.outcome}: <strong className="text-[#00e5a0]">
+                        {isMultiOption ? market.outcomeLabel : (market.outcome === 1 ? t.market.yes : t.market.no)}
+                      </strong>
+                    </p>
+                  )}
                   {user && (() => {
                     const myTrades = market.trades.filter(tr => tr.user.username === user.username);
                     const myInvested = myTrades.reduce((s, tr) => s + tr.amountTzs, 0);
