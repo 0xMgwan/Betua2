@@ -52,6 +52,8 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
   const isMultiOption = market.options && market.options.length >= 2;
   const catColor = CATEGORY_COLORS[market.category] || "#94a3b8";
   const hasImage = market.imageUrl && !imageError;
+  const isExpired = new Date(market.resolvesAt) < new Date();
+  const isTradeable = market.status === "OPEN" && !isExpired;
 
   const handleQuickBuy = (e: React.MouseEvent, side: string, optionIndex?: number) => {
     e.preventDefault();
@@ -187,7 +189,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
             )}
 
             {/* Quick Buy Buttons */}
-            {market.status === "OPEN" && (
+            {isTradeable && (
               isMultiOption ? (
                 <div className="grid grid-cols-2 gap-1.5 mb-3">
                   {market.options!.slice(0, 4).map((option, idx) => {
