@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
       category: category && category !== "all" ? category : undefined,
       subCategory: subCategory && subCategory !== "all" ? subCategory : undefined,
       title: search ? { contains: search } : undefined,
+      resolvesAt: { gte: new Date() }, // Hide expired markets
     },
     include: {
       creator: { select: { username: true, avatarUrl: true } },
