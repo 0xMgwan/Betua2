@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Trophy, XCircle, ShareNetwork, WhatsappLogo, XLogo,
   TelegramLogo, DownloadSimple, X, Lightning, TrendUp,
-  CheckCircle,
+  CheckCircle, InstagramLogo,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { formatTZS } from "@/lib/utils";
@@ -307,9 +307,15 @@ function ShareCardModal({
                 </span>
               </div>
               <div className="flex items-center gap-3 text-white/50 text-[8px] font-mono font-bold">
-                <span>X: @shindaguap</span>
+                <span className="flex items-center gap-1">
+                  <XLogo size={10} weight="bold" />
+                  @shindaguap
+                </span>
                 <span className="text-white/30">·</span>
-                <span>IG: @shindaguap</span>
+                <span className="flex items-center gap-1">
+                  <InstagramLogo size={10} weight="bold" />
+                  @shindaguap
+                </span>
               </div>
             </div>
           </div>
