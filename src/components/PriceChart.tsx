@@ -212,9 +212,9 @@ export function PriceChart({ marketId, className }: PriceChartProps) {
       </div>
 
       {/* Chart */}
-      <div ref={wrapRef} className="relative z-20">
+      <div ref={wrapRef} className="relative z-20 bg-[var(--card)]">
         <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`}
-          className="w-full h-[220px] sm:h-[280px] cursor-crosshair select-none"
+          className="w-full h-[220px] sm:h-[280px] cursor-crosshair select-none bg-[var(--card)]"
           onMouseMove={e => nearest(e.clientX)} onMouseLeave={() => setHIdx(null)}
           onTouchMove={e => { e.preventDefault(); nearest(e.touches[0].clientX); }} onTouchEnd={() => setHIdx(null)}>
           <defs>

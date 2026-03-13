@@ -118,50 +118,21 @@ function ShareCardModal({
     if (!cardRef.current) return;
     setDownloading(true);
     try {
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(cardRef.current, {
+      const { toPng } = await import("html-to-image");
+      const dataUrl = await toPng(cardRef.current, {
         backgroundColor: "#0a0a0a",
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        onclone: (clonedDoc) => {
-          const clonedCard = clonedDoc.querySelector('[data-share-card]');
-          if (clonedCard) {
-            // Force all colors to be standard RGB/hex to avoid oklab parsing issues
-            clonedCard.querySelectorAll('*').forEach((el: any) => {
-              const computedStyle = window.getComputedStyle(el);
-              if (computedStyle.color) {
-                el.style.color = computedStyle.color;
-              }
-              if (computedStyle.backgroundColor) {
-                el.style.backgroundColor = computedStyle.backgroundColor;
-              }
-              if (computedStyle.borderColor) {
-                el.style.borderColor = computedStyle.borderColor;
-              }
-            });
-          }
-        },
+        pixelRatio: 2,
+        cacheBust: true,
       });
-      
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          setDownloading(false);
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.download = `guap-prediction-${Date.now()}.png`;
-        link.href = url;
-        document.body.appendChild(link);
-        link.click();
-        setTimeout(() => {
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          setDownloading(false);
-        }, 100);
-      }, "image/png");
+      const link = document.createElement("a");
+      link.download = `guap-prediction-${Date.now()}.png`;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        document.body.removeChild(link);
+        setDownloading(false);
+      }, 100);
     } catch (err) {
       console.error("Download failed:", err);
       setDownloading(false);
@@ -323,16 +294,23 @@ function ShareCardModal({
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between pt-3 border-t border-white/10">
-              <div className="flex items-center gap-1.5">
-                <Lightning size={10} weight="fill" className={won ? "text-[#00e5a0]" : "text-red-400"} />
-                <span className="text-white/30 text-[9px] font-mono tracking-wider">
-                  {isSw ? "TABIRI · BIASHARA · SHINDA" : "PREDICT · TRADE · WIN"}
+            <div className="border-t border-white/10 pt-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-1.5">
+                  <Lightning size={10} weight="fill" className={won ? "text-[#00e5a0]" : "text-red-400"} />
+                  <span className="text-white/30 text-[9px] font-mono tracking-wider">
+                    {isSw ? "TABIRI · BIASHARA · SHINDA" : "PREDICT · TRADE · WIN"}
+                  </span>
+                </div>
+                <span className="text-white/50 text-[9px] font-mono font-bold">
+                  guap.gold
                 </span>
               </div>
-              <span className="text-white/20 text-[9px] font-mono">
-                guap.betua.app
-              </span>
+              <div className="flex items-center gap-3 text-white/50 text-[8px] font-mono font-bold">
+                <span>X: @shindaguap</span>
+                <span className="text-white/30">·</span>
+                <span>IG: @shindaguap</span>
+              </div>
             </div>
           </div>
         </div>

@@ -195,7 +195,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             }}
           >
             <div>PREDICT · TRADE · WIN</div>
-            <div>guap.betua.app</div>
+            <div>guap.gold</div>
           </div>
         </div>
       ),
