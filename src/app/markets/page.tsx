@@ -30,7 +30,7 @@ export default function MarketsPage() {
   const [category, setCategory] = useState("all");
   const [subCategory, setSubCategory] = useState("all");
   const [status, setStatus] = useState("OPEN");
-  const [sort, setSort] = useState("volume");
+  const [sort, setSort] = useState("new");
 
   useEffect(() => {
     setLoading(true);
