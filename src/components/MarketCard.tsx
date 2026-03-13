@@ -276,6 +276,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
             noPool: market.noPool,
             resolvesAt: market.resolvesAt,
             status: market.status,
+            totalVolume: market.totalVolume,
           }}
           side={selectedSide}
           optionIndex={selectedOptionIndex ?? undefined}

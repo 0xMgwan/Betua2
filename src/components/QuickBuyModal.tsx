@@ -22,6 +22,10 @@ interface QuickBuyModalProps {
     optionPools?: number[];
     resolvesAt?: string;
     status?: string;
+    totalVolume?: number;
+    totalYesShares?: number;
+    totalNoShares?: number;
+    totalOptionShares?: Record<string, number>;
   };
   side: string;
   optionIndex?: number;
@@ -49,6 +53,10 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex }: Qu
     optionPools?: number[];
     price: { yes: number; no: number };
     optionPrices?: number[];
+    totalVolume?: number;
+    totalYesShares?: number;
+    totalNoShares?: number;
+    totalOptionShares?: Record<string, number>;
   } | null>(null);
 
   // Fetch fresh market data when modal opens
@@ -67,6 +75,10 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex }: Qu
             optionPools: m.optionPools || undefined,
             price: m.price,
             optionPrices: m.optionPrices || undefined,
+            totalVolume: m.totalVolume || 0,
+            totalYesShares: m.totalYesShares || 0,
+            totalNoShares: m.totalNoShares || 0,
+            totalOptionShares: m.totalOptionShares || undefined,
           });
         }
       } catch { /* use fallback props */ }
@@ -104,6 +116,20 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex }: Qu
     }
   }
   const cost = amountNum;
+
+  // Proportional pot distribution payout (matching market detail page)
+  const totalVolume = pools.totalVolume || 0;
+  const newPot = Math.round((totalVolume + amountNum) * (1 - FEE_PERCENT));
+  let totalSideShares = 0;
+  if (isMultiOption) {
+    totalSideShares = ((pools.totalOptionShares as Record<string, number>)?.[String(optionIndex)] || 0) + shares;
+  } else {
+    totalSideShares = ((side === "YES" ? pools.totalYesShares : pools.totalNoShares) || 0) + shares;
+  }
+  const payoutIfWin = totalSideShares > 0
+    ? Math.round((shares / totalSideShares) * newPot * (1 - FEE_PERCENT))
+    : 0;
+  const netGain = payoutIfWin - amountNum;
 
   const handleBuy = async () => {
     if (!user) {
@@ -268,15 +294,15 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex }: Qu
                   <div className="flex items-center justify-between text-xs font-mono">
                     <span className="text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Ukishinda" : "If you win"}</span>
                     <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
-                    <span className="font-bold tabular-nums text-[#00e5a0]">{formatTZS(shares)}</span>
+                    <span className="font-bold tabular-nums text-[#00e5a0]">{formatTZS(payoutIfWin)}</span>
                   </div>
 
                   {/* Net gain */}
                   <div className="flex items-center justify-between text-xs font-mono">
                     <span className="text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Faida halisi" : "Net gain"}</span>
                     <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
-                    <span className={`font-bold tabular-nums ${shares - cost >= 0 ? "text-[#00e5a0]" : "text-yellow-400"}`}>
-                      {shares - cost >= 0 ? `+${formatTZS(shares - cost)}` : formatTZS(shares - cost)}
+                    <span className={`font-bold tabular-nums ${netGain >= 0 ? "text-[#00e5a0]" : "text-yellow-400"}`}>
+                      {netGain >= 0 ? `+${formatTZS(netGain)}` : formatTZS(netGain)}
                     </span>
                   </div>
                 </div>
