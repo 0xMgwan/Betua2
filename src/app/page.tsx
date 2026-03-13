@@ -185,15 +185,25 @@ const TESTIMONIALS_META = [
 /* ─────────────────────────────────────────────────────────
    Page
    ───────────────────────────────────────────────────────── */
+function formatVolume(v: number): string {
+  if (v >= 1_000_000_000) return `${(v / 1_000_000_000).toFixed(1)}B`;
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 1_000) return `${(v / 1_000).toFixed(0)}K`;
+  return String(v);
+}
+
 export default function HomePage() {
   const { t } = useLanguage();
   const [markets, setMarkets] = useState<unknown[]>([]);
-
+  const [stats, setStats] = useState({ totalVolume: 0, openMarkets: 0, totalTraders: 0, totalTrades: 0, resolvedMarkets: 0 });
 
   useEffect(() => {
     fetch("/api/markets?sort=volume")
       .then((r) => r.json())
       .then((d) => setMarkets(d.markets?.slice(0, 6) || []));
+    fetch("/api/stats")
+      .then((r) => r.json())
+      .then((d) => setStats(d));
   }, []);
 
   const fadeUp = {
@@ -392,10 +402,10 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6 text-center">
             {[
-              { label: t.landing.stats.totalVolume, value: "2.4B+ TZS", sub: t.landing.stats.totalVolumeSub },
-              { label: t.landing.stats.openMarkets, value: "340+", sub: t.landing.stats.openMarketsSub },
-              { label: t.landing.stats.activeTraders, value: "12,000+", sub: t.landing.stats.activeTradersSub },
-              { label: t.landing.stats.avgPayout, value: "94%", sub: t.landing.stats.avgPayoutSub },
+              { label: t.landing.stats.totalVolume, value: `${formatVolume(stats.totalVolume)} TZS`, sub: t.landing.stats.totalVolumeSub },
+              { label: t.landing.stats.openMarkets, value: String(stats.openMarkets), sub: t.landing.stats.openMarketsSub },
+              { label: t.landing.stats.activeTraders, value: formatVolume(stats.totalTraders), sub: t.landing.stats.activeTradersSub },
+              { label: t.landing.stats.totalTrades, value: formatVolume(stats.totalTrades), sub: t.landing.stats.totalTradesSub },
             ].map((s, i) => (
               <motion.div
                 key={s.label}

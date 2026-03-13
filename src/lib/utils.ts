@@ -56,5 +56,6 @@ export const SPORTS_SUBCATEGORIES = [
   { value: "UCL", label: "Champions League", icon: "/champions league.png" },
   { value: "Europa League", label: "Europa League", icon: "/Europa League.png" },
   { value: "NBC PL", label: "NBC PL", icon: "/nbc.png" },
+  { value: "NBA", label: "NBA", icon: "/NBA.svg" },
   { value: "Other Sports", label: "Other", icon: "🏅" },
 ];

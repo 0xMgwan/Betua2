@@ -32,6 +32,8 @@
       "openMarketsSub": "new markets weekly",
       "activeTraders": "Active Traders",
       "activeTradersSub": "& growing daily",
+      "totalTrades": "Total Trades",
+      "totalTradesSub": "& counting",
       "avgPayout": "Average Payout",
       "avgPayoutSub": "return on winning trades"
     },

@@ -30,8 +30,10 @@
       "totalVolumeSub": "kwenye masoko yote",
       "openMarkets": "Masoko Wazi",
       "openMarketsSub": "masoko mapya kila wiki",
-      "activeTraders": "Wafanyabiashara Hai",
+      "activeTraders": "Watabiri Hai",
       "activeTradersSub": "& wanaongezeka kila siku",
+      "totalTrades": "Biashara Jumla",
+      "totalTradesSub": "& zinaendelea",
       "avgPayout": "Malipo ya Wastani",
       "avgPayoutSub": "faida ya biashara zinazoshinda"
     },
