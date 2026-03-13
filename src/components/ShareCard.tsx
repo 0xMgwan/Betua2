@@ -131,55 +131,66 @@ function ShareCardModal({
     ? `${window.location.origin}${marketUrl}`
     : marketUrl;
 
+  // Helper: convert any CSS color string to rgb/rgba via canvas
+  const toRgb = useCallback((color: string): string => {
+    try {
+      const ctx = document.createElement("canvas").getContext("2d");
+      if (!ctx) return color;
+      ctx.fillStyle = color;
+      return ctx.fillStyle; // always returns #hex or rgb/rgba
+    } catch { return color; }
+  }, []);
+
   const handleDownload = useCallback(async () => {
     if (!cardRef.current) return;
     setDownloading(true);
     try {
-      // Convert all images inside the card to base64 before capture
-      const imgs = cardRef.current.querySelectorAll("img");
-      const origSrcs: { el: HTMLImageElement; src: string }[] = [];
-      await Promise.all(
-        Array.from(imgs).map(async (img) => {
-          if (img.src.startsWith("data:")) return; // already base64
-          origSrcs.push({ el: img, src: img.src });
-          try {
-            const res = await fetch(`/api/proxy-image?url=${encodeURIComponent(img.src)}`);
-            if (!res.ok) return;
-            const blob = await res.blob();
-            const b64 = await new Promise<string>((resolve) => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result as string);
-              reader.readAsDataURL(blob);
-            });
-            img.src = b64;
-          } catch { /* keep original src */ }
-        })
-      );
-
-      const { toPng } = await import("html-to-image");
-      const dataUrl = await toPng(cardRef.current, {
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(cardRef.current, {
         backgroundColor: "#0a0a0a",
-        pixelRatio: 2,
-        cacheBust: true,
+        scale: 2,
+        useCORS: true,
+        allowTaint: false,
+        logging: false,
+        proxy: "/api/proxy-image?url=",
+        onclone: (clonedDoc) => {
+          // Fix oklab colors: convert all computed colors to rgb via canvas
+          const card = clonedDoc.querySelector("[data-share-card]");
+          if (!card) return;
+          card.querySelectorAll("*").forEach((el) => {
+            const s = (el as HTMLElement).style;
+            const cs = clonedDoc.defaultView?.getComputedStyle(el);
+            if (!cs) return;
+            const props = ["color", "backgroundColor", "borderColor", "borderTopColor", "borderBottomColor", "borderLeftColor", "borderRightColor"];
+            props.forEach((p) => {
+              const v = cs.getPropertyValue(p === "backgroundColor" ? "background-color" : p === "borderColor" ? "border-color" : p === "borderTopColor" ? "border-top-color" : p === "borderBottomColor" ? "border-bottom-color" : p === "borderLeftColor" ? "border-left-color" : p === "borderRightColor" ? "border-right-color" : p);
+              if (v && v !== "transparent" && v !== "rgba(0, 0, 0, 0)") {
+                (s as any)[p] = toRgb(v);
+              }
+            });
+          });
+        },
       });
 
-      // Restore original srcs
-      origSrcs.forEach(({ el, src }) => { el.src = src; });
-
-      const link = document.createElement("a");
-      link.download = `guap-prediction-${Date.now()}.png`;
-      link.href = dataUrl;
-      document.body.appendChild(link);
-      link.click();
-      setTimeout(() => {
-        document.body.removeChild(link);
-        setDownloading(false);
-      }, 100);
+      canvas.toBlob((blob) => {
+        if (!blob) { setDownloading(false); return; }
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.download = `guap-prediction-${Date.now()}.png`;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => {
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          setDownloading(false);
+        }, 100);
+      }, "image/png");
     } catch (err) {
       console.error("Download failed:", err);
       setDownloading(false);
     }
-  }, []);
+  }, [toRgb]);
 
   return (
     <motion.div

@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
+  // Support both ?url=<encoded> and html2canvas proxy format ?url=<raw>
   let url = req.nextUrl.searchParams.get("url");
+  if (!url) {
+    // html2canvas appends the URL after the proxy path
+    const full = req.nextUrl.search;
+    const match = full.match(/url=(.+)/);
+    if (match) url = decodeURIComponent(match[1]);
+  }
   if (!url) return NextResponse.json({ error: "Missing url" }, { status: 400 });
 
   // Resolve relative URLs against request origin
