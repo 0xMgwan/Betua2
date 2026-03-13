@@ -420,14 +420,21 @@ export function Navbar() {
                       href={href}
                       onClick={() => setMobileOpen(false)}
                       className={cn(
-                        "flex items-center gap-2 px-4 py-3 text-xs font-mono font-bold tracking-wider uppercase border-b border-[var(--card-border)] transition-colors",
+                        "flex items-center justify-between px-4 py-3 text-xs font-mono font-bold tracking-wider uppercase border-b border-[var(--card-border)] transition-colors",
                         pathname.startsWith(href)
                           ? "text-[var(--foreground)] bg-[var(--card)]"
                           : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card)]"
                       )}
                     >
-                      <Icon size={14} />
-                      {label}
+                      <div className="flex items-center gap-2">
+                        <Icon size={14} />
+                        {label}
+                      </div>
+                      {href === "/wallet" && user && (
+                        <span className="text-[10px] text-[var(--accent)] font-bold tabular-nums">
+                          {formatTZS(user.balanceTzs || 0)}
+                        </span>
+                      )}
                     </Link>
                   ))}
                   {user ? (
