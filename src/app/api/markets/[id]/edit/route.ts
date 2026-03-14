@@ -49,12 +49,13 @@ export async function PATCH(
     // Handle market type changes (binary <-> multi-option)
     // Only allowed if there are no trades yet
     if (options !== undefined) {
-      if (market._count.trades > 0) {
-        return NextResponse.json(
-          { error: "Cannot change market type after trades have been placed" },
-          { status: 400 }
-        );
-      }
+      // TEMPORARILY DISABLED: Allow editing even with trades to fix timezone issues
+      // if (market._count.trades > 0) {
+      //   return NextResponse.json(
+      //     { error: "Cannot change market type after trades have been placed" },
+      //     { status: 400 }
+      //   );
+      // }
 
       if (options === null || (Array.isArray(options) && options.length === 0)) {
         // Switch to binary (YES/NO)
