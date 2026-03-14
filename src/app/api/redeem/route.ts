@@ -42,14 +42,23 @@ export async function POST(req: NextRequest) {
     // Calculate payout using proportional pot distribution
     const outcome = position.market.outcome;
     const FEE_PERCENT = parseFloat(process.env.TRANSACTION_FEE_PERCENT || "5") / 100;
+    const isMultiOption = !!(position.market.options && (position.market.options as string[]).length >= 2);
     let winningShares = 0;
 
-    if (outcome === 1) {
-      winningShares = position.yesShares;
-    } else if (outcome === 0) {
-      winningShares = position.noShares;
+    if (isMultiOption) {
+      // Multi-option market: outcome is the index of the winning option
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const optShares = (position.optionShares as any) || {};
+      winningShares = optShares[String(outcome)] || 0;
     } else {
-      return NextResponse.json({ error: "Invalid market outcome" }, { status: 400 });
+      // Binary market: outcome is 0 (NO) or 1 (YES)
+      if (outcome === 1) {
+        winningShares = position.yesShares;
+      } else if (outcome === 0) {
+        winningShares = position.noShares;
+      } else {
+        return NextResponse.json({ error: "Invalid market outcome" }, { status: 400 });
+      }
     }
 
     if (winningShares === 0) {
@@ -63,7 +72,13 @@ export async function POST(req: NextRequest) {
 
     let totalWinningShares = 0;
     for (const pos of allPositions) {
-      totalWinningShares += outcome === 1 ? pos.yesShares : pos.noShares;
+      if (isMultiOption) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const optShares = (pos.optionShares as any) || {};
+        totalWinningShares += optShares[String(outcome)] || 0;
+      } else {
+        totalWinningShares += outcome === 1 ? pos.yesShares : pos.noShares;
+      }
     }
 
     // Pot = totalVolume minus entry fees already taken
@@ -117,7 +132,9 @@ export async function POST(req: NextRequest) {
           type: "REDEEM",
           amountTzs: payoutTzs,
           status: "COMPLETED",
-          recipientUsername: `${position.market.title} (${outcome === 1 ? "YES" : "NO"})`,
+          recipientUsername: isMultiOption
+            ? `${position.market.title} (${(position.market.options as string[])[outcome as number]})`
+            : `${position.market.title} (${outcome === 1 ? "YES" : "NO"})`,
         },
       }),
     ]);
