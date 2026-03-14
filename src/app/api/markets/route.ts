@@ -179,7 +179,13 @@ export async function POST(req: NextRequest) {
             category,
             subCategory: category === "Sports" ? subCategory || null : null,
             imageUrl,
-            resolvesAt: new Date(resolvesAt),
+            resolvesAt: (() => {
+              // Parse as EAT (GMT+3) - subtract 3 hours to get UTC
+              const [datePart, timePart] = resolvesAt.split('T');
+              const [year, month, day] = datePart.split('-').map(Number);
+              const [hour, minute] = timePart.split(':').map(Number);
+              return new Date(Date.UTC(year, month - 1, day, hour - 3, minute));
+            })(),
             creatorId: session.userId,
             yesPool: isMultiOption ? 0 : 100000,
             noPool: isMultiOption ? 0 : 100000,
@@ -197,7 +203,13 @@ export async function POST(req: NextRequest) {
                 category,
                 subCategory: category === "Sports" ? subCategory || null : null,
                 imageUrl,
-                resolvesAt: new Date(resolvesAt),
+                resolvesAt: (() => {
+                  // Parse as EAT (GMT+3) - subtract 3 hours to get UTC
+                  const [datePart, timePart] = resolvesAt.split('T');
+                  const [year, month, day] = datePart.split('-').map(Number);
+                  const [hour, minute] = timePart.split(':').map(Number);
+                  return new Date(Date.UTC(year, month - 1, day, hour - 3, minute));
+                })(),
                 creatorId: session.userId,
                 yesPool: isMultiOption ? 0 : 100000,
                 noPool: isMultiOption ? 0 : 100000,

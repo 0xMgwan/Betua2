@@ -41,7 +41,13 @@ export async function PATCH(
       title: title || market.title,
       description: description || market.description,
       imageUrl: imageUrl !== undefined ? imageUrl : market.imageUrl,
-      resolvesAt: resolvesAt ? new Date(resolvesAt) : market.resolvesAt,
+      resolvesAt: resolvesAt ? (() => {
+        // Parse as EAT (GMT+3) - subtract 3 hours to get UTC
+        const [datePart, timePart] = resolvesAt.split('T');
+        const [year, month, day] = datePart.split('-').map(Number);
+        const [hour, minute] = timePart.split(':').map(Number);
+        return new Date(Date.UTC(year, month - 1, day, hour - 3, minute));
+      })() : market.resolvesAt,
       category: category || market.category,
       subCategory: subCategory !== undefined ? subCategory : market.subCategory,
     };
