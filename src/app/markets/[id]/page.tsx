@@ -270,7 +270,15 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
       title: market.title,
       description: market.description,
       imageUrl: market.imageUrl || "",
-      resolvesAt: toEATDateTimeLocal(market.resolvesAt),
+      resolvesAt: (() => {
+        const d = new Date(market.resolvesAt);
+        const y = d.getFullYear();
+        const mo = String(d.getMonth() + 1).padStart(2, "0");
+        const da = String(d.getDate()).padStart(2, "0");
+        const h = String(d.getHours()).padStart(2, "0");
+        const mi = String(d.getMinutes()).padStart(2, "0");
+        return `${y}-${mo}-${da}T${h}:${mi}`;
+      })(),
       category: market.category,
       subCategory: market.subCategory || "",
     });
