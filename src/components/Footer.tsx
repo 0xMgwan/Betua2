@@ -6,7 +6,7 @@ export function Footer() {
     <footer className="border-t border-[var(--card-border)] mt-auto">
       <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-center gap-5">
         <a
-          href="https://x.com/youneedguap?s=21&t=hj2iETJ0AG45JhGdjSLNcg"
+          href="https://x.com/shindaguap?s=11&t=hj2iETJ0AG45JhGdjSLNcg"
           target="_blank"
           rel="noopener noreferrer"
           className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
@@ -15,7 +15,7 @@ export function Footer() {
           <XLogo size={18} weight="fill" />
         </a>
         <a
-          href="https://instagram.com/youneedguap"
+          href="https://www.instagram.com/shindaguap?igsh=MWhzMm9xa2t4bmRvbw=="
           target="_blank"
           rel="noopener noreferrer"
           className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
