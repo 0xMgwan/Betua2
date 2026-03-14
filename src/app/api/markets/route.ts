@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { getPrice, getMultiOptionPrices } from "@/lib/amm";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
 import { createNotification } from "@/lib/notify";
+import { fromEATDateTimeLocal } from "@/lib/utils";
 
 // Fee configuration
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
@@ -179,7 +180,7 @@ export async function POST(req: NextRequest) {
             category,
             subCategory: category === "Sports" ? subCategory || null : null,
             imageUrl,
-            resolvesAt: new Date(resolvesAt),
+            resolvesAt: fromEATDateTimeLocal(resolvesAt),
             creatorId: session.userId,
             yesPool: isMultiOption ? 0 : 100000,
             noPool: isMultiOption ? 0 : 100000,
@@ -197,7 +198,7 @@ export async function POST(req: NextRequest) {
                 category,
                 subCategory: category === "Sports" ? subCategory || null : null,
                 imageUrl,
-                resolvesAt: new Date(resolvesAt),
+                resolvesAt: fromEATDateTimeLocal(resolvesAt),
                 creatorId: session.userId,
                 yesPool: isMultiOption ? 0 : 100000,
                 noPool: isMultiOption ? 0 : 100000,

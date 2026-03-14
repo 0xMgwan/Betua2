@@ -573,7 +573,7 @@ export default function CreateMarketPage() {
                     selected={form.resolvesAt ? new Date(form.resolvesAt) : new Date(defaultDate)}
                     onChange={(date) => {
                       if (!date) { setForm({ ...form, resolvesAt: "" }); return; }
-                      // Format as local time (YYYY-MM-DDTHH:mm) — don't use toISOString() which converts to UTC
+                      // Format as EAT time (GMT+3)
                       const y = date.getFullYear();
                       const m = String(date.getMonth() + 1).padStart(2, "0");
                       const d = String(date.getDate()).padStart(2, "0");

@@ -24,6 +24,38 @@ export function formatPercent(n: number): string {
   return `${(n * 100).toFixed(1)}%`;
 }
 
+// EAT (East Africa Time) is GMT+3
+const EAT_OFFSET_MS = 3 * 60 * 60 * 1000;
+
+/**
+ * Convert a Date to EAT timezone and format as YYYY-MM-DDTHH:mm for datetime-local input
+ */
+export function toEATDateTimeLocal(date: Date | string): string {
+  const d = new Date(date);
+  // Get UTC time and add EAT offset
+  const eatTime = new Date(d.getTime() + EAT_OFFSET_MS);
+  const y = eatTime.getUTCFullYear();
+  const mo = String(eatTime.getUTCMonth() + 1).padStart(2, "0");
+  const da = String(eatTime.getUTCDate()).padStart(2, "0");
+  const h = String(eatTime.getUTCHours()).padStart(2, "0");
+  const mi = String(eatTime.getUTCMinutes()).padStart(2, "0");
+  return `${y}-${mo}-${da}T${h}:${mi}`;
+}
+
+/**
+ * Parse a datetime-local string (YYYY-MM-DDTHH:mm) as EAT and return UTC Date
+ */
+export function fromEATDateTimeLocal(dateTimeStr: string): Date {
+  // Parse as if it's EAT, then convert to UTC
+  const [datePart, timePart] = dateTimeStr.split("T");
+  const [year, month, day] = datePart.split("-").map(Number);
+  const [hour, minute] = timePart.split(":").map(Number);
+  
+  // Create date in EAT (treat as UTC then subtract offset)
+  const eatDate = new Date(Date.UTC(year, month - 1, day, hour, minute));
+  return new Date(eatDate.getTime() - EAT_OFFSET_MS);
+}
+
 export function timeUntil(date: Date | string): string {
   const d = new Date(date);
   const now = new Date();

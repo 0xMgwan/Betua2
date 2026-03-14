@@ -1,6 +1,7 @@
 // NTZS REST API client
-const NTZS_BASE_URL = process.env.NTZS_BASE_URL || "https://www.ntzs.co.tz";
-const NTZS_API_KEY = process.env.NTZS_API_KEY!;
+// Strip quotes from env vars (common .env misconfiguration)
+const NTZS_BASE_URL = (process.env.NTZS_BASE_URL || "https://www.ntzs.co.tz").replace(/^["']|["']$/g, "");
+const NTZS_API_KEY = (process.env.NTZS_API_KEY || "").replace(/^["']|["']$/g, "");
 
 async function ntzsRequest<T>(
   path: string,

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
 import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { formatTZS, formatNumber, timeUntil, timeAgo, SPORTS_SUBCATEGORIES } from "@/lib/utils";
+import { formatTZS, formatPercent, formatNumber, timeUntil, timeAgo, toEATDateTimeLocal, SPORTS_SUBCATEGORIES } from "@/lib/utils";
 import { getSharesOut, getMultiOptionSharesOut, getPayoutForShares, getMultiOptionPayoutForShares } from "@/lib/amm";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -270,15 +270,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
       title: market.title,
       description: market.description,
       imageUrl: market.imageUrl || "",
-      resolvesAt: (() => {
-        const d = new Date(market.resolvesAt);
-        const y = d.getFullYear();
-        const mo = String(d.getMonth() + 1).padStart(2, "0");
-        const da = String(d.getDate()).padStart(2, "0");
-        const h = String(d.getHours()).padStart(2, "0");
-        const mi = String(d.getMinutes()).padStart(2, "0");
-        return `${y}-${mo}-${da}T${h}:${mi}`;
-      })(),
+      resolvesAt: toEATDateTimeLocal(market.resolvesAt),
       category: market.category,
       subCategory: market.subCategory || "",
     });

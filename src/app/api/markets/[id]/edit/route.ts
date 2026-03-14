@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { fromEATDateTimeLocal } from "@/lib/utils";
 
 const INIT_POOL = 100_000;
 const POOL_PER_OPTION = 5_000;
@@ -41,7 +42,7 @@ export async function PATCH(
       title: title || market.title,
       description: description || market.description,
       imageUrl: imageUrl !== undefined ? imageUrl : market.imageUrl,
-      resolvesAt: resolvesAt ? new Date(resolvesAt) : market.resolvesAt,
+      resolvesAt: resolvesAt ? fromEATDateTimeLocal(resolvesAt) : market.resolvesAt,
       category: category || market.category,
       subCategory: subCategory !== undefined ? subCategory : market.subCategory,
     };
