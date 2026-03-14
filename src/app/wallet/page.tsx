@@ -329,6 +329,11 @@ export default function WalletPage() {
                         required
                       />
                       <p className="text-xs text-[var(--muted)] mt-1">{t.wallet.phoneFormat}</p>
+                      {tab === "withdraw" && (
+                        <p className="text-xs text-amber-500 mt-2 font-medium">
+                           Minimum withdrawal: 5,000 TZS
+                        </p>
+                      )}
                     </div>
                   )}
 
