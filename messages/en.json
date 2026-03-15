@@ -139,6 +139,7 @@
     "categories": {
       "all": "All",
       "politics": "Politics",
+      "geopolitics": "Geopolitics",
       "sports": "Sports",
       "business": "Business",
       "entertainment": "Entertainment",
@@ -165,6 +166,7 @@
       "submit": "Create Market",
       "categories": {
         "politics": "Politics",
+        "geopolitics": "Geopolitics",
         "sports": "Sports",
         "business": "Business",
         "entertainment": "Entertainment",
@@ -264,6 +266,7 @@
     "createButton": "Create Market",
     "categories": {
       "politics": "Politics",
+      "geopolitics": "Geopolitics",
       "sports": "Sports",
       "business": "Business",
       "entertainment": "Entertainment",

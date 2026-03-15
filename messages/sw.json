@@ -139,6 +139,7 @@
     "categories": {
       "all": "Yote",
       "politics": "Siasa",
+      "geopolitics": "Siasa za Kimataifa",
       "sports": "Michezo",
       "business": "Biashara",
       "entertainment": "Burudani",
@@ -165,6 +166,7 @@
       "submit": "Unda Soko",
       "categories": {
         "politics": "Siasa",
+        "geopolitics": "Siasa za Kimataifa",
         "sports": "Michezo",
         "business": "Biashara",
         "entertainment": "Burudani",
@@ -264,6 +266,7 @@
     "createButton": "Unda Soko",
     "categories": {
       "politics": "Siasa",
+      "geopolitics": "Siasa za Kimataifa",
       "sports": "Michezo",
       "business": "Biashara",
       "entertainment": "Burudani",
