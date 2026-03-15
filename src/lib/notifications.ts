@@ -85,10 +85,15 @@ export class NotificationService {
   }
 
   // Notification templates for different events
-  async notifyTrade(marketTitle: string, side: string, amount: number, marketId: string) {
+  async notifyTrade(marketTitle: string, side: string, amount: number, marketId: string, locale: string = 'en') {
+    const title = locale === 'sw' ? '✅ Biashara Imefanikiwa' : '✅ Trade Successful';
+    const body = locale === 'sw' 
+      ? `Umenunua hisa za ${side} katika "${marketTitle}" kwa ${amount.toLocaleString()} TZS`
+      : `Bought ${side} shares in "${marketTitle}" for ${amount.toLocaleString()} TZS`;
+    
     await this.showNotification({
-      title: '✅ Trade Successful',
-      body: `Bought ${side} shares in "${marketTitle}" for ${amount.toLocaleString()} TZS`,
+      title,
+      body,
       url: `/markets/${marketId}`,
       tag: 'trade',
     });

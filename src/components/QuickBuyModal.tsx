@@ -171,7 +171,7 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
       setSuccess(true);
       
       // Send push notification
-      notifications.notifyTrade(market.title, side, Number(amount), market.id);
+      notifications.notifyTrade(market.title, side, Number(amount), market.id, locale);
       
       setTimeout(() => {
         onClose();
