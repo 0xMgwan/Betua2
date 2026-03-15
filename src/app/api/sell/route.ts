@@ -22,7 +22,10 @@ export async function POST(req: NextRequest) {
 
     const [market, user, position] = await Promise.all([
       prisma.market.findUnique({ where: { id: marketId } }),
-      prisma.user.findUnique({ where: { id: session.userId } }),
+      prisma.user.findUnique({ 
+        where: { id: session.userId },
+        select: { id: true, ntzsUserId: true, balanceTzs: true }
+      }),
       prisma.position.findUnique({
         where: { userId_marketId: { userId: session.userId, marketId } },
       }),

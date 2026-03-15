@@ -17,7 +17,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Phone number required" }, { status: 400 });
   }
 
-  const user = await prisma.user.findUnique({ where: { id: session.userId } });
+  const user = await prisma.user.findUnique({ 
+    where: { id: session.userId },
+    select: { id: true, ntzsUserId: true, balanceTzs: true }
+  });
   if (!user?.ntzsUserId) {
     return NextResponse.json({ error: "Wallet not yet provisioned. Please contact support." }, { status: 400 });
   }

@@ -71,7 +71,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Load user to check balance and get nTZS user ID
-    const user = await prisma.user.findUnique({ where: { id: session.userId } });
+    const user = await prisma.user.findUnique({ 
+      where: { id: session.userId },
+      select: { id: true, ntzsUserId: true, balanceTzs: true, walletAddress: true }
+    });
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     if (!user.ntzsUserId) {

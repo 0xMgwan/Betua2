@@ -7,7 +7,10 @@ export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const user = await prisma.user.findUnique({ where: { id: session.userId } });
+  const user = await prisma.user.findUnique({ 
+    where: { id: session.userId },
+    select: { id: true, ntzsUserId: true, balanceTzs: true, walletAddress: true }
+  });
   if (!user?.ntzsUserId) {
     return NextResponse.json({ balanceTzs: 0, walletAddress: null });
   }
