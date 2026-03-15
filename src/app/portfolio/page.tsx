@@ -12,7 +12,7 @@ import {
   CurrencyDollar, Trophy, Eye, ArrowRight, CheckCircle, XCircle,
   Pulse, WarningCircle, ShareNetwork, CaretDown,
 } from "@phosphor-icons/react";
-import { getPayoutForShares, getMultiOptionPayoutForShares } from "@/lib/amm";
+import { getPayoutForShares, getMultiOptionPayoutForShares, getPrice, getMultiOptionPrices } from "@/lib/amm";
 import { cn } from "@/lib/utils";
 import { ShareCardButton } from "@/components/ShareCard";
 
@@ -53,13 +53,30 @@ interface Trade {
   market: { id: string; title: string; status: string };
 }
 
+interface CreatedMarket {
+  id: string;
+  title: string;
+  status: string;
+  category: string;
+  imageUrl?: string | null;
+  resolvesAt: string;
+  totalVolume: number;
+  createdAt: string;
+  yesPool: number;
+  noPool: number;
+  options?: string[] | null;
+  optionPools?: number[] | null;
+  _count: { trades: number };
+}
+
 export default function PortfolioPage() {
   const { user } = useUser();
   const { t, locale } = useLanguage();
   const [positions, setPositions] = useState<Position[]>([]);
   const [trades, setTrades] = useState<Trade[]>([]);
+  const [createdMarkets, setCreatedMarkets] = useState<CreatedMarket[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"positions" | "history">("positions");
+  const [tab, setTab] = useState<"positions" | "history" | "created">("positions");
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [redeemSuccess, setRedeemSuccess] = useState<string | null>(null);
 
@@ -77,6 +94,7 @@ export default function PortfolioPage() {
       .then((d) => {
         setPositions(d.positions || []);
         setTrades(d.trades || []);
+        setCreatedMarkets(d.createdMarkets || []);
       })
       .finally(() => setLoading(false));
 
@@ -87,6 +105,7 @@ export default function PortfolioPage() {
         .then((d) => {
           setPositions(d.positions || []);
           setTrades(d.trades || []);
+          setCreatedMarkets(d.createdMarkets || []);
         })
         .catch(() => {}); // silently ignore errors
     }, 30000);
@@ -290,7 +309,7 @@ export default function PortfolioPage() {
 
               {/* Tabs — terminal style */}
               <div className="flex border-b-2 border-[var(--card-border)] mb-6">
-                {(["positions", "history"] as const).map((tb) => (
+                {(["positions", "history", ...(createdMarkets.length > 0 ? ["created" as const] : [])] as const).map((tb) => (
                   <button
                     key={tb}
                     onClick={() => setTab(tb)}
@@ -303,7 +322,9 @@ export default function PortfolioPage() {
                   >
                     {tb === "positions"
                       ? `> ${t.portfolio.openPositions} (${positions.length})`
-                      : `> ${t.portfolio.tradeHistory} (${trades.length})`}
+                      : tb === "history"
+                      ? `> ${t.portfolio.tradeHistory} (${trades.length})`
+                      : `> ${locale === "sw" ? "SOKO ZAKO" : "CREATED"} (${createdMarkets.length})`}
                   </button>
                 ))}
               </div>
@@ -705,6 +726,80 @@ export default function PortfolioPage() {
                     </div>
                   </div>
                 )
+              ) : tab === "created" ? (
+                <div className="space-y-2">
+                  {createdMarkets.map((market, i) => {
+                    const isMultiOption = Array.isArray(market.options) && market.options.length >= 2;
+                    const price = getPrice(market.yesPool, market.noPool);
+                    const prices = isMultiOption && market.optionPools ? getMultiOptionPrices(market.optionPools) : [];
+                    
+                    return (
+                      <motion.div
+                        key={market.id}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.04 }}
+                      >
+                        <Link href={`/markets/${market.id}`}>
+                          <div className="bg-[var(--background)] border border-[var(--card-border)] hover:border-[var(--accent)]/40 hover:shadow-[0_0_15px_rgba(0,229,160,0.05)] transition-all">
+                            <div className="px-4 py-3">
+                              <div className="flex items-start justify-between gap-3 mb-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1.5">
+                                    <span className="text-[10px] font-mono px-1.5 py-0.5 border border-[var(--card-border)] text-[var(--muted)] uppercase tracking-wider">
+                                      [{market.category}]
+                                    </span>
+                                    <span className={cn(
+                                      "text-[10px] font-mono font-bold px-1.5 py-0.5 border uppercase tracking-wider",
+                                      market.status === "RESOLVED" 
+                                        ? "border-blue-500/30 text-blue-400"
+                                        : market.status === "OPEN"
+                                        ? "border-[var(--accent)]/30 text-[var(--accent)]"
+                                        : "border-yellow-500/30 text-yellow-400"
+                                    )}>
+                                      {market.status}
+                                    </span>
+                                  </div>
+                                  <p className="font-bold text-sm line-clamp-1 leading-snug">{market.title}</p>
+                                </div>
+                              </div>
+
+                              {/* Market stats */}
+                              <div className="flex items-center gap-4 mt-3 pt-2 border-t border-[var(--card-border)]">
+                                <div>
+                                  <div className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
+                                    {locale === "sw" ? "Kiasi" : "Volume"}
+                                  </div>
+                                  <div className="text-sm font-mono font-bold tabular-nums">
+                                    {formatTZS(market.totalVolume)}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
+                                    {locale === "sw" ? "Biashara" : "Trades"}
+                                  </div>
+                                  <div className="text-sm font-mono font-bold tabular-nums">
+                                    {market._count.trades}
+                                  </div>
+                                </div>
+                                {!isMultiOption && (
+                                  <div>
+                                    <div className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
+                                      YES / NO
+                                    </div>
+                                    <div className="text-sm font-mono font-bold tabular-nums">
+                                      {formatPercent(price.yes)} / {formatPercent(price.no)}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      </motion.div>
+                    );
+                  })}
+                </div>
               ) : (
                 <div className="space-y-1">
                   {trades.length === 0 ? (

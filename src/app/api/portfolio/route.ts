@@ -125,5 +125,28 @@ export async function GET() {
     },
   });
 
-  return NextResponse.json({ positions: enrichedWithInvested, trades });
+  // Fetch markets created by this user
+  const createdMarkets = await prisma.market.findMany({
+    where: { creatorId: session.userId },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      category: true,
+      imageUrl: true,
+      resolvesAt: true,
+      totalVolume: true,
+      createdAt: true,
+      yesPool: true,
+      noPool: true,
+      options: true,
+      optionPools: true,
+      _count: {
+        select: { trades: true },
+      },
+    },
+  });
+
+  return NextResponse.json({ positions: enrichedWithInvested, trades, createdMarkets });
 }
