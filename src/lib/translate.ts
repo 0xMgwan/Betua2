@@ -10,6 +10,8 @@ const CUSTOM_TRANSLATIONS: Record<string, Record<string, string>> = {
   sw: {
     "Draw": "Sare",
     "draw": "sare",
+    "Celebrities": "Macelebrity",
+    "celebrities": "macelebrity",
     "Market will resolve after the final whistle plus extra time and penalties": "Soko kutatuliwa baada ya filimbi ya mwisho pamoja na muda wa nyongeza na penati",
   }
 };
@@ -52,9 +54,22 @@ export async function translateText(
     }
   }
 
-  // Check custom translations first
+  // Check custom translations first (exact match)
   if (CUSTOM_TRANSLATIONS[toLang]?.[text]) {
     return CUSTOM_TRANSLATIONS[toLang][text];
+  }
+
+  // Check if text contains any custom translation phrases and replace them
+  let translatedText = text;
+  for (const [englishPhrase, swahiliPhrase] of Object.entries(CUSTOM_TRANSLATIONS[toLang] || {})) {
+    if (text.includes(englishPhrase)) {
+      translatedText = translatedText.replace(englishPhrase, swahiliPhrase);
+    }
+  }
+  
+  // If we made any replacements, return the modified text
+  if (translatedText !== text) {
+    return translatedText;
   }
 
   // Check cache first
