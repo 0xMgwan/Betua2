@@ -36,6 +36,13 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     setLocaleState(newLocale);
     setMessages(newLocale === 'sw' ? sw : en);
     document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000`;
+    
+    // Save to database for authenticated users
+    fetch('/api/user/locale', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locale: newLocale }),
+    }).catch(err => console.error('Failed to save locale preference:', err));
   };
 
   return (
