@@ -196,6 +196,8 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                   {market.options!.slice(0, 4).map((option, idx) => {
                     const colors = ["#00e5a0", "#00b4d8", "#f59e0b", "#ef4444"];
                     const c = colors[idx % colors.length];
+                    const optPrice = market.optionPrices?.[idx] || 0;
+                    const pricePerShare = Math.round(optPrice * 1000);
                     return (
                       <button
                         key={idx}
@@ -207,7 +209,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                           backgroundColor: `${c}08`,
                         }}
                       >
-                        Buy {option.length > 10 ? option.slice(0, 10) + ".." : option}
+                        Buy {option.length > 10 ? option.slice(0, 10) + ".." : option} @ TSh {pricePerShare}
                       </button>
                     );
                   })}
@@ -218,13 +220,13 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                     onClick={(e) => handleQuickBuy(e, "YES")}
                     className="py-2 px-3 bg-[#00e5a0]/8 border border-[#00e5a0]/50 text-[#00e5a0] font-mono font-bold text-[11px] uppercase tracking-wider transition-all hover:bg-[#00e5a0]/15 hover:border-[#00e5a0] hover:shadow-[0_0_12px_rgba(0,229,160,0.2)] active:scale-[0.97]"
                   >
-                    Buy Yes
+                    Buy Yes @ TSh {Math.round(market.price.yes * 1000)}
                   </button>
                   <button
                     onClick={(e) => handleQuickBuy(e, "NO")}
                     className="py-2 px-3 bg-red-500/8 border border-red-500/50 text-red-400 font-mono font-bold text-[11px] uppercase tracking-wider transition-all hover:bg-red-500/15 hover:border-red-500 hover:shadow-[0_0_12px_rgba(239,68,68,0.2)] active:scale-[0.97]"
                   >
-                    Buy No
+                    Buy No @ TSh {Math.round(market.price.no * 1000)}
                   </button>
                 </div>
               )
