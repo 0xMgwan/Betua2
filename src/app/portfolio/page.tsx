@@ -719,7 +719,7 @@ export default function PortfolioPage() {
                           <span className="font-bold">{formatTZS(Math.round(totalValue))}</span>
                         </div>
                         <div className="flex justify-between text-sm font-mono">
-                          <span className="text-[var(--muted)]">{locale === "sw" ? "Malipo yakiwezekana" : "Max payout (if all correct)"}</span>
+                          <span className="text-[var(--muted)]">{locale === "sw" ? "Malipo ukishinda" : "Max payout (if all correct)"}</span>
                           <span className="font-bold text-yellow-400">{formatTZS(Math.round(totalPayout))}</span>
                         </div>
                       </div>
