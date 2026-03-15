@@ -13,7 +13,7 @@ import {
   CurrencyDollar, Upload, X, ChartLine, Plus, Trash,
   Bank, SoccerBall, FilmSlate, CurrencyBtc, Briefcase,
   Flask, CloudSun, Crosshair, Terminal, Lightning,
-  CheckSquare, ListBullets, TextT, AlignLeft, Eye,
+  CheckSquare, ListBullets, TextT, AlignLeft, Eye, Globe,
 } from "@phosphor-icons/react";
 import { CRYPTO_SYMBOLS } from "@/lib/pyth";
 import { TerminalDatePicker } from "@/components/TerminalDatePicker";
@@ -174,6 +174,7 @@ export default function CreateMarketPage() {
   // Category config with Phosphor icons and terminal colors
   const catConfig: Record<string, { icon: React.ReactNode; color: string; border: string; activeBg: string }> = {
     Politics: { icon: <Bank size={16} weight="fill" />, color: "text-purple-400", border: "border-purple-500/40", activeBg: "bg-purple-500/80" },
+    Geopolitics: { icon: <Globe size={16} weight="fill" />, color: "text-indigo-400", border: "border-indigo-500/40", activeBg: "bg-indigo-500/80" },
     Sports: { icon: <SoccerBall size={16} weight="fill" />, color: "text-[#00e5a0]", border: "border-[#00e5a0]/40", activeBg: "bg-[#00e5a0]" },
     Entertainment: { icon: <FilmSlate size={16} weight="fill" />, color: "text-pink-400", border: "border-pink-500/40", activeBg: "bg-pink-500/80" },
     Crypto: { icon: <CurrencyBtc size={16} weight="fill" />, color: "text-orange-400", border: "border-orange-500/40", activeBg: "bg-orange-500/80" },

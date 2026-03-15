@@ -29,12 +29,13 @@ interface Market {
 
 const CATEGORY_COLORS: Record<string, string> = {
   Politics: "#f59e0b",
+  Geopolitics: "#6366f1",
   Sports: "#00b4d8",
   Entertainment: "#ec4899",
   Crypto: "#00e5a0",
   Business: "#8b5cf6",
   Science: "#14b8a6",
-  Weather: "#6366f1",
+  Weather: "#818cf8",
   Technology: "#f97316",
   Other: "#94a3b8",
 };

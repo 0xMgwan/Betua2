@@ -88,6 +88,7 @@ export function timeAgo(date: Date | string): string {
 
 export const CATEGORIES = [
   "Politics",
+  "Geopolitics",
   "Sports",
   "Business",
   "Entertainment",
