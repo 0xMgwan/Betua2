@@ -1,5 +1,5 @@
 "use client";
-import { XLogo, InstagramLogo } from "@phosphor-icons/react";
+import { XLogo, InstagramLogo, WhatsappLogo } from "@phosphor-icons/react";
 
 export function Footer() {
   return (
@@ -22,6 +22,15 @@ export function Footer() {
           aria-label="Follow us on Instagram"
         >
           <InstagramLogo size={18} weight="fill" />
+        </a>
+        <a
+          href="https://chat.whatsapp.com/CfFU1jLmjDO8QLrH31Sv0C"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[var(--muted)] hover:text-[#25D366] transition-colors"
+          aria-label="Join our WhatsApp community"
+        >
+          <WhatsappLogo size={18} weight="fill" />
         </a>
       </div>
     </footer>

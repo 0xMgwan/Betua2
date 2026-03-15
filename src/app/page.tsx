@@ -10,7 +10,7 @@ import {
   CaretRight, CheckCircle, Star, UsersThree, CurrencyDollar,
   Handshake, TrendUp, MagnifyingGlass, Trophy,
   Sparkle, Phone, ArrowDownLeft, XLogo, InstagramLogo,
-  UserPlus, Wallet, Crosshair,
+  UserPlus, Wallet, Crosshair, WhatsappLogo,
 } from "@phosphor-icons/react";
 import HeroAscii from "@/components/ui/hero-ascii";
 import { GlitchText } from "@/components/ui/glitch-text";
@@ -862,14 +862,25 @@ export default function HomePage() {
               {t.landing.cta.subtitle}
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                href="/auth/register"
-                className="group flex items-center gap-2 px-10 py-4 border-2 border-[var(--foreground)] text-[var(--foreground)] font-black text-lg hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all w-full sm:w-auto justify-center font-mono tracking-wider uppercase"
-              >
-                {t.landing.cta.button}
-                <ArrowRight size={20} weight="bold" className="group-hover:translate-x-1 transition-transform" />
-              </Link>
+            <div className="flex flex-col items-center justify-center gap-4">
+              <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+                <Link
+                  href="/auth/register"
+                  className="group flex items-center gap-2 px-10 py-4 border-2 border-[var(--foreground)] text-[var(--foreground)] font-black text-lg hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all w-full sm:w-auto justify-center font-mono tracking-wider uppercase"
+                >
+                  {t.landing.cta.button}
+                  <ArrowRight size={20} weight="bold" className="group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <a
+                  href="https://chat.whatsapp.com/CfFU1jLmjDO8QLrH31Sv0C"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-2 px-10 py-4 border-2 border-[#25D366] text-[#25D366] font-black text-lg hover:bg-[#25D366] hover:text-white transition-all w-full sm:w-auto justify-center font-mono tracking-wider uppercase"
+                >
+                  {locale === "sw" ? "JIUNGE NA JAMII" : "JOIN COMMUNITY"}
+                  <UsersThree size={20} weight="bold" className="group-hover:scale-110 transition-transform" />
+                </a>
+              </div>
               <div className="flex flex-col sm:flex-row items-center gap-3 text-sm text-[var(--muted)]">
                 <span className="flex items-center gap-1.5"><CheckCircle size={14} weight="fill" className="text-[var(--accent)]" /> {t.landing.cta.noKyc}</span>
                 <span className="flex items-center gap-1.5"><CheckCircle size={14} weight="fill" className="text-[var(--accent)]" /> {t.landing.cta.mpesaSupported}</span>
@@ -903,7 +914,7 @@ export default function HomePage() {
             {[
               { title: t.landing.footer.platform, links: [{ href: "/markets", label: t.landing.footer.browseMarkets }, { href: "/markets/create", label: t.landing.footer.createMarket }, { href: "/leaderboard", label: t.landing.footer.leaderboard }] },
               { title: t.landing.footer.account, links: [{ href: "/auth/register", label: t.landing.footer.signUp }, { href: "/auth/login", label: t.landing.footer.signIn }, { href: "/wallet", label: t.landing.footer.wallet }] },
-              { title: t.landing.footer.about, links: [{ href: "#about", label: t.landing.footer.aboutGuap }, { href: "#ntzs", label: t.landing.footer.ntzsNetwork }, { href: "#contact", label: t.landing.footer.contact }] },
+              { title: t.landing.footer.about, links: [{ href: "#about", label: t.landing.footer.aboutGuap }, { href: "#ntzs", label: t.landing.footer.ntzsNetwork }, { href: "https://chat.whatsapp.com/CfFU1jLmjDO8QLrH31Sv0C", label: t.landing.footer.contact }] },
             ].map((col) => (
               <div key={col.title}>
                 <h4 className="font-black text-xs uppercase tracking-widest text-[var(--muted)] mb-3">{col.title}</h4>
@@ -939,6 +950,15 @@ export default function HomePage() {
                   aria-label="Follow us on Instagram (coming soon)"
                 >
                   <InstagramLogo size={16} weight="fill" />
+                </a>
+                <a
+                  href="https://chat.whatsapp.com/CfFU1jLmjDO8QLrH31Sv0C"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[var(--muted)] hover:text-[#25D366] transition-colors"
+                  aria-label="Join our WhatsApp community"
+                >
+                  <WhatsappLogo size={16} weight="fill" />
                 </a>
               </div>
               <p className="flex items-center gap-1.5">
