@@ -13,6 +13,13 @@ const CUSTOM_TRANSLATIONS: Record<string, Record<string, string>> = {
   }
 };
 
+// Patterns that should NOT be translated (proper nouns, team names, etc.)
+const NO_TRANSLATE_PATTERNS = [
+  /^[A-Z][a-z]+(\s[A-Z][a-z]+)*$/, // Proper nouns like "Liverpool", "Barcelona"
+  /^[A-Z]{2,}(\s[A-Z]{2,})*$/, // Acronyms like "AC Milan", "FC"
+  /vs|v\.|@/, // Match indicators
+];
+
 interface TranslationCache {
   [key: string]: string;
 }
@@ -36,6 +43,13 @@ export async function translateText(
 
   // Return original if translating to same language
   if (fromLang === toLang) return text;
+
+  // Check if text matches no-translate patterns (proper nouns, team names)
+  for (const pattern of NO_TRANSLATE_PATTERNS) {
+    if (pattern.test(text)) {
+      return text; // Don't translate proper nouns
+    }
+  }
 
   // Check custom translations first
   if (CUSTOM_TRANSLATIONS[toLang]?.[text]) {
