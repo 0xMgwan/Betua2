@@ -68,7 +68,7 @@ export async function POST(req: Request) {
         language,
         translatedTitle,
         translatedDesc,
-        translatedOptions: translatedOptions || null,
+        translatedOptions: translatedOptions as any,
       },
     });
 
