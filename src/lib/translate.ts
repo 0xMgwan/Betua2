@@ -10,6 +10,7 @@ const CUSTOM_TRANSLATIONS: Record<string, Record<string, string>> = {
   sw: {
     "Draw": "Sare",
     "draw": "sare",
+    "Market will resolve after the final whistle plus extra time and penalties": "Soko kutatuliwa baada ya filimbi ya mwisho pamoja na muda wa nyongeza na penati",
   }
 };
 
