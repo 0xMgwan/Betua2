@@ -97,8 +97,14 @@ export async function translateText(
     const data = await response.json();
     console.log(`[Translate] API response:`, data);
     
-    const translated = data.responseData?.translatedText || text;
+    let translated = data.responseData?.translatedText || text;
     console.log(`[Translate] Original: "${text.substring(0, 50)}..." -> Translated: "${translated.substring(0, 50)}..."`);
+
+    // Post-process: Replace incorrectly translated terms
+    if (toLang === 'sw') {
+      translated = translated.replace(/Mashuhuri/g, 'Celebrities');
+      translated = translated.replace(/mashuhuri/g, 'celebrities');
+    }
 
     // Cache the translation
     translationCache[cacheKey] = translated;
