@@ -99,79 +99,121 @@ export class NotificationService {
     });
   }
 
-  async notifyMarketResolved(marketTitle: string, outcome: string, marketId: string) {
+  async notifyMarketResolved(marketTitle: string, outcome: string, marketId: string, locale: string = 'en') {
+    const title = locale === 'sw' ? '🎯 Soko Limetatuliwa' : '🎯 Market Resolved';
+    const body = locale === 'sw' 
+      ? `"${marketTitle}" imetatuliwa: ${outcome}`
+      : `"${marketTitle}" resolved: ${outcome}`;
+    
     await this.showNotification({
-      title: '🎯 Market Resolved',
-      body: `"${marketTitle}" resolved: ${outcome}`,
+      title,
+      body,
       url: `/markets/${marketId}`,
       tag: 'resolution',
       requireInteraction: true,
     });
   }
 
-  async notifyWinnings(marketTitle: string, amount: number, marketId: string) {
+  async notifyWinnings(marketTitle: string, amount: number, marketId: string, locale: string = 'en') {
+    const title = locale === 'sw' ? '🎉 Umeshinda!' : '🎉 You Won!';
+    const body = locale === 'sw'
+      ? `Umeshinda ${amount.toLocaleString()} TZS katika "${marketTitle}". Pokea sasa!`
+      : `You won ${amount.toLocaleString()} TZS in "${marketTitle}". Redeem now!`;
+    const redeemAction = locale === 'sw' ? 'Pokea Sasa' : 'Redeem Now';
+    const viewAction = locale === 'sw' ? 'Angalia Portfolio' : 'View Portfolio';
+    
     await this.showNotification({
-      title: '🎉 You Won!',
-      body: `You won ${amount.toLocaleString()} TZS in "${marketTitle}". Redeem now!`,
+      title,
+      body,
       url: `/portfolio`,
       tag: 'winnings',
       requireInteraction: true,
       actions: [
-        { action: 'redeem', title: 'Redeem Now' },
-        { action: 'view', title: 'View Portfolio' },
+        { action: 'redeem', title: redeemAction },
+        { action: 'view', title: viewAction },
       ],
     });
   }
 
-  async notifyTransferReceived(from: string, amount: number) {
+  async notifyTransferReceived(from: string, amount: number, locale: string = 'en') {
+    const title = locale === 'sw' ? '💰 Pesa Imepokelewa' : '💰 Money Received';
+    const body = locale === 'sw'
+      ? `@${from} amekutumia ${amount.toLocaleString()} TZS`
+      : `@${from} sent you ${amount.toLocaleString()} TZS`;
+    
     await this.showNotification({
-      title: '💰 Money Received',
-      body: `@${from} sent you ${amount.toLocaleString()} TZS`,
+      title,
+      body,
       url: `/wallet`,
       tag: 'transfer',
     });
   }
 
-  async notifyTransferSent(to: string, amount: number) {
+  async notifyTransferSent(to: string, amount: number, locale: string = 'en') {
+    const title = locale === 'sw' ? '📤 Uhamisho Umetumwa' : '📤 Transfer Sent';
+    const body = locale === 'sw'
+      ? `Umetuma ${amount.toLocaleString()} TZS kwa @${to}`
+      : `Sent ${amount.toLocaleString()} TZS to @${to}`;
+    
     await this.showNotification({
-      title: '📤 Transfer Sent',
-      body: `Sent ${amount.toLocaleString()} TZS to @${to}`,
+      title,
+      body,
       url: `/wallet`,
       tag: 'transfer',
     });
   }
 
-  async notifyDeposit(amount: number) {
+  async notifyDeposit(amount: number, locale: string = 'en') {
+    const title = locale === 'sw' ? '💵 Amana Imefanikiwa' : '💵 Deposit Successful';
+    const body = locale === 'sw'
+      ? `${amount.toLocaleString()} TZS imeongezwa kwenye mkoba wako`
+      : `${amount.toLocaleString()} TZS added to your wallet`;
+    
     await this.showNotification({
-      title: '💵 Deposit Successful',
-      body: `${amount.toLocaleString()} TZS added to your wallet`,
+      title,
+      body,
       url: `/wallet`,
       tag: 'deposit',
     });
   }
 
-  async notifyWithdraw(amount: number) {
+  async notifyWithdraw(amount: number, locale: string = 'en') {
+    const title = locale === 'sw' ? '💸 Uondoaji Umefanikiwa' : '💸 Withdrawal Successful';
+    const body = locale === 'sw'
+      ? `${amount.toLocaleString()} TZS imetolewa kwenye mkoba wako`
+      : `${amount.toLocaleString()} TZS withdrawn from your wallet`;
+    
     await this.showNotification({
-      title: '💸 Withdrawal Successful',
-      body: `${amount.toLocaleString()} TZS withdrawn from your wallet`,
+      title,
+      body,
       url: `/wallet`,
       tag: 'withdraw',
     });
   }
 
-  async notifyMarketCreated(marketTitle: string, marketId: string) {
+  async notifyMarketCreated(marketTitle: string, marketId: string, locale: string = 'en') {
+    const title = locale === 'sw' ? '🎨 Soko Limeundwa' : '🎨 Market Created';
+    const body = locale === 'sw'
+      ? `Soko lako "${marketTitle}" sasa liko hai!`
+      : `Your market "${marketTitle}" is now live!`;
+    
     await this.showNotification({
-      title: '🎨 Market Created',
-      body: `Your market "${marketTitle}" is now live!`,
+      title,
+      body,
       url: `/markets/${marketId}`,
       tag: 'market-created',
     });
   }
 
-  async notifyPriceAlert(marketTitle: string, side: string, price: number, marketId: string) {
+  async notifyPriceAlert(marketTitle: string, side: string, price: number, marketId: string, locale: string = 'en') {
+    const title = locale === 'sw' ? '📊 Arifa ya Bei' : '📊 Price Alert';
+    const body = locale === 'sw'
+      ? `${side} katika "${marketTitle}" sasa iko ${(price * 100).toFixed(0)}%`
+      : `${side} in "${marketTitle}" is now at ${(price * 100).toFixed(0)}%`;
+    
     await this.showNotification({
-      title: '📊 Price Alert',
-      body: `${side} in "${marketTitle}" is now at ${(price * 100).toFixed(0)}%`,
+      title,
+      body,
       url: `/markets/${marketId}`,
       tag: 'price-alert',
     });
