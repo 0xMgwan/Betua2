@@ -15,6 +15,7 @@ import {
 import HeroAscii from "@/components/ui/hero-ascii";
 import { GlitchText } from "@/components/ui/glitch-text";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useUser } from "@/store/useUser";
 
 /* ─────────────────────────────────────────────────────────
    Live market mockup — animated YES/NO bar
@@ -194,6 +195,7 @@ function formatVolume(v: number): string {
 
 export default function HomePage() {
   const { t, locale } = useLanguage();
+  const { user } = useUser();
   const [markets, setMarkets] = useState<unknown[]>([]);
   const [stats, setStats] = useState({ totalVolume: 0, openMarkets: 0, totalTraders: 0, totalTrades: 0, resolvedMarkets: 0 });
 
@@ -865,10 +867,10 @@ export default function HomePage() {
             <div className="flex flex-col items-center justify-center gap-4">
               <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
                 <Link
-                  href="/auth/register"
+                  href={user ? "/wallet" : "/auth/register"}
                   className="group flex items-center gap-2 px-10 py-4 border-2 border-[var(--foreground)] text-[var(--foreground)] font-black text-lg hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all w-full sm:w-auto justify-center font-mono tracking-wider uppercase"
                 >
-                  {t.landing.cta.button}
+                  {user ? (locale === "sw" ? "ANZA KUTRADE" : "START TRADING") : t.landing.cta.button}
                   <ArrowRight size={20} weight="bold" className="group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <a
