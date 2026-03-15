@@ -142,3 +142,17 @@ model Notification {
   @@index([userId, read])
   @@index([userId, createdAt])
 }
+
+model MarketTranslation {
+  id               String   @id @default(cuid())
+  marketId         String
+  language         String
+  translatedTitle  String
+  translatedDesc   String?
+  translatedOptions Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([marketId, language])
+  @@index([marketId])
+}

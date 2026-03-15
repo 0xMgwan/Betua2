@@ -29,11 +29,14 @@ interface QuickBuyModalProps {
   };
   side: string;
   optionIndex?: number;
+  displaySide?: string;
 }
 
 const QUICK_AMOUNTS = [500, 1000, 2000, 5000, 10000];
 
-export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex }: QuickBuyModalProps) {
+export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, displaySide }: QuickBuyModalProps) {
+  console.log('[QuickBuyModal] Received - side:', side, 'displaySide:', displaySide, 'optionIndex:', optionIndex);
+  
   const { t, locale } = useLanguage();
   const { user } = useUser();
   const router = useRouter();
@@ -209,7 +212,7 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex }: Qu
                   <div className="w-3 h-3 rounded-full bg-[var(--accent)]/70"></div>
                 </div>
                 <span className="font-mono text-xs text-[var(--muted)] uppercase tracking-wider">
-                  [{locale === "sw" ? "NUNUA" : "BUY"}] {side}
+                  [{locale === "sw" ? "NUNUA" : "BUY"}] {displaySide || side}
                 </span>
               </div>
               <button
@@ -318,8 +321,8 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex }: Qu
                   </div>
                   <p className="text-xs font-mono text-[var(--foreground)]">
                     {locale === "sw" 
-                      ? `Umenunua hisa ${shares} za ${side}!`
-                      : `Bought ${shares} ${side} shares!`}
+                      ? `Umenunua hisa ${shares} za ${displaySide || side}!`
+                      : `Bought ${shares} ${displaySide || side} shares!`}
                   </p>
                 </div>
               )}
@@ -357,7 +360,7 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex }: Qu
                           : (locale === "sw" ? "Limeisha" : "Expired"))
                       : loading
                       ? (locale === "sw" ? "Inaendelea..." : "Processing...")
-                      : `> ${locale === "sw" ? "Nunua" : "Buy"} ${isMultiOption ? side.slice(0, 10) : side}`}
+                      : `> ${locale === "sw" ? "Nunua" : "Buy"} ${isMultiOption ? (displaySide || side).slice(0, 10) : (displaySide || side)}`}
                   </button>
                 </div>
               )}

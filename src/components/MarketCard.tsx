@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -46,6 +46,11 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [selectedSide, setSelectedSide] = useState<string | null>(null);
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
+  const [selectedDisplaySide, setSelectedDisplaySide] = useState<string | null>(null);
+  const [translatedTitle, setTranslatedTitle] = useState<string | null>(null);
+  const [translatedOptions, setTranslatedOptions] = useState<string[] | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
+
   const yesPctRaw = market.price.yes * 100;
   const noPctRaw = market.price.no * 100;
   const yesPct = yesPctRaw % 1 === 0 ? Math.round(yesPctRaw) : parseFloat(yesPctRaw.toFixed(1));
@@ -56,11 +61,48 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
   const isExpired = new Date(market.resolvesAt) < new Date();
   const isTradeable = market.status === "OPEN" && !isExpired;
 
+  // Fetch translation when locale is Swahili
+  useEffect(() => {
+    if (locale === "sw" && !translatedTitle && !isTranslating) {
+      console.log(`[Translation] Fetching translation for market ${market.id}`);
+      setIsTranslating(true);
+      fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ marketId: market.id, language: "sw" }),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          console.log(`[Translation] Received translation:`, data);
+          if (data.title) setTranslatedTitle(data.title);
+          if (data.options) setTranslatedOptions(data.options);
+        })
+        .catch((err) => console.error("[Translation] Error:", err))
+        .finally(() => setIsTranslating(false));
+    } else if (locale === "en") {
+      // Reset to original when switching back to English
+      setTranslatedTitle(null);
+      setTranslatedOptions(null);
+    }
+  }, [locale, market.id, translatedTitle, isTranslating]);
+
+  // Use translated content if available, otherwise use original
+  const displayTitle = locale === "sw" && translatedTitle ? translatedTitle : market.title;
+  const displayOptions = locale === "sw" && translatedOptions ? translatedOptions : market.options;
+
   const handleQuickBuy = (e: React.MouseEvent, side: string, optionIndex?: number) => {
     e.preventDefault();
     e.stopPropagation();
     setSelectedSide(side);
     setSelectedOptionIndex(optionIndex ?? null);
+    // Set display side (translated if available)
+    if (optionIndex !== undefined && displayOptions) {
+      const displaySide = displayOptions[optionIndex];
+      console.log('[MarketCard] Setting display side:', displaySide, 'for original:', side);
+      setSelectedDisplaySide(displaySide);
+    } else {
+      setSelectedDisplaySide(side);
+    }
     setShowBuyModal(true);
   };
 
@@ -130,14 +172,14 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                 </div>
               )}
               <h3 className="font-mono text-[13px] sm:text-sm font-bold leading-snug group-hover:text-[var(--accent)] transition-colors line-clamp-2 flex-1">
-                {market.title}
+                {displayTitle}
               </h3>
             </div>
 
             {/* Price bars */}
             {isMultiOption ? (
               <div className="space-y-1.5 mb-3">
-                {market.options!.map((opt, i) => {
+                {displayOptions!.map((opt, i) => {
                   const pctRaw = (market.optionPrices![i] || 0) * 100;
                   const pct = pctRaw % 1 === 0 ? Math.round(pctRaw) : parseFloat(pctRaw.toFixed(1));
                   const colors = ["#00e5a0", "#00b4d8", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#84cc16"];
@@ -193,15 +235,16 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
             {isTradeable && (
               isMultiOption ? (
                 <div className="grid grid-cols-2 gap-1.5 mb-3">
-                  {market.options!.slice(0, 4).map((option, idx) => {
+                  {displayOptions!.slice(0, 4).map((option, idx) => {
                     const colors = ["#00e5a0", "#00b4d8", "#f59e0b", "#ef4444"];
                     const c = colors[idx % colors.length];
                     const optPrice = market.optionPrices?.[idx] || 0;
                     const pricePerShare = Math.round(optPrice * 1000);
+                    const originalOption = market.options?.[idx] || option;
                     return (
                       <button
                         key={idx}
-                        onClick={(e) => handleQuickBuy(e, option, idx)}
+                        onClick={(e) => handleQuickBuy(e, originalOption, idx)}
                         className="py-2 px-2 border font-mono font-bold text-[10px] uppercase tracking-wider transition-all active:scale-95"
                         style={{
                           borderColor: `${c}60`,
@@ -269,10 +312,11 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
             setShowBuyModal(false);
             setSelectedSide(null);
             setSelectedOptionIndex(null);
+            setSelectedDisplaySide(null);
           }}
           market={{
             id: market.id,
-            title: market.title,
+            title: displayTitle,
             price: market.price,
             optionPrices: market.optionPrices || undefined,
             yesPool: market.yesPool,
@@ -283,6 +327,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
           }}
           side={selectedSide}
           optionIndex={selectedOptionIndex ?? undefined}
+          displaySide={selectedDisplaySide ?? undefined}
         />
       )}
     </motion.div>

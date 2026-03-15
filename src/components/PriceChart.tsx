@@ -10,6 +10,7 @@ interface ChartPoint {
 interface PriceChartProps {
   marketId: string;
   className?: string;
+  displayOptions?: string[] | null;
 }
 
 const COLORS = [
@@ -40,7 +41,7 @@ function bezier(pts: { x: number; y: number }[]): string {
   return d;
 }
 
-export function PriceChart({ marketId, className }: PriceChartProps) {
+export function PriceChart({ marketId, className, displayOptions }: PriceChartProps) {
   const [points, setPoints] = useState<ChartPoint[]>([]);
   const [opts, setOpts] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +52,9 @@ export function PriceChart({ marketId, className }: PriceChartProps) {
   const [cw, setCw] = useState(560);
   const svgRef = useRef<SVGSVGElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
+  
+  // Use displayOptions for labels if provided, otherwise use original opts
+  const displayLabels = displayOptions && displayOptions.length === opts.length ? displayOptions : opts;
 
   const fetchChart = useCallback(async () => {
     try {
@@ -195,11 +199,12 @@ export function PriceChart({ marketId, className }: PriceChartProps) {
             const c = COLORS[i % COLORS.length];
             const on = visible.has(o);
             const v = dp.prices[o];
+            const label = displayLabels[i] || o;
             return (
               <button key={o} onClick={() => toggle(o)}
                 className={cn("flex items-center gap-1.5 transition-opacity duration-200", on ? "opacity-100" : "opacity-25 hover:opacity-50")}>
                 <span className="text-[11px] font-mono" style={{ color: on ? c : "var(--muted)" }}>●</span>
-                <span className="text-[11px] font-mono text-[var(--foreground)]">{o}</span>
+                <span className="text-[11px] font-mono text-[var(--foreground)]">{label}</span>
                 {v != null && <span className="text-[11px] font-mono font-bold" style={{ color: on ? c : "var(--muted)" }}>{(v * 100).toFixed(1)}%</span>}
               </button>
             );

@@ -57,6 +57,11 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   const [market, setMarket] = useState<MarketData | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"trades" | "comments">("trades");
+  
+  // Translation state
+  const [translatedTitle, setTranslatedTitle] = useState<string | null>(null);
+  const [translatedDesc, setTranslatedDesc] = useState<string | null>(null);
+  const [translatedOptions, setTranslatedOptions] = useState<string[] | null>(null);
 
   // Trade state
   const [tradeMode, setTradeMode] = useState<"buy" | "sell">("buy");
@@ -142,7 +147,53 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
   useEffect(() => { loadMarket(); const i = setInterval(loadMarket, 30000); return () => clearInterval(i); }, [loadMarket]);
 
+  // Reset translations when market changes
+  useEffect(() => {
+    setTranslatedTitle(null);
+    setTranslatedDesc(null);
+    setTranslatedOptions(null);
+  }, [market?.id]);
+
+  // Fetch translation when locale is Swahili
+  useEffect(() => {
+    if (locale === "sw" && market && !translatedTitle) {
+      console.log(`[Translation] Fetching translation for market ${market.id}`);
+      fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ marketId: market.id, language: "sw" }),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          console.log(`[Translation] Received translation:`, data);
+          if (data.title) setTranslatedTitle(data.title);
+          if (data.description) setTranslatedDesc(data.description);
+          if (data.options) setTranslatedOptions(data.options);
+        })
+        .catch((err) => console.error("[Translation] Error:", err));
+    } else if (locale === "en") {
+      setTranslatedTitle(null);
+      setTranslatedDesc(null);
+      setTranslatedOptions(null);
+    }
+  }, [locale, market?.id, translatedTitle]);
+
   const isMultiOption = !!(market?.options && market.options.length >= 2);
+  
+  // Use translated content if available
+  const displayTitle = locale === "sw" && translatedTitle ? translatedTitle : market?.title;
+  const displayDesc = locale === "sw" && translatedDesc ? translatedDesc : market?.description;
+  const displayOptions = locale === "sw" && translatedOptions ? translatedOptions : market?.options;
+  
+  // Helper to translate trade side names
+  const getDisplaySide = (side: string) => {
+    if (!isMultiOption || !market?.options || !displayOptions) return side;
+    const optionIndex = market.options.indexOf(side);
+    if (optionIndex >= 0 && displayOptions[optionIndex]) {
+      return displayOptions[optionIndex];
+    }
+    return side;
+  };
 
   async function handleTrade(e: React.FormEvent) {
     e.preventDefault();
@@ -482,7 +533,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       </span>
                     )}
                   </div>
-                  <h1 className="text-base sm:text-xl font-bold leading-tight">{market.title}</h1>
+                  <h1 className="text-base sm:text-xl font-bold leading-tight">{displayTitle}</h1>
                   <div className="flex items-center gap-3 mt-1.5 text-[10px] text-[var(--muted)] font-mono">
                     <span>@{market.creator.username}</span>
                     <span className="flex items-center gap-0.5">
@@ -508,21 +559,21 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                 {/* Share icons */}
                 <div className="flex gap-1 flex-shrink-0">
                   <a
-                    href={`https://wa.me/?text=${encodeURIComponent(`${market.title} - Predict now on GUAP! ${typeof window !== 'undefined' ? window.location.href : ''}`)}`}
+                    href={`https://wa.me/?text=${encodeURIComponent(`${displayTitle} - Predict now on GUAP! ${typeof window !== 'undefined' ? window.location.href : ''}`)}`}
                     target="_blank" rel="noopener noreferrer"
                     className="p-1 text-[#25D366] hover:bg-[#25D366]/10 rounded transition-all"
                   >
                     <WhatsappLogo size={14} weight="fill" />
                   </a>
                   <a
-                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${market.title} - Predict now on GUAP!`)}&url=${typeof window !== 'undefined' ? encodeURIComponent(window.location.href) : ''}`}
+                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${displayTitle} - Predict now on GUAP!`)}&url=${typeof window !== 'undefined' ? encodeURIComponent(window.location.href) : ''}`}
                     target="_blank" rel="noopener noreferrer"
                     className="p-1 text-[var(--foreground)] hover:bg-[var(--foreground)]/10 rounded transition-all"
                   >
                     <XLogo size={14} weight="fill" />
                   </a>
                   <a
-                    href={`https://t.me/share/url?url=${typeof window !== 'undefined' ? encodeURIComponent(window.location.href) : ''}&text=${encodeURIComponent(market.title)}`}
+                    href={`https://t.me/share/url?url=${typeof window !== 'undefined' ? encodeURIComponent(window.location.href) : ''}&text=${encodeURIComponent(displayTitle || '')}`}
                     target="_blank" rel="noopener noreferrer"
                     className="p-1 text-[#0088cc] hover:bg-[#0088cc]/10 rounded transition-all"
                   >
@@ -533,7 +584,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
             </div>
 
             {/* ── Price Chart (prominent, like Kalshi) ── */}
-            <PriceChart marketId={id} className="rounded-xl" />
+            <PriceChart marketId={id} className="rounded-xl" displayOptions={displayOptions} />
 
             {/* ── Volume + Stats bar ── */}
             <div className="flex items-center justify-between px-1 text-xs font-mono text-[var(--muted)]">
@@ -553,9 +604,9 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                 </span>
               </div>
 
-              {isMultiOption && market.options && market.optionPrices ? (
+              {isMultiOption && displayOptions && market.optionPrices ? (
                 <div className="divide-y divide-[var(--card-border)]">
-                  {market.options.map((opt, i) => {
+                  {displayOptions.map((opt, i) => {
                     const pct = Math.round((market.optionPrices![i] || 0) * 100);
                     const dotColors = [
                       "bg-[#00e5a0]", "bg-[#00b4d8]", "bg-[#f59e0b]", "bg-[#ef4444]",
@@ -608,7 +659,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                 </span>
               </div>
               <div className="px-4 py-3 text-sm text-[var(--muted)] leading-relaxed">
-                {market.description}
+                {displayDesc}
               </div>
             </div>
 
@@ -631,10 +682,10 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                 <p className="text-sm text-[var(--muted)] mb-4">
                   {locale === "sw" ? "Mara ikitaruliwa, washindi watalipwa moja kwa moja." : "Once resolved, winners receive their payouts automatically."}
                 </p>
-                {isMultiOption && market.options ? (
+                {isMultiOption && displayOptions ? (
                   <div className="space-y-2">
                     <div className="grid grid-cols-2 gap-2">
-                      {market.options.map((opt, i) => (
+                      {displayOptions.map((opt, i) => (
                         <button
                           key={i}
                           onClick={() => handleResolveOption(i)}
@@ -726,7 +777,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                                 tr.side === "YES" ? "yes-pill" : "no-pill"
                               )}
                             >
-                              {tr.side}
+                              {getDisplaySide(tr.side)}
                             </span>
                           </div>
                           <div className="text-right text-xs">
@@ -878,9 +929,9 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                 {tradeMode === "buy" ? (
                 <form onSubmit={handleTrade} className="space-y-4">
                   {/* Side selector */}
-                  {isMultiOption && market.options && market.optionPrices ? (
+                  {isMultiOption && displayOptions && market.optionPrices ? (
                     <div className="space-y-2">
-                      {market.options.map((opt, i) => {
+                      {displayOptions.map((opt, i) => {
                         const pct = Math.round((market.optionPrices![i] || 0) * 100);
                         const bgColors = [
                           "bg-[#00e5a0]", "bg-[#00b4d8]", "bg-[#f59e0b]", "bg-[#ef4444]",
@@ -1030,7 +1081,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     {tradeLoading
                       ? (locale === "sw" ? "Inachakata…" : "Processing…")
                       : isMultiOption
-                        ? `${t.market.buy} ${market.options![selectedOption]}`
+                        ? `${t.market.buy} ${displayOptions![selectedOption]}`
                         : `${t.market.buy} ${side === "YES" ? t.market.yes : t.market.no}`
                     }
                   </button>
@@ -1046,9 +1097,9 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                 /* ═══ SELL FORM ═══ */
                 <form onSubmit={handleSell} className="space-y-4">
                   {/* Side selector (same as buy) */}
-                  {isMultiOption && market.options && market.optionPrices ? (
+                  {isMultiOption && displayOptions && market.optionPrices ? (
                     <div className="space-y-2">
-                      {market.options.map((opt, i) => {
+                      {displayOptions.map((opt, i) => {
                         const pct = Math.round((market.optionPrices![i] || 0) * 100);
                         const bgColors = [
                           "bg-[#00e5a0]", "bg-[#00b4d8]", "bg-[#f59e0b]", "bg-[#ef4444]",
