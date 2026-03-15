@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
     const [market, user] = await Promise.all([
       prisma.market.findUnique({ where: { id: marketId } }),
-      prisma.user.findUnique({ where: { id: session.userId }, select: { id: true, ntzsUserId: true, balanceTzs: true } }),
+      prisma.user.findUnique({ where: { id: session.userId }, select: { id: true, ntzsUserId: true, balanceTzs: true, locale: true } }),
     ]);
 
     if (!market) return NextResponse.json({ error: "Market not found" }, { status: 404 });
@@ -230,12 +230,17 @@ export async function POST(req: NextRequest) {
     }
 
     // Notification: trade completed
-    // Note: locale field will be available after database migration
+    const userLocale = user.locale || 'en';
+    const notifTitle = userLocale === 'sw' ? 'Biashara Imefanikiwa' : 'Trade Successful';
+    const notifMessage = userLocale === 'sw'
+      ? `Umenunua hisa za ${tradeSide} katika "${market.title}" kwa ${amountTzs.toLocaleString()} TZS`
+      : `Bought ${tradeSide} shares in "${market.title}" for ${amountTzs.toLocaleString()} TZS`;
+    
     createNotification({
       userId: session.userId,
       type: "TRADE",
-      title: "Trade Successful",
-      message: `Bought ${tradeSide} shares in "${market.title}" for ${amountTzs.toLocaleString()} TZS`,
+      title: notifTitle,
+      message: notifMessage,
       link: `/markets/${marketId}`,
     });
 
