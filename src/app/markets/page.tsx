@@ -21,7 +21,7 @@ export default function MarketsPage() {
   ];
 
   const SORTS = [
-    { value: "volume", label: locale === "sw" ? "Kiasi Kikubwa" : "Top Volume" },
+    { value: "volume", label: locale === "sw" ? "Kiasi Kikubwa" : "Trending" },
     { value: "new", label: locale === "sw" ? "Mpya" : "Newest" },
   ];
   const [markets, setMarkets] = useState<unknown[]>([]);
