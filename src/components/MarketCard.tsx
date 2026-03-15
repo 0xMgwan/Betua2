@@ -252,7 +252,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                           backgroundColor: `${c}08`,
                         }}
                       >
-                        Buy {option.length > 10 ? option.slice(0, 10) + ".." : option} @ TSh {pricePerShare}
+                        {locale === "sw" ? "Nunua" : "Buy"} {option.length > 10 ? option.slice(0, 10) + ".." : option} @ TSh {pricePerShare}
                       </button>
                     );
                   })}

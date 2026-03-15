@@ -5,6 +5,14 @@
 
 const MYMEMORY_API = "https://api.mymemory.translated.net/get";
 
+// Custom translations for sports/betting terms that don't translate well
+const CUSTOM_TRANSLATIONS: Record<string, Record<string, string>> = {
+  sw: {
+    "Draw": "Sare",
+    "draw": "sare",
+  }
+};
+
 interface TranslationCache {
   [key: string]: string;
 }
@@ -24,10 +32,15 @@ export async function translateText(
   fromLang: string = "en",
   toLang: string = "sw"
 ): Promise<string> {
-  if (!text || text.trim() === "") return text;
-  
+  if (!text) return text;
+
   // Return original if translating to same language
   if (fromLang === toLang) return text;
+
+  // Check custom translations first
+  if (CUSTOM_TRANSLATIONS[toLang]?.[text]) {
+    return CUSTOM_TRANSLATIONS[toLang][text];
+  }
 
   // Check cache first
   const cacheKey = `${fromLang}-${toLang}-${text}`;
