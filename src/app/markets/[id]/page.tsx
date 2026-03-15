@@ -1420,6 +1420,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       required
                     >
                       <option value="Politics">{locale === "sw" ? "Siasa" : "Politics"}</option>
+                      <option value="Geopolitics">{locale === "sw" ? "Siasa za Kimataifa" : "Geopolitics"}</option>
                       <option value="Sports">{locale === "sw" ? "Michezo" : "Sports"}</option>
                       <option value="Business">{locale === "sw" ? "Biashara" : "Business"}</option>
                       <option value="Entertainment">{locale === "sw" ? "Burudani" : "Entertainment"}</option>
