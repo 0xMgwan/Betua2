@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { createNotification, createNotifications } from "@/lib/notify";
+import { ntzs } from "@/lib/ntzs";
 
 const FEE_PERCENT = parseFloat(process.env.TRANSACTION_FEE_PERCENT || "5") / 100;
+const CREATOR_FEE_PERCENT = 0.01; // 1% of total volume goes to non-admin creators
+const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
+const ADMIN_USER_IDS = (process.env.ADMIN_USER_IDS || "").split(",").filter(Boolean);
 
 export async function POST(
   req: NextRequest,
@@ -96,6 +100,62 @@ export async function POST(
     })
     .filter(Boolean);
 
+  // ── Creator Fee: Pay 1% of volume to non-admin market creators ──
+  const isAdminCreator = ADMIN_USER_IDS.includes(market.creatorId);
+  let creatorFeeAmount = 0;
+  let creatorFeePaid = false;
+  
+  if (!isAdminCreator && market.totalVolume > 0) {
+    creatorFeeAmount = Math.round(market.totalVolume * CREATOR_FEE_PERCENT);
+    
+    if (creatorFeeAmount > 0 && PLATFORM_NTZS_USER_ID) {
+      // Get creator's nTZS user ID
+      const creator = await prisma.user.findUnique({
+        where: { id: market.creatorId },
+        select: { ntzsUserId: true, username: true },
+      });
+      
+      if (creator?.ntzsUserId) {
+        try {
+          await ntzs.transfers.create({
+            fromUserId: PLATFORM_NTZS_USER_ID,
+            toUserId: creator.ntzsUserId,
+            amountTzs: creatorFeeAmount,
+          });
+          creatorFeePaid = true;
+          
+          // Update creator's local balance too
+          await prisma.user.update({
+            where: { id: market.creatorId },
+            data: { balanceTzs: { increment: creatorFeeAmount } },
+          });
+          
+          // Create transaction record for creator
+          await prisma.transaction.create({
+            data: {
+              userId: market.creatorId,
+              type: "CREATOR_FEE",
+              amountTzs: creatorFeeAmount,
+              status: "COMPLETED",
+              recipientUsername: `Creator reward: ${market.title}`,
+            },
+          });
+          
+          // Notify creator about their reward
+          createNotification({
+            userId: market.creatorId,
+            type: "CREATOR_FEE",
+            title: "Creator Reward!",
+            message: `You earned ${creatorFeeAmount.toLocaleString()} TZS for creating "${market.title}"`,
+            link: `/wallet`,
+          });
+        } catch (err) {
+          console.error("Creator fee transfer failed:", err);
+        }
+      }
+    }
+  }
+
   // Notify all position holders about resolution
   const notificationBatch = market.positions.map((pos) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -140,5 +200,10 @@ export async function POST(
     totalWinningShares,
     feePercent: Math.round(FEE_PERCENT * 100),
     payouts: payoutSummary,
+    creatorFee: {
+      amount: creatorFeeAmount,
+      paid: creatorFeePaid,
+      isAdmin: isAdminCreator,
+    },
   });
 }
