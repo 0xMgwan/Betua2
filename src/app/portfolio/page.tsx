@@ -755,7 +755,7 @@ export default function PortfolioPage() {
                           : (locale === "sw" ? "IMETATULIWA" : "RESOLVED")
                         }
                         {" "}
-                        ({createdMarketFilter === "all" 
+                        ({filter === "all" 
                           ? createdMarkets.length 
                           : createdMarkets.filter(m => m.status === filter).length
                         })
