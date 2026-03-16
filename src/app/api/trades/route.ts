@@ -21,10 +21,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Minimum trade is 100 TZS" }, { status: 400 });
     }
 
-    const [market, user] = await Promise.all([
+    const [market, userResult] = await Promise.all([
       prisma.market.findUnique({ where: { id: marketId } }),
-      prisma.user.findUnique({ where: { id: session.userId }, select: { id: true, ntzsUserId: true, balanceTzs: true, locale: true } }),
+      prisma.user.findUnique({ where: { id: session.userId } }),
     ]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const user = userResult as any;
 
     if (!market) return NextResponse.json({ error: "Market not found" }, { status: 404 });
     if (market.status !== "OPEN") return NextResponse.json({ error: "Market is not open" }, { status: 400 });
@@ -54,10 +56,9 @@ export async function POST(req: NextRequest) {
         }
       } catch (balErr) {
         // If NTZS is unreachable, fall back to local balance check
-        if (balErr instanceof NtzsApiError) {
-          if ((user.balanceTzs || 0) < amountTzs) {
-            return NextResponse.json({ error: `Insufficient balance.` }, { status: 400 });
-          }
+        console.error("nTZS balance check failed, using local balance:", balErr);
+        if ((user.balanceTzs || 0) < amountTzs) {
+          return NextResponse.json({ error: `Insufficient balance.` }, { status: 400 });
         }
       }
     } else {
@@ -82,6 +83,9 @@ export async function POST(req: NextRequest) {
 
     if (isMultiOption) {
       const pools = mkt.optionPools as number[];
+      if (!pools || !Array.isArray(pools)) {
+        return NextResponse.json({ error: "Invalid market state: missing option pools" }, { status: 500 });
+      }
       const result = getMultiOptionSharesOut(tradeAmount, optionIndex, pools);
       shares = result.shares;
       avgPrice = result.avgPrice;
@@ -100,19 +104,17 @@ export async function POST(req: NextRequest) {
     let ntzsTransferId: string | undefined;
 
     // Transfer full amount from user → platform escrow via NTZS
-    if (PLATFORM_NTZS_USER_ID) {
+    if (PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
       try {
         const transfer = await ntzs.transfers.create({
-          fromUserId: user.ntzsUserId!,
+          fromUserId: user.ntzsUserId,
           toUserId: PLATFORM_NTZS_USER_ID,
           amountTzs,
         });
         ntzsTransferId = transfer.id;
       } catch (err) {
-        if (err instanceof NtzsApiError) {
-          return NextResponse.json({ error: err.message || "Transfer failed" }, { status: 400 });
-        }
-        throw err;
+        console.error("nTZS transfer failed:", err);
+        // Continue without nTZS transfer - use local balance instead
       }
     }
 
@@ -214,11 +216,11 @@ export async function POST(req: NextRequest) {
       ]);
     } catch (dbErr) {
       console.error("Database transaction failed, refunding user:", dbErr);
-      if (PLATFORM_NTZS_USER_ID && ntzsTransferId) {
+      if (PLATFORM_NTZS_USER_ID && ntzsTransferId && user.ntzsUserId) {
         try {
           await ntzs.transfers.create({
             fromUserId: PLATFORM_NTZS_USER_ID,
-            toUserId: user.ntzsUserId!,
+            toUserId: user.ntzsUserId,
             amountTzs,
           });
           console.log(`Refunded ${amountTzs} TZS to user ${user.ntzsUserId}`);
@@ -255,6 +257,8 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("Trade error:", err);
     const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: "Trade failed. Please try again.", debug: msg }, { status: 500 });
+    const stack = err instanceof Error ? err.stack : undefined;
+    console.error("Trade error stack:", stack);
+    return NextResponse.json({ error: msg || "Trade failed. Please try again." }, { status: 500 });
   }
 }

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { NotificationProvider } from "@/components/NotificationProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { CartButton, CartModal } from "@/components/Cart";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -46,6 +47,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <LanguageProvider>
             <NotificationProvider>
               {children}
+              <CartButton />
+              <CartModal />
             </NotificationProvider>
           </LanguageProvider>
         </ThemeProvider>

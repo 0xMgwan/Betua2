@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Footer } from "@/components/Footer";
 
-export default function MarketsPage() {
+function MarketsContent() {
   const { t, locale } = useLanguage();
   const searchParams = useSearchParams();
 
@@ -182,5 +182,13 @@ export default function MarketsPage() {
       </div>
       <Footer />
     </div>
+  );
+}
+
+export default function MarketsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <MarketsContent />
+    </Suspense>
   );
 }

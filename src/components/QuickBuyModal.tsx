@@ -2,10 +2,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, TrendUp, TrendDown } from "@phosphor-icons/react";
+import { X, TrendUp, TrendDown, ShoppingCart } from "@phosphor-icons/react";
 import { formatTZS } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useUser } from "@/store/useUser";
+import { useCart } from "@/store/useCart";
 import { notifications } from "@/lib/notifications";
 import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
 
@@ -39,6 +40,7 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
   
   const { t, locale } = useLanguage();
   const { user } = useUser();
+  const { addItem, openCart } = useCart();
   const router = useRouter();
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
@@ -133,6 +135,27 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
     ? Math.round((shares / totalSideShares) * newPot * (1 - FEE_PERCENT))
     : 0;
   const netGain = payoutIfWin - amountNum;
+
+  const handleAddToCart = () => {
+    if (!amount || Number(amount) < 500) {
+      setError(locale === "sw" ? "Kiasi lazima kiwe angalau TZS 500" : "Amount must be at least TZS 500");
+      return;
+    }
+
+    addItem({
+      marketId: market.id,
+      marketTitle: market.title,
+      side: side,
+      optionIndex: optionIndex,
+      amount: Number(amount),
+      estimatedShares: shares,
+      currentPrice: price,
+      category: "Market", // You can pass this as a prop if needed
+    });
+
+    onClose();
+    openCart();
+  };
 
   const handleBuy = async () => {
     if (!user) {
@@ -336,19 +359,22 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
 
               {/* Actions - Terminal Style */}
               {!success && (
-                <div className="flex gap-2 sm:gap-3 pt-3 sm:pt-2 border-t-2 border-[var(--card-border)]">
-                  <button
-                    onClick={onClose}
-                    className="flex-1 py-3 sm:py-3 px-3 sm:px-4 border-2 border-[var(--card-border)] rounded-none font-mono font-bold text-[10px] sm:text-xs uppercase tracking-wider hover:bg-[var(--background)] hover:border-[var(--accent)]/40 transition-all active:scale-95"
-                  >
-                    {locale === "sw" ? "Ghairi" : "Cancel"}
-                  </button>
-                  <button
-                    onClick={handleBuy}
-                    disabled={loading || !amount || Number(amount) < 500 || !isTradeable}
-                    className={`flex-1 py-3 sm:py-3 px-3 sm:px-4 rounded-none font-mono font-bold text-[10px] sm:text-xs uppercase tracking-wider transition-all disabled:opacity-40 border-2 active:scale-95 ${
-                      isMultiOption
-                        ? "bg-[var(--accent)]/10 border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)]/20 hover:shadow-[0_0_15px_rgba(0,229,160,0.3)]"
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleAddToCart}
+                      disabled={!amount || Number(amount) < 500 || !isTradeable}
+                      className="flex-1 py-3 px-3 border-2 border-[var(--accent)]/50 text-[var(--accent)] rounded-none font-mono font-bold text-[10px] sm:text-xs uppercase tracking-wider hover:bg-[var(--accent)]/10 transition-all disabled:opacity-40 active:scale-95 flex items-center justify-center gap-2"
+                    >
+                      <ShoppingCart size={14} weight="fill" />
+                      {locale === "sw" ? "Ongeza" : "Add to Cart"}
+                    </button>
+                    <button
+                      onClick={handleBuy}
+                      disabled={loading || !amount || Number(amount) < 500 || !isTradeable}
+                      className={`flex-1 py-3 px-3 rounded-none font-mono font-bold text-[10px] sm:text-xs uppercase tracking-wider transition-all disabled:opacity-40 border-2 active:scale-95 ${
+                        isMultiOption
+                          ? "bg-[var(--accent)]/10 border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)]/20 hover:shadow-[0_0_15px_rgba(0,229,160,0.3)]"
                         : side === "YES"
                         ? "bg-[#00e5a0]/10 border-[#00e5a0] text-[#00e5a0] hover:bg-[#00e5a0]/20 hover:shadow-[0_0_15px_rgba(0,229,160,0.3)]"
                         : "bg-red-500/10 border-red-500 text-red-400 hover:bg-red-500/20 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]"
@@ -362,6 +388,7 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
                       ? (locale === "sw" ? "Inaendelea..." : "Processing...")
                       : `> ${locale === "sw" ? "Nunua" : "Buy"} ${isMultiOption ? (displaySide || side).slice(0, 10) : (displaySide || side)}`}
                   </button>
+                </div>
                 </div>
               )}
             </div>

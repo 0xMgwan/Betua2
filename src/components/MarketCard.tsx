@@ -4,11 +4,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Clock, TrendUp, UsersThree, Lightning, Timer, ChartLineUp } from "@phosphor-icons/react";
+import { Clock, TrendUp, UsersThree, Lightning, Timer, ChartLineUp, ShoppingCart } from "@phosphor-icons/react";
 import { formatTZS, formatNumber, timeUntil, SPORTS_SUBCATEGORIES } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useCart } from "@/store/useCart";
 import { QuickBuyModal } from "./QuickBuyModal";
+import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
 
 interface Market {
   id: string;
@@ -44,6 +46,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 export function MarketCard({ market, index = 0 }: { market: Market; index?: number }) {
   const { t, locale } = useLanguage();
   const router = useRouter();
+  const { addItem, openCart } = useCart();
   const [imageError, setImageError] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [selectedSide, setSelectedSide] = useState<string | null>(null);
@@ -106,6 +109,38 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
       setSelectedDisplaySide(side);
     }
     setShowBuyModal(true);
+  };
+
+  const handleAddToCart = (e: React.MouseEvent, side: string, optionIndex?: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const defaultAmount = 500; // Default amount for quick add
+    let estimatedShares = 0;
+    let currentPrice = 0;
+    
+    if (isMultiOption && optionIndex !== undefined && market.optionPrices) {
+      currentPrice = market.optionPrices[optionIndex];
+      // Estimate shares (simplified - actual calculation happens at checkout)
+      estimatedShares = Math.round(defaultAmount / (currentPrice * 1000));
+    } else {
+      currentPrice = side === "YES" ? market.price.yes : market.price.no;
+      estimatedShares = Math.round(defaultAmount / (currentPrice * 1000));
+    }
+    
+    addItem({
+      marketId: market.id,
+      marketTitle: displayTitle,
+      side: side,
+      optionIndex: optionIndex,
+      amount: defaultAmount,
+      estimatedShares: estimatedShares,
+      currentPrice: currentPrice,
+      category: market.category,
+      imageUrl: market.imageUrl,
+    });
+    
+    openCart();
   };
 
   return (
@@ -260,35 +295,65 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                     const pricePerShare = Math.round(optPrice * 1000);
                     const originalOption = market.options?.[idx] || option;
                     return (
-                      <button
-                        key={idx}
-                        onClick={(e) => handleQuickBuy(e, originalOption, idx)}
-                        className="py-2 px-2 border font-mono font-bold text-[10px] uppercase tracking-wider transition-all active:scale-95"
-                        style={{
-                          borderColor: `${c}60`,
-                          color: c,
-                          backgroundColor: `${c}08`,
-                        }}
-                      >
-                        {locale === "sw" ? "Nunua" : "Buy"} {option.length > 10 ? option.slice(0, 10) + ".." : option} @ TSh {pricePerShare}
-                      </button>
+                      <div key={idx} className="flex gap-1">
+                        <button
+                          onClick={(e) => handleQuickBuy(e, originalOption, idx)}
+                          className="flex-1 py-2 px-2 border font-mono font-bold text-[10px] uppercase tracking-wider transition-all active:scale-95"
+                          style={{
+                            borderColor: `${c}60`,
+                            color: c,
+                            backgroundColor: `${c}08`,
+                          }}
+                        >
+                          {option.length > 8 ? option.slice(0, 8) + ".." : option} @ {pricePerShare}
+                        </button>
+                        <button
+                          onClick={(e) => handleAddToCart(e, originalOption, idx)}
+                          className="px-2 border transition-all active:scale-95 hover:bg-[var(--accent)]/10"
+                          style={{
+                            borderColor: `${c}60`,
+                            color: c,
+                          }}
+                          title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
+                        >
+                          <ShoppingCart size={14} weight="bold" />
+                        </button>
+                      </div>
                     );
                   })}
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-2 mb-3">
-                  <button
-                    onClick={(e) => handleQuickBuy(e, "YES")}
-                    className="py-2 px-3 bg-[#00e5a0]/8 border border-[#00e5a0]/50 text-[#00e5a0] font-mono font-bold text-[11px] uppercase tracking-wider transition-all hover:bg-[#00e5a0]/15 hover:border-[#00e5a0] hover:shadow-[0_0_12px_rgba(0,229,160,0.2)] active:scale-[0.97]"
-                  >
-                    Buy Yes @ TSh {Math.round(market.price.yes * 1000)}
-                  </button>
-                  <button
-                    onClick={(e) => handleQuickBuy(e, "NO")}
-                    className="py-2 px-3 bg-red-500/8 border border-red-500/50 text-red-400 font-mono font-bold text-[11px] uppercase tracking-wider transition-all hover:bg-red-500/15 hover:border-red-500 hover:shadow-[0_0_12px_rgba(239,68,68,0.2)] active:scale-[0.97]"
-                  >
-                    Buy No @ TSh {Math.round(market.price.no * 1000)}
-                  </button>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={(e) => handleQuickBuy(e, "YES")}
+                      className="flex-1 py-2 px-2 bg-[#00e5a0]/8 border border-[#00e5a0]/50 text-[#00e5a0] font-mono font-bold text-[10px] uppercase tracking-wider transition-all hover:bg-[#00e5a0]/15 hover:border-[#00e5a0] active:scale-[0.97]"
+                    >
+                      Yes @ {Math.round(market.price.yes * 1000)}
+                    </button>
+                    <button
+                      onClick={(e) => handleAddToCart(e, "YES")}
+                      className="px-2 bg-[#00e5a0]/8 border border-[#00e5a0]/50 text-[#00e5a0] transition-all hover:bg-[#00e5a0]/15 active:scale-95"
+                      title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
+                    >
+                      <ShoppingCart size={14} weight="bold" />
+                    </button>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={(e) => handleQuickBuy(e, "NO")}
+                      className="flex-1 py-2 px-2 bg-red-500/8 border border-red-500/50 text-red-400 font-mono font-bold text-[10px] uppercase tracking-wider transition-all hover:bg-red-500/15 hover:border-red-500 active:scale-[0.97]"
+                    >
+                      No @ {Math.round(market.price.no * 1000)}
+                    </button>
+                    <button
+                      onClick={(e) => handleAddToCart(e, "NO")}
+                      className="px-2 bg-red-500/8 border border-red-500/50 text-red-400 transition-all hover:bg-red-500/15 active:scale-95"
+                      title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
+                    >
+                      <ShoppingCart size={14} weight="bold" />
+                    </button>
+                  </div>
                 </div>
               )
             )}
