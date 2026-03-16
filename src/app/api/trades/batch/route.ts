@@ -6,6 +6,7 @@ import { ntzs } from "@/lib/ntzs";
 import { createNotification } from "@/lib/notify";
 
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
+const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
 
 interface BatchTradeItem {
   marketId: string;
@@ -229,6 +230,18 @@ export async function POST(req: NextRequest) {
       } catch (err) {
         console.error("nTZS transfer failed:", err);
       }
+    }
+
+    // Transfer fees from platform escrow → settlement fee wallet
+    const totalFees = Math.round(totalAmount * FEE_PERCENT);
+    if (PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID && totalFees > 0) {
+      ntzs.transfers.create({
+        fromUserId: PLATFORM_NTZS_USER_ID,
+        toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
+        amountTzs: totalFees,
+      }).catch((feeErr) => {
+        console.error("Fee transfer failed (non-fatal):", feeErr);
+      });
     }
 
     // Send notification
