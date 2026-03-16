@@ -140,13 +140,17 @@ export default function PortfolioPage() {
       // Auto-hide success message after 3 seconds
       setTimeout(() => setRedeemSuccess(null), 3000);
 
-      // Refresh portfolio data to get updated balance
-      fetch("/api/portfolio")
-        .then((r) => r.json())
-        .then((d) => {
-          setPositions(d.positions || []);
-          setTrades(d.trades || []);
-        });
+      // Refresh portfolio data and user balance
+      Promise.all([
+        fetch("/api/portfolio").then((r) => r.json()),
+        fetch("/api/auth/me").then((r) => r.json())
+      ]).then(([portfolioData, userData]) => {
+        setPositions(portfolioData.positions || []);
+        setTrades(portfolioData.trades || []);
+        if (userData.user) {
+          useUser.getState().setUser(userData.user);
+        }
+      });
     } catch (err) {
       alert(locale === "sw" ? "Kosa la mtandao" : "Network error");
     } finally {
@@ -503,13 +507,7 @@ export default function PortfolioPage() {
                                               : p.market.outcome === 1 ? "YES" : "NO"
                                           }
                                           won={won}
-                                          payout={
-                                            won
-                                              ? (isMultiOpt && p.optionShares && p.market.outcome !== null
-                                                  ? (p.optionShares[String(p.market.outcome)] || 0) * 0.95
-                                                  : (p.market.outcome === 1 ? p.yesShares : p.noShares) * 0.95)
-                                              : 0
-                                          }
+                                          payout={p.currentValue}
                                           invested={p.totalInvested}
                                           username={user?.username || ""}
                                           shares={
