@@ -50,9 +50,16 @@ export const useCart = create<CartStore>()(
 
       updateAmount: (id, amount) => {
         set((state) => ({
-          items: state.items.map((item) =>
-            item.id === id ? { ...item, amount } : item
-          ),
+          items: state.items.map((item) => {
+            if (item.id === id) {
+              // Recalculate estimated shares based on new amount and current price
+              const estimatedShares = item.currentPrice > 0 
+                ? Math.round(amount / (item.currentPrice * 1000))
+                : item.estimatedShares;
+              return { ...item, amount, estimatedShares };
+            }
+            return item;
+          }),
         }));
       },
 

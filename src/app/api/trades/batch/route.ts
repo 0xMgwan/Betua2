@@ -204,16 +204,18 @@ export async function POST(req: NextRequest) {
         data: { balanceTzs: { decrement: totalDeducted } },
       });
 
-      // Create transaction record
-      await tx.transaction.create({
-        data: {
-          userId: user.id,
-          type: "TRADE",
-          amountTzs: -totalDeducted,
-          status: "COMPLETED",
-          recipientUsername: `Batch trade: ${trades.length} positions`,
-        },
-      });
+      // Create transaction record for each trade
+      for (const result of results) {
+        await tx.transaction.create({
+          data: {
+            userId: user.id,
+            type: "BUY_SHARES",
+            amountTzs: result.amount,
+            status: "COMPLETED",
+            recipientUsername: `${result.marketTitle} (${result.side})`,
+          },
+        });
+      }
     });
 
     // Transfer to platform escrow via nTZS
