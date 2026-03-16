@@ -498,18 +498,24 @@ export default function PortfolioPage() {
                                           category={p.market.category}
                                           imageUrl={p.market.imageUrl}
                                           outcome={
-                                            isMultiOpt && p.optionShares
-                                              ? p.market.options![Number(Object.entries(p.optionShares).sort((a, b) => b[1] - a[1])[0]?.[0] || 0)] || "Option"
-                                              : p.yesShares > p.noShares ? "YES" : "NO"
+                                            isMultiOpt && p.optionShares && p.market.outcome !== null && typeof p.market.outcome === 'number'
+                                              ? p.market.options![p.market.outcome] || "Option"
+                                              : p.market.outcome === 1 ? "YES" : "NO"
                                           }
                                           won={won}
-                                          payout={p.currentValue}
+                                          payout={
+                                            won
+                                              ? (isMultiOpt && p.optionShares && p.market.outcome !== null
+                                                  ? (p.optionShares[String(p.market.outcome)] || 0) * 0.95
+                                                  : (p.market.outcome === 1 ? p.yesShares : p.noShares) * 0.95)
+                                              : 0
+                                          }
                                           invested={p.totalInvested}
                                           username={user?.username || ""}
                                           shares={
-                                            isMultiOpt && p.optionShares
-                                              ? Object.values(p.optionShares).reduce((s, v) => s + v, 0)
-                                              : Math.max(p.yesShares, p.noShares)
+                                            isMultiOpt && p.optionShares && p.market.outcome !== null
+                                              ? p.optionShares[String(p.market.outcome)] || 0
+                                              : p.market.outcome === 1 ? p.yesShares : p.noShares
                                           }
                                           marketUrl={`/markets/${p.market.id}`}
                                         />
