@@ -14,12 +14,6 @@ import { Footer } from "@/components/Footer";
 export default function MarketsPage() {
   const { t, locale } = useLanguage();
 
-  const STATUSES = [
-    { value: "OPEN", label: locale === "sw" ? "Wazi" : "Open" },
-    { value: "RESOLVED", label: t.markets.resolved },
-    { value: "all", label: t.markets.filters.all },
-  ];
-
   const SORTS = [
     { value: "volume", label: locale === "sw" ? "Za Moto" : "Trending" },
     { value: "new", label: locale === "sw" ? "Mpya" : "Newest" },
@@ -29,12 +23,11 @@ export default function MarketsPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [subCategory, setSubCategory] = useState("all");
-  const [status, setStatus] = useState("OPEN");
   const [sort, setSort] = useState("new");
 
   useEffect(() => {
     setLoading(true);
-    const params = new URLSearchParams({ status, sort });
+    const params = new URLSearchParams({ status: "OPEN", sort });
     if (category !== "all") params.set("category", category);
     if (category === "Sports" && subCategory !== "all") params.set("subCategory", subCategory);
     if (search) params.set("q", search);
@@ -43,7 +36,7 @@ export default function MarketsPage() {
       .then((r) => r.json())
       .then((d) => setMarkets(d.markets || []))
       .finally(() => setLoading(false));
-  }, [category, subCategory, status, sort, search]);
+  }, [category, subCategory, sort, search]);
 
   return (
     <div className="min-h-screen">
@@ -79,24 +72,6 @@ export default function MarketsPage() {
 
           {/* Filter row */}
           <div className="flex flex-wrap gap-3">
-            {/* Status */}
-            <div className="flex items-center bg-[var(--card)] border border-[var(--card-border)] rounded-xl p-1 gap-1">
-              {STATUSES.map((s) => (
-                <button
-                  key={s.value}
-                  onClick={() => setStatus(s.value)}
-                  className={cn(
-                    "px-3 py-1.5 text-sm font-medium transition-all font-mono",
-                    status === s.value
-                      ? "bg-[var(--foreground)] text-[var(--background)]"
-                      : "text-[var(--muted)] hover:text-[var(--foreground)]"
-                  )}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-
             {/* Sort */}
             <div className="flex items-center bg-[var(--card)] border border-[var(--card-border)] rounded-xl p-1 gap-1">
               {SORTS.map((s) => (
