@@ -163,12 +163,15 @@ export function CartModal() {
                     {/* Amount Input */}
                     <div className="flex items-center gap-1.5 sm:gap-2">
                       <input
-                        type="number"
-                        value={item.amount}
-                        onChange={(e) => updateAmount(item.id, Number(e.target.value))}
+                        type="text"
+                        inputMode="numeric"
+                        value={item.amount || ''}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^0-9]/g, '');
+                          updateAmount(item.id, val === '' ? 0 : Number(val));
+                        }}
                         onFocus={(e) => e.target.select()}
-                        min="100"
-                        step="100"
+                        placeholder="100"
                         className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-[var(--background)] border border-[var(--card-border)] rounded text-xs sm:text-sm font-mono focus:outline-none focus:border-[var(--accent)]"
                       />
                       <span className="text-xs sm:text-sm font-mono font-bold whitespace-nowrap">
