@@ -39,6 +39,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Already redeemed" }, { status: 400 });
     }
 
+    // Atomically mark as redeemed FIRST to prevent race conditions
+    // Only update if redeemed is still false (prevents double-click exploit)
+    const lockResult = await prisma.position.updateMany({
+      where: { 
+        id: positionId, 
+        redeemed: false  // Only update if not already redeemed
+      },
+      data: { redeemed: true }
+    });
+
+    // If no rows were updated, someone else already redeemed it
+    if (lockResult.count === 0) {
+      return NextResponse.json({ error: "Already redeemed (concurrent request)" }, { status: 400 });
+    }
+
     // Calculate payout using proportional pot distribution
     const outcome = position.market.outcome;
     const FEE_PERCENT = parseFloat(process.env.TRANSACTION_FEE_PERCENT || "5") / 100;
@@ -116,12 +131,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Mark position as redeemed, add balance, create transaction record
-    const [updatedPosition] = await prisma.$transaction([
-      prisma.position.update({
-        where: { id: positionId },
-        data: { redeemed: true },
-      }),
+    // Add balance and create transaction record (position already marked as redeemed above)
+    await prisma.$transaction([
       prisma.user.update({
         where: { id: session.userId },
         data: { balanceTzs: { increment: payoutTzs } },
@@ -152,7 +163,7 @@ export async function POST(req: NextRequest) {
       success: true,
       payout: payoutTzs,
       winningShares,
-      position: updatedPosition,
+      positionId,
       ntzsTransferId,
     });
   } catch (err) {
