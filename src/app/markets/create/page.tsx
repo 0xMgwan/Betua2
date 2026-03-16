@@ -248,7 +248,12 @@ export default function CreateMarketPage() {
                     [FEE] {t.markets.createMarket.fee}: <span className="font-bold text-yellow-400">{CREATION_FEE_TZS.toLocaleString()} TZS</span>
                   </span>
                 </div>
-                <p className="text-[10px] font-mono text-[var(--muted)] mt-1 ml-6">{t.markets.createMarket.feeDescription}</p>
+                <p className="text-[10px] font-mono text-[var(--muted)] mt-1 ml-6">
+                  {t.markets.createMarket.feeDescription}
+                </p>
+                <p className="text-[10px] font-mono text-green-400/80 mt-1 ml-6">
+                  💰 Earn 1% of total trading volume when your market resolves!
+                </p>
               </motion.div>
 
               {error && (
