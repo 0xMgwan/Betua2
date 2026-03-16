@@ -140,7 +140,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
       imageUrl: market.imageUrl,
     });
     
-    openCart();
+    // Don't auto-open cart - let user click cart button to view
   };
 
   return (

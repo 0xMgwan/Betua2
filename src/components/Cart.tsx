@@ -115,7 +115,7 @@ export function CartModal() {
             </div>
 
             {/* Items */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 sm:space-y-3">
               {items.length === 0 ? (
                 <div className="text-center py-16">
                   <ShoppingCart size={48} className="mx-auto text-[var(--muted)] mb-4" />
@@ -130,21 +130,21 @@ export function CartModal() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: 100 }}
-                    className="bg-[var(--card)] border border-[var(--card-border)] p-3 rounded"
+                    className="bg-[var(--card)] border border-[var(--card-border)] p-2 sm:p-3 rounded"
                   >
-                    <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-start justify-between mb-1.5 sm:mb-2">
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-mono text-[var(--muted)] mb-1">
+                        <p className="text-[10px] sm:text-xs font-mono text-[var(--muted)] mb-0.5 sm:mb-1">
                           {item.category}
                         </p>
-                        <p className="text-sm font-bold line-clamp-2 mb-1">
+                        <p className="text-xs sm:text-sm font-bold line-clamp-2 mb-0.5 sm:mb-1">
                           {item.marketTitle}
                         </p>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono font-bold text-[var(--accent)] px-2 py-0.5 bg-[var(--accent)]/10 border border-[var(--accent)]/20 rounded">
+                        <div className="flex items-center gap-1.5 sm:gap-2">
+                          <span className="text-[10px] sm:text-xs font-mono font-bold text-[var(--accent)] px-1.5 sm:px-2 py-0.5 bg-[var(--accent)]/10 border border-[var(--accent)]/20 rounded">
                             {item.side}
                           </span>
-                          <span className="text-xs font-mono text-[var(--muted)]">
+                          <span className="text-[10px] sm:text-xs font-mono text-[var(--muted)]">
                             ~{item.estimatedShares.toFixed(0)} {locale === "sw" ? "hisa" : "shares"}
                           </span>
                         </div>
@@ -158,16 +158,16 @@ export function CartModal() {
                     </div>
 
                     {/* Amount Input */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                       <input
                         type="number"
                         value={item.amount}
                         onChange={(e) => updateAmount(item.id, Number(e.target.value))}
                         min="100"
                         step="100"
-                        className="flex-1 px-3 py-2 bg-[var(--background)] border border-[var(--card-border)] rounded text-sm font-mono focus:outline-none focus:border-[var(--accent)]"
+                        className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-[var(--background)] border border-[var(--card-border)] rounded text-xs sm:text-sm font-mono focus:outline-none focus:border-[var(--accent)]"
                       />
-                      <span className="text-sm font-mono font-bold">
+                      <span className="text-xs sm:text-sm font-mono font-bold whitespace-nowrap">
                         {formatTZS(item.amount)}
                       </span>
                     </div>
@@ -178,7 +178,7 @@ export function CartModal() {
 
             {/* Footer */}
             {items.length > 0 && (
-              <div className="p-4 border-t border-[var(--card-border)] space-y-3">
+              <div className="p-3 sm:p-4 border-t border-[var(--card-border)] space-y-2 sm:space-y-3">
                 {error && (
                   <div className="text-xs font-mono text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded">
                     {error}
@@ -186,10 +186,10 @@ export function CartModal() {
                 )}
 
                 <div className="flex items-center justify-between font-mono">
-                  <span className="text-sm text-[var(--muted)]">
+                  <span className="text-xs sm:text-sm text-[var(--muted)]">
                     {locale === "sw" ? "Jumla" : "Total"}
                   </span>
-                  <span className="text-lg font-bold">
+                  <span className="text-base sm:text-lg font-bold">
                     {formatTZS(getTotalAmount())}
                   </span>
                 </div>
