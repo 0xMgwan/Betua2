@@ -79,6 +79,7 @@ export default function PortfolioPage() {
   const [tab, setTab] = useState<"positions" | "history" | "created">("positions");
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [redeemSuccess, setRedeemSuccess] = useState<string | null>(null);
+  const [createdMarketFilter, setCreatedMarketFilter] = useState<"all" | "OPEN" | "EXPIRED" | "RESOLVED">("all");
 
   // Sell state
   const [sellOpen, setSellOpen] = useState<string | null>(null); // position id
@@ -727,78 +728,127 @@ export default function PortfolioPage() {
                   </div>
                 )
               ) : tab === "created" ? (
-                <div className="space-y-2">
-                  {createdMarkets.map((market, i) => {
-                    const isMultiOption = Array.isArray(market.options) && market.options.length >= 2;
-                    const price = getPrice(market.yesPool, market.noPool);
-                    const prices = isMultiOption && market.optionPools ? getMultiOptionPrices(market.optionPools) : [];
-                    
-                    return (
-                      <motion.div
-                        key={market.id}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.04 }}
+                <div className="space-y-4">
+                  {/* Filter buttons */}
+                  <div className="flex flex-wrap gap-2">
+                    {(["all", "OPEN", "EXPIRED", "RESOLVED"] as const).map((filter) => (
+                      <button
+                        key={filter}
+                        onClick={() => setCreatedMarketFilter(filter)}
+                        className={cn(
+                          "px-3 py-1.5 text-xs font-mono font-bold border transition-all uppercase tracking-wider",
+                          createdMarketFilter === filter
+                            ? "border-[var(--accent)] text-[var(--accent)] bg-[var(--accent)]/10"
+                            : "border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--foreground)] hover:text-[var(--foreground)]"
+                        )}
                       >
-                        <Link href={`/markets/${market.id}`}>
-                          <div className="bg-[var(--background)] border border-[var(--card-border)] hover:border-[var(--accent)]/40 hover:shadow-[0_0_15px_rgba(0,229,160,0.05)] transition-all">
-                            <div className="px-4 py-3">
-                              <div className="flex items-start justify-between gap-3 mb-2">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-1.5">
-                                    <span className="text-[10px] font-mono px-1.5 py-0.5 border border-[var(--card-border)] text-[var(--muted)] uppercase tracking-wider">
-                                      [{market.category}]
-                                    </span>
-                                    <span className={cn(
-                                      "text-[10px] font-mono font-bold px-1.5 py-0.5 border uppercase tracking-wider",
-                                      market.status === "RESOLVED" 
-                                        ? "border-blue-500/30 text-blue-400"
-                                        : market.status === "OPEN"
-                                        ? "border-[var(--accent)]/30 text-[var(--accent)]"
-                                        : "border-yellow-500/30 text-yellow-400"
-                                    )}>
-                                      {market.status}
-                                    </span>
-                                  </div>
-                                  <p className="font-bold text-sm line-clamp-1 leading-snug">{market.title}</p>
-                                </div>
-                              </div>
+                        {filter === "all" 
+                          ? (locale === "sw" ? "ZOTE" : "ALL")
+                          : filter === "OPEN"
+                          ? (locale === "sw" ? "WAZI" : "OPEN")
+                          : filter === "EXPIRED"
+                          ? (locale === "sw" ? "IMEISHA" : "EXPIRED")
+                          : (locale === "sw" ? "IMETATULIWA" : "RESOLVED")
+                        }
+                        {" "}
+                        ({createdMarketFilter === "all" 
+                          ? createdMarkets.length 
+                          : createdMarkets.filter(m => m.status === filter).length
+                        })
+                      </button>
+                    ))}
+                  </div>
 
-                              {/* Market stats */}
-                              <div className="flex items-center gap-4 mt-3 pt-2 border-t border-[var(--card-border)]">
-                                <div>
-                                  <div className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
-                                    {locale === "sw" ? "Kiasi" : "Volume"}
-                                  </div>
-                                  <div className="text-sm font-mono font-bold tabular-nums">
-                                    {formatTZS(market.totalVolume)}
+                  {/* Markets list */}
+                  <div className="space-y-2">
+                  {(() => {
+                    const filteredMarkets = createdMarkets.filter(
+                      market => createdMarketFilter === "all" || market.status === createdMarketFilter
+                    );
+
+                    if (filteredMarkets.length === 0) {
+                      return (
+                        <div className="text-center py-16">
+                          <p className="text-sm font-mono text-[var(--muted)]">
+                            [EMPTY] {locale === "sw" ? "Hakuna soko" : "No markets"} {createdMarketFilter !== "all" && `(${createdMarketFilter})`}
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    return filteredMarkets.map((market, i) => {
+                      const isMultiOption = Array.isArray(market.options) && market.options.length >= 2;
+                      const price = getPrice(market.yesPool, market.noPool);
+                      const prices = isMultiOption && market.optionPools ? getMultiOptionPrices(market.optionPools) : [];
+                      
+                      return (
+                        <motion.div
+                          key={market.id}
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.04 }}
+                        >
+                          <Link href={`/markets/${market.id}`}>
+                            <div className="bg-[var(--background)] border border-[var(--card-border)] hover:border-[var(--accent)]/40 hover:shadow-[0_0_15px_rgba(0,229,160,0.05)] transition-all">
+                              <div className="px-4 py-3">
+                                <div className="flex items-start justify-between gap-3 mb-2">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1.5">
+                                      <span className="text-[10px] font-mono px-1.5 py-0.5 border border-[var(--card-border)] text-[var(--muted)] uppercase tracking-wider">
+                                        [{market.category}]
+                                      </span>
+                                      <span className={cn(
+                                        "text-[10px] font-mono font-bold px-1.5 py-0.5 border uppercase tracking-wider",
+                                        market.status === "RESOLVED" 
+                                          ? "border-blue-500/30 text-blue-400"
+                                          : market.status === "OPEN"
+                                          ? "border-[var(--accent)]/30 text-[var(--accent)]"
+                                          : "border-yellow-500/30 text-yellow-400"
+                                      )}>
+                                        {market.status}
+                                      </span>
+                                    </div>
+                                    <p className="font-bold text-sm line-clamp-1 leading-snug">{market.title}</p>
                                   </div>
                                 </div>
-                                <div>
-                                  <div className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
-                                    {locale === "sw" ? "Biashara" : "Trades"}
-                                  </div>
-                                  <div className="text-sm font-mono font-bold tabular-nums">
-                                    {market._count.trades}
-                                  </div>
-                                </div>
-                                {!isMultiOption && (
+
+                                {/* Market stats */}
+                                <div className="flex items-center gap-4 mt-3 pt-2 border-t border-[var(--card-border)]">
                                   <div>
                                     <div className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
-                                      YES / NO
+                                      {locale === "sw" ? "Kiasi" : "Volume"}
                                     </div>
                                     <div className="text-sm font-mono font-bold tabular-nums">
-                                      {formatPercent(price.yes)} / {formatPercent(price.no)}
+                                      {formatTZS(market.totalVolume)}
                                     </div>
                                   </div>
-                                )}
+                                  <div>
+                                    <div className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
+                                      {locale === "sw" ? "Biashara" : "Trades"}
+                                    </div>
+                                    <div className="text-sm font-mono font-bold tabular-nums">
+                                      {market._count.trades}
+                                    </div>
+                                  </div>
+                                  {!isMultiOption && (
+                                    <div>
+                                      <div className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
+                                        YES / NO
+                                      </div>
+                                      <div className="text-sm font-mono font-bold tabular-nums">
+                                        {formatPercent(price.yes)} / {formatPercent(price.no)}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </Link>
-                      </motion.div>
-                    );
-                  })}
+                          </Link>
+                        </motion.div>
+                      );
+                    });
+                  })()}
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-1">
