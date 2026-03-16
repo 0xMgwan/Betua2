@@ -100,7 +100,7 @@ export function CartModal() {
               <div className="flex items-center gap-2">
                 <ShoppingCart size={20} weight="fill" className="text-[var(--accent)]" />
                 <h2 className="font-mono font-bold text-lg">
-                  {locale === "sw" ? "Mkoba" : "Betslip"}
+                  {locale === "sw" ? "Mkoba" : "Prediction Slip"}
                 </h2>
                 <span className="text-xs font-mono text-[var(--muted)]">
                   ({items.length})
