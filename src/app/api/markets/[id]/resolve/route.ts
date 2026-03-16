@@ -6,7 +6,7 @@ import { ntzs } from "@/lib/ntzs";
 
 const FEE_PERCENT = parseFloat(process.env.TRANSACTION_FEE_PERCENT || "5") / 100;
 const CREATOR_FEE_PERCENT = 0.01; // 1% of total volume goes to non-admin creators
-const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
+const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
 const ADMIN_USER_IDS = (process.env.ADMIN_USER_IDS || "").split(",").filter(Boolean);
 
 export async function POST(
@@ -108,7 +108,7 @@ export async function POST(
   if (!isAdminCreator && market.totalVolume > 0) {
     creatorFeeAmount = Math.round(market.totalVolume * CREATOR_FEE_PERCENT);
     
-    if (creatorFeeAmount > 0 && PLATFORM_NTZS_USER_ID) {
+    if (creatorFeeAmount > 0 && SETTLEMENT_FEE_NTZS_USER_ID) {
       // Get creator's nTZS user ID
       const creator = await prisma.user.findUnique({
         where: { id: market.creatorId },
@@ -117,8 +117,10 @@ export async function POST(
       
       if (creator?.ntzsUserId) {
         try {
+          // Creator fee comes from SETTLEMENT_FEE wallet (collected fees), NOT platform escrow
+          // This ensures solvency: winners get full pot, creator fee comes from platform's fee revenue
           await ntzs.transfers.create({
-            fromUserId: PLATFORM_NTZS_USER_ID,
+            fromUserId: SETTLEMENT_FEE_NTZS_USER_ID,
             toUserId: creator.ntzsUserId,
             amountTzs: creatorFeeAmount,
           });
