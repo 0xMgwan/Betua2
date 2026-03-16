@@ -502,11 +502,17 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
-                    <span className="px-1.5 py-0.5 bg-[var(--accent)]/10 text-[var(--accent)] text-[10px] font-mono rounded border border-[var(--accent)]/20">
+                    <Link 
+                      href={`/markets?category=${market.category}`}
+                      className="px-1.5 py-0.5 bg-[var(--accent)]/10 text-[var(--accent)] text-[10px] font-mono rounded border border-[var(--accent)]/20 hover:bg-[var(--accent)]/20 transition-all cursor-pointer"
+                    >
                       {market.category}
-                    </span>
+                    </Link>
                     {market.subCategory && (
-                      <span className="px-1.5 py-0.5 bg-[var(--accent)]/10 text-[var(--accent)] text-[10px] font-mono rounded border border-[var(--accent)]/20 flex items-center gap-1">
+                      <Link
+                        href={`/markets?category=${market.category}&subCategory=${market.subCategory}`}
+                        className="px-1.5 py-0.5 bg-[var(--accent)]/10 text-[var(--accent)] text-[10px] font-mono rounded border border-[var(--accent)]/20 flex items-center gap-1 hover:bg-[var(--accent)]/20 transition-all cursor-pointer"
+                      >
                         {SPORTS_SUBCATEGORIES.find(s => s.value === market.subCategory)?.icon.startsWith('/') ? (
                           <Image 
                             src={SPORTS_SUBCATEGORIES.find(s => s.value === market.subCategory)!.icon} 
@@ -519,7 +525,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                           <span>{SPORTS_SUBCATEGORIES.find(s => s.value === market.subCategory)?.icon}</span>
                         )}
                         {market.subCategory}
-                      </span>
+                      </Link>
                     )}
                     {isResolved && (
                       <span className="px-1.5 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-mono rounded border border-blue-500/20">
