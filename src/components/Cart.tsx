@@ -197,6 +197,15 @@ export function CartModal() {
                   </span>
                 </div>
 
+                <div className="flex items-center justify-between font-mono">
+                  <span className="text-xs sm:text-sm text-[var(--muted)]">
+                    {locale === "sw" ? "Ukishinda" : "If correct"}
+                  </span>
+                  <span className="text-base sm:text-lg font-bold text-[#00e5a0]">
+                    {formatTZS(Math.round(items.reduce((sum, item) => sum + item.estimatedShares * 1000 * 0.95, 0)))}
+                  </span>
+                </div>
+
                 <div className="flex gap-2">
                   <button
                     onClick={clearCart}

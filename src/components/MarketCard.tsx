@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Clock, TrendUp, UsersThree, Lightning, Timer, ChartLineUp, ShoppingCart } from "@phosphor-icons/react";
+import { Clock, TrendUp, UsersThree, Lightning, Timer, ChartLineUp, ShoppingCart, Check } from "@phosphor-icons/react";
 import { formatTZS, formatNumber, timeUntil, SPORTS_SUBCATEGORIES } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -55,6 +55,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
   const [translatedTitle, setTranslatedTitle] = useState<string | null>(null);
   const [translatedOptions, setTranslatedOptions] = useState<string[] | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [cartAdded, setCartAdded] = useState<string | null>(null); // Track which option was just added
 
   const yesPctRaw = market.price.yes * 100;
   const noPctRaw = market.price.no * 100;
@@ -140,7 +141,10 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
       imageUrl: market.imageUrl,
     });
     
-    // Don't auto-open cart - let user click cart button to view
+    // Show visual feedback
+    const key = optionIndex !== undefined ? `${side}-${optionIndex}` : side;
+    setCartAdded(key);
+    setTimeout(() => setCartAdded(null), 1500);
   };
 
   return (
@@ -309,14 +313,14 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                         </button>
                         <button
                           onClick={(e) => handleAddToCart(e, originalOption, idx)}
-                          className="px-2 border transition-all active:scale-95 hover:bg-[var(--accent)]/10"
+                          className={`px-2 border transition-all active:scale-95 ${cartAdded === `${originalOption}-${idx}` ? 'bg-[#00e5a0] scale-110' : 'hover:bg-[var(--accent)]/10'}`}
                           style={{
-                            borderColor: `${c}60`,
-                            color: c,
+                            borderColor: cartAdded === `${originalOption}-${idx}` ? '#00e5a0' : `${c}60`,
+                            color: cartAdded === `${originalOption}-${idx}` ? '#000' : c,
                           }}
                           title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
                         >
-                          <ShoppingCart size={14} weight="bold" />
+                          {cartAdded === `${originalOption}-${idx}` ? <Check size={14} weight="bold" /> : <ShoppingCart size={14} weight="bold" />}
                         </button>
                       </div>
                     );
@@ -333,10 +337,10 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                     </button>
                     <button
                       onClick={(e) => handleAddToCart(e, "YES")}
-                      className="px-2 bg-[#00e5a0]/8 border border-[#00e5a0]/50 text-[#00e5a0] transition-all hover:bg-[#00e5a0]/15 active:scale-95"
+                      className={`px-2 border transition-all active:scale-95 ${cartAdded === 'YES' ? 'bg-[#00e5a0] border-[#00e5a0] text-black scale-110' : 'bg-[#00e5a0]/8 border-[#00e5a0]/50 text-[#00e5a0] hover:bg-[#00e5a0]/15'}`}
                       title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
                     >
-                      <ShoppingCart size={14} weight="bold" />
+                      {cartAdded === 'YES' ? <Check size={14} weight="bold" /> : <ShoppingCart size={14} weight="bold" />}
                     </button>
                   </div>
                   <div className="flex gap-1">
@@ -348,10 +352,10 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                     </button>
                     <button
                       onClick={(e) => handleAddToCart(e, "NO")}
-                      className="px-2 bg-red-500/8 border border-red-500/50 text-red-400 transition-all hover:bg-red-500/15 active:scale-95"
+                      className={`px-2 border transition-all active:scale-95 ${cartAdded === 'NO' ? 'bg-[#00e5a0] border-[#00e5a0] text-black scale-110' : 'bg-red-500/8 border-red-500/50 text-red-400 hover:bg-red-500/15'}`}
                       title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
                     >
-                      <ShoppingCart size={14} weight="bold" />
+                      {cartAdded === 'NO' ? <Check size={14} weight="bold" /> : <ShoppingCart size={14} weight="bold" />}
                     </button>
                   </div>
                 </div>
