@@ -5,6 +5,7 @@ import { ntzs } from "@/lib/ntzs";
 import { createNotification } from "@/lib/notify";
 
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
+const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -129,6 +130,17 @@ export async function POST(req: NextRequest) {
         console.error("Redeem transfer failed:", err);
         return NextResponse.json({ error: "Transfer failed" }, { status: 500 });
       }
+    }
+
+    // Transfer settlement fee from platform escrow → settlement fee wallet (non-blocking)
+    if (PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID && settlementFee > 0) {
+      ntzs.transfers.create({
+        fromUserId: PLATFORM_NTZS_USER_ID,
+        toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
+        amountTzs: settlementFee,
+      }).catch((feeErr) => {
+        console.error("Settlement fee transfer failed (non-fatal):", feeErr);
+      });
     }
 
     // Add balance and create transaction record (position already marked as redeemed above)
