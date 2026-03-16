@@ -166,6 +166,7 @@ export function CartModal() {
                         type="number"
                         value={item.amount}
                         onChange={(e) => updateAmount(item.id, Number(e.target.value))}
+                        onFocus={(e) => e.target.select()}
                         min="100"
                         step="100"
                         className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-[var(--background)] border border-[var(--card-border)] rounded text-xs sm:text-sm font-mono focus:outline-none focus:border-[var(--accent)]"
