@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
 import { MarketCard } from "@/components/MarketCard";
@@ -13,6 +14,7 @@ import { Footer } from "@/components/Footer";
 
 export default function MarketsPage() {
   const { t, locale } = useLanguage();
+  const searchParams = useSearchParams();
 
   const SORTS = [
     { value: "volume", label: locale === "sw" ? "Za Moto" : "Trending" },
@@ -21,8 +23,8 @@ export default function MarketsPage() {
   const [markets, setMarkets] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("all");
-  const [subCategory, setSubCategory] = useState("all");
+  const [category, setCategory] = useState(searchParams.get("category") || "all");
+  const [subCategory, setSubCategory] = useState(searchParams.get("subCategory") || "all");
   const [sort, setSort] = useState("new");
 
   useEffect(() => {

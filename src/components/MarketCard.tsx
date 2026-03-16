@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -42,6 +43,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 export function MarketCard({ market, index = 0 }: { market: Market; index?: number }) {
   const { t, locale } = useLanguage();
+  const router = useRouter();
   const [imageError, setImageError] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [selectedSide, setSelectedSide] = useState<string | null>(null);
@@ -112,8 +114,10 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
     >
-      <Link href={`/markets/${market.id}`}>
-        <div className="group relative bg-[var(--card)] border border-[var(--card-border)] overflow-hidden hover:border-[var(--accent)]/60 transition-all duration-200 hover:shadow-[0_0_20px_rgba(0,229,160,0.1)]">
+      <div 
+        onClick={() => router.push(`/markets/${market.id}`)}
+        className="group relative bg-[var(--card)] border border-[var(--card-border)] overflow-hidden hover:border-[var(--accent)]/60 transition-all duration-200 hover:shadow-[0_0_20px_rgba(0,229,160,0.1)] cursor-pointer"
+      >
           {/* Accent top line */}
           <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, ${catColor}, transparent)` }} />
 
@@ -126,7 +130,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    window.location.href = `/markets?category=${market.category}`;
+                    router.push(`/markets?category=${market.category}`);
                   }}
                   className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 border hover:opacity-80 transition-opacity cursor-pointer"
                   style={{ borderColor: `${catColor}50`, color: catColor, backgroundColor: `${catColor}10` }}
@@ -144,7 +148,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      window.location.href = `/markets?category=${market.category}&subCategory=${market.subCategory}`;
+                      router.push(`/markets?category=${market.category}&subCategory=${market.subCategory}`);
                     }}
                     className="text-[9px] font-mono font-bold text-[var(--accent)] uppercase tracking-wider px-1.5 py-0.5 border border-[var(--accent)]/30 bg-[var(--accent)]/10 flex items-center gap-1 hover:opacity-80 transition-opacity cursor-pointer"
                   >
@@ -316,7 +320,6 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
             </div>
           </div>
         </div>
-      </Link>
 
       {/* Quick Buy Modal */}
       {showBuyModal && selectedSide && (
