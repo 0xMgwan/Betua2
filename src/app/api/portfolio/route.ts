@@ -58,23 +58,32 @@ export async function GET() {
     const totals = marketShareTotals[mkt.id] || { yes: 0, no: 0, options: {} };
 
     // For resolved markets, use actual outcome — losers get 0, winners get their payout
+    // Must match redeem API calculation exactly
     if (mkt.status === "RESOLVED" && mkt.outcome !== null) {
       if (isMultiOption) {
         const optShares = (p.optionShares as Record<string, number>) || {};
         const winningShares = optShares[String(mkt.outcome)] || 0;
         const totalWinShares = totals.options[String(mkt.outcome)] || 1;
-        const currentValue = winningShares > 0
-          ? Math.round((winningShares / totalWinShares) * pot * (1 - FEE_PERCENT))
+        // Proportional pot distribution: (yourShares / totalShares) * pot
+        const grossPayout = totalWinShares > 0
+          ? Math.round((winningShares / totalWinShares) * pot)
           : 0;
+        // Settlement fee: 5% of gross payout
+        const settlementFee = Math.round(grossPayout * FEE_PERCENT);
+        const currentValue = grossPayout - settlementFee;
         const prices = mkt.optionPools ? getMultiOptionPrices(mkt.optionPools as number[]) : [];
         return { ...p, currentValue, price: getPrice(mkt.yesPool, mkt.noPool), optionPrices: prices };
       }
 
       const winningShares = mkt.outcome === 1 ? p.yesShares : p.noShares;
       const totalWinShares = mkt.outcome === 1 ? totals.yes : totals.no;
-      const currentValue = winningShares > 0 && totalWinShares > 0
-        ? Math.round((winningShares / totalWinShares) * pot * (1 - FEE_PERCENT))
+      // Proportional pot distribution: (yourShares / totalShares) * pot
+      const grossPayout = totalWinShares > 0
+        ? Math.round((winningShares / totalWinShares) * pot)
         : 0;
+      // Settlement fee: 5% of gross payout
+      const settlementFee = Math.round(grossPayout * FEE_PERCENT);
+      const currentValue = grossPayout - settlementFee;
       return { ...p, currentValue, price: getPrice(mkt.yesPool, mkt.noPool) };
     }
 
