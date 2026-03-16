@@ -140,12 +140,15 @@ export function CartModal() {
                         <p className="text-xs sm:text-sm font-bold line-clamp-2 mb-0.5 sm:mb-1">
                           {item.marketTitle}
                         </p>
-                        <div className="flex items-center gap-1.5 sm:gap-2">
+                        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                           <span className="text-[10px] sm:text-xs font-mono font-bold text-[var(--accent)] px-1.5 sm:px-2 py-0.5 bg-[var(--accent)]/10 border border-[var(--accent)]/20 rounded">
                             {item.side}
                           </span>
                           <span className="text-[10px] sm:text-xs font-mono text-[var(--muted)]">
                             ~{item.estimatedShares.toFixed(0)} {locale === "sw" ? "hisa" : "shares"}
+                          </span>
+                          <span className="text-[10px] sm:text-xs font-mono text-[#00e5a0]">
+                            → {formatTZS(Math.round(item.estimatedShares * 1000 * 0.95))}
                           </span>
                         </div>
                       </div>
