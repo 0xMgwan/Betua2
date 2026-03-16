@@ -121,19 +121,33 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
             {/* Top row: Category + Status + Timer */}
             <div className="flex items-center justify-between mb-2.5">
               <div className="flex items-center gap-2">
-                <span
-                  className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 border"
+                <a
+                  href={`/markets?category=${market.category}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.location.href = `/markets?category=${market.category}`;
+                  }}
+                  className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 border hover:opacity-80 transition-opacity cursor-pointer"
                   style={{ borderColor: `${catColor}50`, color: catColor, backgroundColor: `${catColor}10` }}
                 >
                   {market.category}
-                </span>
+                </a>
                 {market.status === "RESOLVED" && (
                   <span className="text-[9px] font-mono font-bold text-blue-400 uppercase tracking-wider px-1.5 py-0.5 border border-blue-400/30 bg-blue-400/10">
                     Resolved
                   </span>
                 )}
                 {market.subCategory && (
-                  <span className="text-[9px] font-mono font-bold text-[var(--accent)] uppercase tracking-wider px-1.5 py-0.5 border border-[var(--accent)]/30 bg-[var(--accent)]/10 flex items-center gap-1">
+                  <a
+                    href={`/markets?category=${market.category}&subCategory=${market.subCategory}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      window.location.href = `/markets?category=${market.category}&subCategory=${market.subCategory}`;
+                    }}
+                    className="text-[9px] font-mono font-bold text-[var(--accent)] uppercase tracking-wider px-1.5 py-0.5 border border-[var(--accent)]/30 bg-[var(--accent)]/10 flex items-center gap-1 hover:opacity-80 transition-opacity cursor-pointer"
+                  >
                     {SPORTS_SUBCATEGORIES.find(s => s.value === market.subCategory)?.icon.startsWith('/') ? (
                       <Image 
                         src={SPORTS_SUBCATEGORIES.find(s => s.value === market.subCategory)!.icon} 
@@ -146,7 +160,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                       <span>{SPORTS_SUBCATEGORIES.find(s => s.value === market.subCategory)?.icon}</span>
                     )}
                     {market.subCategory}
-                  </span>
+                  </a>
                 )}
               </div>
               <span className={cn(
