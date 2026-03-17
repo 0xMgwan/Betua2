@@ -482,7 +482,7 @@ export default function DevelopersPage() {
                 <div className="p-4 bg-[var(--background)] border border-[var(--card-border)] text-center">
                   <div className="text-2xl font-bold text-orange-400">~9.75%</div>
                   <div className="text-xs text-[var(--muted)]">Total Per Cycle</div>
-                  <div className="text-[10px] text-[var(--muted)] mt-1">All fees go to platform</div>
+                  <div className="text-[10px] text-[var(--muted)] mt-1">All fees go to platform.</div>
                 </div>
               </div>
 
