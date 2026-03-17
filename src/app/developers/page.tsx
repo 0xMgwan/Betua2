@@ -164,7 +164,7 @@ export default function DevelopersPage() {
             transition={{ delay: 0.1 }}
             className="text-3xl md:text-4xl font-bold mb-4"
           >
-            Betua <span className="text-[var(--accent)]">Public API</span>
+            GUAP <span className="text-[var(--accent)]">Public API</span>
           </motion.h1>
 
           <motion.p
@@ -173,8 +173,7 @@ export default function DevelopersPage() {
             transition={{ delay: 0.2 }}
             className="text-[var(--muted)] max-w-2xl mx-auto mb-8"
           >
-            Integrate prediction markets into your app. Enable your users to trade on real-world events
-            with our simple REST API.
+            Integrate prediction markets into your app. Enable your users to trade on real-world events with our simple REST API.
           </motion.p>
 
           <motion.div
@@ -213,7 +212,7 @@ export default function DevelopersPage() {
               <div className="p-4 bg-[var(--card)] border border-[var(--card-border)]">
                 <h3 className="text-sm font-mono font-bold text-[var(--accent)] mb-2">1. Get API Key</h3>
                 <p className="text-xs text-[var(--muted)] mb-3">
-                  Contact us to register as a partner and receive your API credentials.
+                  Contact us to register as a partner and get your API credentials.
                 </p>
                 <CodeBlock code="Authorization: Bearer gp_live_xxxxxxxxxxxxxxxx" />
               </div>
@@ -224,7 +223,7 @@ export default function DevelopersPage() {
                   Create or get a user using your own external ID (e.g., phone number).
                 </p>
                 <CodeBlock
-                  code={`curl -X POST https://betua.co.tz/api/v1/users \\
+                  code={`curl -X POST https://guap.co.tz/api/v1/users \\
   -H "Authorization: Bearer gp_live_xxx" \\
   -H "Content-Type: application/json" \\
   -d '{"externalId": "255712345678"}'`}
@@ -237,7 +236,7 @@ export default function DevelopersPage() {
                   Let your users trade on prediction markets.
                 </p>
                 <CodeBlock
-                  code={`curl -X POST https://betua.co.tz/api/v1/trades \\
+                  code={`curl -X POST https://guap.co.tz/api/v1/trades \\
   -H "Authorization: Bearer gp_live_xxx" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -304,7 +303,7 @@ export default function DevelopersPage() {
                 "phone": "string (optional) — Phone number",
               }}
               response={{
-                "userId": "string — Betua user ID",
+                "userId": "string — GUAP user ID",
                 "externalId": "string — Your user ID",
                 "username": "string",
                 "balanceTzs": "number — Wallet balance",
@@ -521,8 +520,8 @@ export default function DevelopersPage() {
               Contact us to register as a partner and get your API credentials.
             </p>
             <a
-              href="mailto:api@betua.co.tz"
-              className="inline-flex items-center gap-2 px-6 py-2 bg-[var(--accent)] text-white font-mono text-sm font-bold hover:bg-[var(--accent)]/90 transition-colors"
+              href="mailto:api@guap.co.tz"
+              className="inline-flex items-center gap-2 px-6 py-2 border-2 border-[var(--accent)] text-[var(--accent)] font-mono text-sm font-bold hover:bg-[var(--accent)] hover:text-[var(--background)] transition-colors"
             >
               <Key size={16} />
               Request API Access

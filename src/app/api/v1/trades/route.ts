@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
         return apiError("optionIndex is required for multi-option markets");
       }
       const pools = (market.optionPools as number[]) || [];
-      const result = getMultiOptionSharesOut(pools, optionIndex, netAmount);
+      const result = getMultiOptionSharesOut(netAmount, optionIndex, pools);
       sharesOut = result.shares;
       newOptionPools = result.newPools;
     } else {
@@ -128,10 +128,12 @@ export async function POST(req: NextRequest) {
         return apiError("side must be YES or NO for binary markets");
       }
       const isYes = side.toUpperCase() === "YES";
-      const result = getSharesOut(market.yesPool, market.noPool, isYes, netAmount);
+      const result = isYes
+        ? getSharesOut(netAmount, market.noPool, market.yesPool)
+        : getSharesOut(netAmount, market.yesPool, market.noPool);
       sharesOut = result.shares;
-      newYesPool = result.newYesPool;
-      newNoPool = result.newNoPool;
+      newYesPool = isYes ? result.newPoolOut : result.newPoolIn;
+      newNoPool = isYes ? result.newPoolIn : result.newPoolOut;
     }
 
     // Execute trade in transaction
@@ -142,7 +144,7 @@ export async function POST(req: NextRequest) {
         data: {
           yesPool: newYesPool,
           noPool: newNoPool,
-          optionPools: newOptionPools,
+          optionPools: newOptionPools ?? undefined,
           totalVolume: { increment: amountTzs },
         },
       });

@@ -840,7 +840,7 @@ export default function HomePage() {
                 <span className="text-[var(--accent)]">Into Your App</span>
               </h2>
               <p className="text-[var(--muted)] mb-6 leading-relaxed">
-                Banks, mobile money apps, and fintech platforms can integrate Betua's prediction markets via our REST API. Enable your users to trade on real-world events.
+                Banks, mobile money apps, and fintech platforms can integrate GUAP's prediction markets via our REST API. Enable your users to trade on real-world events.
               </p>
               <div className="space-y-3 mb-6">
                 {[
@@ -856,7 +856,7 @@ export default function HomePage() {
               </div>
               <Link
                 href="/developers"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--accent)] text-white font-mono font-bold hover:bg-[var(--accent)]/90 transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 border-2 border-[var(--accent)] text-[var(--accent)] font-mono font-bold hover:bg-[var(--accent)] hover:text-[var(--background)] transition-colors"
               >
                 View API Docs
                 <ArrowRight size={16} weight="bold" />
