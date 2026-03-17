@@ -15,6 +15,9 @@
 
 export function getPrice(yesPool: number, noPool: number): { yes: number; no: number } {
   const total = yesPool + noPool;
+  if (total === 0) {
+    return { yes: 0.5, no: 0.5 }; // Default to 50/50 if no liquidity
+  }
   return {
     yes: noPool / total,
     no: yesPool / total,
