@@ -4,6 +4,14 @@ import { prisma } from "@/lib/prisma";
 import { ntzs } from "@/lib/ntzs";
 import { getPrice } from "@/lib/amm";
 import { sendWhatsAppMessage, sendWhatsAppList } from "@/lib/whatsapp";
+import {
+  getCachedUser,
+  setCachedUser,
+  invalidateUserCache,
+  getCachedBalance,
+  setCachedBalance,
+  invalidateBalanceCache,
+} from "@/lib/whatsapp-cache";
 
 // User session state (in production, use Redis)
 const userSessions: Map<string, { step: string; data: Record<string, unknown> }> = new Map();
@@ -57,7 +65,7 @@ async function sendWelcome(phone: string): Promise<void> {
   const user = await findUserByPhone(phone);
   
   if (user) {
-    const balance = await getUserBalance(user.id);
+    const balance = await getUserBalance(user.id, phone);
     await sendWhatsAppMessage(phone,
       `🎯 *Karibu GUAP!*\n\n` +
       `Salio lako: *${formatTZS(balance)} TZS*\n\n` +
@@ -182,6 +190,9 @@ async function completeRegistration(
       },
     });
 
+    // Invalidate cache for new user
+    invalidateUserCache(phone);
+    
     userSessions.delete(phone);
     await sendWhatsAppMessage(phone,
       `✅ *Umefanikiwa kujiandikisha!*\n\n` +
@@ -252,6 +263,9 @@ async function processDeposit(phone: string, amount: number): Promise<void> {
       phone: phone,
     });
 
+    // Invalidate balance cache since deposit initiated
+    invalidateBalanceCache(phone);
+    
     userSessions.delete(phone);
     await sendWhatsAppMessage(phone,
       `✅ *Ombi la Kuweka Pesa*\n\n` +
@@ -318,6 +332,9 @@ async function processWithdraw(phone: string, amount: number): Promise<void> {
       phone: phone,
     });
 
+    // Invalidate balance cache since withdrawal initiated
+    invalidateBalanceCache(phone);
+    
     userSessions.delete(phone);
     await sendWhatsAppMessage(phone,
       `✅ *Pesa Imetumwa!*\n\n` +
@@ -581,15 +598,46 @@ async function sendHelp(phone: string): Promise<void> {
   );
 }
 
-// Helper: Find user by phone
+// Helper: Find user by phone (with caching)
 async function findUserByPhone(phone: string) {
-  return prisma.user.findFirst({
+  // Check cache first
+  const cached = getCachedUser(phone);
+  if (cached) {
+    return cached;
+  }
+
+  // Query database
+  const user = await prisma.user.findFirst({
     where: { phone },
+    select: {
+      id: true,
+      phone: true,
+      ntzsUserId: true,
+      username: true,
+    },
   });
+
+  // Cache result (only if phone is not null)
+  if (user && user.phone) {
+    setCachedUser(user.phone, {
+      id: user.id,
+      phone: user.phone,
+      ntzsUserId: user.ntzsUserId,
+      username: user.username,
+    });
+  }
+
+  return user;
 }
 
-// Helper: Get user balance
-async function getUserBalance(userId: string): Promise<number> {
+// Helper: Get user balance (with caching)
+async function getUserBalance(userId: string, phone?: string): Promise<number> {
+  // Check cache first if phone provided
+  if (phone) {
+    const cached = getCachedBalance(phone);
+    if (cached !== null) return cached;
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { ntzsUserId: true },
@@ -599,7 +647,14 @@ async function getUserBalance(userId: string): Promise<number> {
 
   try {
     const ntzUser = await ntzs.users.get(user.ntzsUserId);
-    return ntzUser.balanceTzs || 0;
+    const balance = ntzUser.balanceTzs || 0;
+    
+    // Cache the balance
+    if (phone) {
+      setCachedBalance(phone, balance);
+    }
+    
+    return balance;
   } catch {
     return 0;
   }
