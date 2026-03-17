@@ -487,7 +487,7 @@ export default function DevelopersPage() {
               </div>
 
               <p className="text-xs text-[var(--muted)] mt-4 text-center">
-                Partners keep 100% of their own fees (if any). Platform fees are non-negotiable.
+                Partners keep 100% of their own fees (if any). 
               </p>
             </div>
           </div>
