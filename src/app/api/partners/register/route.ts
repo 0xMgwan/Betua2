@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
         rateLimit: 100,
         isActive: true,
         isApproved: false, // Requires admin approval
-        metadata: companyDescription ? { description: companyDescription } : null,
+        metadata: companyDescription ? { description: companyDescription } : undefined,
       },
     });
 
