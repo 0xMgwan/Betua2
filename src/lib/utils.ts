@@ -94,7 +94,7 @@ export const CATEGORIES = [
   "Entertainment",
   "Technology",
   "Science",
-  "Crypto",
+  "FX & Commodities",
   "Weather",
   "Other",
 ];

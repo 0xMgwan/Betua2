@@ -172,10 +172,11 @@ export function evaluateResolution(
 }
 
 /**
- * Well-known Pyth price feed IDs for common crypto assets
+ * Well-known Pyth price feed IDs for crypto, FX, and commodities
  * Source: https://pyth.network/developers/price-feed-ids
  */
 export const PYTH_FEED_IDS: Record<string, string> = {
+  // Crypto
   BTC:  "0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43",
   ETH:  "0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace",
   SOL:  "0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d",
@@ -186,9 +187,22 @@ export const PYTH_FEED_IDS: Record<string, string> = {
   DOT:  "0xca3eed9b267293f6595901c734c7525ce8ef49adafe8284606ceb307afa2ca5b",
   LINK: "0x8ac0c70fff57e9aefdf5edf44b51d62c2d433653cbb2cf5cc06bb115af04d221",
   UNI:  "0x78d185a741d07edb3412b09008b7c5cfb9bbbd7d568bf00ba737b456ba171501",
+  // FX Pairs
+  "EUR/USD": "0xa995d00bb36a63cef7fd2c287dc105fc8f3d93779f062f09551b0af3e81ec30b",
+  "GBP/USD": "0x84c2dde9633d93d1bcad84e7dc41c9d56578b7ec52fabedc1f335d673df0a7c1",
+  "USD/JPY": "0xef2c98c804ba503c6a707e38be4dfbb16683775f195b091252bf24693042fd52",
+  "AUD/USD": "0x67a6f93030420c1c9e3fe37c1ab6b77966af82f995944a9fefce357a22854a80",
+  "USD/CHF": "0x0b1e3297e69f162877b577b0d6a47a0d63b2392bc8499e6540da4187a63e28f8",
+  "USD/CAD": "0x3112b03a41c910ed446852aacf67118cb1bec67b2cd0b9a214c58cc0eaa2ecca",
+  "NZD/USD": "0x92eea8ba1b00078cdc2ef6f64f091f262e8c7d0576ee4677571c4a8e8e0d5d11",
+  // Metals / Commodities
+  "XAU/USD": "0x765d2ba906dbc32ca17cc11f5310a89e9ee1f6420508c63861f2f8ba4ee34bb2",
+  "XAG/USD": "0xf2fb02c32b055c805e7238d628e5e9dadef274376114eb1f012337cabe93871e",
+  "XPT/USD": "0x398e4bbc7cbf89d6648c21e08019d878967677753b3096799595c78f805a34e5",
+  "XCU/USD": "0x636bedafa14a37912993f265eda22431a2be363ad41a10276424bbe1b7f508c4",
 };
 
-/** Popular crypto symbols for the market creation UI */
+/** Crypto symbols for the market creation UI */
 export const CRYPTO_SYMBOLS = [
   { symbol: "BTC",   label: "Bitcoin (BTC)",   emoji: "₿" },
   { symbol: "ETH",   label: "Ethereum (ETH)",  emoji: "Ξ" },
@@ -198,4 +212,30 @@ export const CRYPTO_SYMBOLS = [
   { symbol: "MATIC", label: "Polygon (MATIC)", emoji: "🟣" },
   { symbol: "ADA",   label: "Cardano (ADA)",   emoji: "🔵" },
   { symbol: "LINK",  label: "Chainlink (LINK)", emoji: "⛓️" },
+];
+
+/** FX pairs for the market creation UI */
+export const FX_SYMBOLS = [
+  { symbol: "EUR/USD", label: "EUR/USD", emoji: "💶" },
+  { symbol: "GBP/USD", label: "GBP/USD", emoji: "💷" },
+  { symbol: "USD/JPY", label: "USD/JPY", emoji: "💴" },
+  { symbol: "AUD/USD", label: "AUD/USD", emoji: "🇦🇺" },
+  { symbol: "USD/CHF", label: "USD/CHF", emoji: "🇨🇭" },
+  { symbol: "USD/CAD", label: "USD/CAD", emoji: "🇨🇦" },
+  { symbol: "NZD/USD", label: "NZD/USD", emoji: "🇳🇿" },
+];
+
+/** Commodities for the market creation UI */
+export const COMMODITY_SYMBOLS = [
+  { symbol: "XAU/USD", label: "Gold (XAU)", emoji: "🥇" },
+  { symbol: "XAG/USD", label: "Silver (XAG)", emoji: "🥈" },
+  { symbol: "XPT/USD", label: "Platinum (XPT)", emoji: "⚪" },
+  { symbol: "XCU/USD", label: "Copper (XCU)", emoji: "🟤" },
+];
+
+/** All Pyth symbols combined for the market creation UI */
+export const ALL_PYTH_SYMBOLS = [
+  ...FX_SYMBOLS,
+  ...COMMODITY_SYMBOLS,
+  ...CRYPTO_SYMBOLS,
 ];

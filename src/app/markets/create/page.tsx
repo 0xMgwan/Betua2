@@ -15,7 +15,7 @@ import {
   Flask, CloudSun, Crosshair, Terminal, Lightning,
   CheckSquare, ListBullets, TextT, AlignLeft, Eye, Globe,
 } from "@phosphor-icons/react";
-import { CRYPTO_SYMBOLS } from "@/lib/pyth";
+import { ALL_PYTH_SYMBOLS } from "@/lib/pyth";
 import { TerminalDatePicker } from "@/components/TerminalDatePicker";
 
 const CREATION_FEE_TZS = 2000;
@@ -54,9 +54,9 @@ export default function CreateMarketPage() {
     setCustomOptions(updated);
   }
 
-  // Pyth-specific state (only for Crypto markets)
+  // Pyth-specific state (only for FX & Commodities markets)
   const [pythConfig, setPythConfig] = useState({
-    symbol: "BTC",
+    symbol: "EUR/USD",
     targetPrice: "",
     operator: "above" as "above" | "below",
   });
@@ -111,8 +111,8 @@ export default function CreateMarketPage() {
     const resolveDate = new Date(form.resolvesAt);
     if (resolveDate <= new Date()) return setError("Resolution date must be in the future");
 
-    if (form.category === "Crypto" && !pythConfig.targetPrice) {
-      return setError("Set a target price for crypto market auto-resolution");
+    if (form.category === "FX & Commodities" && !pythConfig.targetPrice) {
+      return setError("Set a target price for FX & Commodities market auto-resolution");
     }
 
     setLoading(true);
@@ -143,8 +143,8 @@ export default function CreateMarketPage() {
         body.options = validOptions;
       }
 
-      // Add Pyth data for Crypto markets
-      if (form.category === "Crypto" && pythConfig.targetPrice) {
+      // Add Pyth data for FX & Commodities markets
+      if (form.category === "FX & Commodities" && pythConfig.targetPrice) {
         body.pythSymbol = pythConfig.symbol;
         body.pythTargetPrice = parseFloat(pythConfig.targetPrice);
         body.pythOperator = pythConfig.operator;
@@ -169,7 +169,7 @@ export default function CreateMarketPage() {
     }
   }
 
-  const isCrypto = form.category === "Crypto";
+  const isFxCommodities = form.category === "FX & Commodities";
 
   // Category config with Phosphor icons and terminal colors
   const catConfig: Record<string, { icon: React.ReactNode; color: string; border: string; activeBg: string }> = {
@@ -177,7 +177,7 @@ export default function CreateMarketPage() {
     Geopolitics: { icon: <Globe size={16} weight="fill" />, color: "text-indigo-400", border: "border-indigo-500/40", activeBg: "bg-indigo-500/80" },
     Sports: { icon: <SoccerBall size={16} weight="fill" />, color: "text-[#00e5a0]", border: "border-[#00e5a0]/40", activeBg: "bg-[#00e5a0]" },
     Entertainment: { icon: <FilmSlate size={16} weight="fill" />, color: "text-pink-400", border: "border-pink-500/40", activeBg: "bg-pink-500/80" },
-    Crypto: { icon: <CurrencyBtc size={16} weight="fill" />, color: "text-orange-400", border: "border-orange-500/40", activeBg: "bg-orange-500/80" },
+    "FX & Commodities": { icon: <ChartLine size={16} weight="fill" />, color: "text-orange-400", border: "border-orange-500/40", activeBg: "bg-orange-500/80" },
     Business: { icon: <Briefcase size={16} weight="fill" />, color: "text-[#00b4d8]", border: "border-[#00b4d8]/40", activeBg: "bg-[#00b4d8]" },
     Science: { icon: <Flask size={16} weight="fill" />, color: "text-teal-400", border: "border-teal-500/40", activeBg: "bg-teal-500/80" },
     Weather: { icon: <CloudSun size={16} weight="fill" />, color: "text-sky-400", border: "border-sky-500/40", activeBg: "bg-sky-500/80" },
@@ -451,7 +451,7 @@ export default function CreateMarketPage() {
                 )}
 
                 {/* Pyth integration */}
-                {isCrypto && (
+                {isFxCommodities && (
                   <motion.div
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -471,10 +471,15 @@ export default function CreateMarketPage() {
                         <select
                           value={pythConfig.symbol}
                           onChange={(e) => setPythConfig({ ...pythConfig, symbol: e.target.value })}
-                          className="w-full px-2 py-2 bg-[var(--background)] border border-orange-500/20 text-sm font-mono focus:outline-none focus:border-orange-500/50 transition-colors"
+                          className="w-full px-2 py-2 bg-[#0a0a0a] border border-orange-500/20 text-sm font-mono text-orange-400 focus:outline-none focus:border-orange-500/50 transition-colors cursor-pointer appearance-none"
+                          style={{ 
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23f97316' d='M2 4l4 4 4-4'/%3E%3C/svg%3E")`,
+                            backgroundRepeat: 'no-repeat',
+                            backgroundPosition: 'right 8px center'
+                          }}
                         >
-                          {CRYPTO_SYMBOLS.map((s) => (
-                            <option key={s.symbol} value={s.symbol}>{s.label}</option>
+                          {ALL_PYTH_SYMBOLS.map((s) => (
+                            <option key={s.symbol} value={s.symbol} className="bg-[#0a0a0a] text-orange-400 py-2">{s.emoji} {s.label}</option>
                           ))}
                         </select>
                       </div>
@@ -495,10 +500,15 @@ export default function CreateMarketPage() {
                         <select
                           value={pythConfig.operator}
                           onChange={(e) => setPythConfig({ ...pythConfig, operator: e.target.value as "above" | "below" })}
-                          className="w-full px-2 py-2 bg-[var(--background)] border border-orange-500/20 text-sm font-mono focus:outline-none focus:border-orange-500/50 transition-colors"
+                          className="w-full px-2 py-2 bg-[#0a0a0a] border border-orange-500/20 text-sm font-mono text-orange-400 focus:outline-none focus:border-orange-500/50 transition-colors cursor-pointer appearance-none"
+                          style={{ 
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23f97316' d='M2 4l4 4 4-4'/%3E%3C/svg%3E")`,
+                            backgroundRepeat: 'no-repeat',
+                            backgroundPosition: 'right 8px center'
+                          }}
                         >
-                          <option value="above">Above / ≥</option>
-                          <option value="below">Below / ≤</option>
+                          <option value="above" className="bg-[#0a0a0a] text-orange-400">Above / ≥</option>
+                          <option value="below" className="bg-[#0a0a0a] text-orange-400">Below / ≤</option>
                         </select>
                       </div>
                     </div>
@@ -524,20 +534,20 @@ export default function CreateMarketPage() {
                   <label className="flex items-center gap-2 text-xs font-mono text-[var(--accent)] mb-2 uppercase tracking-wider">
                     <TextT size={12} weight="bold" />
                     {t.markets.createMarket.question}
-                    {isCrypto && <span className="text-[var(--muted)] normal-case">(auto for crypto)</span>}
+                    {isFxCommodities && <span className="text-[var(--muted)] normal-case">(auto-generated)</span>}
                   </label>
                   <textarea
                     value={form.title}
                     onChange={(e) => setForm({ ...form, title: e.target.value })}
                     className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--card-border)] text-sm font-mono focus:outline-none focus:border-[var(--accent)]/50 focus:shadow-[0_0_15px_rgba(0,229,160,0.05)] transition-all resize-none placeholder:text-[var(--muted)]/50"
                     placeholder={
-                      isCrypto
-                        ? "Will BTC reach $100,000 by end of 2025?"
+                      isFxCommodities
+                        ? "Will EUR/USD reach 1.15 by end of 2025?"
                         : "Will CCM win the 2025 Tanzanian general election?"
                     }
                     rows={2}
                     maxLength={200}
-                    required={!isCrypto}
+                    required={!isFxCommodities}
                   />
                   <p className={cn("text-[10px] font-mono mt-1 text-right", form.title.length > 180 ? "text-red-400" : "text-[var(--muted)]")}>
                     {form.title.length}/200
@@ -679,7 +689,7 @@ export default function CreateMarketPage() {
                 <div className="h-px bg-gradient-to-r from-transparent via-[var(--accent)]/30 to-transparent" />
 
                 {/* ── LIVE PREVIEW ── */}
-                {(form.title || (isCrypto && pythConfig.targetPrice)) && (
+                {(form.title || (isFxCommodities && pythConfig.targetPrice)) && (
                   <motion.div
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -697,13 +707,13 @@ export default function CreateMarketPage() {
                         <span className={cn("text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 border", catConfig[form.category]?.color || "text-[var(--muted)]", catConfig[form.category]?.border || "border-[var(--card-border)]")}>
                           [{form.category}]
                         </span>
-                        {isCrypto && (
+                        {isFxCommodities && (
                           <span className="text-[10px] font-mono text-orange-400 border border-orange-500/30 px-1.5 py-0.5">PYTH</span>
                         )}
                       </div>
                       <p className="font-bold text-sm mb-3">
                         {form.title ||
-                          (isCrypto && pythConfig.targetPrice
+                          (isFxCommodities && pythConfig.targetPrice
                             ? `Will ${pythConfig.symbol} be ${pythConfig.operator === "above" ? "≥" : "≤"} $${parseFloat(pythConfig.targetPrice).toLocaleString()} USD by resolution?`
                             : "")}
                       </p>
