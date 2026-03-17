@@ -19,12 +19,21 @@ const translations = {
       p2: "Each market has two shares: YES and NO. The share price reflects the probability of an event happening.",
       p3: "When the market ends, winning shares become TZS 1.00 each, losing shares become TZS 0.00.",
     },
+    sharesVsOdds: {
+      title: "Shares vs Traditional Betting",
+      items: [
+        { title: "Trade Anytime", desc: "Buy and sell shares before the event ends. Lock in profits or cut losses early." },
+        { title: "Fair Pricing", desc: "Prices reflect real probabilities, not bookmaker margins. The market sets the price." },
+        { title: "No House Edge", desc: "Trade peer-to-peer. No bookmaker taking a cut from every bet." },
+        { title: "Transparent Odds", desc: "See exactly what everyone thinks. Price = probability. TZS 0.70 = 70% chance." },
+      ],
+    },
     features: {
       title: "Why GUAP?",
       items: [
         { title: "Safe & Transparent", desc: "All transactions on nTZS blockchain." },
         { title: "Lightning Fast", desc: "Deposit and withdraw via M-Pesa in seconds." },
-        { title: "Built for Tanzanians", desc: "Swahili, TZS, and M-Pesa." },
+        { title: "Built for Africans", desc: "Swahili, TZS, and M-Pesa." },
         { title: "Big Community", desc: "Join thousands of predictors." },
         { title: "Many Markets", desc: "Sports, politics, entertainment, economy." },
         { title: "Big Profits", desc: "Buy low, sell high." },
@@ -52,12 +61,21 @@ const translations = {
       p2: "Kila soko lina hisa mbili: YES na NO. Bei ya hisa inaonyesha uwezekano wa tukio kutokea.",
       p3: "Soko linapoisha, hisa zinazoshinda zinakuwa TZS 1.00, zinazoshindwa zinakuwa TZS 0.00.",
     },
+    sharesVsOdds: {
+      title: "Hisa vs Kamari ya Kawaida",
+      items: [
+        { title: "Biashara Wakati Wowote", desc: "Nunua na uza hisa kabla tukio halijamalizika. Funga faida au punguza hasara mapema." },
+        { title: "Bei ya Haki", desc: "Bei zinaonyesha uwezekano halisi, si faida ya kampuni. Soko linaweka bei." },
+        { title: "Hakuna Faida ya Nyumba", desc: "Biashara moja kwa moja na wengine. Hakuna kampuni inayochukua sehemu ya kila dau." },
+        { title: "Uwezekano Wazi", desc: "Ona kile kila mtu anafikiri. Bei = uwezekano. TZS 0.70 = nafasi 70%." },
+      ],
+    },
     features: {
       title: "Kwa Nini GUAP?",
       items: [
         { title: "Salama na Wazi", desc: "Miamala yote kwenye blockchain ya nTZS." },
         { title: "Haraka Sana", desc: "Weka na toa pesa kupitia M-Pesa." },
-        { title: "Kwa Watanzania", desc: "Kiswahili, TZS, na M-Pesa." },
+        { title: "Kwa Waafrika", desc: "Kiswahili, TZS, na M-Pesa." },
         { title: "Jamii Kubwa", desc: "Jiunge na maelfu ya watabiri." },
         { title: "Masoko Mengi", desc: "Michezo, siasa, burudani, uchumi." },
         { title: "Faida Kubwa", desc: "Nunua chini, uza juu." },
@@ -128,6 +146,32 @@ export default function AboutPage() {
         </motion.div>
       </section>
 
+      {/* Shares vs Odds */}
+      <section className="py-20 px-4 bg-[var(--card)]/30 border-t border-[var(--card-border)]">
+        <motion.div initial="hidden" whileInView="show" viewport={{ once: true }} variants={stagger} className="max-w-6xl mx-auto">
+          <motion.div variants={fadeUp} className="flex items-center gap-3 mb-12 justify-center">
+            <div className="w-8 h-px bg-[var(--foreground)]" />
+            <h2 className="text-3xl font-black font-mono">{t.sharesVsOdds.title}</h2>
+            <div className="w-8 h-px bg-[var(--foreground)]" />
+          </motion.div>
+          <div className="grid md:grid-cols-2 gap-6">
+            {t.sharesVsOdds.items.map((item, i) => (
+              <motion.div key={item.title} variants={fadeUp} className="bg-[var(--card)] border-2 border-[var(--card-border)] p-6 hover:border-[var(--gold)] transition-all">
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 border-2 border-[var(--gold)] flex items-center justify-center font-mono font-black text-sm text-[var(--gold)] flex-shrink-0">
+                    {String(i + 1).padStart(2, "0")}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black font-mono mb-2">{item.title}</h3>
+                    <p className="text-sm text-[var(--muted)] font-mono">{item.desc}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      </section>
+
       {/* Features */}
       <section className="py-20 px-4 bg-[var(--card)]/30 border-t border-[var(--card-border)]">
         <motion.div initial="hidden" whileInView="show" viewport={{ once: true }} variants={stagger} className="max-w-6xl mx-auto">
@@ -176,29 +220,25 @@ export default function AboutPage() {
         </motion.div>
       </section>
 
-      {/* nTZS */}
-      <section className="py-20 px-4 bg-[var(--card)]/30 border-t border-[var(--card-border)]">
-        <motion.div initial="hidden" whileInView="show" viewport={{ once: true }} variants={stagger} className="max-w-4xl mx-auto text-center">
-          <motion.h2 variants={fadeUp} className="text-3xl font-black font-mono mb-8">{t.ntzs.title}</motion.h2>
-          <motion.a variants={fadeUp} href="https://www.ntzs.co.tz/" target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-[var(--gold)] text-black font-mono font-bold px-6 py-3 hover:opacity-90 transition-opacity">
-            {t.ntzs.cta} <ArrowRight size={16} />
-          </motion.a>
-        </motion.div>
-      </section>
-
-      {/* CTA */}
+      {/* CTA + nTZS */}
       <section className="py-24 px-4 border-t border-[var(--card-border)]">
         <motion.div initial="hidden" whileInView="show" viewport={{ once: true }} variants={stagger} className="max-w-4xl mx-auto text-center">
           <motion.h2 variants={fadeUp} className="text-4xl md:text-5xl font-black font-mono mb-6">{t.cta.title}</motion.h2>
           <motion.p variants={fadeUp} className="text-xl text-[var(--muted)] font-mono mb-10">{t.cta.desc}</motion.p>
-          <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4 justify-center">
+          <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <Link href="/auth/register" className="bg-[var(--gold)] text-black font-mono font-bold px-8 py-4 hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
               {t.cta.register} <ArrowRight size={16} />
             </Link>
             <Link href="/markets" className="border-2 border-[var(--foreground)] font-mono font-bold px-8 py-4 hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all">
               {t.cta.browse}
             </Link>
+          </motion.div>
+          <motion.div variants={fadeUp} className="pt-8 border-t border-[var(--card-border)]">
+            <p className="text-sm text-[var(--muted)] font-mono mb-4">{t.ntzs.title}</p>
+            <a href="https://www.ntzs.co.tz/" target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-[var(--gold)] font-mono font-bold hover:opacity-80 transition-opacity">
+              {t.ntzs.cta} <ArrowRight size={14} />
+            </a>
           </motion.div>
         </motion.div>
       </section>
