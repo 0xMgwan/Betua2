@@ -6,43 +6,7 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  
-  // Fetch market data from API instead of using Prisma directly
-  let market: { title: string; category: string; yesPrice: number; noPrice: number } | null = null;
-  
-  try {
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : "https://www.guap.gold";
-    const res = await fetch(`${baseUrl}/api/markets/${id}`, { 
-      cache: "no-store",
-      headers: { "Content-Type": "application/json" }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      market = {
-        title: data.title || "GUAP Market",
-        category: data.category || "PREDICTION",
-        yesPrice: Math.round((data.yesPrice || 0.5) * 100),
-        noPrice: Math.round((data.noPrice || 0.5) * 100),
-      };
-    }
-  } catch {
-    // Fallback to default values
-  }
-
-  if (!market) {
-    market = {
-      title: "GUAP Prediction Market",
-      category: "PREDICTION",
-      yesPrice: 50,
-      noPrice: 50,
-    };
-  }
-
-  const { title, category, yesPrice, noPrice } = market;
-
+  // Static OG image without database calls for reliability
   return new ImageResponse(
     (
       <div
@@ -90,7 +54,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
               textTransform: "uppercase",
             }}
           >
-            {category}
+            PREDICTION
           </div>
         </div>
 
@@ -105,7 +69,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             display: "flex",
           }}
         >
-          {title}
+          GUAP Prediction Market
         </div>
 
         {/* Prices */}
@@ -136,7 +100,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
                 color: "#00e5a0",
               }}
             >
-              {yesPrice}%
+              50%
             </div>
           </div>
           <div
@@ -165,7 +129,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
                 color: "#ef4444",
               }}
             >
-              {noPrice}%
+              50%
             </div>
           </div>
         </div>
