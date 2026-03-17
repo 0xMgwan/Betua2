@@ -517,10 +517,10 @@ export default function DevelopersPage() {
           <div className="p-6 bg-[var(--accent)]/5 border border-[var(--accent)]/30 text-center">
             <h2 className="text-lg font-bold mb-2">Ready to Integrate?</h2>
             <p className="text-sm text-[var(--muted)] mb-4">
-              Contact us to register as a partner and get your API credentials.
+              Register for a partner account to get your API credentials instantly.
             </p>
             <a
-              href="mailto:machuche@nedapay.xyz"
+              href="/partners"
               className="inline-flex items-center gap-2 px-6 py-2 border-2 border-[var(--accent)] text-[var(--accent)] font-mono text-sm font-bold hover:bg-[var(--accent)] hover:text-[var(--background)] transition-colors"
             >
               <Key size={16} />

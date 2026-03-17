@@ -60,10 +60,11 @@ export async function validateApiKey(req: NextRequest): Promise<PartnerContext |
       tier: true,
       rateLimit: true,
       isActive: true,
+      isApproved: true,
     },
   });
 
-  if (!partner || !partner.isActive) {
+  if (!partner || !partner.isActive || !partner.isApproved) {
     return null;
   }
 

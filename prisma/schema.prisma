@@ -166,13 +166,16 @@ model Partner {
   id            String   @id @default(cuid())
   name          String                          // e.g., "CRDB Bank", "M-Pesa"
   email         String   @unique
+  passwordHash  String?                         // For dashboard login
   apiKey        String   @unique                // Hashed API key
   apiKeyPrefix  String                          // First 8 chars for display (e.g., "gp_live_")
+  rawApiKey     String?                         // Stored once on creation, shown only once
   webhookUrl    String?                         // URL to send events
   webhookSecret String?                         // Secret for webhook signatures
   tier          String   @default("FREE")       // FREE, BASIC, PRO, ENTERPRISE
   rateLimit     Int      @default(100)          // Requests per minute
   isActive      Boolean  @default(true)
+  isApproved    Boolean  @default(false)        // Admin must approve before API works
   metadata      Json?                           // Additional partner info
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
