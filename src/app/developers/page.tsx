@@ -223,7 +223,7 @@ export default function DevelopersPage() {
                   Create or get a user using your own external ID (e.g., phone number).
                 </p>
                 <CodeBlock
-                  code={`curl -X POST https://guap.co.tz/api/v1/users \\
+                  code={`curl -X POST https://www.guap.gold/api/v1/users \\
   -H "Authorization: Bearer gp_live_xxx" \\
   -H "Content-Type: application/json" \\
   -d '{"externalId": "255712345678"}'`}
@@ -236,7 +236,7 @@ export default function DevelopersPage() {
                   Let your users trade on prediction markets.
                 </p>
                 <CodeBlock
-                  code={`curl -X POST https://guap.co.tz/api/v1/trades \\
+                  code={`curl -X POST https://www.guap.gold/api/v1/trades \\
   -H "Authorization: Bearer gp_live_xxx" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -520,7 +520,7 @@ export default function DevelopersPage() {
               Contact us to register as a partner and get your API credentials.
             </p>
             <a
-              href="mailto:api@guap.co.tz"
+              href="mailto:api@guap.gold"
               className="inline-flex items-center gap-2 px-6 py-2 border-2 border-[var(--accent)] text-[var(--accent)] font-mono text-sm font-bold hover:bg-[var(--accent)] hover:text-[var(--background)] transition-colors"
             >
               <Key size={16} />

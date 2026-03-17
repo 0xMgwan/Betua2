@@ -4,8 +4,8 @@
 
 **Tanzania's first prediction market platform.** Trade on real-world events and earn from your knowledge.
 
-[![Live](https://img.shields.io/badge/status-live-success)](https://guap.gold)
-[![API](https://img.shields.io/badge/API-v1.0-blue)](https://guap.gold/developers)
+[![Live](https://img.shields.io/badge/status-live-success)](https://www.guap.gold)
+[![API](https://img.shields.io/badge/API-v1.0-blue)](https://www.guap.gold/developers)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ---
@@ -139,13 +139,13 @@ GUAP provides a **REST API** for third-party integrations. Banks, mobile money a
 
 ```bash
 # 1. Create user
-curl -X POST https://guap.gold/api/v1/users \
+curl -X POST https://www.guap.gold/api/v1/users \
   -H "Authorization: Bearer gp_live_xxx" \
   -H "Content-Type: application/json" \
   -d '{"externalId": "255712345678"}'
 
 # 2. Place trade
-curl -X POST https://guap.gold/api/v1/trades \
+curl -X POST https://www.guap.gold/api/v1/trades \
   -H "Authorization: Bearer gp_live_xxx" \
   -H "Content-Type: application/json" \
   -d '{
@@ -156,11 +156,11 @@ curl -X POST https://guap.gold/api/v1/trades \
   }'
 
 # 3. Get positions
-curl https://guap.gold/api/v1/positions?externalId=255712345678 \
+curl https://www.guap.gold/api/v1/positions?externalId=255712345678 \
   -H "Authorization: Bearer gp_live_xxx"
 
 # 4. Redeem winnings
-curl -X POST https://guap.gold/api/v1/positions/abc123/redeem \
+curl -X POST https://www.guap.gold/api/v1/positions/abc123/redeem \
   -H "Authorization: Bearer gp_live_xxx" \
   -d '{"externalId": "255712345678"}'
 ```
@@ -178,7 +178,7 @@ curl -X POST https://guap.gold/api/v1/positions/abc123/redeem \
 | `/api/v1/positions` | GET | User portfolio |
 | `/api/v1/positions/:id/redeem` | POST | Redeem winnings |
 
-**Full documentation**: [guap.co.tz/developers](https://guap.gold/developers)
+**Full documentation**: [www.guap.gold/developers](https://www.guap.gold/developers)
 
 ### Rate Limits
 
@@ -332,8 +332,8 @@ We welcome contributions! Please:
 
 ## 📞 Contact
 
-- **Website**: [guap.co.tz](https://guap.gold)
-- **API Docs**: [guap.co.tz/developers](https://guap.gold/developers)
+- **Website**: [www.guap.gold](https://www.guap.gold)
+- **API Docs**: [www.guap.gold/developers](https://www.guap.gold/developers)
 - **Twitter**: [@shindaguap](https://x.com/shindaguap)
 - **WhatsApp**: [Join Community](https://chat.whatsapp.com/CfFU1jLmjDO8QLrH31Sv0C)
 - **Email**: api@guap.gold

@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
     // Create nTZS wallet for user
     let ntzsUserId: string | null = null;
     try {
-      const ntzsUser = await ntzs.users.createOrGet({
+      const ntzsUser = await ntzs.users.create({
         externalId: newUser.id,
         email: finalEmail,
       });
