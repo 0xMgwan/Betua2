@@ -856,7 +856,7 @@ export default function HomePage() {
               </div>
               <Link
                 href="/developers"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--accent)] text-black font-mono font-bold hover:bg-[var(--accent)]/90 transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--accent)] text-white font-mono font-bold hover:bg-[var(--accent)]/90 transition-colors"
               >
                 View API Docs
                 <ArrowRight size={16} weight="bold" />

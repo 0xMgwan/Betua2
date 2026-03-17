@@ -522,7 +522,7 @@ export default function DevelopersPage() {
             </p>
             <a
               href="mailto:api@betua.co.tz"
-              className="inline-flex items-center gap-2 px-6 py-2 bg-[var(--accent)] text-black font-mono text-sm font-bold hover:bg-[var(--accent)]/90 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-2 bg-[var(--accent)] text-white font-mono text-sm font-bold hover:bg-[var(--accent)]/90 transition-colors"
             >
               <Key size={16} />
               Request API Access
