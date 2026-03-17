@@ -10,7 +10,7 @@ import {
   CaretRight, CheckCircle, Star, UsersThree, CurrencyDollar,
   Handshake, TrendUp, MagnifyingGlass, Trophy,
   Sparkle, Phone, ArrowDownLeft, XLogo, InstagramLogo,
-  UserPlus, Wallet, Crosshair, WhatsappLogo,
+  UserPlus, Wallet, Crosshair, WhatsappLogo, Terminal,
 } from "@phosphor-icons/react";
 import HeroAscii from "@/components/ui/hero-ascii";
 import { GlitchText } from "@/components/ui/glitch-text";
@@ -820,6 +820,85 @@ export default function HomePage() {
       </section>
 
       {/* ══════════════════════════════════════════════
+          API INTEGRATION SECTION
+          ══════════════════════════════════════════════ */}
+      <section className="max-w-7xl mx-auto px-4 py-20">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="bg-[var(--card)] border border-[var(--card-border)] p-8 md:p-12"
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-[var(--accent)]/10 border border-[var(--accent)]/20 text-[var(--accent)] text-xs font-mono font-bold mb-4 uppercase">
+                <Terminal size={14} />
+                For Developers
+              </div>
+              <h2 className="text-3xl font-black mb-4 font-mono">
+                Integrate Prediction Markets<br />
+                <span className="text-[var(--accent)]">Into Your App</span>
+              </h2>
+              <p className="text-[var(--muted)] mb-6 leading-relaxed">
+                Banks, mobile money apps, and fintech platforms can integrate Betua's prediction markets via our REST API. Enable your users to trade on real-world events.
+              </p>
+              <div className="space-y-3 mb-6">
+                {[
+                  { icon: <ShieldCheck size={16} />, text: "API Key Authentication" },
+                  { icon: <Lightning size={16} />, text: "Rate Limited Tiers" },
+                  { icon: <CurrencyDollar size={16} />, text: "Keep 100% Trading Fees" },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm">
+                    <span className="text-[var(--accent)]">{item.icon}</span>
+                    <span>{item.text}</span>
+                  </div>
+                ))}
+              </div>
+              <Link
+                href="/developers"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--accent)] text-black font-mono font-bold hover:bg-[var(--accent)]/90 transition-colors"
+              >
+                View API Docs
+                <ArrowRight size={16} weight="bold" />
+              </Link>
+            </div>
+
+            <div className="relative">
+              <div className="bg-[#0a0a0a] border border-[var(--accent)]/20 p-4 font-mono text-xs">
+                <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[var(--card-border)]">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 rounded-full bg-red-500" />
+                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                  </div>
+                  <span className="text-[var(--muted)]">api-integration.sh</span>
+                </div>
+                <pre className="text-[var(--muted)] leading-relaxed overflow-x-auto">
+                  <code>
+{`# Create user
+curl -X POST /api/v1/users \\
+  -H "Authorization: Bearer gp_live_xxx" \\
+  -d '{"externalId": "255712345678"}'
+
+# Place trade
+curl -X POST /api/v1/trades \\
+  -H "Authorization: Bearer gp_live_xxx" \\
+  -d '{
+    "externalId": "255712345678",
+    "marketId": "clxyz123",
+    "side": "YES",
+    "amountTzs": 5000
+  }'`}
+                  </code>
+                </pre>
+              </div>
+              <div className="absolute -bottom-2 -right-2 w-full h-full border border-[var(--accent)]/10 -z-10" />
+            </div>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ══════════════════════════════════════════════
           FINAL CTA
           ══════════════════════════════════════════════ */}
       <section className="max-w-7xl mx-auto px-4 pb-24">
@@ -916,7 +995,7 @@ export default function HomePage() {
             {[
               { title: t.landing.footer.platform, links: [{ href: "/markets", label: t.landing.footer.browseMarkets }, { href: "/markets/create", label: t.landing.footer.createMarket }, { href: "/leaderboard", label: t.landing.footer.leaderboard }] },
               { title: t.landing.footer.account, links: [{ href: "/auth/register", label: t.landing.footer.signUp }, { href: "/auth/login", label: t.landing.footer.signIn }, { href: "/wallet", label: t.landing.footer.wallet }] },
-              { title: t.landing.footer.about, links: [{ href: "#about", label: t.landing.footer.aboutGuap }, { href: "#ntzs", label: t.landing.footer.ntzsNetwork }, { href: "https://chat.whatsapp.com/CfFU1jLmjDO8QLrH31Sv0C", label: t.landing.footer.contact }] },
+              { title: t.landing.footer.about, links: [{ href: "#about", label: t.landing.footer.aboutGuap }, { href: "https://www.ntzs.co.tz/", label: t.landing.footer.ntzsNetwork }, { href: "https://chat.whatsapp.com/CfFU1jLmjDO8QLrH31Sv0C", label: t.landing.footer.contact }] },
             ].map((col) => (
               <div key={col.title}>
                 <h4 className="font-black text-xs uppercase tracking-widest text-[var(--muted)] mb-3">{col.title}</h4>
@@ -947,9 +1026,11 @@ export default function HomePage() {
                   <XLogo size={16} weight="fill" />
                 </a>
                 <a
-                  href="#"
-                  className="text-[var(--muted)] hover:text-[var(--accent)] transition-colors cursor-not-allowed opacity-50"
-                  aria-label="Follow us on Instagram (coming soon)"
+                  href="https://www.instagram.com/shindaguap"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[var(--muted)] hover:text-[var(--accent)] transition-colors"
+                  aria-label="Follow us on Instagram"
                 >
                   <InstagramLogo size={16} weight="fill" />
                 </a>
