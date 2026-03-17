@@ -157,3 +157,60 @@ model MarketTranslation {
   @@unique([marketId, language])
   @@index([marketId])
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PUBLIC API - Partner Integration Models
+// ═══════════════════════════════════════════════════════════════════════════
+
+model Partner {
+  id            String   @id @default(cuid())
+  name          String                          // e.g., "CRDB Bank", "M-Pesa"
+  email         String   @unique
+  apiKey        String   @unique                // Hashed API key
+  apiKeyPrefix  String                          // First 8 chars for display (e.g., "gp_live_")
+  webhookUrl    String?                         // URL to send events
+  webhookSecret String?                         // Secret for webhook signatures
+  tier          String   @default("FREE")       // FREE, BASIC, PRO, ENTERPRISE
+  rateLimit     Int      @default(100)          // Requests per minute
+  isActive      Boolean  @default(true)
+  metadata      Json?                           // Additional partner info
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  users         PartnerUser[]
+  apiLogs       ApiLog[]
+
+  @@index([apiKey])
+  @@index([apiKeyPrefix])
+}
+
+model PartnerUser {
+  id            String   @id @default(cuid())
+  partnerId     String
+  partner       Partner  @relation(fields: [partnerId], references: [id])
+  externalId    String                          // Partner's user ID (e.g., "CRDB-0712345678")
+  userId        String                          // Our internal User ID
+  metadata      Json?                           // Additional user info from partner
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([partnerId, externalId])             // Each partner can only have one mapping per externalId
+  @@index([partnerId])
+  @@index([userId])
+}
+
+model ApiLog {
+  id            String   @id @default(cuid())
+  partnerId     String
+  partner       Partner  @relation(fields: [partnerId], references: [id])
+  endpoint      String                          // e.g., "/api/v1/trades"
+  method        String                          // GET, POST, etc.
+  statusCode    Int
+  responseTime  Int                             // ms
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime @default(now())
+
+  @@index([partnerId, createdAt])
+  @@index([createdAt])
+}
