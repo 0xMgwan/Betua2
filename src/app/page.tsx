@@ -995,7 +995,7 @@ curl -X POST /api/v1/trades \\
             {[
               { title: t.landing.footer.platform, links: [{ href: "/markets", label: t.landing.footer.browseMarkets }, { href: "/markets/create", label: t.landing.footer.createMarket }, { href: "/leaderboard", label: t.landing.footer.leaderboard }] },
               { title: t.landing.footer.account, links: [{ href: "/auth/register", label: t.landing.footer.signUp }, { href: "/auth/login", label: t.landing.footer.signIn }, { href: "/wallet", label: t.landing.footer.wallet }] },
-              { title: t.landing.footer.about, links: [{ href: "#about", label: t.landing.footer.aboutGuap }, { href: "https://www.ntzs.co.tz/", label: t.landing.footer.ntzsNetwork }, { href: "https://chat.whatsapp.com/CfFU1jLmjDO8QLrH31Sv0C", label: t.landing.footer.contact }] },
+              { title: t.landing.footer.about, links: [{ href: "/about", label: t.landing.footer.aboutGuap }, { href: "https://www.ntzs.co.tz/", label: t.landing.footer.ntzsNetwork }, { href: "https://chat.whatsapp.com/CfFU1jLmjDO8QLrH31Sv0C", label: t.landing.footer.contact }] },
             ].map((col) => (
               <div key={col.title}>
                 <h4 className="font-black text-xs uppercase tracking-widest text-[var(--muted)] mb-3">{col.title}</h4>
