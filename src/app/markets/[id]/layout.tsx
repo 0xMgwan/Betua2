@@ -30,7 +30,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     const noPrice = Math.round(price.no * 100);
 
     const desc = `YES ${yesPrice}% · NO ${noPrice}% — ${market.description?.slice(0, 120) || market.title}`;
-    const ogImageUrl = `/markets/${id}/opengraph-image`;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.guap.gold";
+    const ogImageUrl = `${baseUrl}/markets/${id}/opengraph-image`;
 
     return {
       title: `${market.title} — GUAP`,
