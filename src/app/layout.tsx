@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title: "GUAP — Predict the Future. Earn GUAP.",
   description: "Trade YES or NO on African events. Politics, sports, business. Powered by nTZS. Africa's first prediction market.",
   keywords: ["predictions", "Africa", "TZS", "markets", "GUAP", "Mobile Money", "nTZS", "trading"],
-  metadataBase: new URL("https://www.guap.gold"),
+  metadataBase: new URL("https://guap.gold"),
   manifest: "/manifest.json",
   icons: {
     icon: "/icon-192.png",
