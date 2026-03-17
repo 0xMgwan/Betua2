@@ -487,7 +487,7 @@ export default function DevelopersPage() {
               </div>
 
               <p className="text-xs text-[var(--muted)] mt-4 text-center">
-                Partners keep 100% of their own fees (if any). 
+                Partners keep 100% of their own fees. 
               </p>
             </div>
           </div>
@@ -520,7 +520,7 @@ export default function DevelopersPage() {
               Contact us to register as a partner and get your API credentials.
             </p>
             <a
-              href="mailto:api@guap.gold"
+              href="mailto:machuche@nedapay.xyz"
               className="inline-flex items-center gap-2 px-6 py-2 border-2 border-[var(--accent)] text-[var(--accent)] font-mono text-sm font-bold hover:bg-[var(--accent)] hover:text-[var(--background)] transition-colors"
             >
               <Key size={16} />
