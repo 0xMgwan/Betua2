@@ -126,6 +126,25 @@ async function handleSessionFlow(
       userSessions.set(phone, { step: "register_name", data: { phone } });
       await sendWhatsAppMessage(phone, `Tafadhali andika jina lako:`);
     }
+  } else if (step === "deposit_phone") {
+    // Normalize phone number
+    let mpesaPhone = text.replace(/[^0-9]/g, "");
+    if (mpesaPhone.startsWith("0")) {
+      mpesaPhone = "255" + mpesaPhone.substring(1);
+    }
+    if (!mpesaPhone.startsWith("255") || mpesaPhone.length !== 12) {
+      await sendWhatsAppMessage(phone,
+        `❌ Nambari si sahihi.\n\nAndika nambari ya M-Pesa (mfano: 0712345678):`
+      );
+      return;
+    }
+    data.mpesaPhone = mpesaPhone;
+    userSessions.set(phone, { step: "deposit_amount", data });
+    await sendWhatsAppMessage(phone,
+      `✅ Nambari: ${mpesaPhone}\n\n` +
+      `Andika kiasi unachotaka kuweka (TZS):\n\n` +
+      `Mfano: *10000*`
+    );
   } else if (step === "deposit_amount") {
     const amount = parseInt(text.replace(/[^0-9]/g, ""));
     if (isNaN(amount) || amount < 1000) {
@@ -134,7 +153,7 @@ async function handleSessionFlow(
       );
       return;
     }
-    await processDeposit(phone, amount);
+    await processDeposit(phone, amount, data.mpesaPhone as string);
   } else if (step === "withdraw_amount") {
     const amount = parseInt(text.replace(/[^0-9]/g, ""));
     if (isNaN(amount) || amount < 1000) {
@@ -238,50 +257,46 @@ async function startDeposit(phone: string): Promise<void> {
     return;
   }
 
-  userSessions.set(phone, { step: "deposit_amount", data: { userId: user.id } });
+  userSessions.set(phone, { step: "deposit_phone", data: { userId: user.id, whatsappPhone: phone } });
   await sendWhatsAppMessage(phone,
     `💳 *Weka Pesa*\n\n` +
-    `Andika kiasi unachotaka kuweka (TZS):\n\n` +
-    `Mfano: *10000*`
+    `Andika nambari ya simu yako:\n\n` +
+    `Mfano: *0712345678* au *255712345678*`
   );
 }
 
 // Process deposit
-async function processDeposit(phone: string, amount: number): Promise<void> {
-  const user = await findUserByPhone(phone);
+async function processDeposit(whatsappPhone: string, amount: number, mpesaPhone: string): Promise<void> {
+  const user = await findUserByPhone(whatsappPhone);
   if (!user || !user.ntzsUserId) {
-    userSessions.delete(phone);
-    await sendWhatsAppMessage(phone, `❌ Tatizo limetokea. Jaribu tena.`);
+    userSessions.delete(whatsappPhone);
+    await sendWhatsAppMessage(whatsappPhone, `❌ Tatizo limetokea. Jaribu tena.`);
     return;
   }
 
   try {
-    // Create deposit request via nTZS
+    // Create deposit request via nTZS with M-Pesa phone number
     const deposit = await ntzs.deposits.create({
       userId: user.ntzsUserId,
       amountTzs: amount,
-      phone: phone,
+      phone: mpesaPhone,
     });
 
     // Invalidate balance cache since deposit initiated
-    invalidateBalanceCache(phone);
+    invalidateBalanceCache(whatsappPhone);
     
-    userSessions.delete(phone);
-    await sendWhatsAppMessage(phone,
-      `✅ *Ombi la Kuweka Pesa*\n\n` +
+    userSessions.delete(whatsappPhone);
+    await sendWhatsAppMessage(whatsappPhone,
+      `✅ *Ombi la Kuweka Pesa Limetumwa!*\n\n` +
       `Kiasi: *${formatTZS(amount)} TZS*\n\n` +
-      `📱 *Maelekezo:*\n` +
-      `1. Nenda M-Pesa\n` +
-      `2. Chagua Lipa Bili\n` +
-      `3. Nambari: *${"XXX"}*\n` +
-      `4. Kiasi: ${formatTZS(amount)}\n` +
-      `5. Rejea: *${deposit.id}*\n\n` +
-      `Pesa itaonekana ndani ya dakika 1.`
+      `📱 Angalia simu yako (${mpesaPhone}) kwa STK push ya M-Pesa.\n` +
+      `Weka PIN yako kuthibitisha malipo.\n\n` +
+      `Pesa itaonekana kwenye wallet yako ndani ya dakika 1 baada ya kuthibitisha.`
     );
   } catch (error) {
     console.error("Deposit error:", error);
-    userSessions.delete(phone);
-    await sendWhatsAppMessage(phone,
+    userSessions.delete(whatsappPhone);
+    await sendWhatsAppMessage(whatsappPhone,
       `❌ Tatizo limetokea. Tafadhali jaribu tena.`
     );
   }
