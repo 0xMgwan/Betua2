@@ -294,12 +294,11 @@ export default function PortfolioPage() {
               </motion.div>
 
               {/* Stats grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
+              <div className="grid grid-cols-3 gap-2 mb-6">
                 {[
                   { label: t.portfolio.walletBalance, value: formatTZS(user.balanceTzs || 0), color: "text-[var(--accent)]", border: "border-[var(--accent)]/30", icon: <Wallet size={14} weight="fill" className="text-[var(--accent)]" /> },
-                  { label: t.portfolio.openPositionsValue, value: formatTZS(Math.round(totalValue)), color: "text-[var(--foreground)]", border: "border-[var(--card-border)]", icon: <ChartLineUp size={14} weight="fill" className="text-[#00b4d8]" /> },
                   { label: t.portfolio.totalInvested, value: formatTZS(totalInvested), color: "text-[var(--foreground)]", border: "border-[var(--card-border)]", icon: <CurrencyDollar size={14} weight="fill" className="text-orange-400" /> },
-                  { label: locale === "sw" ? "Malipo" : "Payout", value: formatTZS(Math.round(totalPayout)), color: "text-yellow-400", border: "border-yellow-500/30", icon: <Trophy size={14} weight="fill" className="text-yellow-400" /> },
+                  { label: t.portfolio.openPositionsValue, value: formatTZS(Math.round(totalValue)), color: "text-yellow-400", border: "border-yellow-500/30", icon: <ChartLineUp size={14} weight="fill" className="text-yellow-400" /> },
                 ].map((s, i) => (
                   <motion.div
                     key={s.label}
