@@ -89,6 +89,9 @@ export default function PortfolioPage() {
   const [sellError, setSellError] = useState("");
   const [sellSuccess, setSellSuccess] = useState("");
 
+  // Expanded position state
+  const [expandedPosition, setExpandedPosition] = useState<string | null>(null);
+
   useEffect(() => {
     fetch("/api/portfolio")
       .then((r) => r.json())
@@ -560,6 +563,72 @@ export default function PortfolioPage() {
                               </div>
                             </div>
                           </Link>
+
+                          {/* Expand/collapse button */}
+                          <button
+                            onClick={() => setExpandedPosition(expandedPosition === p.id ? null : p.id)}
+                            className="w-full py-1.5 bg-[var(--card)] border border-t-0 border-[var(--card-border)] text-[10px] font-mono text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card-border)]/30 transition-all flex items-center justify-center gap-1"
+                          >
+                            <CaretDown size={10} className={cn("transition-transform", expandedPosition === p.id && "rotate-180")} />
+                            {expandedPosition === p.id 
+                              ? (locale === "sw" ? "Ficha" : "Hide Details")
+                              : (locale === "sw" ? "Onyesha Biashara" : "Show Trades")
+                            }
+                          </button>
+
+                          {/* Expanded trades section */}
+                          <AnimatePresence>
+                            {expandedPosition === p.id && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="border border-t-0 border-[var(--card-border)] bg-[var(--card)]/50 px-4 py-3">
+                                  <div className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider mb-2">
+                                    {locale === "sw" ? "Biashara Zako" : "Your Trades"}
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    {trades
+                                      .filter(tr => tr.market.id === p.market.id && !tr.side.startsWith("SELL_"))
+                                      .slice(0, 5)
+                                      .map((tr) => (
+                                        <div key={tr.id} className="flex items-center justify-between text-xs font-mono">
+                                          <div className="flex items-center gap-2">
+                                            <span className={cn(
+                                              "px-1.5 py-0.5 text-[9px] font-bold border",
+                                              tr.side === "YES" ? "border-[#00e5a0]/30 text-[#00e5a0]"
+                                                : tr.side === "NO" ? "border-red-500/30 text-red-400"
+                                                : "border-[#00b4d8]/30 text-[#00b4d8]"
+                                            )}>
+                                              {tr.side}
+                                            </span>
+                                            <span className="text-[var(--muted)]">
+                                              {formatNumber(tr.shares)} @ {tr.price.toFixed(3)}
+                                            </span>
+                                          </div>
+                                          <span className="text-[var(--foreground)]">{formatTZS(tr.amountTzs)}</span>
+                                        </div>
+                                      ))}
+                                    {trades.filter(tr => tr.market.id === p.market.id && !tr.side.startsWith("SELL_")).length === 0 && (
+                                      <div className="text-xs text-[var(--muted)] font-mono">
+                                        {locale === "sw" ? "Hakuna biashara" : "No trades found"}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Link
+                                    href={`/markets/${p.market.id}`}
+                                    className="mt-3 flex items-center gap-1.5 text-[10px] font-mono text-[var(--accent)] hover:underline uppercase tracking-wider"
+                                  >
+                                    <Eye size={12} />
+                                    {locale === "sw" ? "Tazama Soko Kamili" : "View Full Market"}
+                                    <ArrowRight size={10} />
+                                  </Link>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
 
                           {/* Inline sell panel */}
                           <AnimatePresence>
