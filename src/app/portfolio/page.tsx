@@ -502,9 +502,12 @@ export default function PortfolioPage() {
                                           category={p.market.category}
                                           imageUrl={p.market.imageUrl}
                                           outcome={
-                                            isMultiOpt && p.optionShares && p.market.outcome !== null && typeof p.market.outcome === 'number'
-                                              ? p.market.options![p.market.outcome] || "Option"
-                                              : p.market.outcome === 1 ? "YES" : "NO"
+                                            isMultiOpt && p.optionShares
+                                              ? (() => {
+                                                  const maxIdx = Object.entries(p.optionShares).reduce((a, b) => (b[1] > (p.optionShares?.[a] || 0) ? b[0] : a), "0");
+                                                  return p.market.options?.[Number(maxIdx)] || "Option";
+                                                })()
+                                              : p.yesShares >= p.noShares ? "YES" : "NO"
                                           }
                                           won={won}
                                           payout={p.currentValue}

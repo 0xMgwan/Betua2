@@ -894,7 +894,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     const myYesShares = myTrades.filter(tr => tr.side === "YES").reduce((s, tr) => s + tr.shares, 0);
                     const myNoShares = myTrades.filter(tr => tr.side === "NO").reduce((s, tr) => s + tr.shares, 0);
                     const myPick = isMultiOption
-                      ? (market.outcomeLabel || "Option")
+                      ? (myTrades.length > 0 ? myTrades[0].side : "Option")
                       : myYesShares >= myNoShares ? "YES" : "NO";
                     const winningShares = isMultiOption ? 0 : (market.outcome === 1 ? myYesShares : myNoShares);
                     const totalWinShares = isMultiOption ? 1 : (market.outcome === 1 ? market.totalYesShares : market.totalNoShares);
