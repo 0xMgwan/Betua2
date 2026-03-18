@@ -16,6 +16,7 @@ import HeroAscii from "@/components/ui/hero-ascii";
 import { GlitchText } from "@/components/ui/glitch-text";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useUser } from "@/store/useUser";
+import { ActivityTicker } from "@/components/ActivityTicker";
 
 /* ─────────────────────────────────────────────────────────
    Live market mockup — animated YES/NO bar
@@ -216,6 +217,11 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[var(--background)] overflow-x-hidden" suppressHydrationWarning>
       <Navbar />
+
+      {/* Activity Ticker */}
+      <div className="max-w-7xl mx-auto px-4 pt-4">
+        <ActivityTicker />
+      </div>
 
       {/* ══════════════════════════════════════════════
           HERO — Terminal-style GUAP Hero Section
