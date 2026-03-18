@@ -7,6 +7,7 @@ import { ntzs } from "@/lib/ntzs";
 const FEE_PERCENT = parseFloat(process.env.TRANSACTION_FEE_PERCENT || "5") / 100;
 const CREATOR_FEE_PERCENT = 0.01; // 1% of total volume goes to non-admin creators
 const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
+const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
 const ADMIN_USER_IDS = (process.env.ADMIN_USER_IDS || "").split(",").filter(Boolean);
 
 export async function POST(
@@ -58,6 +59,25 @@ export async function POST(
       resolvedAt: new Date(),
     },
   });
+
+  // ── "None" outcome: No winner - transfer entire pot to settlement fee wallet as revenue ──
+  let noneOutcomeRevenue = 0;
+  let noneOutcomeTransferred = false;
+  if (isNoneOutcome && market.totalVolume > 0 && PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID) {
+    // The pot (minus entry fees already taken) goes to settlement fee wallet
+    noneOutcomeRevenue = Math.round(market.totalVolume * (1 - FEE_PERCENT));
+    try {
+      await ntzs.transfers.create({
+        fromUserId: PLATFORM_NTZS_USER_ID,
+        toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
+        amountTzs: noneOutcomeRevenue,
+      });
+      noneOutcomeTransferred = true;
+      console.log(`None outcome: Transferred ${noneOutcomeRevenue} TZS to settlement fee wallet for market ${id}`);
+    } catch (err) {
+      console.error("None outcome revenue transfer failed:", err);
+    }
+  }
 
   // ── Payout calculation (for response info only — actual transfers happen in /api/redeem) ──
   // Winners split the totalVolume proportionally based on their winning shares.
@@ -206,6 +226,11 @@ export async function POST(
       amount: creatorFeeAmount,
       paid: creatorFeePaid,
       isAdmin: isAdminCreator,
+    },
+    noneOutcome: {
+      isNone: isNoneOutcome,
+      revenue: noneOutcomeRevenue,
+      transferred: noneOutcomeTransferred,
     },
   });
 }
