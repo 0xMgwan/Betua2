@@ -22,7 +22,7 @@ import { useUser } from "@/store/useUser";
    ───────────────────────────────────────────────────────── */
 function LiveMarketCard() {
   const { t } = useLanguage();
-  const [pct, setPct] = useState(67);
+  const [pct, setPct] = useState(52);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -38,12 +38,12 @@ function LiveMarketCard() {
       {/* Header */}
       <div className="flex items-start gap-3 mb-4">
         <div className="w-10 h-10 border border-[var(--foreground)]/30 flex items-center justify-center text-lg shrink-0">
-          🗳️
+          📈
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-bold text-sm leading-snug font-mono">CCM wins Tanzania 2025 general election?</p>
+          <p className="font-bold text-sm leading-snug font-mono">Will CRDB shares be above 600 TSH by end of week?</p>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-xs px-2 py-0.5 border border-[var(--foreground)]/30 text-[var(--foreground)] font-mono tracking-wider uppercase">{t.landing.liveMarket.politics}</span>
+            <span className="text-xs px-2 py-0.5 border border-[var(--foreground)]/30 text-[var(--foreground)] font-mono tracking-wider uppercase">{t.landing.liveMarket.business}</span>
             <span className="flex items-center gap-1 text-xs text-[var(--muted)] font-mono">
               <span className="w-1.5 h-1.5 bg-[var(--foreground)] animate-pulse" />
               {t.landing.liveMarket.live}

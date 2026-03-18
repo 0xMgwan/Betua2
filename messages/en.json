@@ -20,6 +20,7 @@
     },
     "liveMarket": {
       "politics": "POLITICS",
+      "business": "BUSINESS",
       "live": "LIVE",
       "buyYes": "BUY YES",
       "buyNo": "BUY NO",
