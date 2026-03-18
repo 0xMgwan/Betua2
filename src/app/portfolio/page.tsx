@@ -358,8 +358,11 @@ export default function PortfolioPage() {
                       const isMultiOpt = !!(p.market.options && p.market.options.length >= 2);
                       const won = isResolved && (
                         isMultiOpt
-                          ? !!(p.optionShares && p.market.outcome !== null && p.optionShares[String(p.market.outcome)] > 0)
-                          : ((p.market.outcome === 1 && p.yesShares > 0) || (p.market.outcome === 0 && p.noShares > 0))
+                          ? !!(p.optionShares && p.market.outcome !== null && (() => {
+                              const maxIdx = Object.entries(p.optionShares).reduce((a, b) => (b[1] > (p.optionShares?.[a] || 0) ? b[0] : a), "0");
+                              return maxIdx === String(p.market.outcome);
+                            })())
+                          : ((p.market.outcome === 1 && p.yesShares >= p.noShares) || (p.market.outcome === 0 && p.noShares > p.yesShares))
                       );
 
                       const positionPayout = isMultiOpt && p.optionShares
