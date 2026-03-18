@@ -11,6 +11,7 @@ import { CATEGORIES, SPORTS_SUBCATEGORIES } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Footer } from "@/components/Footer";
+import { ActivityTicker } from "@/components/ActivityTicker";
 
 function MarketsContent() {
   const { t, locale } = useLanguage();
@@ -44,6 +45,11 @@ function MarketsContent() {
     <div className="min-h-screen">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Activity Ticker - Shows on all screen sizes */}
+        <div className="mb-6">
+          <ActivityTicker />
+        </div>
+
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -152,7 +158,7 @@ function MarketsContent() {
           )}
         </div>
 
-        {/* Grid */}
+        {/* Markets Grid */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
