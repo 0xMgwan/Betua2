@@ -193,9 +193,11 @@ export default function PortfolioPage() {
     }
   };
 
-  const totalValue = positions.reduce((sum, p) => sum + p.currentValue, 0);
-  // Total invested: only count trades for currently open positions (matches payout scope)
-  const openMarketIds = new Set(positions.map(p => p.market.id));
+  const totalValue = positions
+    .filter((p) => p.market.status === "OPEN")
+    .reduce((sum, p) => sum + p.currentValue, 0);
+  // Total invested: only count trades for currently OPEN positions
+  const openMarketIds = new Set(positions.filter(p => p.market.status === "OPEN").map(p => p.market.id));
   const totalInvested = trades
     .filter(t => !t.side.startsWith("SELL_") && openMarketIds.has(t.market.id))
     .reduce((sum, t) => sum + t.amountTzs, 0);
