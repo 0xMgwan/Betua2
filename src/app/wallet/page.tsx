@@ -416,6 +416,7 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
   const isRedeem = tx.type === "REDEEM";
   const isCreateMarket = tx.type === "CREATE_MARKET";
   const isReferral = tx.type === "REFERRAL_REWARD";
+  const isCreatorFee = tx.type === "CREATOR_FEE";
 
   const statusConfig = {
     COMPLETED: { icon: <CheckCircle size={13} weight="fill" className="text-[var(--accent)]" />, label: locale === "sw" ? "Imethibitishwa" : "Confirmed", color: "text-[var(--accent)]" },
@@ -433,12 +434,14 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
       <div className="flex items-center gap-3">
         <div className={cn(
           "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-          isDeposit || isReceive || isRedeem || isReferral ? "bg-[var(--accent)]/10" : 
+          isDeposit || isReceive || isRedeem || isReferral || isCreatorFee ? "bg-[var(--accent)]/10" : 
           isSend || isBuyShares || isSellShares ? "bg-blue-500/10" : 
           isCreateMarket ? "bg-purple-500/10" :
           "bg-red-500/10"
         )}>
           {isReferral
+            ? <Gift size={18} weight="bold" className="text-[var(--accent)]" />
+            : isCreatorFee
             ? <Gift size={18} weight="bold" className="text-[var(--accent)]" />
             : isDeposit || isReceive || isRedeem
             ? <ArrowDownLeft size={18} weight="bold" className="text-[var(--accent)]" />
@@ -451,6 +454,7 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
         <div>
           <p className="text-sm font-semibold">
             {isReferral ? (locale === "sw" ? "Bonasi ya Referral" : "Referral Reward") :
+             isCreatorFee ? (locale === "sw" ? "Ada ya Muundaji" : "Creator Fee") :
              isDeposit ? t.wallet.deposit : 
              isReceive ? (locale === "sw" ? "Pokea" : "Receive") : 
              isSend ? t.wallet.send : 
@@ -466,18 +470,18 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
             {isSend && tx.recipientUsername && <span className="ml-1.5 opacity-70">→ @{tx.recipientUsername}</span>}
             {isReceive && tx.recipientUsername && <span className="ml-1.5 opacity-70">← @{tx.recipientUsername}</span>}
             {isReferral && tx.recipientUsername && <span className="ml-1.5 opacity-70">← @{tx.recipientUsername}</span>}
-            {(isBuyShares || isSellShares || isRedeem || isCreateMarket) && tx.recipientUsername && <span className="ml-1.5 opacity-70 line-clamp-1">· {tx.recipientUsername}</span>}
+            {(isBuyShares || isSellShares || isRedeem || isCreateMarket || isCreatorFee) && tx.recipientUsername && <span className="ml-1.5 opacity-70 line-clamp-1">· {tx.recipientUsername}</span>}
           </p>
         </div>
       </div>
 
       <div className="text-right">
         <p className={cn("font-black text-sm tabular-nums", 
-          isDeposit || isReceive || isRedeem || isReferral ? "text-[var(--accent)]" : 
+          isDeposit || isReceive || isRedeem || isReferral || isCreatorFee ? "text-[var(--accent)]" : 
           isCreateMarket ? "text-purple-400" :
           isSend || isBuyShares || isSellShares ? "text-blue-400" : 
           "text-red-400")}>
-          {isDeposit || isReceive || isRedeem || isReferral ? "+" : "−"}{formatTZS(tx.amountTzs)}
+          {isDeposit || isReceive || isRedeem || isReferral || isCreatorFee ? "+" : "−"}{formatTZS(tx.amountTzs)}
         </p>
         <div className={cn("flex items-center gap-1 justify-end text-xs font-medium mt-0.5", statusConfig.color)}>
           {statusConfig.icon}
