@@ -294,24 +294,24 @@ export default function PortfolioPage() {
               </motion.div>
 
               {/* Stats grid */}
-              <div className="grid grid-cols-3 gap-2 mb-6">
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-6">
                 {[
-                  { label: t.portfolio.walletBalance, value: formatTZS(user.balanceTzs || 0), color: "text-[var(--accent)]", border: "border-[var(--accent)]/30", icon: <Wallet size={14} weight="fill" className="text-[var(--accent)]" /> },
-                  { label: t.portfolio.totalInvested, value: formatTZS(totalInvested), color: "text-[var(--foreground)]", border: "border-[var(--card-border)]", icon: <CurrencyDollar size={14} weight="fill" className="text-orange-400" /> },
-                  { label: t.portfolio.openPositionsValue, value: formatTZS(Math.round(totalValue)), color: "text-yellow-400", border: "border-yellow-500/30", icon: <ChartLineUp size={14} weight="fill" className="text-yellow-400" /> },
+                  { label: t.portfolio.walletBalance, value: formatTZS(user.balanceTzs || 0), color: "text-[var(--accent)]", border: "border-[var(--accent)]/30", icon: <Wallet size={12} weight="fill" className="text-[var(--accent)]" /> },
+                  { label: t.portfolio.totalInvested, value: formatTZS(totalInvested), color: "text-[var(--foreground)]", border: "border-[var(--card-border)]", icon: <CurrencyDollar size={12} weight="fill" className="text-orange-400" /> },
+                  { label: t.portfolio.openPositionsValue, value: formatTZS(Math.round(totalValue)), color: "text-yellow-400", border: "border-yellow-500/30", icon: <ChartLineUp size={12} weight="fill" className="text-yellow-400" /> },
                 ].map((s, i) => (
                   <motion.div
                     key={s.label}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.06 }}
-                    className={cn("bg-[var(--background)] border p-4", s.border)}
+                    className={cn("bg-[var(--background)] border p-2 sm:p-4 overflow-hidden", s.border)}
                   >
-                    <div className="flex items-center gap-1.5 mb-2">
+                    <div className="flex items-center gap-1 mb-1 sm:mb-2">
                       {s.icon}
-                      <span className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">{s.label}</span>
+                      <span className="text-[8px] sm:text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider truncate">{s.label}</span>
                     </div>
-                    <div className={cn("text-xl font-mono font-bold tabular-nums", s.color)}>{s.value}</div>
+                    <div className={cn("text-sm sm:text-xl font-mono font-bold tabular-nums truncate", s.color)}>{s.value}</div>
                   </motion.div>
                 ))}
               </div>
