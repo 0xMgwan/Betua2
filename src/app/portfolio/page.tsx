@@ -77,6 +77,7 @@ export default function PortfolioPage() {
   const [createdMarkets, setCreatedMarkets] = useState<CreatedMarket[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"positions" | "history" | "created">("positions");
+  const [positionFilter, setPositionFilter] = useState<"open" | "expired" | "resolved">("open");
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [redeemSuccess, setRedeemSuccess] = useState<string | null>(null);
   const [redeemPopup, setRedeemPopup] = useState<{ payout: number; marketTitle: string } | null>(null);
@@ -366,44 +367,95 @@ export default function PortfolioPage() {
                   ))}
                 </div>
               ) : tab === "positions" ? (
-                positions.length === 0 ? (
-                  <div className="text-center py-16">
-                    <TrendUp size={32} className="mx-auto mb-3 text-[var(--muted)] opacity-30" weight="duotone" />
-                    <p className="text-sm font-mono text-[var(--muted)] mb-1">[EMPTY] {t.portfolio.noOpenPositions}</p>
-                    <p className="text-[10px] font-mono text-[var(--muted)] mb-6">{t.portfolio.startTrading}</p>
-                    <Link href="/markets" className="inline-flex items-center gap-2 px-5 py-2 border-2 border-[var(--accent)] text-[var(--accent)] font-mono font-bold text-xs hover:bg-[var(--accent)] hover:text-[var(--background)] transition-all tracking-wider uppercase">
-                      <ArrowRight size={12} weight="bold" />
-                      {t.portfolio.browseMarkets}
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {positions.map((p, i) => {
-                      const isResolved = p.market.status === "RESOLVED";
-                      const isExpired = p.market.status === "EXPIRED" || (p.market.status === "OPEN" && new Date(p.market.resolvesAt) < new Date());
-                      const isOpen = p.market.status === "OPEN" && !isExpired;
-                      const isMultiOpt = !!(p.market.options && p.market.options.length >= 2);
-                      const won = isResolved && (
-                        isMultiOpt
-                          ? !!(p.optionShares && p.market.outcome !== null && (() => {
-                              const maxIdx = Object.entries(p.optionShares).reduce((a, b) => (b[1] > (p.optionShares?.[a] || 0) ? b[0] : a), "0");
-                              return maxIdx === String(p.market.outcome);
-                            })())
-                          : ((p.market.outcome === 1 && p.yesShares >= p.noShares) || (p.market.outcome === 0 && p.noShares > p.yesShares))
-                      );
-
-                      const positionPayout = isMultiOpt && p.optionShares
-                        ? Object.values(p.optionShares).reduce((s, v) => s + v, 0)
-                        : p.yesShares + p.noShares;
-
-                      const valuePct = positionPayout > 0 ? Math.min((p.currentValue / positionPayout) * 100, 100) : 0;
-
-                      // Left accent color
-                      const accentColor = isResolved
-                        ? won ? "border-l-[var(--accent)]" : "border-l-red-500"
-                        : isExpired ? "border-l-orange-400" : "border-l-yellow-400";
-
+                <>
+                  {/* Position filter buttons */}
+                  <div className="flex gap-2 mb-4">
+                    {(["open", "expired", "resolved"] as const).map((filter) => {
+                      const filterCount = positions.filter((p) => {
+                        const isResolved = p.market.status === "RESOLVED";
+                        const isExpired = p.market.status === "EXPIRED" || (p.market.status === "OPEN" && new Date(p.market.resolvesAt) < new Date());
+                        const isOpen = p.market.status === "OPEN" && !isExpired;
+                        return filter === "open" ? isOpen : filter === "expired" ? isExpired : isResolved;
+                      }).length;
+                      
                       return (
+                        <button
+                          key={filter}
+                          onClick={() => setPositionFilter(filter)}
+                          className={cn(
+                            "px-3 py-1.5 text-xs font-mono font-bold uppercase tracking-wider transition-all border",
+                            positionFilter === filter
+                              ? "bg-[var(--accent)]/10 border-[var(--accent)] text-[var(--accent)]"
+                              : "border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[var(--foreground)]/30"
+                          )}
+                        >
+                          {filter} ({filterCount})
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {positions.filter((p) => {
+                    const isResolved = p.market.status === "RESOLVED";
+                    const isExpired = p.market.status === "EXPIRED" || (p.market.status === "OPEN" && new Date(p.market.resolvesAt) < new Date());
+                    const isOpen = p.market.status === "OPEN" && !isExpired;
+                    return positionFilter === "open" ? isOpen : positionFilter === "expired" ? isExpired : isResolved;
+                  }).length === 0 && (
+                    <div className="text-center py-16">
+                      <TrendUp size={32} className="mx-auto mb-3 text-[var(--muted)] opacity-30" weight="duotone" />
+                      <p className="text-sm font-mono text-[var(--muted)] mb-1">
+                        [EMPTY] {positionFilter === "open" ? t.portfolio.noOpenPositions : positionFilter === "expired" ? (locale === "sw" ? "Hakuna nafasi zilizokwisha" : "No expired positions") : (locale === "sw" ? "Hakuna nafasi zilizotatuliwa" : "No resolved positions")}
+                      </p>
+                      {positionFilter === "open" && (
+                        <>
+                          <p className="text-[10px] font-mono text-[var(--muted)] mb-6">{t.portfolio.startTrading}</p>
+                          <Link href="/markets" className="inline-flex items-center gap-2 px-5 py-2 border-2 border-[var(--accent)] text-[var(--accent)] font-mono font-bold text-xs hover:bg-[var(--accent)] hover:text-[var(--background)] transition-all tracking-wider uppercase">
+                            <ArrowRight size={12} weight="bold" />
+                            {t.portfolio.browseMarkets}
+                          </Link>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {positions.filter((p) => {
+                    const isResolved = p.market.status === "RESOLVED";
+                    const isExpired = p.market.status === "EXPIRED" || (p.market.status === "OPEN" && new Date(p.market.resolvesAt) < new Date());
+                    const isOpen = p.market.status === "OPEN" && !isExpired;
+                    return positionFilter === "open" ? isOpen : positionFilter === "expired" ? isExpired : isResolved;
+                  }).length > 0 && (
+                    <div className="space-y-2">
+                      {positions.filter((p) => {
+                        const isResolved = p.market.status === "RESOLVED";
+                        const isExpired = p.market.status === "EXPIRED" || (p.market.status === "OPEN" && new Date(p.market.resolvesAt) < new Date());
+                        const isOpen = p.market.status === "OPEN" && !isExpired;
+                        return positionFilter === "open" ? isOpen : positionFilter === "expired" ? isExpired : isResolved;
+                      }).map((p, i) => {
+                        const isResolved = p.market.status === "RESOLVED";
+                        const isExpired = p.market.status === "EXPIRED" || (p.market.status === "OPEN" && new Date(p.market.resolvesAt) < new Date());
+                        const isOpen = p.market.status === "OPEN" && !isExpired;
+                        const isMultiOpt = !!(p.market.options && p.market.options.length >= 2);
+                        const won = isResolved && (
+                          isMultiOpt
+                            ? !!(p.optionShares && p.market.outcome !== null && (() => {
+                                const maxIdx = Object.entries(p.optionShares).reduce((a, b) => (b[1] > (p.optionShares?.[a] || 0) ? b[0] : a), "0");
+                                return maxIdx === String(p.market.outcome);
+                              })())
+                            : ((p.market.outcome === 1 && p.yesShares >= p.noShares) || (p.market.outcome === 0 && p.noShares > p.yesShares))
+                        );
+
+                        const positionPayout = isMultiOpt && p.optionShares
+                          ? Object.values(p.optionShares).reduce((s, v) => s + v, 0)
+                          : p.yesShares + p.noShares;
+
+                        const valuePct = positionPayout > 0 ? Math.min((p.currentValue / positionPayout) * 100, 100) : 0;
+
+                        // Left accent color
+                        const accentColor = isResolved
+                          ? won ? "border-l-[var(--accent)]" : "border-l-red-500"
+                          : isExpired ? "border-l-orange-400" : "border-l-yellow-400";
+
+                        return (
                         <motion.div
                           key={p.id}
                           initial={{ opacity: 0, x: -8 }}
@@ -834,7 +886,8 @@ export default function PortfolioPage() {
                       </div>
                     </div>
                   </div>
-                )
+                  )}
+                </>
               ) : tab === "created" ? (
                 <div className="space-y-4">
                   {/* Filter buttons */}
