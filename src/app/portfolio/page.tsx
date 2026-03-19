@@ -1155,16 +1155,16 @@ export default function PortfolioPage() {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-[var(--card)] border-2 border-[#ff4d6a] rounded-xl overflow-hidden max-w-sm w-full shadow-[0_0_60px_rgba(255,77,106,0.3)]"
+              className="bg-[var(--card)] border-2 border-[var(--accent)] rounded-xl overflow-hidden max-w-sm w-full shadow-[0_0_60px_rgba(0,229,160,0.3)]"
             >
               {/* Terminal header */}
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[#ff4d6a]/30 bg-[#ff4d6a]/5">
+              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--accent)]/30 bg-[var(--accent)]/5">
                 <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-[#ff4d6a]" />
-                  <div className="w-3 h-3 rounded-full bg-[#ff4d6a]/50" />
-                  <div className="w-3 h-3 rounded-full bg-[#ff4d6a]/30" />
+                  <div className="w-3 h-3 rounded-full bg-[var(--accent)]" />
+                  <div className="w-3 h-3 rounded-full bg-[var(--accent)]/50" />
+                  <div className="w-3 h-3 rounded-full bg-[var(--accent)]/30" />
                 </div>
-                <span className="text-[10px] font-mono text-[#ff4d6a] uppercase tracking-wider ml-2">
+                <span className="text-[10px] font-mono text-[var(--accent)] uppercase tracking-wider ml-2">
                   SELL.SUCCESS
                 </span>
               </div>
@@ -1175,9 +1175,9 @@ export default function PortfolioPage() {
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
-                  className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#ff4d6a]/10 border-2 border-[#ff4d6a] flex items-center justify-center"
+                  className="w-16 h-16 mx-auto mb-4 rounded-full bg-[var(--accent)]/10 border-2 border-[var(--accent)] flex items-center justify-center"
                 >
-                  <CurrencyDollar size={32} weight="fill" className="text-[#ff4d6a]" />
+                  <CurrencyDollar size={32} weight="fill" className="text-[var(--accent)]" />
                 </motion.div>
 
                 <motion.div
@@ -1185,7 +1185,7 @@ export default function PortfolioPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
                 >
-                  <p className="text-[#ff4d6a] font-mono font-bold text-lg mb-1">
+                  <p className="text-[var(--accent)] font-mono font-bold text-lg mb-1">
                     {locale === "sw" ? "UMEUZWA!" : "SOLD!"}
                   </p>
                   <p className="text-[var(--muted)] font-mono text-xs mb-2 line-clamp-2">
@@ -1200,12 +1200,12 @@ export default function PortfolioPage() {
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.3 }}
-                  className="bg-[var(--background)] border border-[#ff4d6a]/30 rounded-lg p-4 mb-4"
+                  className="bg-[var(--background)] border border-[var(--accent)]/30 rounded-lg p-4 mb-4"
                 >
                   <p className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider mb-1">
                     {locale === "sw" ? "Umepokea" : "You Received"}
                   </p>
-                  <p className="text-3xl font-mono font-bold text-[#ff4d6a] tabular-nums">
+                  <p className="text-3xl font-mono font-bold text-[var(--accent)] tabular-nums">
                     {formatTZS(sellPopup.payout)}
                   </p>
                 </motion.div>
@@ -1226,19 +1226,19 @@ export default function PortfolioPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
                   onClick={() => setSellPopup(null)}
-                  className="w-full py-3 bg-[#ff4d6a] text-white font-mono font-bold text-sm uppercase tracking-wider hover:bg-[#ff4d6a]/90 transition-all"
+                  className="w-full py-3 bg-[var(--accent)] text-[var(--background)] font-mono font-bold text-sm uppercase tracking-wider hover:bg-[var(--accent)]/90 transition-all"
                 >
                   {locale === "sw" ? "SAWA" : "GOT IT"}
                 </motion.button>
               </div>
 
               {/* Terminal footer */}
-              <div className="bg-[var(--background)] border-t border-[#ff4d6a]/30 px-4 py-2 flex items-center justify-between">
+              <div className="bg-[var(--background)] border-t border-[var(--accent)]/30 px-4 py-2 flex items-center justify-between">
                 <span className="text-[9px] font-mono text-[var(--muted)]">
                   [SELL_COMPLETE]
                 </span>
-                <span className="text-[9px] font-mono text-[#ff4d6a] flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#ff4d6a] animate-pulse" />
+                <span className="text-[9px] font-mono text-[var(--accent)] flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
                   CONFIRMED
                 </span>
               </div>
