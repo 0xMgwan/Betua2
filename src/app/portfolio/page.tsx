@@ -79,6 +79,7 @@ export default function PortfolioPage() {
   const [tab, setTab] = useState<"positions" | "history" | "created">("positions");
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [redeemSuccess, setRedeemSuccess] = useState<string | null>(null);
+  const [redeemPopup, setRedeemPopup] = useState<{ payout: number; marketTitle: string } | null>(null);
   const [createdMarketFilter, setCreatedMarketFilter] = useState<"all" | "OPEN" | "EXPIRED" | "RESOLVED">("all");
 
   // Sell state
@@ -116,7 +117,7 @@ export default function PortfolioPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleRedeem = async (positionId: string) => {
+  const handleRedeem = async (positionId: string, marketTitle: string) => {
     setRedeeming(positionId);
     try {
       const res = await fetch("/api/redeem", {
@@ -132,7 +133,8 @@ export default function PortfolioPage() {
         return;
       }
 
-      // Show success message
+      // Show success popup with payout amount
+      setRedeemPopup({ payout: data.payout || 0, marketTitle });
       setRedeemSuccess(positionId);
       
       // Update position in state to mark as redeemed
@@ -140,8 +142,8 @@ export default function PortfolioPage() {
         prev.map((p) => (p.id === positionId ? { ...p, redeemed: true } : p))
       );
 
-      // Auto-hide success message after 3 seconds
-      setTimeout(() => setRedeemSuccess(null), 3000);
+      // Auto-hide success message after 5 seconds
+      setTimeout(() => setRedeemSuccess(null), 5000);
 
       // Refresh portfolio data and user balance
       Promise.all([
@@ -540,7 +542,7 @@ export default function PortfolioPage() {
                                           <button
                                             onClick={(e) => {
                                               e.preventDefault();
-                                              handleRedeem(p.id);
+                                              handleRedeem(p.id, p.market.title);
                                             }}
                                             disabled={redeeming === p.id}
                                             className="py-1.5 px-4 border-2 border-[var(--accent)] text-[var(--accent)] font-mono font-bold text-xs hover:bg-[var(--accent)] hover:text-[var(--background)] transition-all disabled:opacity-50 tracking-wider uppercase shadow-[0_0_15px_rgba(0,229,160,0.1)]"
@@ -1014,6 +1016,110 @@ export default function PortfolioPage() {
         </motion.div>
       </div>
       <Footer />
+
+      {/* ═══ Redeem Success Popup ═══ */}
+      <AnimatePresence>
+        {redeemPopup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={() => setRedeemPopup(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[var(--card)] border-2 border-[var(--accent)] rounded-xl overflow-hidden max-w-sm w-full shadow-[0_0_60px_rgba(0,229,160,0.3)]"
+            >
+              {/* Terminal header */}
+              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--accent)]/30 bg-[var(--accent)]/5">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-[var(--accent)]" />
+                  <div className="w-3 h-3 rounded-full bg-[var(--accent)]/50" />
+                  <div className="w-3 h-3 rounded-full bg-[var(--accent)]/30" />
+                </div>
+                <span className="text-[10px] font-mono text-[var(--accent)] uppercase tracking-wider ml-2">
+                  REDEEM.SUCCESS
+                </span>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 text-center">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
+                  className="w-16 h-16 mx-auto mb-4 rounded-full bg-[var(--accent)]/10 border-2 border-[var(--accent)] flex items-center justify-center"
+                >
+                  <CheckCircle size={32} weight="fill" className="text-[var(--accent)]" />
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <p className="text-[var(--accent)] font-mono font-bold text-lg mb-1">
+                    {locale === "sw" ? "IMEFANIKIWA!" : "SUCCESS!"}
+                  </p>
+                  <p className="text-[var(--muted)] font-mono text-xs mb-4 line-clamp-2">
+                    {redeemPopup.marketTitle}
+                  </p>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="bg-[var(--background)] border border-[var(--accent)]/30 rounded-lg p-4 mb-4"
+                >
+                  <p className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider mb-1">
+                    {locale === "sw" ? "Malipo Yako" : "Your Payout"}
+                  </p>
+                  <p className="text-3xl font-mono font-bold text-[var(--accent)] tabular-nums">
+                    {formatTZS(redeemPopup.payout)}
+                  </p>
+                </motion.div>
+
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-[10px] font-mono text-[var(--muted)] mb-4"
+                >
+                  {locale === "sw" 
+                    ? "Fedha zimeongezwa kwenye salio lako" 
+                    : "Funds have been added to your wallet"}
+                </motion.p>
+
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  onClick={() => setRedeemPopup(null)}
+                  className="w-full py-3 bg-[var(--accent)] text-[var(--background)] font-mono font-bold text-sm uppercase tracking-wider hover:bg-[var(--accent)]/90 transition-all"
+                >
+                  {locale === "sw" ? "SAWA" : "AWESOME"}
+                </motion.button>
+              </div>
+
+              {/* Terminal footer */}
+              <div className="bg-[var(--background)] border-t border-[var(--accent)]/30 px-4 py-2 flex items-center justify-between">
+                <span className="text-[9px] font-mono text-[var(--muted)]">
+                  [TXN_COMPLETE]
+                </span>
+                <span className="text-[9px] font-mono text-[var(--accent)] flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
+                  CONFIRMED
+                </span>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
