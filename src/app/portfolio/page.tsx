@@ -359,6 +359,8 @@ export default function PortfolioPage() {
                   <div className="space-y-2">
                     {positions.map((p, i) => {
                       const isResolved = p.market.status === "RESOLVED";
+                      const isExpired = p.market.status === "EXPIRED" || (p.market.status === "OPEN" && new Date(p.market.resolvesAt) < new Date());
+                      const isOpen = p.market.status === "OPEN" && !isExpired;
                       const isMultiOpt = !!(p.market.options && p.market.options.length >= 2);
                       const won = isResolved && (
                         isMultiOpt
@@ -378,7 +380,7 @@ export default function PortfolioPage() {
                       // Left accent color
                       const accentColor = isResolved
                         ? won ? "border-l-[var(--accent)]" : "border-l-red-500"
-                        : "border-l-yellow-400";
+                        : isExpired ? "border-l-orange-400" : "border-l-yellow-400";
 
                       return (
                         <motion.div
@@ -407,6 +409,11 @@ export default function PortfolioPage() {
                                         )}>
                                           {won ? <CheckCircle size={10} weight="fill" /> : <XCircle size={10} weight="fill" />}
                                           {won ? t.portfolio.won : t.portfolio.lost}
+                                        </span>
+                                      ) : isExpired ? (
+                                        <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 border border-orange-500/30 text-orange-400 uppercase tracking-wider flex items-center gap-1">
+                                          <Pulse size={10} weight="fill" />
+                                          {locale === "sw" ? "IMEKWISHA" : "EXPIRED"}
                                         </span>
                                       ) : (
                                         <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 border border-yellow-500/30 text-yellow-400 uppercase tracking-wider flex items-center gap-1">
@@ -447,7 +454,7 @@ export default function PortfolioPage() {
                                 </div>
 
                                 {/* Progress bar for open positions */}
-                                {!isResolved && (
+                                {isOpen && (
                                   <div className="mt-3">
                                     <div className="w-full h-1 bg-[var(--card)] overflow-hidden">
                                       <motion.div
@@ -467,7 +474,7 @@ export default function PortfolioPage() {
                                     <div className="text-base font-mono font-bold tabular-nums">{formatTZS(Math.round(p.currentValue))}</div>
                                   </div>
 
-                                  {!isResolved ? (
+                                  {isOpen ? (
                                     <div className="flex items-end gap-3">
                                       <button
                                         onClick={(e) => {
@@ -631,7 +638,7 @@ export default function PortfolioPage() {
 
                           {/* Inline sell panel */}
                           <AnimatePresence>
-                            {sellOpen === p.id && !isResolved && (() => {
+                            {sellOpen === p.id && isOpen && (() => {
                               // Determine available shares for selected side
                               let availShares = 0;
                               let sideLabel = "";
