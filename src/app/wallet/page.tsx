@@ -310,7 +310,7 @@ export default function WalletPage() {
                         type="text"
                         value={recipient}
                         onChange={(e) => setRecipient(e.target.value)}
-                        className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
+                        className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors lowercase placeholder:lowercase"
                         placeholder="username"
                         required
                       />
