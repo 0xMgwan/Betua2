@@ -10,7 +10,6 @@ export async function GET() {
         select: { amountTzs: true },
       },
     },
-    take: 50,
   });
 
   const enriched = users
@@ -23,6 +22,7 @@ export async function GET() {
       totalTrades: u._count.trades,
       marketsCreated: u._count.marketsCreated,
     }))
+    .filter((u: { totalTrades: number }) => u.totalTrades > 0) // Only show users with at least 1 trade
     .sort((a: { totalVolume: number }, b: { totalVolume: number }) => b.totalVolume - a.totalVolume);
 
   const ranked = enriched.map((u: typeof enriched[number], i: number) => ({ ...u, rank: i + 1 }));

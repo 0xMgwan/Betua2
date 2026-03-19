@@ -89,6 +89,7 @@ export default function PortfolioPage() {
   const [sellLoading, setSellLoading] = useState(false);
   const [sellError, setSellError] = useState("");
   const [sellSuccess, setSellSuccess] = useState("");
+  const [sellPopup, setSellPopup] = useState<{ payout: number; shares: number; side: string; marketTitle: string } | null>(null);
 
   // Expanded position state
   const [expandedPosition, setExpandedPosition] = useState<string | null>(null);
@@ -183,13 +184,31 @@ export default function PortfolioPage() {
       if (!res.ok) {
         setSellError(data.error || "Sell failed");
       } else {
+        // Show success popup
+        const sideLabel = isMultiOpt 
+          ? (position.market.options?.[Number(sellSide)] || `Option ${sellSide}`)
+          : sellSide;
+        setSellPopup({ 
+          payout: data.netPayout, 
+          shares: Number(sellShares), 
+          side: sideLabel,
+          marketTitle: position.market.title 
+        });
         setSellSuccess(`Sold for ${formatTZS(data.netPayout)}!`);
         setSellShares("");
-        // Refresh portfolio
-        fetch("/api/portfolio")
-          .then((r) => r.json())
-          .then((d) => { setPositions(d.positions || []); setTrades(d.trades || []); });
-        setTimeout(() => { setSellSuccess(""); setSellOpen(null); }, 3000);
+        setSellOpen(null);
+        // Refresh portfolio and user balance
+        Promise.all([
+          fetch("/api/portfolio").then((r) => r.json()),
+          fetch("/api/auth/me").then((r) => r.json())
+        ]).then(([portfolioData, userData]) => {
+          setPositions(portfolioData.positions || []);
+          setTrades(portfolioData.trades || []);
+          if (userData.user) {
+            useUser.getState().setUser(userData.user);
+          }
+        });
+        setTimeout(() => setSellSuccess(""), 3000);
       }
     } catch {
       setSellError("Network error");
@@ -1113,6 +1132,113 @@ export default function PortfolioPage() {
                 </span>
                 <span className="text-[9px] font-mono text-[var(--accent)] flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
+                  CONFIRMED
+                </span>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══ Sell Success Popup ═══ */}
+      <AnimatePresence>
+        {sellPopup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={() => setSellPopup(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[var(--card)] border-2 border-[#ff4d6a] rounded-xl overflow-hidden max-w-sm w-full shadow-[0_0_60px_rgba(255,77,106,0.3)]"
+            >
+              {/* Terminal header */}
+              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[#ff4d6a]/30 bg-[#ff4d6a]/5">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-[#ff4d6a]" />
+                  <div className="w-3 h-3 rounded-full bg-[#ff4d6a]/50" />
+                  <div className="w-3 h-3 rounded-full bg-[#ff4d6a]/30" />
+                </div>
+                <span className="text-[10px] font-mono text-[#ff4d6a] uppercase tracking-wider ml-2">
+                  SELL.SUCCESS
+                </span>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 text-center">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
+                  className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#ff4d6a]/10 border-2 border-[#ff4d6a] flex items-center justify-center"
+                >
+                  <CurrencyDollar size={32} weight="fill" className="text-[#ff4d6a]" />
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <p className="text-[#ff4d6a] font-mono font-bold text-lg mb-1">
+                    {locale === "sw" ? "UMEUZWA!" : "SOLD!"}
+                  </p>
+                  <p className="text-[var(--muted)] font-mono text-xs mb-2 line-clamp-2">
+                    {sellPopup.marketTitle}
+                  </p>
+                  <p className="text-[var(--foreground)] font-mono text-sm mb-4">
+                    {sellPopup.shares} {sellPopup.side} {locale === "sw" ? "hisa" : "shares"}
+                  </p>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="bg-[var(--background)] border border-[#ff4d6a]/30 rounded-lg p-4 mb-4"
+                >
+                  <p className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider mb-1">
+                    {locale === "sw" ? "Umepokea" : "You Received"}
+                  </p>
+                  <p className="text-3xl font-mono font-bold text-[#ff4d6a] tabular-nums">
+                    {formatTZS(sellPopup.payout)}
+                  </p>
+                </motion.div>
+
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-[10px] font-mono text-[var(--muted)] mb-4"
+                >
+                  {locale === "sw" 
+                    ? "Fedha zimeongezwa kwenye salio lako" 
+                    : "Funds have been added to your wallet"}
+                </motion.p>
+
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  onClick={() => setSellPopup(null)}
+                  className="w-full py-3 bg-[#ff4d6a] text-white font-mono font-bold text-sm uppercase tracking-wider hover:bg-[#ff4d6a]/90 transition-all"
+                >
+                  {locale === "sw" ? "SAWA" : "GOT IT"}
+                </motion.button>
+              </div>
+
+              {/* Terminal footer */}
+              <div className="bg-[var(--background)] border-t border-[#ff4d6a]/30 px-4 py-2 flex items-center justify-between">
+                <span className="text-[9px] font-mono text-[var(--muted)]">
+                  [SELL_COMPLETE]
+                </span>
+                <span className="text-[9px] font-mono text-[#ff4d6a] flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#ff4d6a] animate-pulse" />
                   CONFIRMED
                 </span>
               </div>
