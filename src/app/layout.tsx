@@ -34,13 +34,13 @@ export const metadata: Metadata = {
     description: "Trade YES or NO on African events. Politics, sports, business. Powered by nTZS.",
     siteName: "GUAP",
     type: "website",
-    images: [{ url: "/og-image.png?v=2", width: 1200, height: 630 }],
+    images: [{ url: "/og-guap.png", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
     title: "GUAP — Predict the Future. Earn GUAP.",
     description: "Trade YES or NO on African events. Politics, sports, business. Powered by nTZS.",
-    images: ["/og-image.png?v=2"],
+    images: ["/og-guap.png"],
   },
 };
 
