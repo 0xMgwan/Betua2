@@ -438,10 +438,11 @@ export default function PortfolioPage() {
                         const won = isResolved && (
                           isMultiOpt
                             ? !!(p.optionShares && p.market.outcome !== null && (() => {
-                                const maxIdx = Object.entries(p.optionShares).reduce((a, b) => (b[1] > (p.optionShares?.[a] || 0) ? b[0] : a), "0");
-                                return maxIdx === String(p.market.outcome);
+                                // Check if user has ANY shares in the winning option (not just their largest position)
+                                const winningShares = p.optionShares[String(p.market.outcome)] || 0;
+                                return winningShares > 0;
                               })())
-                            : ((p.market.outcome === 1 && p.yesShares >= p.noShares) || (p.market.outcome === 0 && p.noShares > p.yesShares))
+                            : ((p.market.outcome === 1 && p.yesShares > 0) || (p.market.outcome === 0 && p.noShares > 0))
                         );
 
                         const positionPayout = isMultiOpt && p.optionShares
