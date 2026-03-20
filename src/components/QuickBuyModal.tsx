@@ -321,15 +321,6 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
                     <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
                     <span className="font-bold tabular-nums text-[#00e5a0]">{formatTZS(payoutIfWin)}</span>
                   </div>
-
-                  {/* Net gain */}
-                  <div className="flex items-center justify-between text-xs font-mono">
-                    <span className="text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Faida halisi" : "Net gain"}</span>
-                    <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
-                    <span className={`font-bold tabular-nums ${netGain >= 0 ? "text-[#00e5a0]" : "text-yellow-400"}`}>
-                      {netGain >= 0 ? `+${formatTZS(netGain)}` : formatTZS(netGain)}
-                    </span>
-                  </div>
                 </div>
               )}
 
