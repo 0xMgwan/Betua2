@@ -16,7 +16,8 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://guap.gold"),
   manifest: "/manifest.json",
   icons: {
-    icon: "/icon-192.png",
+    icon: "/guap.svg",
+    shortcut: "/guap.svg",
     apple: "/apple-touch-icon.png",
   },
   appleWebApp: {
@@ -29,13 +30,13 @@ export const metadata: Metadata = {
     description: "Trade YES or NO on African events. Politics, sports, business. Powered by nTZS.",
     siteName: "GUAP",
     type: "website",
-    images: [{ url: "/icon-512.png", width: 512, height: 512 }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
     title: "GUAP — Predict the Future. Earn GUAP.",
     description: "Trade YES or NO on African events. Politics, sports, business. Powered by nTZS.",
-    images: ["/icon-512.png"],
+    images: ["/og-image.png"],
   },
 };
 
