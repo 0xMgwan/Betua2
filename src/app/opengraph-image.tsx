@@ -17,27 +17,51 @@ export default function Image() {
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: "#0a0a0a",
-          border: "4px solid #00e5a0",
         }}
       >
+        {/* Gold G Logo */}
         <div
           style={{
-            fontSize: 140,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 200,
+            height: 200,
+            backgroundColor: "#1a1a1a",
+            borderRadius: 24,
+            marginBottom: 32,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 140,
+              fontFamily: "monospace",
+              fontWeight: 900,
+              color: "#D4AF37",
+              letterSpacing: "-0.05em",
+            }}
+          >
+            G
+          </div>
+        </div>
+        <div
+          style={{
+            fontSize: 72,
             fontFamily: "monospace",
             fontWeight: 900,
-            color: "#00e5a0",
-            letterSpacing: "-0.02em",
+            color: "#D4AF37",
+            letterSpacing: "0.1em",
           }}
         >
           GUAP
         </div>
         <div
           style={{
-            fontSize: 30,
+            fontSize: 28,
             fontFamily: "monospace",
             color: "#ffffff",
             opacity: 0.85,
-            marginTop: 8,
+            marginTop: 16,
           }}
         >
           Predict the Future. Earn GUAP.
@@ -46,9 +70,9 @@ export default function Image() {
           style={{
             fontSize: 20,
             fontFamily: "monospace",
-            color: "#00e5a0",
-            opacity: 0.6,
-            marginTop: 16,
+            color: "#D4AF37",
+            opacity: 0.7,
+            marginTop: 12,
           }}
         >
           Trade YES or NO on African events. Powered by nTZS.
