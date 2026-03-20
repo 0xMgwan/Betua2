@@ -60,22 +60,39 @@ export async function POST(
     },
   });
 
-  // ── "None" outcome: No winner - transfer entire pot to settlement fee wallet as revenue ──
-  let noneOutcomeRevenue = 0;
-  let noneOutcomeTransferred = false;
-  if (isNoneOutcome && market.totalVolume > 0 && PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID) {
+  // ── Calculate total winning shares first (needed for no-winner check) ──
+  let totalWinningSharesPreCheck = 0;
+  for (const pos of market.positions) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const p = pos as any;
+    if (isMultiOption) {
+      const optShares = (p.optionShares as Record<string, number>) || {};
+      totalWinningSharesPreCheck += optShares[String(winningOutcome)] || 0;
+    } else {
+      totalWinningSharesPreCheck += outcome ? pos.yesShares : pos.noShares;
+    }
+  }
+
+  // ── No winners: Transfer pot to settlement fee wallet as revenue ──
+  // This handles both "None" outcome AND when a valid option wins but nobody picked it
+  let noWinnerRevenue = 0;
+  let noWinnerTransferred = false;
+  const hasNoWinners = isNoneOutcome || totalWinningSharesPreCheck === 0;
+  
+  if (hasNoWinners && market.totalVolume > 0 && PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID) {
     // The pot (minus entry fees already taken) goes to settlement fee wallet
-    noneOutcomeRevenue = Math.round(market.totalVolume * (1 - FEE_PERCENT));
+    noWinnerRevenue = Math.round(market.totalVolume * (1 - FEE_PERCENT));
     try {
       await ntzs.transfers.create({
         fromUserId: PLATFORM_NTZS_USER_ID,
         toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
-        amountTzs: noneOutcomeRevenue,
+        amountTzs: noWinnerRevenue,
       });
-      noneOutcomeTransferred = true;
-      console.log(`None outcome: Transferred ${noneOutcomeRevenue} TZS to settlement fee wallet for market ${id}`);
+      noWinnerTransferred = true;
+      const reason = isNoneOutcome ? "None outcome" : `No one picked ${winningLabel}`;
+      console.log(`${reason}: Transferred ${noWinnerRevenue} TZS to settlement fee wallet for market ${id}`);
     } catch (err) {
-      console.error("None outcome revenue transfer failed:", err);
+      console.error("No winner revenue transfer failed:", err);
     }
   }
 
@@ -227,10 +244,11 @@ export async function POST(
       paid: creatorFeePaid,
       isAdmin: isAdminCreator,
     },
-    noneOutcome: {
-      isNone: isNoneOutcome,
-      revenue: noneOutcomeRevenue,
-      transferred: noneOutcomeTransferred,
+    noWinners: {
+      hasNoWinners,
+      isNoneOutcome,
+      revenue: noWinnerRevenue,
+      transferred: noWinnerTransferred,
     },
   });
 }
