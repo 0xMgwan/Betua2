@@ -43,6 +43,8 @@ model Market {
   imageUrl     String?
   creatorId    String
   creator      User         @relation("MarketCreator", fields: [creatorId], references: [id])
+  partnerId    String?                              // If set, market only visible to this partner's platform
+  partner      Partner?     @relation(fields: [partnerId], references: [id])
   status       String       @default("OPEN")
   outcome      Int?
   outcomeLabel String?
@@ -60,6 +62,8 @@ model Market {
   positions Position[]
   trades    Trade[]
   comments  Comment[]
+
+  @@index([partnerId])
 }
 
 model Position {
@@ -182,6 +186,7 @@ model Partner {
 
   users         PartnerUser[]
   apiLogs       ApiLog[]
+  markets       Market[]                        // Markets created by this partner (only visible on their platform)
 
   @@index([apiKey])
   @@index([apiKeyPrefix])
