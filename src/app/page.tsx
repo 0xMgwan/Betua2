@@ -987,9 +987,7 @@ curl -X POST /api/v1/trades \\
             {/* Brand */}
             <div className="sm:col-span-2 lg:col-span-1">
               <Link href="/" className="flex items-center gap-2 font-black text-xl mb-3">
-                <div className="w-8 h-8 border-2 border-[var(--foreground)] flex items-center justify-center text-[var(--foreground)] font-black text-sm font-mono">
-                  G
-                </div>
+                <img src="/guap.svg" alt="GUAP" className="w-8 h-8" />
                 <span className="text-[var(--foreground)] font-mono">GUAP</span>
               </Link>
               <p className="text-sm text-[var(--muted)] leading-relaxed max-w-xs font-mono">

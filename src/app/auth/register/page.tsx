@@ -27,11 +27,15 @@ function RegisterForm() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (form.password.length < 8) {
       return setError("Password must be at least 8 characters");
+    }
+    if (!agreedToTerms) {
+      return setError(locale === "sw" ? "Lazima ukubali Masharti na Vigezo" : "You must agree to the Terms and Conditions");
     }
     setLoading(true);
     setError("");
@@ -71,9 +75,7 @@ function RegisterForm() {
               <ArrowLeft size={16} className="text-[var(--muted)]" />
               <span className="text-sm text-[var(--muted)]">{t.common.back}</span>
             </Link>
-            <div className="w-14 h-14 border-2 border-[var(--foreground)] flex items-center justify-center text-[var(--foreground)] font-black text-2xl mx-auto mb-4 font-mono">
-              G
-            </div>
+            <img src="/guap.svg" alt="GUAP" className="w-14 h-14 mx-auto mb-4" />
             <h1 className="text-2xl font-bold font-mono">{t.auth.joinGuap}</h1>
             <p className="text-[var(--muted)] text-sm mt-1 font-mono">{t.auth.joinGuapSub}</p>
           </div>
@@ -151,9 +153,37 @@ function RegisterForm() {
               </div>
             </div>
 
+            {/* Terms & Conditions Checkbox */}
+            <div className="flex items-start gap-2 pt-2">
+              <input
+                type="checkbox"
+                id="terms"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="mt-1 w-4 h-4 accent-[var(--accent)] cursor-pointer"
+              />
+              <label htmlFor="terms" className="text-xs text-[var(--muted)] cursor-pointer">
+                {locale === "sw" ? (
+                  <>
+                    Ninakubali{" "}
+                    <Link href="/terms" target="_blank" className="text-[var(--accent)] hover:underline font-medium">
+                      Masharti na Vigezo
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    I agree to the{" "}
+                    <Link href="/terms" target="_blank" className="text-[var(--accent)] hover:underline font-medium">
+                      Terms and Conditions
+                    </Link>
+                  </>
+                )}
+              </label>
+            </div>
+
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !agreedToTerms}
               className="w-full py-3 border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold font-mono tracking-wider hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all disabled:opacity-50 mt-2 uppercase"
             >
               {loading ? `${t.auth.signUpButton}...` : t.auth.signUpButton}
