@@ -16,8 +16,12 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://guap.gold"),
   manifest: "/manifest.json",
   icons: {
-    icon: "/guap.svg",
-    shortcut: "/guap.svg",
+    icon: [
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/guap.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/favicon-32.png",
     apple: "/apple-touch-icon.png",
   },
   appleWebApp: {
