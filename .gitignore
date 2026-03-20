@@ -44,4 +44,3 @@ next-env.d.ts
 /public/uploads/*
 !public/uploads/.gitkeep
 guap.png
-guap.svg
