@@ -130,9 +130,7 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 font-bold text-xl font-mono">
-          <div className="w-8 h-8 border-2 border-[var(--foreground)] flex items-center justify-center text-[var(--foreground)] font-black text-sm">
-            G
-          </div>
+          <img src="/guap.svg" alt="GUAP" className="w-8 h-8" />
           <span className="text-[var(--foreground)] tracking-wider">GUAP</span>
         </Link>
 

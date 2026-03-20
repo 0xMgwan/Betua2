@@ -204,9 +204,7 @@ function ShareCardModal({
             {/* Header */}
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 border-2 border-white/30 flex items-center justify-center text-white font-black text-[10px]">
-                  G
-                </div>
+                <img src="/guap.svg" alt="GUAP" className="w-7 h-7" />
                 <span className="text-white/60 text-[10px] font-mono tracking-[0.3em] uppercase">
                   GUAP
                 </span>
