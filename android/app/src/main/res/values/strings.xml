@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">GUAP</string>
+    <string name="title_activity_main">GUAP</string>
+    <string name="package_name">gold.guap.app</string>
+    <string name="custom_url_scheme">gold.guap.app</string>
+</resources>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>GUAP</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0a0a0a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: monospace;
+      color: #D4AF37;
+    }
+    .loader {
+      text-align: center;
+    }
+    .logo {
+      font-size: 48px;
+      font-weight: 900;
+      margin-bottom: 20px;
+      letter-spacing: 0.1em;
+    }
+    .spinner {
+      border: 3px solid rgba(212, 175, 55, 0.1);
+      border-top: 3px solid #D4AF37;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="loader">
+    <div class="logo">GUAP</div>
+    <div class="spinner"></div>
+  </div>
+  <script>
+    // Redirect to live website
+    window.location.href = 'https://guap.gold';
+  </script>
+</body>
+</html>
