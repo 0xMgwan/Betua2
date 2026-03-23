@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     // Generate webhook secret
     const webhookSecret = crypto.randomBytes(32).toString("hex");
 
-    // Create partner
+    // Create partner (auto-approved since admin is registering them)
     const partner = await prisma.partner.create({
       data: {
         name,
@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
         rateLimit: RATE_LIMITS[tier.toUpperCase() as keyof typeof RATE_LIMITS] || RATE_LIMITS.FREE,
         webhookUrl: webhookUrl || null,
         webhookSecret,
+        isApproved: true, // Auto-approve since admin is creating
       },
     });
 
