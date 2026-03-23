@@ -41,16 +41,19 @@ export async function validateApiKey(req: NextRequest): Promise<PartnerContext |
   const authHeader = req.headers.get("Authorization");
   
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    console.log("[API Auth] Missing or invalid Authorization header");
     return null;
   }
 
   const apiKey = authHeader.slice(7); // Remove "Bearer " prefix
   
   if (!apiKey.startsWith("gp_live_")) {
+    console.log("[API Auth] API key does not start with gp_live_");
     return null;
   }
 
   const hashedKey = hashApiKey(apiKey);
+  console.log("[API Auth] Looking for hashed key:", hashedKey.substring(0, 16) + "...");
 
   const partner = await prisma.partner.findUnique({
     where: { apiKey: hashedKey },
@@ -64,9 +67,29 @@ export async function validateApiKey(req: NextRequest): Promise<PartnerContext |
     },
   });
 
-  if (!partner || !partner.isActive || !partner.isApproved) {
+  if (!partner) {
+    console.log("[API Auth] No partner found with this API key hash");
+    // Try to find any partner to debug
+    const anyPartner = await prisma.partner.findFirst({
+      select: { apiKey: true, name: true, isActive: true, isApproved: true }
+    });
+    if (anyPartner) {
+      console.log("[API Auth] Found partner in DB:", anyPartner.name, "stored hash:", anyPartner.apiKey?.substring(0, 16) + "...");
+    }
     return null;
   }
+
+  if (!partner.isActive) {
+    console.log("[API Auth] Partner found but isActive is false");
+    return null;
+  }
+
+  if (!partner.isApproved) {
+    console.log("[API Auth] Partner found but isApproved is false");
+    return null;
+  }
+
+  console.log("[API Auth] Partner validated successfully:", partner.name);
 
   return {
     partnerId: partner.id,
