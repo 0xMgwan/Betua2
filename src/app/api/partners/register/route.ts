@@ -36,14 +36,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate API key
-    const rawApiKey = `gp_live_${crypto.randomBytes(24).toString("hex")}`;
-    const hashedApiKey = await bcrypt.hash(rawApiKey, 10);
-    const apiKeyPrefix = rawApiKey.substring(0, 16);
+    const rawApiKey = `gp_live_${crypto.randomBytes(32).toString("hex")}`;
+    // Use SHA256 hash to match api-auth.ts validation
+    const hashedApiKey = crypto.createHash("sha256").update(rawApiKey).digest("hex");
+    const apiKeyPrefix = "gp_live_";
 
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Create partner (not approved by default)
+    // Create partner (auto-approved for self-service)
     const partner = await prisma.partner.create({
       data: {
         name,
@@ -55,14 +56,14 @@ export async function POST(req: NextRequest) {
         tier: "FREE",
         rateLimit: 100,
         isActive: true,
-        isApproved: false, // Requires admin approval
+        isApproved: true, // Auto-approve for self-service registration
         metadata: companyDescription ? { description: companyDescription } : undefined,
       },
     });
 
     return NextResponse.json({
       success: true,
-      message: "Registration successful! Your account is pending approval.",
+      message: "Registration successful! Your account is active and ready to use.",
       partnerId: partner.id,
       email: partner.email,
       apiKeyPrefix: partner.apiKeyPrefix,

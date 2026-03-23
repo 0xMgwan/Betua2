@@ -45,7 +45,7 @@ export default function PartnersAuthPage() {
       if (isLogin) {
         router.push("/partners/dashboard");
       } else {
-        setSuccess("Registration successful! Your account is pending approval. You can login to view your dashboard.");
+        setSuccess("Registration successful! Your account is active. You can login to view your API key.");
         setIsLogin(true);
       }
     } catch {

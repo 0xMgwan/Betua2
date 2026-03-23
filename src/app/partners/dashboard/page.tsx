@@ -12,6 +12,7 @@ export default function PartnerDashboard() {
   const [loading, setLoading] = useState(true);
   const [showApiKey, setShowApiKey] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
   useEffect(() => {
     Promise.all([fetch("/api/partners/me"), fetch("/api/partners/stats")])
@@ -29,6 +30,26 @@ export default function PartnerDashboard() {
       navigator.clipboard.writeText(partner.rawApiKey);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const regenerateApiKey = async () => {
+    if (!confirm("Are you sure you want to regenerate your API key? Your old key will stop working immediately.")) return;
+    setRegenerating(true);
+    try {
+      const res = await fetch("/api/partners/regenerate-key", { method: "POST" });
+      const data = await res.json();
+      if (res.ok && data.apiKey) {
+        setPartner({ ...partner, rawApiKey: data.apiKey, apiKeyPrefix: "gp_live_" });
+        setShowApiKey(true);
+        alert("New API key generated! Make sure to copy it now.");
+      } else {
+        alert(data.error || "Failed to regenerate key");
+      }
+    } catch {
+      alert("Network error");
+    } finally {
+      setRegenerating(false);
     }
   };
 
@@ -72,6 +93,13 @@ export default function PartnerDashboard() {
                 <div><span className="text-[var(--muted)]">Rate:</span> {partner.rateLimit}/min</div>
                 <div><span className="text-[var(--muted)]">Status:</span> <span className={partner.isApproved ? "text-green-500" : "text-yellow-500"}>{partner.isApproved ? "Active" : "Pending"}</span></div>
               </div>
+              <button 
+                onClick={regenerateApiKey} 
+                disabled={regenerating}
+                className="mt-4 w-full py-2 px-4 border border-red-500/50 text-red-500 text-sm font-mono hover:bg-red-500/10 disabled:opacity-50"
+              >
+                {regenerating ? "Regenerating..." : "Regenerate API Key"}
+              </button>
             </div>
           </div>
 
