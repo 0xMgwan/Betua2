@@ -1,7 +1,7 @@
 /**
  * Markets API
- * GET /api/v1/markets - List markets (partner sees only their markets)
- * POST /api/v1/markets - Create a new market (only visible on partner's platform)
+ * GET /api/v1/markets - List markets (all public GUAP markets + partner's own markets)
+ * POST /api/v1/markets - Create a new market (scoped to partner's platform)
  * 
  * Query params (GET):
  * - status: OPEN, RESOLVED, ALL (default: OPEN)
@@ -51,9 +51,12 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100);
     const offset = parseInt(searchParams.get("offset") || "0");
 
-    // Build where clause - only show partner's own markets
+    // Build where clause - show public markets (no partnerId) AND partner's own markets
     const where: any = {
-      partnerId: partner.partnerId, // Only show markets created by this partner
+      OR: [
+        { partnerId: null }, // Public GUAP markets
+        { partnerId: partner.partnerId }, // Partner's own markets
+      ],
     };
     if (status !== "ALL") {
       where.status = status;
