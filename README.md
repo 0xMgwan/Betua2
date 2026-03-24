@@ -2,7 +2,7 @@
 
 ![GUAP Banner](https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&h=300&fit=crop&q=80)
 
-**Tanzania's first prediction market platform.** Trade on real-world events and earn from your knowledge.
+**Africa's first prediction market platform.** Trade on real-world events and earn from your knowledge.
 
 [![Live](https://img.shields.io/badge/status-live-success)](https://www.guap.gold)
 [![API](https://img.shields.io/badge/API-v1.0-blue)](https://www.guap.gold/developers)
