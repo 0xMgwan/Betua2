@@ -335,6 +335,49 @@ export default function DevelopersPage() {
                 "currency": "TZS",
               }}
             />
+            <Endpoint
+              method="POST"
+              path="/api/v1/wallet/deposit"
+              description="Initiate M-Pesa deposit"
+              body={{
+                "externalId": "string (required)",
+                "amountTzs": "number (required, min 1000)",
+                "phone": "string (required) — M-Pesa number",
+              }}
+              response={{
+                "depositId": "string",
+                "status": "PENDING",
+              }}
+            />
+            <Endpoint
+              method="POST"
+              path="/api/v1/wallet/withdraw"
+              description="Initiate M-Pesa withdrawal"
+              body={{
+                "externalId": "string (required)",
+                "amountTzs": "number (required, min 1000)",
+                "phone": "string (required)",
+              }}
+            />
+            <Endpoint
+              method="POST"
+              path="/api/v1/wallet/send"
+              description="Send TZS between users"
+              body={{
+                "fromExternalId": "string (required)",
+                "toExternalId": "string (required)",
+                "amountTzs": "number (required)",
+              }}
+            />
+            <Endpoint
+              method="GET"
+              path="/api/v1/wallet/transactions"
+              description="Get transaction history"
+              query={{
+                "externalId": "string (required)",
+                "limit": "number (max 100)",
+              }}
+            />
 
             {/* Markets */}
             <h3 className="text-sm font-mono font-bold text-blue-400 mb-3 flex items-center gap-2 mt-6">
@@ -444,18 +487,35 @@ export default function DevelopersPage() {
             />
             <Endpoint
               method="POST"
-              path="/api/v1/positions/:id/redeem"
+              path="/api/v1/positions/redeem"
               description="Redeem winnings from resolved market"
               body={{
                 "externalId": "string (required)",
+                "positionId": "string (required)",
               }}
               response={{
-                "positionId": "string",
-                "marketId": "string",
+                "payoutTzs": "number — Net payout",
                 "winningShares": "number",
-                "grossPayout": "number",
-                "settlementFee": "number — 5% fee",
-                "netPayout": "number — Amount credited",
+              }}
+            />
+            <Endpoint
+              method="POST"
+              path="/api/v1/positions/sell"
+              description="Sell shares (exit position early)"
+              body={{
+                "externalId": "string (required)",
+                "marketId": "string (required)",
+                "side": "YES | NO (for binary)",
+                "optionIndex": "number (for multi-option)",
+                "sharesToSell": "number (required)",
+              }}
+            />
+            <Endpoint
+              method="POST"
+              path="/api/v1/markets/:id/resolve"
+              description="Resolve your own market"
+              body={{
+                "outcome": "number (0=NO, 1=YES or option index)",
               }}
             />
           </div>
