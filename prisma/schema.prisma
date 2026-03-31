@@ -7,64 +7,61 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  username      String   @unique
-  displayName   String?
-  phone         String?
-  bio           String?
-  avatarUrl     String?
-  passwordHash  String
-  ntzsUserId    String?  @unique
-  walletAddress String?
-  country       String?  @default("TZ")  // TZ or KE
-  referralCode  String?  @unique
-  referredById  String?
-  referredBy    User?    @relation("Referrals", fields: [referredById], references: [id])
-  referrals     User[]   @relation("Referrals")
-  balanceTzs    Int      @default(0)
-  balanceKes    Int      @default(0)
-  locale        String?  @default("en")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  marketsCreated   Market[]          @relation("MarketCreator")
-  positions        Position[]
-  trades           Trade[]
-  comments         Comment[]
-  notifications    Notification[]
-  referralRewards  ReferralReward[]  @relation("ReferralRewardsEarned")
+  id              String           @id @default(cuid())
+  walletAddress   String?
+  ntzsUserId      String?          @unique
+  username        String           @unique
+  email           String           @unique
+  phone           String?
+  bio             String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  avatarUrl       String?
+  displayName     String?
+  passwordHash    String
+  balanceTzs      Int              @default(0)
+  referralCode    String?          @unique
+  referredById    String?
+  locale          String?          @default("en")
+  balanceKes      Int              @default(0)
+  country         String?          @default("TZ")
+  comments        Comment[]
+  marketsCreated  Market[]         @relation("MarketCreator")
+  notifications   Notification[]
+  positions       Position[]
+  referralRewards ReferralReward[] @relation("ReferralRewardsEarned")
+  trades          Trade[]
+  referredBy      User?            @relation("Referrals", fields: [referredById], references: [id])
+  referrals       User[]           @relation("Referrals")
 }
 
 model Market {
-  id           String       @id @default(cuid())
-  title        String
+  id           String     @id @default(cuid())
   description  String
   category     String
-  subCategory  String?
   imageUrl     String?
   creatorId    String
-  creator      User         @relation("MarketCreator", fields: [creatorId], references: [id])
-  partnerId    String?                              // If set, market only visible to this partner's platform
-  partner      Partner?     @relation(fields: [partnerId], references: [id])
-  currency     String       @default("TZS")        // Market's base currency (TZS or KES)
-  status       String       @default("OPEN")
-  outcome      Int?
-  outcomeLabel String?
-  resolvesAt   DateTime
   resolvedAt   DateTime?
-  totalVolume  Int          @default(0)
-  yesPool      Int          @default(100000)
-  noPool       Int          @default(100000)
-  liquidity    Int          @default(200000)
-  options      Json?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  liquidity    Int        @default(200000)
+  noPool       Int        @default(100000)
+  outcome      Int?
+  resolvesAt   DateTime
+  title        String
+  totalVolume  Int        @default(0)
+  yesPool      Int        @default(100000)
+  status       String     @default("OPEN")
   optionPools  Json?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-
-  positions Position[]
-  trades    Trade[]
-  comments  Comment[]
+  options      Json?
+  outcomeLabel String?
+  subCategory  String?
+  partnerId    String?
+  comments     Comment[]
+  creator      User       @relation("MarketCreator", fields: [creatorId], references: [id])
+  partner      Partner?   @relation(fields: [partnerId], references: [id])
+  positions    Position[]
+  trades       Trade[]
 
   @@index([partnerId])
 }
@@ -73,14 +70,14 @@ model Position {
   id           String   @id @default(cuid())
   userId       String
   marketId     String
-  user         User     @relation(fields: [userId], references: [id])
-  market       Market   @relation(fields: [marketId], references: [id])
-  yesShares    Int      @default(0)
-  noShares     Int      @default(0)
-  optionShares Json?
-  redeemed     Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  noShares     Int      @default(0)
+  yesShares    Int      @default(0)
+  redeemed     Boolean  @default(false)
+  optionShares Json?
+  market       Market   @relation(fields: [marketId], references: [id])
+  user         User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, marketId])
 }
@@ -89,15 +86,15 @@ model Trade {
   id             String   @id @default(cuid())
   userId         String
   marketId       String
-  user           User     @relation(fields: [userId], references: [id])
-  market         Market   @relation(fields: [marketId], references: [id])
-  side           String
-  amountTzs      Int
   shares         Int
+  amountTzs      Int
+  createdAt      DateTime @default(now())
+  ntzsTransferId String?
   price          Float
   txHash         String?
-  ntzsTransferId String?
-  createdAt      DateTime @default(now())
+  side           String
+  market         Market   @relation(fields: [marketId], references: [id])
+  user           User     @relation(fields: [userId], references: [id])
 }
 
 model Transaction {
@@ -105,129 +102,124 @@ model Transaction {
   userId            String
   type              String
   amountTzs         Int      @default(0)
-  amountKes         Int      @default(0)
-  currency          String   @default("TZS")  // TZS or KES
   status            String   @default("PENDING")
   ntzsDepositId     String?
   ntzsWithdrawId    String?
-  externalRef       String?  // Pretium transaction code
-  txHash            String?  // Blockchain tx hash for NKES
-  description       String?
   phone             String?
-  recipientUsername String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+  recipientUsername String?
+  amountKes         Int      @default(0)
+  currency          String   @default("TZS")
+  description       String?
+  externalRef       String?
+  txHash            String?
 
   @@index([externalRef])
 }
 
 model ReferralReward {
-  id            String   @id @default(cuid())
-  referrerId    String
-  referrer      User     @relation("ReferralRewardsEarned", fields: [referrerId], references: [id])
-  referredId    String
-  depositTxId   String   @unique
-  amountTzs     Int
-  status        String   @default("PENDING")
+  id             String   @id @default(cuid())
+  referrerId     String
+  referredId     String
+  depositTxId    String   @unique
+  amountTzs      Int
+  status         String   @default("PENDING")
   ntzsTransferId String?
-  createdAt     DateTime @default(now())
+  createdAt      DateTime @default(now())
+  referrer       User     @relation("ReferralRewardsEarned", fields: [referrerId], references: [id])
 }
 
 model Comment {
   id        String   @id @default(cuid())
   userId    String
   marketId  String
-  user      User     @relation(fields: [userId], references: [id])
-  market    Market   @relation(fields: [marketId], references: [id])
   body      String
   createdAt DateTime @default(now())
+  market    Market   @relation(fields: [marketId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model Notification {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
   type      String
   title     String
   message   String
   link      String?
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId, read])
   @@index([userId, createdAt])
 }
 
 model MarketTranslation {
-  id               String   @id @default(cuid())
-  marketId         String
-  language         String
-  translatedTitle  String
-  translatedDesc   String?
+  id                String   @id @default(cuid())
+  marketId          String
+  language          String
+  translatedTitle   String
+  translatedDesc    String?
   translatedOptions Json?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@unique([marketId, language])
   @@index([marketId])
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PUBLIC API - Partner Integration Models
-// ═══════════════════════════════════════════════════════════════════════════
-
 model Partner {
-  id            String   @id @default(cuid())
-  name          String                          // e.g., "CRDB Bank", "M-Pesa"
-  email         String   @unique
-  passwordHash  String?                         // For dashboard login
-  apiKey        String   @unique                // Hashed API key
-  apiKeyPrefix  String                          // First 8 chars for display (e.g., "gp_live_")
-  rawApiKey     String?                         // Stored once on creation, shown only once
-  webhookUrl    String?                         // URL to send events
-  webhookSecret String?                         // Secret for webhook signatures
-  tier          String   @default("FREE")       // FREE, BASIC, PRO, ENTERPRISE
-  rateLimit     Int      @default(100)          // Requests per minute
-  isActive      Boolean  @default(true)
-  isApproved    Boolean  @default(false)        // Admin must approve before API works
-  metadata      Json?                           // Additional partner info
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  users         PartnerUser[]
+  id            String        @id @default(cuid())
+  name          String
+  email         String        @unique
+  apiKey        String        @unique
+  apiKeyPrefix  String
+  webhookUrl    String?
+  webhookSecret String?
+  tier          String        @default("FREE")
+  rateLimit     Int           @default(100)
+  isActive      Boolean       @default(true)
+  metadata      Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  isApproved    Boolean       @default(false)
+  passwordHash  String?
+  rawApiKey     String?
   apiLogs       ApiLog[]
-  markets       Market[]                        // Markets created by this partner (only visible on their platform)
+  markets       Market[]
+  users         PartnerUser[]
 
   @@index([apiKey])
   @@index([apiKeyPrefix])
 }
 
 model PartnerUser {
-  id            String   @id @default(cuid())
-  partnerId     String
-  partner       Partner  @relation(fields: [partnerId], references: [id])
-  externalId    String                          // Partner's user ID (e.g., "CRDB-0712345678")
-  userId        String                          // Our internal User ID
-  metadata      Json?                           // Additional user info from partner
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id         String   @id @default(cuid())
+  partnerId  String
+  externalId String
+  userId     String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  partner    Partner  @relation(fields: [partnerId], references: [id])
 
-  @@unique([partnerId, externalId])             // Each partner can only have one mapping per externalId
+  @@unique([partnerId, externalId])
   @@index([partnerId])
   @@index([userId])
 }
 
 model ApiLog {
-  id            String   @id @default(cuid())
-  partnerId     String
-  partner       Partner  @relation(fields: [partnerId], references: [id])
-  endpoint      String                          // e.g., "/api/v1/trades"
-  method        String                          // GET, POST, etc.
-  statusCode    Int
-  responseTime  Int                             // ms
-  ipAddress     String?
-  userAgent     String?
-  createdAt     DateTime @default(now())
+  id           String   @id @default(cuid())
+  partnerId    String
+  endpoint     String
+  method       String
+  statusCode   Int
+  responseTime Int
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  partner      Partner  @relation(fields: [partnerId], references: [id])
 
   @@index([partnerId, createdAt])
   @@index([createdAt])
