@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ntzs } from "@/lib/ntzs";
+import { nkes } from "@/lib/nkes";
 import { createNotification } from "@/lib/notify";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
 
@@ -117,9 +118,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "User wallet not found" }, { status: 404 });
     }
 
-    // Transfer payout from platform escrow → user via nTZS
+    // Determine user's currency and calculate payout
+    const userCurrency: Currency = getUserCurrency(user.country);
+    const payoutInUserCurrency = userCurrency === 'KES' 
+      ? convertCurrency(payoutTzs, 'TZS', 'KES') 
+      : payoutTzs;
+
+    // Transfer payout from platform escrow → user
     let ntzsTransferId: string | undefined;
-    if (PLATFORM_NTZS_USER_ID) {
+    let nkesTransferTxHash: string | undefined;
+    
+    if (userCurrency === 'KES') {
+      // Kenya user: Transfer NKES from escrow to user
+      try {
+        const ntzsUser = await ntzs.users.get(user.ntzsUserId);
+        const walletAddress = ntzsUser.walletAddress;
+        if (walletAddress) {
+          nkesTransferTxHash = await nkes.transferFromEscrow(walletAddress, payoutInUserCurrency);
+        }
+      } catch (err) {
+        console.error("NKES redeem transfer failed:", err);
+        return NextResponse.json({ error: "Transfer failed" }, { status: 500 });
+      }
+    } else if (PLATFORM_NTZS_USER_ID) {
+      // Tanzania user: Transfer nTZS via nTZS API
       try {
         const transfer = await ntzs.transfers.create({
           fromUserId: PLATFORM_NTZS_USER_ID,
@@ -128,13 +150,13 @@ export async function POST(req: NextRequest) {
         });
         ntzsTransferId = transfer.id;
       } catch (err) {
-        console.error("Redeem transfer failed:", err);
+        console.error("nTZS redeem transfer failed:", err);
         return NextResponse.json({ error: "Transfer failed" }, { status: 500 });
       }
     }
 
-    // Transfer settlement fee from platform escrow → settlement fee wallet (non-blocking)
-    if (PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID && settlementFee > 0) {
+    // Transfer settlement fee from platform escrow → settlement fee wallet (non-blocking, TZS only)
+    if (userCurrency === 'TZS' && PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID && settlementFee > 0) {
       ntzs.transfers.create({
         fromUserId: PLATFORM_NTZS_USER_ID,
         toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
@@ -143,12 +165,6 @@ export async function POST(req: NextRequest) {
         console.error("Settlement fee transfer failed (non-fatal):", feeErr);
       });
     }
-
-    // Determine user's currency and calculate payout
-    const userCurrency: Currency = getUserCurrency(user.country);
-    const payoutInUserCurrency = userCurrency === 'KES' 
-      ? convertCurrency(payoutTzs, 'TZS', 'KES') 
-      : payoutTzs;
 
     // Add balance and create transaction record (position already marked as redeemed above)
     await prisma.$transaction([

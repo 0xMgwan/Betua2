@@ -9,10 +9,15 @@ const NKES_CONTRACT_ADDRESS = process.env.NKES_CONTRACT_ADDRESS || '';
 const NKES_MINTER_PRIVATE_KEY = process.env.NKES_MINTER_PRIVATE_KEY || '';
 const BASE_RPC_URL = process.env.BASE_RPC_URL || 'https://mainnet.base.org';
 
+// Platform escrow wallet for NKES
+const NKES_ESCROW_ADDRESS = process.env.NKES_ESCROW_ADDRESS || '';
+
 // NKES ABI (only the functions we need)
 const NKES_ABI = [
   'function mint(address to, uint256 amount) external',
   'function burn(address from, uint256 amount) external',
+  'function transfer(address to, uint256 amount) external returns (bool)',
+  'function transferFrom(address from, address to, uint256 amount) external returns (bool)',
   'function balanceOf(address account) view returns (uint256)',
   'function decimals() view returns (uint8)',
 ];
@@ -89,6 +94,69 @@ export const nkes = {
     const decimals = await nkesContract.decimals();
     
     return parseFloat(ethers.formatUnits(balance, decimals));
+  },
+
+  /**
+   * Transfer NKES from user to platform escrow (for trades)
+   * Note: This requires the platform to have approval to transfer on behalf of user
+   * For now, we burn from user and mint to escrow (custodial model)
+   * @param fromAddress User's wallet address
+   * @param amountKes Amount in KES
+   */
+  async transferToEscrow(fromAddress: string, amountKes: number): Promise<string> {
+    if (!NKES_ESCROW_ADDRESS) {
+      throw new Error('NKES escrow address not configured');
+    }
+    
+    const nkesContract = getContract();
+    const amount = ethers.parseUnits(amountKes.toString(), 2);
+    
+    console.log(`[NKES] Transferring ${amountKes} NKES from ${fromAddress} to escrow`);
+    
+    // Burn from user and mint to escrow (custodial transfer)
+    const burnTx = await nkesContract.burn(fromAddress, amount);
+    await burnTx.wait();
+    
+    const mintTx = await nkesContract.mint(NKES_ESCROW_ADDRESS, amount);
+    const receipt = await mintTx.wait();
+    
+    console.log(`[NKES] Transfer to escrow successful: ${receipt.hash}`);
+    
+    return receipt.hash;
+  },
+
+  /**
+   * Transfer NKES from platform escrow to user (for redemptions)
+   * @param toAddress User's wallet address
+   * @param amountKes Amount in KES
+   */
+  async transferFromEscrow(toAddress: string, amountKes: number): Promise<string> {
+    if (!NKES_ESCROW_ADDRESS) {
+      throw new Error('NKES escrow address not configured');
+    }
+    
+    const nkesContract = getContract();
+    const amount = ethers.parseUnits(amountKes.toString(), 2);
+    
+    console.log(`[NKES] Transferring ${amountKes} NKES from escrow to ${toAddress}`);
+    
+    // Burn from escrow and mint to user (custodial transfer)
+    const burnTx = await nkesContract.burn(NKES_ESCROW_ADDRESS, amount);
+    await burnTx.wait();
+    
+    const mintTx = await nkesContract.mint(toAddress, amount);
+    const receipt = await mintTx.wait();
+    
+    console.log(`[NKES] Transfer from escrow successful: ${receipt.hash}`);
+    
+    return receipt.hash;
+  },
+
+  /**
+   * Get escrow address
+   */
+  getEscrowAddress(): string {
+    return NKES_ESCROW_ADDRESS;
   },
 };
 
