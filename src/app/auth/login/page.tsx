@@ -51,9 +51,7 @@ export default function LoginPage() {
               <ArrowLeft size={16} className="text-[var(--muted)]" />
               <span className="text-sm text-[var(--muted)]">{t.common.back}</span>
             </Link>
-            <div className="w-14 h-14 border-2 border-[var(--foreground)] flex items-center justify-center text-[var(--foreground)] font-black text-2xl mx-auto mb-4 font-mono">
-              G
-            </div>
+            <img src="/guap.svg" alt="GUAP" className="w-14 h-14 mx-auto mb-4" />
             <h1 className="text-2xl font-bold font-mono">{t.auth.welcomeBack}</h1>
             <p className="text-[var(--muted)] text-sm mt-1 font-mono">{t.auth.welcomeBackSub}</p>
           </div>

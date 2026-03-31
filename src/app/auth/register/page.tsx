@@ -59,7 +59,6 @@ function RegisterForm() {
   const PERKS = [
     locale === "sw" ? "Mkoba bure" : "Free wallet",
     locale === "sw" ? "Kuweka na kutoa pesa kwa Pesa za Simu" : "Mobile Money deposits & withdrawals",
-    locale === "sw" ? "Fanya biashara kwa TZS halisi" : "Trade with real TZS",
   ];
 
   return (
@@ -122,13 +121,14 @@ function RegisterForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1.5">{t.auth.phone}</label>
+              <label className="block text-sm font-medium mb-1.5">Mobile number</label>
               <input
                 type="tel"
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
                 placeholder="255712345678"
+                required
               />
             </div>
 

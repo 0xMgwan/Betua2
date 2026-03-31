@@ -11,7 +11,9 @@ interface User {
   avatarUrl?: string | null;
   walletAddress?: string | null;
   ntzsUserId?: string | null;
+  country?: string | null;
   balanceTzs: number;
+  balanceKes: number;
 }
 
 interface UserStore {

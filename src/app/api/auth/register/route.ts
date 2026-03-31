@@ -31,8 +31,11 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await bcrypt.hash(password, 12);
 
+    // Detect country from phone number
+    const country = phone?.startsWith('254') || phone?.startsWith('+254') ? 'KE' : 'TZ';
+
     const user = await prisma.user.create({
-      data: { email, username, displayName: username, phone, passwordHash, referredById },
+      data: { email, username, displayName: username, phone, passwordHash, referredById, country },
     });
 
     // Create NTZS wallet
