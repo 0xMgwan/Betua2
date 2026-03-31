@@ -18,39 +18,44 @@ const ADMIN_NTZS_USER_IDS = [
 ];
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const category = searchParams.get("category");
-  const subCategory = searchParams.get("subCategory");
-  const status = searchParams.get("status") || "OPEN";
-  const search = searchParams.get("q");
-  const sort = searchParams.get("sort") || "volume";
+  try {
+    const { searchParams } = new URL(req.url);
+    const category = searchParams.get("category");
+    const subCategory = searchParams.get("subCategory");
+    const status = searchParams.get("status") || "OPEN";
+    const search = searchParams.get("q");
+    const sort = searchParams.get("sort") || "volume";
 
-  const markets = await prisma.market.findMany({
-    where: {
-      status: status === "all" ? undefined : status,
-      category: category && category !== "all" ? category : undefined,
-      subCategory: subCategory && subCategory !== "all" ? subCategory : undefined,
-      title: search ? { contains: search } : undefined,
-      resolvesAt: { gte: new Date() }, // Hide expired markets
-    },
-    include: {
-      creator: { select: { username: true, avatarUrl: true } },
-      _count: { select: { trades: true, comments: true } },
-    },
-    orderBy: sort === "volume" ? { totalVolume: "desc" } : { createdAt: "desc" },
-    take: 50,
-  });
+    const markets = await prisma.market.findMany({
+      where: {
+        status: status === "all" ? undefined : status,
+        category: category && category !== "all" ? category : undefined,
+        subCategory: subCategory && subCategory !== "all" ? subCategory : undefined,
+        title: search ? { contains: search, mode: "insensitive" } : undefined,
+        resolvesAt: { gte: new Date() },
+      },
+      include: {
+        creator: { select: { username: true, avatarUrl: true } },
+        _count: { select: { trades: true, comments: true } },
+      },
+      orderBy: sort === "volume" ? { totalVolume: "desc" } : { createdAt: "desc" },
+      take: 50,
+    });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const enriched = markets.map((m: any) => ({
-    ...m,
-    price: getPrice(m.yesPool, m.noPool),
-    optionPrices: m.options && m.optionPools
-      ? getMultiOptionPrices(m.optionPools as number[])
-      : null,
-  }));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const enriched = markets.map((m: any) => ({
+      ...m,
+      price: getPrice(m.yesPool, m.noPool),
+      optionPrices: m.options && m.optionPools
+        ? getMultiOptionPrices(m.optionPools as number[])
+        : null,
+    }));
 
-  return NextResponse.json({ markets: enriched });
+    return NextResponse.json({ markets: enriched });
+  } catch (error) {
+    console.error("Markets API error:", error);
+    return NextResponse.json({ error: "Failed to fetch markets", markets: [] }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
