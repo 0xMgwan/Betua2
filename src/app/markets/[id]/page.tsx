@@ -935,7 +935,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                           outcome={myPick}
                           won={didWin}
                           payout={myPayout}
-                          invested={myInvested}
+                          invested={myInvestedTzs}
                           username={user.username || ""}
                           shares={myShares}
                           marketUrl={`/markets/${market.id}`}
