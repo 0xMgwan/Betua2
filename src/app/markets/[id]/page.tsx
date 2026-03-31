@@ -408,10 +408,12 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   const FEE_PERCENT = 0.05;
   let estimatedShares = 0;
   let estimatedPrice = 0;
-  if (market && amount && Number(amount) >= 100) {
+  if (market && amount && Number(amount) >= (isKenya ? 50 : 100)) {
     try {
-      const feeAmt = Math.round(Number(amount) * FEE_PERCENT);
-      const tradeAmt = Number(amount) - feeAmt;
+      // Convert user input to TZS for AMM calculations
+      const amountInTzs = isKenya ? convertCurrency(Number(amount), 'KES', 'TZS') : Number(amount);
+      const feeAmt = Math.round(amountInTzs * FEE_PERCENT);
+      const tradeAmt = amountInTzs - feeAmt;
       if (isMultiOption && market.optionPools) {
         const result = getMultiOptionSharesOut(tradeAmt, selectedOption, market.optionPools);
         estimatedShares = Math.round(result.shares);
@@ -1037,8 +1039,9 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   {/* Estimate */}
                   {estimatedShares > 0 && market && (() => {
                     const FEE_PCT = 0.05;
+                    const amountInTzs = isKenya ? convertCurrency(Number(amount), 'KES', 'TZS') : Number(amount);
                     const pot = Math.round(market.totalVolume * (1 - FEE_PCT));
-                    const newPot = Math.round((market.totalVolume + Number(amount)) * (1 - FEE_PCT));
+                    const newPot = Math.round((market.totalVolume + amountInTzs) * (1 - FEE_PCT));
                     let totalSideShares: number;
                     if (isMultiOption) {
                       totalSideShares = (market.totalOptionShares?.[String(selectedOption)] || 0) + estimatedShares;

@@ -7,6 +7,8 @@ import { motion } from "framer-motion";
 import { CATEGORIES, SPORTS_SUBCATEGORIES } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useUser } from "@/store/useUser";
+import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
 import { Footer } from "@/components/Footer";
 import {
   CalendarBlank, Image as ImageIcon, CaretRight, Info,
@@ -23,6 +25,14 @@ const CREATION_FEE_TZS = 2000;
 export default function CreateMarketPage() {
   const router = useRouter();
   const { t, locale } = useLanguage();
+  const { user } = useUser();
+  
+  // Currency detection for Kenya/Tanzania users
+  const userCurrency: Currency = getUserCurrency(user?.country, user?.phone);
+  const isKenya = userCurrency === 'KES';
+  const CREATION_FEE_DISPLAY = isKenya 
+    ? `${Math.round(CREATION_FEE_TZS / 18.5).toLocaleString()} KES` 
+    : `${CREATION_FEE_TZS.toLocaleString()} TZS`;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
@@ -245,7 +255,7 @@ export default function CreateMarketPage() {
                 <div className="flex items-center gap-2">
                   <CurrencyDollar size={14} weight="fill" className="text-yellow-500" />
                   <span className="text-xs font-mono text-yellow-500">
-                    [FEE] {t.markets.createMarket.fee}: <span className="font-bold text-yellow-400">{CREATION_FEE_TZS.toLocaleString()} TZS</span>
+                    [FEE] {t.markets.createMarket.fee}: <span className="font-bold text-yellow-400">{CREATION_FEE_DISPLAY}</span>
                   </span>
                 </div>
                 <p className="text-[10px] font-mono text-[var(--muted)] mt-1 ml-6">
@@ -756,7 +766,7 @@ export default function CreateMarketPage() {
                   ) : (
                     <>
                       <Lightning size={16} weight="fill" />
-                      {t.markets.createMarket.submit} · {CREATION_FEE_TZS.toLocaleString()} TZS
+                      {t.markets.createMarket.submit} · {CREATION_FEE_DISPLAY}
                       <CaretRight size={16} weight="bold" />
                     </>
                   )}

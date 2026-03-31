@@ -6,6 +6,8 @@ import { useCart } from "@/store/useCart";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { useUser } from "@/store/useUser";
+import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
 
 export function CartButton() {
   const { items, toggleCart } = useCart();
@@ -34,8 +36,22 @@ export function CartModal() {
   const { items, isOpen, closeCart, removeItem, updateAmount, clearCart, getTotalAmount } = useCart();
   const { locale } = useLanguage();
   const router = useRouter();
+  const { user } = useUser();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  
+  // Currency detection for Kenya/Tanzania users
+  const userCurrency: Currency = getUserCurrency(user?.country, user?.phone);
+  const isKenya = userCurrency === 'KES';
+  
+  // Format amount in user's currency
+  const formatAmount = (amountTzs: number) => {
+    if (isKenya) {
+      const amountKes = convertCurrency(amountTzs, 'TZS', 'KES');
+      return `KSh ${amountKes.toLocaleString()}`;
+    }
+    return formatTZS(amountTzs);
+  };
 
   const handleCheckout = async () => {
     if (items.length === 0) return;
@@ -51,7 +67,8 @@ export function CartModal() {
           trades: items.map((item) => ({
             marketId: item.marketId,
             side: item.side,
-            amountTzs: item.amount,
+            // Convert KES to TZS for API if user is Kenyan
+            ...(isKenya ? { amountKes: item.amount } : { amountTzs: item.amount }),
             optionIndex: item.optionIndex,
           })),
         }),
@@ -148,7 +165,7 @@ export function CartModal() {
                             ~{item.estimatedShares.toFixed(0)} {locale === "sw" ? "hisa" : "shares"}
                           </span>
                           <span className="text-[10px] sm:text-xs font-mono text-[#00e5a0]">
-                            → {formatTZS(Math.round(item.estimatedShares * 1000 * 0.95))}
+                            → {formatAmount(Math.round(item.estimatedShares * 1000 * 0.95))}
                           </span>
                         </div>
                       </div>
@@ -175,7 +192,7 @@ export function CartModal() {
                         className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-[var(--background)] border border-[var(--card-border)] rounded text-xs sm:text-sm font-mono focus:outline-none focus:border-[var(--accent)]"
                       />
                       <span className="text-xs sm:text-sm font-mono font-bold whitespace-nowrap">
-                        {formatTZS(item.amount)}
+                        {formatAmount(item.amount)}
                       </span>
                     </div>
                   </motion.div>
@@ -197,7 +214,7 @@ export function CartModal() {
                     {locale === "sw" ? "Jumla" : "Total"}
                   </span>
                   <span className="text-base sm:text-lg font-bold">
-                    {formatTZS(getTotalAmount())}
+                    {formatAmount(getTotalAmount())}
                   </span>
                 </div>
 
@@ -206,7 +223,7 @@ export function CartModal() {
                     {locale === "sw" ? "Ukishinda" : "If correct"}
                   </span>
                   <span className="text-base sm:text-lg font-bold text-[#00e5a0]">
-                    {formatTZS(Math.round(items.reduce((sum, item) => sum + item.estimatedShares * 1000 * 0.95, 0)))}
+                    {formatAmount(Math.round(items.reduce((sum, item) => sum + item.estimatedShares * 1000 * 0.95, 0)))}
                   </span>
                 </div>
 

@@ -9,6 +9,8 @@ import { formatTZS, formatNumber, timeUntil, SPORTS_SUBCATEGORIES } from "@/lib/
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCart } from "@/store/useCart";
+import { useUser } from "@/store/useUser";
+import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
 import { QuickBuyModal } from "./QuickBuyModal";
 import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
 
@@ -47,6 +49,22 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
   const { t, locale } = useLanguage();
   const router = useRouter();
   const { addItem, openCart } = useCart();
+  const { user } = useUser();
+  
+  // Currency detection for Kenya/Tanzania users
+  const userCurrency: Currency = getUserCurrency(user?.country, user?.phone);
+  const isKenya = userCurrency === 'KES';
+  
+  // Format price in user's currency (TZS price * 1000 for display, then convert if Kenya)
+  const formatPrice = (priceRatio: number) => {
+    const priceTzs = Math.round(priceRatio * 1000);
+    if (isKenya) {
+      const priceKes = priceTzs / 18.5;
+      // Show 1 decimal place if needed to differentiate close prices
+      return priceKes < 100 ? priceKes.toFixed(1) : Math.round(priceKes);
+    }
+    return priceTzs;
+  };
   const [imageError, setImageError] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [selectedSide, setSelectedSide] = useState<string | null>(null);
@@ -309,7 +327,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                             backgroundColor: `${c}08`,
                           }}
                         >
-                          {option.length > 8 ? option.slice(0, 8) + ".." : option} @ {pricePerShare}
+                          {option.length > 8 ? option.slice(0, 8) + ".." : option} @ {formatPrice(optPrice)}
                         </button>
                         <button
                           onClick={(e) => handleAddToCart(e, originalOption, idx)}
@@ -333,7 +351,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                       onClick={(e) => handleQuickBuy(e, "YES")}
                       className="flex-1 py-2 px-2 bg-[#00e5a0]/8 border border-[#00e5a0]/50 text-[#00e5a0] font-mono font-bold text-[10px] uppercase tracking-wider transition-all hover:bg-[#00e5a0]/15 hover:border-[#00e5a0] active:scale-[0.97]"
                     >
-                      Yes @ {Math.round(market.price.yes * 1000)}
+                      Yes @ {formatPrice(market.price.yes)}
                     </button>
                     <button
                       onClick={(e) => handleAddToCart(e, "YES")}
@@ -348,7 +366,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                       onClick={(e) => handleQuickBuy(e, "NO")}
                       className="flex-1 py-2 px-2 bg-red-500/8 border border-red-500/50 text-red-400 font-mono font-bold text-[10px] uppercase tracking-wider transition-all hover:bg-red-500/15 hover:border-red-500 active:scale-[0.97]"
                     >
-                      No @ {Math.round(market.price.no * 1000)}
+                      No @ {formatPrice(market.price.no)}
                     </button>
                     <button
                       onClick={(e) => handleAddToCart(e, "NO")}

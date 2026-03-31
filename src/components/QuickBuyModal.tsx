@@ -116,8 +116,10 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
   // Use real AMM formula for accurate share estimates (matching trade API)
   const FEE_PERCENT = 0.05;
   const amountNum = Number(amount) || 0;
-  const feeAmount = Math.round(amountNum * FEE_PERCENT);
-  const tradeAmount = amountNum - feeAmount; // Net amount after 5% fee, same as trade API
+  // Convert user input to TZS for AMM calculations
+  const amountInTzs = isKenya ? convertCurrency(amountNum, 'KES', 'TZS') : amountNum;
+  const feeAmount = Math.round(amountInTzs * FEE_PERCENT);
+  const tradeAmount = amountInTzs - feeAmount; // Net amount after 5% fee, same as trade API
   let shares = 0;
   let avgPrice = 0;
   if (tradeAmount > 0) {
@@ -141,7 +143,7 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
 
   // Proportional pot distribution payout (matching market detail page)
   const totalVolume = pools.totalVolume || 0;
-  const newPot = Math.round((totalVolume + amountNum) * (1 - FEE_PERCENT));
+  const newPot = Math.round((totalVolume + amountInTzs) * (1 - FEE_PERCENT));
   let totalSideShares = 0;
   if (isMultiOption) {
     totalSideShares = ((pools.totalOptionShares as Record<string, number>)?.[String(optionIndex)] || 0) + shares;
@@ -336,7 +338,7 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
                   <div className="flex items-center justify-between text-xs font-mono">
                     <span className="text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Ukishinda" : "If you win"}</span>
                     <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
-                    <span className="font-bold tabular-nums text-[#00e5a0]">{isKenya ? `KSh ${Math.round(payoutIfWin / 18.5)}` : formatTZS(payoutIfWin)}</span>
+                    <span className="font-bold tabular-nums text-[#00e5a0]">{isKenya ? `KSh ${convertCurrency(payoutIfWin, 'TZS', 'KES').toLocaleString()}` : formatTZS(payoutIfWin)}</span>
                   </div>
                 </div>
               )}
