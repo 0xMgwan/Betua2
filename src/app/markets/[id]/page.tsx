@@ -1009,7 +1009,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
                   {/* Amount */}
                   <div>
-                    <label className="block text-sm font-medium mb-1.5">{t.market.amount} ({isKenya ? 'KES' : 'TZS'})</label>
+                    <label className="block text-sm font-medium mb-1.5">{isKenya ? 'Amount (KES)' : t.market.amount}</label>
                     <div className="relative">
                       <input
                         type="number"
@@ -1060,13 +1060,13 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-[var(--muted)]">{locale === "sw" ? "Bei ya wastani" : "Avg price"}</span>
-                        <span className="font-medium">{estimatedPrice.toFixed(4)} TZS/share</span>
+                        <span className="font-medium">{isKenya ? (estimatedPrice / 18.5).toFixed(4) : estimatedPrice.toFixed(4)} {isKenya ? 'KES' : 'TZS'}/share</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-[var(--muted)] flex items-center gap-1">
                           {locale === "sw" ? "Unatumia" : "You spend"}
                         </span>
-                        <span className="font-bold text-[var(--foreground)]">{formatAmount(Number(amount))}</span>
+                        <span className="font-bold text-[var(--foreground)]">{isKenya ? `KSh ${Number(amount).toLocaleString()}` : formatTZS(Number(amount))}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-[var(--muted)] flex items-center gap-1">
@@ -1233,7 +1233,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-[var(--muted)]">{locale === "sw" ? "Bei ya wastani" : "Avg price"}</span>
-                            <span className="font-medium">{estimatedSellPrice.toFixed(4)} TZS/share</span>
+                            <span className="font-medium">{isKenya ? (estimatedSellPrice / 18.5).toFixed(4) : estimatedSellPrice.toFixed(4)} {isKenya ? 'KES' : 'TZS'}/share</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-[var(--muted)]">{locale === "sw" ? "Ada (5%)" : "Fee (5%)"}</span>

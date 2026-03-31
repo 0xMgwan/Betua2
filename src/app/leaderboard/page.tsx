@@ -7,6 +7,7 @@ import { Trophy, Crown, Medal } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
 import { UserAvatar } from "@/components/UserAvatar";
 import { UserProfileModal } from "@/components/UserProfileModal";
 import { Footer } from "@/components/Footer";
@@ -34,6 +35,19 @@ export default function LeaderboardPage() {
   const [leaders, setLeaders] = useState<LeaderEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [profileUsername, setProfileUsername] = useState<string | null>(null);
+  
+  // Currency detection for Kenya/Tanzania users
+  const userCurrency: Currency = getUserCurrency(user?.country, user?.phone);
+  const isKenya = userCurrency === 'KES';
+  
+  // Format amount in user's currency
+  const formatAmount = (amountTzs: number) => {
+    if (isKenya) {
+      const amountKes = convertCurrency(amountTzs, 'TZS', 'KES');
+      return `KSh ${amountKes.toLocaleString()}`;
+    }
+    return formatTZS(amountTzs);
+  };
 
   useEffect(() => {
     fetch("/api/leaderboard")
@@ -67,7 +81,7 @@ export default function LeaderboardPage() {
               <span className="text-2xl font-black text-[var(--accent)]">#{userRank.rank}</span>
               <div>
                 <p className="font-semibold text-sm">{t.leaderboard.yourRanking}</p>
-                <p className="text-xs text-[var(--muted)]">{formatTZS(userRank.totalVolume)} {t.leaderboard.volume}</p>
+                <p className="text-xs text-[var(--muted)]">{formatAmount(userRank.totalVolume)} {t.leaderboard.volume}</p>
               </div>
             </div>
             <span className="text-sm text-[var(--muted)]">{userRank.totalTrades} {t.leaderboard.trades}</span>
@@ -103,7 +117,7 @@ export default function LeaderboardPage() {
                     <p className="text-xs text-[var(--muted)] mb-1">@{actualLeader.username}</p>
                   </button>
                   <p className="text-xs font-medium text-[var(--accent)]">
-                    {formatTZS(actualLeader.totalVolume)}
+                    {formatAmount(actualLeader.totalVolume)}
                   </p>
                 </motion.div>
               );
@@ -156,7 +170,7 @@ export default function LeaderboardPage() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-sm">{formatTZS(l.totalVolume)}</p>
+                  <p className="font-bold text-sm">{formatAmount(l.totalVolume)}</p>
                   <p className="text-xs text-[var(--muted)]">{l.marketsCreated} {t.leaderboard.markets}</p>
                 </div>
               </motion.div>
