@@ -181,8 +181,8 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
   const isMultiOption = !!(market?.options && market.options.length >= 2);
   
-  // Currency detection for Kenya/Tanzania users
-  const userCurrency: Currency = getUserCurrency(user?.country);
+  // Currency detection for Kenya/Tanzania users (check country AND phone prefix)
+  const userCurrency: Currency = getUserCurrency(user?.country, user?.phone);
   const isKenya = userCurrency === 'KES';
   
   // Format amount in user's currency

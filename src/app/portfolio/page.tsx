@@ -96,8 +96,8 @@ export default function PortfolioPage() {
   // Expanded position state
   const [expandedPosition, setExpandedPosition] = useState<string | null>(null);
 
-  // Currency detection for Kenya/Tanzania users
-  const userCurrency: Currency = getUserCurrency(user?.country);
+  // Currency detection for Kenya/Tanzania users (check country AND phone prefix)
+  const userCurrency: Currency = getUserCurrency(user?.country, user?.phone);
   const isKenya = userCurrency === 'KES';
   
   // Format amount in user's currency

@@ -44,10 +44,25 @@ export function fromTZS(amount: number, currency: Currency): number {
 }
 
 /**
- * Get user's currency based on country
+ * Get user's currency based on country or phone number
  */
-export function getUserCurrency(country?: string | null): Currency {
-  return country === 'KE' ? 'KES' : 'TZS';
+export function getUserCurrency(country?: string | null, phone?: string | null): Currency {
+  // Check country first
+  if (country === 'KE') return 'KES';
+  
+  // Fallback: detect from phone number prefix (254 = Kenya)
+  if (phone && (phone.startsWith('254') || phone.startsWith('+254'))) {
+    return 'KES';
+  }
+  
+  return 'TZS';
+}
+
+/**
+ * Check if user is from Kenya
+ */
+export function isKenyanUser(country?: string | null, phone?: string | null): boolean {
+  return getUserCurrency(country, phone) === 'KES';
 }
 
 /**

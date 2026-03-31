@@ -6,6 +6,7 @@ import { X, TrendUp, TrendDown, ShoppingCart } from "@phosphor-icons/react";
 import { formatTZS } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useUser } from "@/store/useUser";
+import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
 import { useCart } from "@/store/useCart";
 import { notifications } from "@/lib/notifications";
 import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
@@ -33,7 +34,8 @@ interface QuickBuyModalProps {
   displaySide?: string;
 }
 
-const QUICK_AMOUNTS = [500, 1000, 2000, 5000, 10000];
+const QUICK_AMOUNTS_TZS = [500, 1000, 2000, 5000, 10000];
+const QUICK_AMOUNTS_KES = [50, 100, 200, 500, 1000];
 
 export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, displaySide }: QuickBuyModalProps) {
   console.log('[QuickBuyModal] Received - side:', side, 'displaySide:', displaySide, 'optionIndex:', optionIndex);
@@ -50,6 +52,21 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
   const isExpired = market.resolvesAt ? new Date(market.resolvesAt) < new Date() : false;
   const isResolved = market.status === "RESOLVED";
   const isTradeable = !isExpired && !isResolved;
+  
+  // Currency detection for Kenya/Tanzania users
+  const userCurrency: Currency = getUserCurrency(user?.country, user?.phone);
+  const isKenya = userCurrency === 'KES';
+  const QUICK_AMOUNTS = isKenya ? QUICK_AMOUNTS_KES : QUICK_AMOUNTS_TZS;
+  const minAmount = isKenya ? 50 : 500;
+  
+  // Format amount in user's currency
+  const formatAmount = (amountTzs: number) => {
+    if (isKenya) {
+      const amountKes = convertCurrency(amountTzs, 'TZS', 'KES');
+      return `KSh ${amountKes.toLocaleString()}`;
+    }
+    return formatTZS(amountTzs);
+  };
 
   // Fresh pool data fetched from API
   const [freshPools, setFreshPools] = useState<{
@@ -137,8 +154,8 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
   const netGain = payoutIfWin - amountNum;
 
   const handleAddToCart = () => {
-    if (!amount || Number(amount) < 500) {
-      setError(locale === "sw" ? "Kiasi lazima kiwe angalau TZS 500" : "Amount must be at least TZS 500");
+    if (!amount || Number(amount) < minAmount) {
+      setError(locale === "sw" ? `Kiasi lazima kiwe angalau ${isKenya ? 'KES' : 'TZS'} ${minAmount}` : `Amount must be at least ${isKenya ? 'KES' : 'TZS'} ${minAmount}`);
       return;
     }
 
@@ -163,8 +180,8 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
       return;
     }
 
-    if (!amount || Number(amount) < 500) {
-      setError(locale === "sw" ? "Kiasi lazima kiwe angalau TZS 500" : "Amount must be at least TZS 500");
+    if (!amount || Number(amount) < minAmount) {
+      setError(locale === "sw" ? `Kiasi lazima kiwe angalau ${isKenya ? 'KES' : 'TZS'} ${minAmount}` : `Amount must be at least ${isKenya ? 'KES' : 'TZS'} ${minAmount}`);
       return;
     }
 
@@ -179,7 +196,7 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
           marketId: market.id,
           side: isMultiOption ? undefined : side,
           optionIndex: isMultiOption ? optionIndex : undefined,
-          amountTzs: Number(amount),
+          ...(isKenya ? { amountKes: Number(amount) } : { amountTzs: Number(amount) }),
         }),
       });
 
@@ -261,22 +278,22 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
                 <div className="flex items-center justify-between text-xs font-mono">
                   <span className="text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Bei ya Hisa" : "Share Price"}</span>
                   <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
-                  <span className="font-bold tabular-nums text-[var(--accent)]">{formatTZS(Math.round(price * 1000))}</span>
+                  <span className="font-bold tabular-nums text-[var(--accent)]">{isKenya ? `KSh ${Math.round(price * 1000 / 18.5)}` : formatTZS(Math.round(price * 1000))}</span>
                 </div>
               </div>
 
               {/* Amount Input - Terminal Style */}
               <div className="mb-4">
                 <label className="block text-[10px] font-mono font-bold text-[var(--muted)] mb-2 uppercase tracking-widest">
-                  &gt; {locale === "sw" ? "Kiasi (TZS)" : "Amount (TZS)"}
+                  &gt; {locale === "sw" ? `Kiasi (${isKenya ? 'KES' : 'TZS'})` : `Amount (${isKenya ? 'KES' : 'TZS'})`}
                 </label>
                 <input
                   type="number"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   className="w-full px-4 py-3 bg-[var(--background)] border-2 border-[var(--card-border)] rounded-none text-sm focus:outline-none focus:border-[var(--accent)] focus:shadow-[0_0_10px_rgba(0,229,160,0.2)] transition-all font-mono font-bold tabular-nums"
-                  placeholder="e.g. 500"
-                  min="500"
+                  placeholder={isKenya ? "e.g. 100" : "e.g. 500"}
+                  min={minAmount}
                 />
               </div>
 
@@ -309,7 +326,7 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
                   <div className="flex items-center justify-between text-xs font-mono">
                     <span className="text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Gharama" : "Cost"}</span>
                     <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
-                    <span className="font-bold tabular-nums text-[var(--accent)]">{formatTZS(Math.round(cost))}</span>
+                    <span className="font-bold tabular-nums text-[var(--accent)]">{isKenya ? `KSh ${Math.round(cost)}` : formatTZS(Math.round(cost))}</span>
                   </div>
 
                   {/* Divider */}
@@ -319,7 +336,7 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
                   <div className="flex items-center justify-between text-xs font-mono">
                     <span className="text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Ukishinda" : "If you win"}</span>
                     <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
-                    <span className="font-bold tabular-nums text-[#00e5a0]">{formatTZS(payoutIfWin)}</span>
+                    <span className="font-bold tabular-nums text-[#00e5a0]">{isKenya ? `KSh ${Math.round(payoutIfWin / 18.5)}` : formatTZS(payoutIfWin)}</span>
                   </div>
                 </div>
               )}
@@ -354,7 +371,7 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
                   <div className="flex gap-2">
                     <button
                       onClick={handleAddToCart}
-                      disabled={!amount || Number(amount) < 500 || !isTradeable}
+                      disabled={!amount || Number(amount) < minAmount || !isTradeable}
                       className="flex-1 py-3 px-3 border-2 border-[var(--accent)]/50 text-[var(--accent)] rounded-none font-mono font-bold text-[10px] sm:text-xs uppercase tracking-wider hover:bg-[var(--accent)]/10 transition-all disabled:opacity-40 active:scale-95 flex items-center justify-center gap-2"
                     >
                       <ShoppingCart size={14} weight="fill" />
@@ -362,7 +379,7 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
                     </button>
                     <button
                       onClick={handleBuy}
-                      disabled={loading || !amount || Number(amount) < 500 || !isTradeable}
+                      disabled={loading || !amount || Number(amount) < minAmount || !isTradeable}
                       className={`flex-1 py-3 px-3 rounded-none font-mono font-bold text-[10px] sm:text-xs uppercase tracking-wider transition-all disabled:opacity-40 border-2 active:scale-95 ${
                         isMultiOption
                           ? "bg-[var(--accent)]/10 border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)]/20 hover:shadow-[0_0_15px_rgba(0,229,160,0.3)]"
