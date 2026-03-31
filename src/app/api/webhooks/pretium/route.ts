@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { nkes } from '@/lib/nkes';
 import { ntzs } from '@/lib/ntzs';
-import { notify } from '@/lib/notify';
+import { createNotification } from '@/lib/notify';
 
 export async function POST(req: NextRequest) {
   try {
@@ -121,9 +121,12 @@ async function handleDeposit(
   });
 
   // Notify user
-  await notify(user.id, 'DEPOSIT_COMPLETE', {
-    amount: amountKes,
-    currency: 'KES',
+  await createNotification({
+    userId: user.id,
+    type: 'DEPOSIT',
+    title: 'Deposit Confirmed',
+    message: `Your deposit of ${amountKes} KES has been confirmed. NKES tokens minted to your wallet.`,
+    link: '/wallet',
   });
 
   console.log(`[Pretium] Deposit complete: ${amountKes} KES minted as NKES`);
@@ -149,8 +152,11 @@ async function handleWithdrawalComplete(
   });
 
   // Notify user
-  await notify(user.id, 'WITHDRAWAL_COMPLETE', {
-    amount: amountKes,
-    currency: 'KES',
+  await createNotification({
+    userId: user.id,
+    type: 'WITHDRAW',
+    title: 'Withdrawal Complete',
+    message: `Your withdrawal of ${amountKes} KES has been sent to your M-Pesa.`,
+    link: '/wallet',
   });
 }
