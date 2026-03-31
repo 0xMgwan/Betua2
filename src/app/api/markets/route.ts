@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
         status: status === "all" ? undefined : status,
         category: category && category !== "all" ? category : undefined,
         subCategory: subCategory && subCategory !== "all" ? subCategory : undefined,
-        title: search ? { contains: search, mode: "insensitive" } : undefined,
+        title: search ? { contains: search } : undefined,
         resolvesAt: { gte: new Date() },
       },
       include: {
