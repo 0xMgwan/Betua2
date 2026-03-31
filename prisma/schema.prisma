@@ -17,11 +17,13 @@ model User {
   passwordHash  String
   ntzsUserId    String?  @unique
   walletAddress String?
+  country       String?  @default("TZ")  // TZ or KE
   referralCode  String?  @unique
   referredById  String?
   referredBy    User?    @relation("Referrals", fields: [referredById], references: [id])
   referrals     User[]   @relation("Referrals")
   balanceTzs    Int      @default(0)
+  balanceKes    Int      @default(0)
   locale        String?  @default("en")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -101,14 +103,21 @@ model Transaction {
   id                String   @id @default(cuid())
   userId            String
   type              String
-  amountTzs         Int
+  amountTzs         Int      @default(0)
+  amountKes         Int      @default(0)
+  currency          String   @default("TZS")  // TZS or KES
   status            String   @default("PENDING")
   ntzsDepositId     String?
   ntzsWithdrawId    String?
+  externalRef       String?  // Pretium transaction code
+  txHash            String?  // Blockchain tx hash for NKES
+  description       String?
   phone             String?
   recipientUsername String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+
+  @@index([externalRef])
 }
 
 model ReferralReward {

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>GUAP Play Store Graphics Generator</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0a0a;
+      color: #fff;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { margin-bottom: 30px; }
+    .graphic-section {
+      margin-bottom: 50px;
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    .graphic-section h2 {
+      margin-top: 0;
+      color: #FFD700;
+    }
+    canvas {
+      border: 1px solid #333;
+      display: block;
+      margin: 20px 0;
+    }
+    button {
+      background: #FFD700;
+      color: #000;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      margin-right: 10px;
+    }
+    button:hover {
+      background: #FFC700;
+    }
+    .info {
+      color: #888;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎨 GUAP Play Store Graphics</h1>
+
+    <!-- Feature Graphic -->
+    <div class="graphic-section">
+      <h2>Feature Graphic (1024x500)</h2>
+      <canvas id="featureGraphic" width="1024" height="500"></canvas>
+      <button onclick="downloadFeatureGraphic()">Download Feature Graphic</button>
+      <div class="info">Required for Play Store listing header</div>
+    </div>
+
+    <!-- High-Res Icon -->
+    <div class="graphic-section">
+      <h2>High-Res Icon (512x512)</h2>
+      <canvas id="appIcon" width="512" height="512"></canvas>
+      <button onclick="downloadAppIcon()">Download App Icon</button>
+      <div class="info">Required for Play Store listing</div>
+    </div>
+  </div>
+
+  <script>
+    // Feature Graphic (1024x500)
+    function drawFeatureGraphic() {
+      const canvas = document.getElementById('featureGraphic');
+      const ctx = canvas.getContext('2d');
+
+      // Background gradient
+      const gradient = ctx.createLinearGradient(0, 0, 1024, 500);
+      gradient.addColorStop(0, '#0a0a0a');
+      gradient.addColorStop(1, '#1a1a1a');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 1024, 500);
+
+      // Gold accent bars
+      ctx.fillStyle = '#FFD700';
+      ctx.fillRect(0, 0, 1024, 8);
+      ctx.fillRect(0, 492, 1024, 8);
+
+      // GUAP text
+      ctx.fillStyle = '#FFD700';
+      ctx.font = 'bold 120px Arial';
+      ctx.fillText('GUAP', 60, 180);
+
+      // Tagline
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '36px Arial';
+      ctx.fillText('Africa\'s First Prediction Market', 60, 250);
+
+      // Subtext
+      ctx.fillStyle = '#888888';
+      ctx.font = '28px Arial';
+      ctx.fillText('Trade on Real-World Events', 60, 310);
+
+      // Stats/features on right
+      ctx.fillStyle = '#FFD700';
+      ctx.font = 'bold 32px Arial';
+      ctx.fillText('✓ Live Markets', 650, 180);
+      ctx.fillText('✓ M-Pesa Wallet', 650, 240);
+      ctx.fillText('✓ Instant Trading', 650, 300);
+      ctx.fillText('✓ Real Payouts', 650, 360);
+    }
+
+    // App Icon (512x512)
+    function drawAppIcon() {
+      const canvas = document.getElementById('appIcon');
+      const ctx = canvas.getContext('2d');
+
+      // Background
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(0, 0, 512, 512);
+
+      // Gold circle
+      ctx.fillStyle = '#FFD700';
+      ctx.beginPath();
+      ctx.arc(256, 256, 200, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Inner black circle
+      ctx.fillStyle = '#0a0a0a';
+      ctx.beginPath();
+      ctx.arc(256, 256, 160, 0, Math.PI * 2);
+      ctx.fill();
+
+      // G letter
+      ctx.fillStyle = '#FFD700';
+      ctx.font = 'bold 240px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('G', 256, 270);
+    }
+
+    // Download functions
+    function downloadFeatureGraphic() {
+      const canvas = document.getElementById('featureGraphic');
+      const link = document.createElement('a');
+      link.download = 'feature-graphic.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    function downloadAppIcon() {
+      const canvas = document.getElementById('appIcon');
+      const link = document.createElement('a');
+      link.download = 'hi-res-icon.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    // Draw on load
+    drawFeatureGraphic();
+    drawAppIcon();
+  </script>
+</body>
+</html>

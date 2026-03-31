@@ -18,6 +18,8 @@ interface Transaction {
   id: string;
   type: string;
   amountTzs: number;
+  amountKes: number;
+  currency: string;
   status: string;
   phone?: string | null;
   ntzsDepositId?: string | null;
@@ -25,7 +27,8 @@ interface Transaction {
   createdAt: string;
 }
 
-const QUICK_AMOUNTS = [5000, 10000, 50000, 100000];
+const QUICK_AMOUNTS_TZS = [5000, 10000, 50000, 100000];
+const QUICK_AMOUNTS_KES = [100, 500, 1000, 5000];
 
 export default function WalletPage() {
   const { user, fetchUser } = useUser();
@@ -91,14 +94,28 @@ export default function WalletPage() {
     };
   }, [transactions, syncStatus]);
 
+  // Detect if user is from Kenya
+  const isKenya = user?.country === 'KE' || user?.phone?.startsWith('254') || user?.phone?.startsWith('+254');
+  const currency = isKenya ? 'KES' : 'TZS';
+  const balance = isKenya ? (user?.balanceKes || 0) : (user?.balanceTzs || 0);
+  const quickAmounts = isKenya ? QUICK_AMOUNTS_KES : QUICK_AMOUNTS_TZS;
+
   async function handleAction(e: React.FormEvent) {
     e.preventDefault();
     setActionLoading(true);
     setMessage(null);
     try {
-      const endpoint = tab === "deposit" ? "/api/wallet/deposit" : tab === "withdraw" ? "/api/wallet/withdraw" : "/api/wallet/send";
+      // Route to Kenya or Tanzania endpoints
+      const endpoint = tab === "deposit" 
+        ? (isKenya ? "/api/wallet/deposit-ke" : "/api/wallet/deposit")
+        : tab === "withdraw" 
+        ? (isKenya ? "/api/wallet/withdraw-ke" : "/api/wallet/withdraw")
+        : "/api/wallet/send";
+      
       const body = tab === "send" 
         ? { amountTzs: Number(amount), recipientUsername: recipient }
+        : isKenya
+        ? { amountKes: Number(amount), phone }
         : { amountTzs: Number(amount), phone };
       const res = await fetch(endpoint, {
         method: "POST",
@@ -184,7 +201,7 @@ export default function WalletPage() {
               <div className="relative">
                 <div className="flex items-center gap-2 mb-3">
                   <CurrencyCircleDollar size={20} className="text-[var(--accent)]" weight="fill" />
-                  <span className="text-sm font-semibold">nTZS Balance</span>
+                  <span className="text-sm font-semibold">{isKenya ? 'NKES Balance' : 'nTZS Balance'}</span>
                   {pendingCount > 0 && (
                     <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/20 animate-pulse">
                       <Clock size={10} weight="fill" />
@@ -193,9 +210,9 @@ export default function WalletPage() {
                   )}
                 </div>
                 <div className="text-4xl font-black mb-0.5 tabular-nums">
-                  {formatTZS(user.balanceTzs || 0)}
+                  {isKenya ? `${(balance / 100).toLocaleString()} KES` : formatTZS(balance)}
                 </div>
-                <p className="text-xs text-[var(--muted)]">{t.wallet.tanzanianShillings}</p>
+                <p className="text-xs text-[var(--muted)]">{isKenya ? 'Kenyan Shillings' : t.wallet.tanzanianShillings}</p>
 
                 {user.walletAddress && (
                   <button
@@ -241,9 +258,13 @@ export default function WalletPage() {
               <div className="p-5">
                 <p className="text-xs text-[var(--muted)] mb-4 leading-relaxed">
                   {tab === "deposit"
-                    ? t.wallet.depositDescription
+                    ? isKenya 
+                      ? "Add KES via M-Pesa (Safaricom). NKES tokens will be minted to your wallet."
+                      : t.wallet.depositDescription
                     : tab === "withdraw"
-                    ? t.wallet.withdrawDescription
+                    ? isKenya
+                      ? "Withdraw KES to your M-Pesa number. NKES tokens will be burned."
+                      : t.wallet.withdrawDescription
                     : t.wallet.sendDescription}
                 </p>
 
@@ -269,22 +290,22 @@ export default function WalletPage() {
                 <form onSubmit={handleAction} className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-[var(--muted)] mb-1.5 uppercase tracking-wide">
-                      {t.wallet.amount}
+                      {t.wallet.amount} ({currency})
                     </label>
                     <input
                       type="number"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors font-medium"
-                      placeholder="e.g. 10,000"
-                      min="1000"
+                      placeholder={isKenya ? "e.g. 1,000" : "e.g. 10,000"}
+                      min={isKenya ? "100" : "1000"}
                       required
                     />
                   </div>
 
                   {/* Quick select */}
                   <div className="grid grid-cols-4 gap-1.5">
-                    {QUICK_AMOUNTS.map((a) => (
+                    {quickAmounts.map((a) => (
                       <button
                         key={a}
                         type="button"
@@ -481,7 +502,10 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
           isCreateMarket ? "text-purple-400" :
           isSend || isBuyShares || isSellShares ? "text-blue-400" : 
           "text-red-400")}>
-          {isDeposit || isReceive || isRedeem || isReferral || isCreatorFee ? "+" : "−"}{formatTZS(tx.amountTzs)}
+          {isDeposit || isReceive || isRedeem || isReferral || isCreatorFee ? "+" : "−"}
+          {tx.currency === 'KES' 
+            ? `${(tx.amountKes / 100).toLocaleString()} KES`
+            : formatTZS(tx.amountTzs)}
         </p>
         <div className={cn("flex items-center gap-1 justify-end text-xs font-medium mt-0.5", statusConfig.color)}>
           {statusConfig.icon}
