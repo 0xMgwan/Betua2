@@ -47,6 +47,7 @@ model Market {
   creator      User         @relation("MarketCreator", fields: [creatorId], references: [id])
   partnerId    String?                              // If set, market only visible to this partner's platform
   partner      Partner?     @relation(fields: [partnerId], references: [id])
+  currency     String       @default("TZS")        // Market's base currency (TZS or KES)
   status       String       @default("OPEN")
   outcome      Int?
   outcomeLabel String?

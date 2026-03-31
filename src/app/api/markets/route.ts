@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { getPrice, getMultiOptionPrices } from "@/lib/amm";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
 import { createNotification } from "@/lib/notify";
+import { getUserCurrency } from "@/lib/currency";
 
 // Fee configuration
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
@@ -73,9 +74,12 @@ export async function POST(req: NextRequest) {
     // Load user to check balance and get nTZS user ID
     const user = await prisma.user.findUnique({ 
       where: { id: session.userId },
-      select: { id: true, ntzsUserId: true, balanceTzs: true, walletAddress: true }
+      select: { id: true, ntzsUserId: true, balanceTzs: true, balanceKes: true, walletAddress: true, country: true }
     });
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+    // Determine market currency based on creator's country
+    const marketCurrency = getUserCurrency(user.country);
 
     if (!user.ntzsUserId) {
       return NextResponse.json(
@@ -190,6 +194,7 @@ export async function POST(req: NextRequest) {
               return new Date(Date.UTC(year, month - 1, day, hour - 3, minute));
             })(),
             creatorId: session.userId,
+            currency: marketCurrency,
             yesPool: isMultiOption ? 0 : 100000,
             noPool: isMultiOption ? 0 : 100000,
             liquidity: isMultiOption ? POOL_PER_OPTION * options.length : 200000,
@@ -214,6 +219,7 @@ export async function POST(req: NextRequest) {
                   return new Date(Date.UTC(year, month - 1, day, hour - 3, minute));
                 })(),
                 creatorId: session.userId,
+                currency: marketCurrency,
                 yesPool: isMultiOption ? 0 : 100000,
                 noPool: isMultiOption ? 0 : 100000,
                 liquidity: isMultiOption ? POOL_PER_OPTION * options.length : 200000,
@@ -225,14 +231,18 @@ export async function POST(req: NextRequest) {
               data: {
                 userId: session.userId,
                 type: "CREATE_MARKET",
-                amountTzs: CREATION_FEE_TZS,
+                amountTzs: marketCurrency === 'TZS' ? CREATION_FEE_TZS : 0,
+                amountKes: marketCurrency === 'KES' ? Math.round(CREATION_FEE_TZS / 18.5) : 0,
+                currency: marketCurrency,
                 status: "COMPLETED",
                 recipientUsername: effectiveTitle,
               },
             }),
             prisma.user.update({
               where: { id: session.userId },
-              data: { balanceTzs: { decrement: CREATION_FEE_TZS } },
+              data: marketCurrency === 'KES'
+                ? { balanceKes: { decrement: Math.round(CREATION_FEE_TZS / 18.5) } }
+                : { balanceTzs: { decrement: CREATION_FEE_TZS } },
             }),
           ])
         )[0];

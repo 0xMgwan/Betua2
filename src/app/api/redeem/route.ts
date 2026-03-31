@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ntzs } from "@/lib/ntzs";
 import { createNotification } from "@/lib/notify";
+import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
 
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
 const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
@@ -143,17 +144,27 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Determine user's currency and calculate payout
+    const userCurrency: Currency = getUserCurrency(user.country);
+    const payoutInUserCurrency = userCurrency === 'KES' 
+      ? convertCurrency(payoutTzs, 'TZS', 'KES') 
+      : payoutTzs;
+
     // Add balance and create transaction record (position already marked as redeemed above)
     await prisma.$transaction([
       prisma.user.update({
         where: { id: session.userId },
-        data: { balanceTzs: { increment: payoutTzs } },
+        data: userCurrency === 'KES'
+          ? { balanceKes: { increment: payoutInUserCurrency } }
+          : { balanceTzs: { increment: payoutTzs } },
       }),
       prisma.transaction.create({
         data: {
           userId: session.userId,
           type: "REDEEM",
-          amountTzs: payoutTzs,
+          amountTzs: userCurrency === 'TZS' ? payoutTzs : 0,
+          amountKes: userCurrency === 'KES' ? payoutInUserCurrency : 0,
+          currency: userCurrency,
           status: "COMPLETED",
           recipientUsername: isMultiOption
             ? `${position.market.title} (${(position.market.options as string[])[outcome as number]})`
@@ -167,13 +178,15 @@ export async function POST(req: NextRequest) {
       userId: session.userId,
       type: "REDEEM",
       title: "Winnings Redeemed!",
-      message: `Redeemed ${payoutTzs.toLocaleString()} TZS from "${position.market.title}"`,
+      message: `Redeemed ${payoutInUserCurrency.toLocaleString()} ${userCurrency} from "${position.market.title}"`,
       link: `/wallet`,
     });
 
     return NextResponse.json({
       success: true,
-      payout: payoutTzs,
+      payout: payoutInUserCurrency,
+      payoutTzs,
+      currency: userCurrency,
       winningShares,
       positionId,
       ntzsTransferId,

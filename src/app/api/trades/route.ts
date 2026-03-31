@@ -5,6 +5,7 @@ import { ntzs, NtzsApiError } from "@/lib/ntzs";
 import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
 import { notifications } from "@/lib/notifications";
 import { createNotification } from "@/lib/notify";
+import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
 
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
 const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
@@ -15,10 +16,16 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const { marketId, side, amountTzs, optionIndex } = await req.json();
+    const body = await req.json();
+    const { marketId, side, optionIndex } = body;
+    
+    // Accept either amountTzs or amountKes based on user's currency
+    let amountTzs = body.amountTzs;
+    let amountKes = body.amountKes;
+    let userCurrency: Currency = 'TZS';
 
-    if (!marketId || !amountTzs || amountTzs < 100) {
-      return NextResponse.json({ error: "Minimum trade is 100 TZS" }, { status: 400 });
+    if (!marketId) {
+      return NextResponse.json({ error: "Market ID required" }, { status: 400 });
     }
 
     const [market, userResult] = await Promise.all([
@@ -31,6 +38,17 @@ export async function POST(req: NextRequest) {
     if (!market) return NextResponse.json({ error: "Market not found" }, { status: 404 });
     if (market.status !== "OPEN") return NextResponse.json({ error: "Market is not open" }, { status: 400 });
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+    // Determine user's currency and convert to TZS for AMM
+    userCurrency = getUserCurrency(user.country);
+    const marketCurrency = (market as any).currency as Currency || 'TZS';
+    
+    if (userCurrency === 'KES' && amountKes) {
+      // Kenya user paying in KES - convert to TZS for AMM
+      amountTzs = convertCurrency(amountKes, 'KES', 'TZS');
+    } else if (!amountTzs || amountTzs < 100) {
+      return NextResponse.json({ error: "Minimum trade is 100 TZS" }, { status: 400 });
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mkt = market as any;
@@ -45,8 +63,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid side" }, { status: 400 });
     }
 
-    // Enforce wallet balance
-    if (user.ntzsUserId) {
+    // Enforce wallet balance based on user's currency
+    if (userCurrency === 'KES') {
+      // Kenya user - check KES balance
+      const userBalanceKes = user.balanceKes || 0;
+      const requiredKes = amountKes || convertCurrency(amountTzs, 'TZS', 'KES');
+      if (userBalanceKes < requiredKes) {
+        return NextResponse.json({
+          error: `Insufficient balance. You have ${(userBalanceKes / 100).toLocaleString()} KES — deposit more to trade.`,
+        }, { status: 400 });
+      }
+    } else if (user.ntzsUserId) {
+      // Tanzania user with nTZS wallet
       try {
         const { balanceTzs } = await ntzs.users.getBalance(user.ntzsUserId);
         if (balanceTzs < amountTzs) {
@@ -55,14 +83,13 @@ export async function POST(req: NextRequest) {
           }, { status: 400 });
         }
       } catch (balErr) {
-        // If NTZS is unreachable, fall back to local balance check
         console.error("nTZS balance check failed, using local balance:", balErr);
         if ((user.balanceTzs || 0) < amountTzs) {
           return NextResponse.json({ error: `Insufficient balance.` }, { status: 400 });
         }
       }
     } else {
-      // No nTZS wallet — check local balance
+      // No nTZS wallet — check local TZS balance
       if ((user.balanceTzs || 0) < amountTzs) {
         return NextResponse.json({ error: "Insufficient balance. Deposit funds first." }, { status: 400 });
       }
@@ -204,14 +231,18 @@ export async function POST(req: NextRequest) {
           data: {
             userId: session.userId,
             type: "BUY_SHARES",
-            amountTzs,
+            amountTzs: userCurrency === 'TZS' ? amountTzs : 0,
+            amountKes: userCurrency === 'KES' ? (amountKes || convertCurrency(amountTzs, 'TZS', 'KES')) : 0,
+            currency: userCurrency,
             status: "COMPLETED",
             recipientUsername: `${market.title} (${tradeSide})`,
           },
         }),
         prisma.user.update({
           where: { id: session.userId },
-          data: { balanceTzs: { decrement: amountTzs } },
+          data: userCurrency === 'KES' 
+            ? { balanceKes: { decrement: amountKes || convertCurrency(amountTzs, 'TZS', 'KES') } }
+            : { balanceTzs: { decrement: amountTzs } },
         }),
       ]);
     } catch (dbErr) {

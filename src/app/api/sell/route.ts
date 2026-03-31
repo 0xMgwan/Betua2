@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
 import { getPayoutForShares, getMultiOptionPayoutForShares } from "@/lib/amm";
 import { createNotification } from "@/lib/notify";
+import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
 
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
 const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
@@ -22,10 +23,7 @@ export async function POST(req: NextRequest) {
 
     const [market, user, position] = await Promise.all([
       prisma.market.findUnique({ where: { id: marketId } }),
-      prisma.user.findUnique({ 
-        where: { id: session.userId },
-        select: { id: true, ntzsUserId: true, balanceTzs: true }
-      }),
+      prisma.user.findUnique({ where: { id: session.userId } }),
       prisma.position.findUnique({
         where: { userId_marketId: { userId: session.userId, marketId } },
       }),
@@ -35,6 +33,9 @@ export async function POST(req: NextRequest) {
     if (market.status !== "OPEN") return NextResponse.json({ error: "Market is not open" }, { status: 400 });
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
     if (!position) return NextResponse.json({ error: "You have no position in this market" }, { status: 400 });
+
+    // Determine user's currency
+    const userCurrency: Currency = getUserCurrency(user.country);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mkt = market as any;
@@ -173,23 +174,32 @@ export async function POST(req: NextRequest) {
         data: {
           userId: session.userId,
           type: "SELL_SHARES",
-          amountTzs: netPayout,
+          amountTzs: userCurrency === 'TZS' ? netPayout : 0,
+          amountKes: userCurrency === 'KES' ? convertCurrency(netPayout, 'TZS', 'KES') : 0,
+          currency: userCurrency,
           status: "COMPLETED",
           recipientUsername: `${market.title} (${tradeSide})`,
         },
       }),
       prisma.user.update({
         where: { id: session.userId },
-        data: { balanceTzs: { increment: netPayout } },
+        data: userCurrency === 'KES'
+          ? { balanceKes: { increment: convertCurrency(netPayout, 'TZS', 'KES') } }
+          : { balanceTzs: { increment: netPayout } },
       }),
     ]);
+
+    // Calculate payout in user's currency for response
+    const payoutInUserCurrency = userCurrency === 'KES' 
+      ? convertCurrency(netPayout, 'TZS', 'KES') 
+      : netPayout;
 
     // Notification
     createNotification({
       userId: session.userId,
       type: "TRADE",
       title: "Shares Sold",
-      message: `Sold ${sharesToSell} ${tradeSide} shares in "${market.title}" for ${netPayout.toLocaleString()} TZS`,
+      message: `Sold ${sharesToSell} ${tradeSide} shares in "${market.title}" for ${payoutInUserCurrency.toLocaleString()} ${userCurrency}`,
       link: `/markets/${marketId}`,
     });
 
