@@ -37,26 +37,27 @@ model User {
 
 model Market {
   id           String     @id @default(cuid())
+  title        String
   description  String
   category     String
+  subCategory  String?
   imageUrl     String?
   creatorId    String
-  resolvedAt   DateTime?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  liquidity    Int        @default(200000)
-  noPool       Int        @default(100000)
+  partnerId    String?
+  currency     String     @default("TZS")
+  status       String     @default("OPEN")
   outcome      Int?
+  outcomeLabel String?
   resolvesAt   DateTime
-  title        String
+  resolvedAt   DateTime?
   totalVolume  Int        @default(0)
   yesPool      Int        @default(100000)
-  status       String     @default("OPEN")
-  optionPools  Json?
+  noPool       Int        @default(100000)
+  liquidity    Int        @default(200000)
   options      Json?
-  outcomeLabel String?
-  subCategory  String?
-  partnerId    String?
+  optionPools  Json?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
   comments     Comment[]
   creator      User       @relation("MarketCreator", fields: [creatorId], references: [id])
   partner      Partner?   @relation(fields: [partnerId], references: [id])
