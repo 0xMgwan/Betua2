@@ -5,6 +5,7 @@ import { Footer } from "@/components/Footer";
 import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS, formatNumber, formatPercent } from "@/lib/utils";
+import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
@@ -94,6 +95,19 @@ export default function PortfolioPage() {
 
   // Expanded position state
   const [expandedPosition, setExpandedPosition] = useState<string | null>(null);
+
+  // Currency detection for Kenya/Tanzania users
+  const userCurrency: Currency = getUserCurrency(user?.country);
+  const isKenya = userCurrency === 'KES';
+  
+  // Format amount in user's currency
+  const formatAmount = (amountTzs: number) => {
+    if (isKenya) {
+      const amountKes = convertCurrency(amountTzs, 'TZS', 'KES');
+      return `KSh ${amountKes.toLocaleString()}`;
+    }
+    return formatTZS(amountTzs);
+  };
 
   useEffect(() => {
     fetch("/api/portfolio")
@@ -195,7 +209,7 @@ export default function PortfolioPage() {
           side: sideLabel,
           marketTitle: position.market.title 
         });
-        setSellSuccess(`Sold for ${formatTZS(data.netPayout)}!`);
+        setSellSuccess(`Sold for ${formatAmount(data.netPayout)}!`);
         setSellShares("");
         setSellOpen(null);
         // Refresh portfolio and user balance
@@ -318,9 +332,9 @@ export default function PortfolioPage() {
               {/* Stats grid */}
               <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-6">
                 {[
-                  { label: t.portfolio.walletBalance, value: formatTZS(user.balanceTzs || 0), color: "text-[var(--accent)]", border: "border-[var(--accent)]/30", icon: <Wallet size={12} weight="fill" className="text-[var(--accent)]" /> },
-                  { label: t.portfolio.totalInvested, value: formatTZS(totalInvested), color: "text-[var(--foreground)]", border: "border-[var(--card-border)]", icon: <CurrencyDollar size={12} weight="fill" className="text-orange-400" /> },
-                  { label: t.portfolio.openPositionsValue, value: formatTZS(Math.round(totalValue)), color: "text-yellow-400", border: "border-yellow-500/30", icon: <ChartLineUp size={12} weight="fill" className="text-yellow-400" /> },
+                  { label: t.portfolio.walletBalance, value: isKenya ? `KSh ${((user.balanceKes || 0) / 100).toLocaleString()}` : formatTZS(user.balanceTzs || 0), color: "text-[var(--accent)]", border: "border-[var(--accent)]/30", icon: <Wallet size={12} weight="fill" className="text-[var(--accent)]" /> },
+                  { label: t.portfolio.totalInvested, value: formatAmount(totalInvested), color: "text-[var(--foreground)]", border: "border-[var(--card-border)]", icon: <CurrencyDollar size={12} weight="fill" className="text-orange-400" /> },
+                  { label: t.portfolio.openPositionsValue, value: formatAmount(Math.round(totalValue)), color: "text-yellow-400", border: "border-yellow-500/30", icon: <ChartLineUp size={12} weight="fill" className="text-yellow-400" /> },
                 ].map((s, i) => (
                   <motion.div
                     key={s.label}
@@ -545,7 +559,7 @@ export default function PortfolioPage() {
                                 <div className="flex items-end justify-between mt-3 pt-2 border-t border-[var(--card-border)]">
                                   <div>
                                     <div className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">{t.portfolio.currentValue}</div>
-                                    <div className="text-base font-mono font-bold tabular-nums">{formatTZS(Math.round(p.currentValue))}</div>
+                                    <div className="text-base font-mono font-bold tabular-nums">{formatAmount(Math.round(p.currentValue))}</div>
                                   </div>
 
                                   {isOpen ? (
@@ -578,7 +592,7 @@ export default function PortfolioPage() {
                                           {locale === "sw" ? "Malipo" : "If correct"}
                                         </div>
                                         <div className="text-base font-mono font-bold tabular-nums text-yellow-400">
-                                          {formatTZS(Math.round(positionPayout))}
+                                          {formatAmount(Math.round(positionPayout))}
                                         </div>
                                       </div>
                                     </div>
@@ -688,7 +702,7 @@ export default function PortfolioPage() {
                                               {formatNumber(tr.shares)} @ {tr.price.toFixed(3)}
                                             </span>
                                           </div>
-                                          <span className="text-[var(--foreground)]">{formatTZS(tr.amountTzs)}</span>
+                                          <span className="text-[var(--foreground)]">{formatAmount(tr.amountTzs)}</span>
                                         </div>
                                       ))}
                                     {trades.filter(tr => tr.market.id === p.market.id && !tr.side.startsWith("SELL_")).length === 0 && (
@@ -830,7 +844,7 @@ export default function PortfolioPage() {
                                     {estPayout > 0 && (
                                       <div className="flex justify-between text-xs font-mono">
                                         <span className="text-[var(--muted)]">{locale === "sw" ? "Utapata" : "You receive"}</span>
-                                        <span className="font-bold text-[#00e5a0]">{formatTZS(estPayout)}</span>
+                                        <span className="font-bold text-[#00e5a0]">{formatAmount(estPayout)}</span>
                                       </div>
                                     )}
 
@@ -874,15 +888,15 @@ export default function PortfolioPage() {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm font-mono">
                           <span className="text-[var(--muted)]">{locale === "sw" ? "Jumla uwekezaji" : "Total invested"}</span>
-                          <span className="font-bold">{formatTZS(totalInvested)}</span>
+                          <span className="font-bold">{formatAmount(totalInvested)}</span>
                         </div>
                         <div className="flex justify-between text-sm font-mono">
                           <span className="text-[var(--muted)]">{locale === "sw" ? "Thamani ya sasa" : "Current value"}</span>
-                          <span className="font-bold">{formatTZS(Math.round(totalValue))}</span>
+                          <span className="font-bold">{formatAmount(Math.round(totalValue))}</span>
                         </div>
                         <div className="flex justify-between text-sm font-mono">
                           <span className="text-[var(--muted)]">{locale === "sw" ? "Malipo (ukiuza sasa)" : "Max payout (if you sell now)"}</span>
-                          <span className="font-bold text-yellow-400">{formatTZS(Math.round(totalPayout))}</span>
+                          <span className="font-bold text-yellow-400">{formatAmount(Math.round(totalPayout))}</span>
                         </div>
                       </div>
                     </div>
@@ -981,7 +995,7 @@ export default function PortfolioPage() {
                                       {locale === "sw" ? "Kiasi" : "Volume"}
                                     </div>
                                     <div className="text-sm font-mono font-bold tabular-nums">
-                                      {formatTZS(market.totalVolume)}
+                                      {formatAmount(market.totalVolume)}
                                     </div>
                                   </div>
                                   <div>
@@ -1059,7 +1073,7 @@ export default function PortfolioPage() {
                               </div>
                               <div className="text-right shrink-0 ml-4">
                                 <div className={cn("text-sm font-mono font-bold tabular-nums", isSell ? "text-[#ff4d6a]" : "")}>
-                                  {isSell ? `+${formatTZS(displayAmount)}` : formatTZS(displayAmount)}
+                                  {isSell ? `+${formatAmount(displayAmount)}` : formatAmount(displayAmount)}
                                 </div>
                                 <div className="text-[10px] font-mono text-[var(--muted)]">{displayShares} {t.portfolio.shares}</div>
                               </div>
@@ -1153,7 +1167,7 @@ export default function PortfolioPage() {
                     {locale === "sw" ? "Malipo Yako" : "Your Payout"}
                   </p>
                   <p className="text-3xl font-mono font-bold text-[var(--accent)] tabular-nums">
-                    {formatTZS(redeemPopup.payout)}
+                    {formatAmount(redeemPopup.payout)}
                   </p>
                 </motion.div>
 
@@ -1260,7 +1274,7 @@ export default function PortfolioPage() {
                     {locale === "sw" ? "Umepokea" : "You Received"}
                   </p>
                   <p className="text-3xl font-mono font-bold text-[var(--accent)] tabular-nums">
-                    {formatTZS(sellPopup.payout)}
+                    {formatAmount(sellPopup.payout)}
                   </p>
                 </motion.div>
 
