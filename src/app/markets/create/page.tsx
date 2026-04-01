@@ -169,6 +169,15 @@ export default function CreateMarketPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
+      
+      // Handle non-JSON responses (e.g., Vercel error pages)
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await res.text();
+        console.error("Non-JSON response:", text.substring(0, 200));
+        return setError("Server error. Please try again later.");
+      }
+      
       const data = await res.json();
       if (!res.ok) return setError(data.error || "Failed to create market");
       router.push(`/markets/${data.market.id}`);

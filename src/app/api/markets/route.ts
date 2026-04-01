@@ -108,13 +108,17 @@ export async function POST(req: NextRequest) {
           );
         }
       } catch (balErr) {
+        console.error("Balance check failed:", balErr);
         if (balErr instanceof NtzsApiError) {
           return NextResponse.json(
-            { error: "Could not verify balance. Please try again." },
+            { error: `Could not verify balance: ${balErr.message}. Please try again.` },
             { status: 503 }
           );
         }
-        throw balErr;
+        return NextResponse.json(
+          { error: "Could not verify balance. Please try again." },
+          { status: 503 }
+        );
       }
 
       // ── Transfer 2,000 TZS creation fee: user → platform → fee wallet ────
