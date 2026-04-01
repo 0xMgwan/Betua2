@@ -82,11 +82,64 @@ export default function CreateMarketPage() {
   tomorrow.setDate(tomorrow.getDate() + 7);
   const defaultDate = tomorrow.toISOString().slice(0, 16);
 
-  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB (Vercel limit is 4.5MB)
+
+  async function compressImage(file: File): Promise<File> {
+    return new Promise((resolve) => {
+      const img = document.createElement('img') as HTMLImageElement;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        
+        // Max dimensions
+        const MAX_DIM = 1200;
+        if (width > MAX_DIM || height > MAX_DIM) {
+          if (width > height) {
+            height = (height / width) * MAX_DIM;
+            width = MAX_DIM;
+          } else {
+            width = (width / height) * MAX_DIM;
+            height = MAX_DIM;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+          } else {
+            resolve(file);
+          }
+        }, 'image/jpeg', 0.8);
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+    
+    // Check file size
+    if (file.size > MAX_FILE_SIZE) {
+      // Try to compress
+      setError(locale === "sw" ? "Inapunguza ukubwa wa picha..." : "Compressing image...");
+      const compressed = await compressImage(file);
+      if (compressed.size > MAX_FILE_SIZE) {
+        setError(locale === "sw" ? "Picha kubwa sana. Tumia picha chini ya 4MB." : "Image too large. Please use an image under 4MB.");
+        return;
+      }
+      setError("");
+      setImageFile(compressed);
+      setImagePreview(URL.createObjectURL(compressed));
+    } else {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
     setForm((f) => ({ ...f, imageUrl: "" })); // clear URL if file selected
   }
 
