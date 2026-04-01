@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
 import { MarketCard } from "@/components/MarketCard";
+import { OnboardingPopup } from "@/components/OnboardingPopup";
 import { motion } from "framer-motion";
 import { MagnifyingGlass, Plus, Funnel } from "@phosphor-icons/react";
 import Link from "next/link";
@@ -44,6 +45,7 @@ function MarketsContent() {
   return (
     <div className="min-h-screen">
       <Navbar />
+      <OnboardingPopup />
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Activity Ticker - Shows on all screen sizes */}
         <div className="mb-6">
