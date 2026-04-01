@@ -1,16 +1,17 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Wallet, TrendUp, Trophy, ArrowRight } from "@phosphor-icons/react";
+import { X, Wallet, TrendUp, Trophy, ArrowRight, DeviceMobile } from "@phosphor-icons/react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function OnboardingPopup() {
   const [isVisible, setIsVisible] = useState(false);
+  const { locale } = useLanguage();
+  const isSw = locale === "sw";
 
   useEffect(() => {
-    const hasSeenOnboarding = localStorage.getItem("hasSeenOnboarding");
-    if (!hasSeenOnboarding) {
-      setIsVisible(true);
-    }
+    const seen = localStorage.getItem("hasSeenOnboarding");
+    if (!seen) setIsVisible(true);
   }, []);
 
   const handleClose = () => {
@@ -18,88 +19,77 @@ export function OnboardingPopup() {
     setIsVisible(false);
   };
 
+  const t = {
+    title: isSw ? "Karibu Guap!" : "Welcome to Guap!",
+    subtitle: isSw ? "Biashara kwenye matukio ya kweli na ushinde" : "Trade on real-world events and win big",
+    step1: isSw ? "Weka Pesa" : "Fund Wallet",
+    step1Desc: isSw ? "Weka TZS kupitia M-Pesa kuanza kubiashara." : "Deposit TZS via M-Pesa to start trading.",
+    step2: isSw ? "Chagua Soko" : "Pick Market",
+    step2Desc: isSw ? "Tazama masoko ya michezo, crypto, siasa. Chagua NDIYO au HAPANA." : "Browse sports, crypto, politics. Choose YES or NO.",
+    step3: isSw ? "Shinda & Toa" : "Win & Withdraw",
+    step3Desc: isSw ? "Ukishinda, dai pesa yako. Toa wakati wowote kwa M-Pesa." : "If you win, claim it. Withdraw anytime to M-Pesa.",
+    step4: isSw ? "Ongeza Kwenye Skrini" : "Add to Home Screen",
+    step4Desc: isSw ? "Bonyeza ⋮ au Share → 'Add to Home Screen' kwa ufikiaji wa haraka." : "Tap ⋮ or Share → 'Add to Home Screen' for quick access.",
+    cta: isSw ? "Anza Kubiashara" : "Start Trading",
+  };
+
   return (
     <AnimatePresence>
       {isVisible && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/80 z-50"
             onClick={handleClose}
           />
-
-          {/* Popup */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg mx-4 bg-[var(--card)] border-2 border-[var(--accent)] rounded-2xl shadow-2xl z-50 overflow-hidden"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] max-w-md bg-black border border-[var(--accent)] z-50 font-mono text-sm"
           >
-            {/* Header */}
-            <div className="relative bg-gradient-to-br from-[#00e5a0]/20 via-[#00c896]/10 to-[#00b4d8]/15 p-6 border-b border-[var(--card-border)]">
-              <button
-                onClick={handleClose}
-                className="absolute top-4 right-4 p-2 hover:bg-[var(--background)]/50 rounded-lg transition-colors"
-              >
-                <X size={20} weight="bold" />
+            {/* Terminal header */}
+            <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--accent)]/50 bg-[var(--accent)]/10">
+              <span className="text-[var(--accent)] text-xs">guap@terminal:~$</span>
+              <button onClick={handleClose} className="text-[var(--muted)] hover:text-white">
+                <X size={16} weight="bold" />
               </button>
-              <h2 className="text-2xl font-black mb-2">Welcome to Guap! 🎯</h2>
-              <p className="text-sm text-[var(--muted)]">
-                Trade on real-world events and win big
-              </p>
             </div>
 
             {/* Content */}
-            <div className="p-6 space-y-4">
-              {/* Step 1 */}
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[var(--accent)]/20 flex items-center justify-center">
-                  <Wallet size={20} weight="duotone" className="text-[var(--accent)]" />
+            <div className="p-4 space-y-3">
+              <div className="text-[var(--accent)]">
+                <span className="text-white">$</span> cat welcome.txt
+              </div>
+              <div className="text-white font-bold text-lg">{t.title} 🎯</div>
+              <div className="text-[var(--muted)] text-xs">{t.subtitle}</div>
+
+              <div className="border-t border-[var(--card-border)] pt-3 space-y-2">
+                <div className="flex gap-2">
+                  <span className="text-[var(--accent)]">[1]</span>
+                  <div><span className="text-white">{t.step1}</span> <span className="text-[var(--muted)]">- {t.step1Desc}</span></div>
                 </div>
-                <div>
-                  <h3 className="font-bold mb-1">1. Fund Your Wallet</h3>
-                  <p className="text-sm text-[var(--muted)]">
-                    Deposit TZS via M-Pesa to start trading. Quick and secure.
-                  </p>
+                <div className="flex gap-2">
+                  <span className="text-[var(--accent)]">[2]</span>
+                  <div><span className="text-white">{t.step2}</span> <span className="text-[var(--muted)]">- {t.step2Desc}</span></div>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-[var(--accent)]">[3]</span>
+                  <div><span className="text-white">{t.step3}</span> <span className="text-[var(--muted)]">- {t.step3Desc}</span></div>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-[var(--accent)]">[4]</span>
+                  <div><span className="text-white">{t.step4}</span> <span className="text-[var(--muted)]">- {t.step4Desc}</span></div>
                 </div>
               </div>
 
-              {/* Step 2 */}
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[var(--accent)]/20 flex items-center justify-center">
-                  <TrendUp size={20} weight="duotone" className="text-[var(--accent)]" />
-                </div>
-                <div>
-                  <h3 className="font-bold mb-1">2. Pick a Market</h3>
-                  <p className="text-sm text-[var(--muted)]">
-                    Browse markets on sports, crypto, politics, and more. Choose YES or NO.
-                  </p>
-                </div>
-              </div>
-
-              {/* Step 3 */}
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[var(--accent)]/20 flex items-center justify-center">
-                  <Trophy size={20} weight="duotone" className="text-[var(--accent)]" />
-                </div>
-                <div>
-                  <h3 className="font-bold mb-1">3. Win & Withdraw</h3>
-                  <p className="text-sm text-[var(--muted)]">
-                    If you're right, claim your winnings. Withdraw anytime to M-Pesa.
-                  </p>
-                </div>
-              </div>
-
-              {/* CTA */}
               <button
                 onClick={handleClose}
-                className="w-full mt-6 px-6 py-3 bg-[var(--accent)] text-black font-bold rounded-xl hover:bg-[var(--accent)]/90 transition-all flex items-center justify-center gap-2 group"
+                className="w-full mt-4 px-4 py-2 border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-black transition-all flex items-center justify-center gap-2 uppercase tracking-wider text-xs"
               >
-                Start Trading
-                <ArrowRight size={18} weight="bold" className="group-hover:translate-x-1 transition-transform" />
+                <span>$</span> {t.cta} <ArrowRight size={14} />
               </button>
             </div>
           </motion.div>
