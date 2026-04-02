@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
         id: true,
         title: true,
         category: true,
+        imageUrl: true,
       },
       orderBy: { createdAt: "desc" },
       take: 10,

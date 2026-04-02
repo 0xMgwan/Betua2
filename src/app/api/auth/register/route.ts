@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { ntzs } from "@/lib/ntzs";
 import { signToken } from "@/lib/auth";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -53,11 +54,12 @@ export async function POST(req: NextRequest) {
       // Non-fatal — wallet can be provisioned later
     }
 
-    // Auto-subscribe to email notifications
+    // Auto-subscribe to email notifications and send welcome email
     try {
-      await prisma.emailSubscription.create({
+      const sub = await prisma.emailSubscription.create({
         data: { email, locale: country === 'KE' ? 'sw' : 'en' },
       });
+      sendWelcomeEmail(email, sub.locale, sub.unsubscribeToken).catch(() => {});
     } catch { /* ignore if already exists */ }
 
     const token = await signToken({ userId: user.id, email, username });
