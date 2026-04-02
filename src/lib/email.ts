@@ -1,11 +1,20 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://guap.gold';
 
-function getResend() {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) throw new Error('RESEND_API_KEY not configured');
-  return new Resend(apiKey);
+// SMTP config - works with Gmail, Outlook, or any SMTP provider
+// For Gmail: use App Password (not regular password)
+// SMTP_HOST=smtp.gmail.com, SMTP_PORT=587, SMTP_USER=your@gmail.com, SMTP_PASS=app_password
+function getTransporter() {
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '587'),
+    secure: false,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
 }
 
 interface Market {
@@ -61,12 +70,11 @@ export async function sendNewMarketsEmail(
   </table>
 </body>`;
 
-  const { error } = await getResend().emails.send({
-    from: 'GUAP <noreply@guap.gold>',
+  const transporter = getTransporter();
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM || `GUAP <${process.env.SMTP_USER}>`,
     to,
     subject,
     html,
   });
-
-  if (error) throw error;
 }

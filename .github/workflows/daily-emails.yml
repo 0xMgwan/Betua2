@@ -1,0 +1,19 @@
+name: Send Daily Market Emails
+
+on:
+  schedule:
+    # Runs every day at 8:00 AM UTC (12:00 PM EAT)
+    - cron: '0 8 * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  send-emails:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send daily market emails
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -X POST https://guap.gold/api/email/send-daily \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json"
