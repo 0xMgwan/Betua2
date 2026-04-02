@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Footer } from "@/components/Footer";
 import { ActivityTicker } from "@/components/ActivityTicker";
+import { EmailSubscribe } from "@/components/EmailSubscribe";
 
 function MarketsContent() {
   const { t, locale } = useLanguage();
@@ -188,6 +189,28 @@ function MarketsContent() {
           </div>
         )}
       </div>
+      
+      {/* Email Subscribe Section */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="bg-[var(--card)] border border-[var(--card-border)] p-6">
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
+            <div className="flex-1">
+              <h3 className="font-mono font-bold text-lg mb-1">
+                {locale === "sw" ? "📬 Pokea Arifa za Masoko" : "📬 Get Market Alerts"}
+              </h3>
+              <p className="text-sm text-[var(--muted)]">
+                {locale === "sw" 
+                  ? "Jiandikishe kupokea barua pepe za masoko mapya kila siku."
+                  : "Subscribe to receive daily emails about new markets."}
+              </p>
+            </div>
+            <div className="md:w-96">
+              <EmailSubscribe />
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <Footer />
     </div>
   );
