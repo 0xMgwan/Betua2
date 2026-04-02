@@ -6,24 +6,13 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://guap.gold';
 // For Gmail: use App Password (not regular password)
 // SMTP_HOST=smtp.gmail.com, SMTP_PORT=587, SMTP_USER=your@gmail.com, SMTP_PASS=app_password
 function getTransporter() {
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  
-  console.log('[EMAIL] SMTP Config:', {
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: process.env.SMTP_PORT || '587',
-    user: user,
-    passLength: pass?.length || 0,
-    passPreview: pass ? `${pass.substring(0, 4)}...${pass.substring(pass.length - 4)}` : 'undefined'
-  });
-  
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: parseInt(process.env.SMTP_PORT || '587'),
     secure: false,
     auth: {
-      user,
-      pass,
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
     },
   });
 }

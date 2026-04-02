@@ -53,6 +53,13 @@ export async function POST(req: NextRequest) {
       // Non-fatal — wallet can be provisioned later
     }
 
+    // Auto-subscribe to email notifications
+    try {
+      await prisma.emailSubscription.create({
+        data: { email, locale: country === 'KE' ? 'sw' : 'en' },
+      });
+    } catch { /* ignore if already exists */ }
+
     const token = await signToken({ userId: user.id, email, username });
 
     const res = NextResponse.json({ user: { id: user.id, email, username } });
