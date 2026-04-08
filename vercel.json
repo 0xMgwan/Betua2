@@ -3,6 +3,10 @@
     {
       "path": "/api/email/send-daily",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/push/check-positions",
+      "schedule": "0 */4 * * *"
     }
   ]
 }

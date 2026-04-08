@@ -33,11 +33,64 @@ export class NotificationService {
       // Register service worker
       this.registration = await navigator.serviceWorker.register('/sw.js');
       console.log('Service Worker registered');
+      
+      // Subscribe to push notifications
+      await this.subscribeToPush();
+      
       return true;
     } catch (error) {
       console.error('Service Worker registration failed:', error);
       return false;
     }
+  }
+
+  async subscribeToPush(): Promise<boolean> {
+    if (!this.registration) return false;
+
+    try {
+      const permission = await this.requestPermission();
+      if (permission !== 'granted') return false;
+
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      if (!vapidKey) {
+        console.warn('VAPID key not configured');
+        return false;
+      }
+
+      // Check existing subscription
+      let subscription = await this.registration.pushManager.getSubscription();
+      
+      if (!subscription) {
+        // Create new subscription
+        subscription = await this.registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: this.urlBase64ToUint8Array(vapidKey),
+        });
+      }
+
+      // Send subscription to server
+      const response = await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription }),
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Push subscription failed:', error);
+      return false;
+    }
+  }
+
+  private urlBase64ToUint8Array(base64String: string): ArrayBuffer {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray.buffer as ArrayBuffer;
   }
 
   async requestPermission(): Promise<NotificationPermission> {

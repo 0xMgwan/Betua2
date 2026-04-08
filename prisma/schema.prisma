@@ -237,3 +237,32 @@ model EmailSubscription {
 
   @@index([isActive])
 }
+
+model PushSubscription {
+  id           String   @id @default(cuid())
+  userId       String
+  endpoint     String   @unique
+  p256dh       String
+  auth         String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+  @@index([isActive])
+}
+
+model NotificationPreference {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  pushEnabled           Boolean  @default(true)
+  tradePlaced           Boolean  @default(true)
+  positionExpiring      Boolean  @default(true)
+  positionPriceChange   Boolean  @default(true)
+  marketResolved        Boolean  @default(true)
+  winnings              Boolean  @default(true)
+  priceChangeThreshold  Int      @default(10)
+  expiryWarningHours    Int      @default(24)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
