@@ -14,6 +14,8 @@ interface User {
   country?: string | null;
   balanceTzs: number;
   balanceKes: number;
+  balanceUsdc: number;
+  preferredCurrency?: string | null;
 }
 
 interface UserStore {

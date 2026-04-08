@@ -24,6 +24,8 @@ model User {
   referredById    String?
   locale          String?          @default("en")
   balanceKes      Int              @default(0)
+  balanceUsdc     Int              @default(0)  // stored in micro-USDC (6 decimals, so 1 USDC = 1000000)
+  preferredCurrency String?        @default("TZS")  // TZS, KES, USDC, NGN
   country         String?          @default("TZ")
   comments        Comment[]
   marketsCreated  Market[]         @relation("MarketCreator")

@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import {
   ArrowDownLeft, ArrowUpRight, Clock, CheckCircle,
   XCircle, Copy, Check, ArrowsClockwise,
-  CurrencyCircleDollar, SmileySad, PaperPlaneRight, Gift,
+  CurrencyCircleDollar, SmileySad, PaperPlaneRight, Gift, ArrowsLeftRight,
 } from "@phosphor-icons/react";
 
 interface Transaction {
@@ -43,6 +43,7 @@ export default function WalletPage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [displayCurrency, setDisplayCurrency] = useState<'TZS' | 'USDC'>('TZS');
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -99,6 +100,13 @@ export default function WalletPage() {
   const currency = isKenya ? 'KES' : 'TZS';
   const balance = isKenya ? (user?.balanceKes || 0) : (user?.balanceTzs || 0);
   const quickAmounts = isKenya ? QUICK_AMOUNTS_KES : QUICK_AMOUNTS_TZS;
+
+  // Currency display toggle (TZS ↔ USDC)
+  const TZS_TO_USDC_RATE = 1 / 2630; // 1 TZS ≈ $0.00038
+  const toggleCurrency = () => setDisplayCurrency(prev => prev === 'TZS' ? 'USDC' : 'TZS');
+  const displayBalance = displayCurrency === 'USDC' 
+    ? balance * TZS_TO_USDC_RATE 
+    : balance;
 
   async function handleAction(e: React.FormEvent) {
     e.preventDefault();
@@ -199,20 +207,44 @@ export default function WalletPage() {
             <div className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-br from-[#00e5a0]/20 via-[#00c896]/10 to-[#00b4d8]/15 border border-[var(--accent)]/25">
               <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-[var(--accent)]/10 blur-2xl pointer-events-none" />
               <div className="relative">
-                <div className="flex items-center gap-2 mb-3">
-                  <CurrencyCircleDollar size={20} className="text-[var(--accent)]" weight="fill" />
-                  <span className="text-sm font-semibold">{isKenya ? 'NKES Balance' : 'nTZS Balance'}</span>
-                  {pendingCount > 0 && (
-                    <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/20 animate-pulse">
-                      <Clock size={10} weight="fill" />
-                      {pendingCount}
-                    </span>
-                  )}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <img 
+                      src={displayCurrency === 'USDC' ? '/usdc.png' : '/ntzs.png'} 
+                      alt={displayCurrency} 
+                      className="w-5 h-5"
+                    />
+                    <span className="text-sm font-semibold">{displayCurrency === 'USDC' ? 'USDC' : 'nTZS'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {pendingCount > 0 && (
+                      <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/20 animate-pulse">
+                        <Clock size={10} weight="fill" />
+                        {pendingCount}
+                      </span>
+                    )}
+                    {/* Currency Toggle */}
+                    <button
+                      onClick={toggleCurrency}
+                      className="flex items-center gap-1 px-2 py-1 text-xs bg-[var(--background)]/60 rounded-lg border border-[var(--card-border)] hover:border-[var(--accent)]/30 transition-colors"
+                    >
+                      <img 
+                        src={displayCurrency === 'USDC' ? '/ntzs.png' : '/usdc.png'} 
+                        alt="switch" 
+                        className="w-3.5 h-3.5"
+                      />
+                      <ArrowsLeftRight size={10} />
+                    </button>
+                  </div>
                 </div>
                 <div className="text-4xl font-black mb-0.5 tabular-nums">
-                  {isKenya ? `${(balance / 100).toLocaleString()} KES` : formatTZS(balance)}
+                  {displayCurrency === 'USDC' 
+                    ? `$${displayBalance.toFixed(2)}`
+                    : formatTZS(Math.round(displayBalance))}
                 </div>
-                <p className="text-xs text-[var(--muted)]">{isKenya ? 'Kenyan Shillings' : t.wallet.tanzanianShillings}</p>
+                <p className="text-xs text-[var(--muted)]">
+                  {displayCurrency === 'USDC' ? 'USD Coin' : t.wallet.tanzanianShillings}
+                </p>
 
                 {user.walletAddress && (
                   <button

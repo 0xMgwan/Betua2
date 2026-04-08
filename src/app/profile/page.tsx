@@ -7,7 +7,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS } from "@/lib/utils";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { FloppyDisk, ChartBar, TrendUp, Medal, Upload, X, Copy, Check, Users, Gift } from "@phosphor-icons/react";
+import { FloppyDisk, ChartBar, TrendUp, Medal, Upload, X, Copy, Check, Users, Gift, ArrowsLeftRight } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 interface Stats {
@@ -40,6 +40,7 @@ export default function ProfilePage() {
   const [stats, setStats] = useState<Stats>({ totalTrades: 0, totalVolume: 0, openPositions: 0, marketsCreated: 0 });
   const [referral, setReferral] = useState<ReferralData | null>(null);
   const [refCopied, setRefCopied] = useState(false);
+  const [displayCurrency, setDisplayCurrency] = useState<'TZS' | 'USDC'>('TZS');
 
   useEffect(() => {
     if (user) {
@@ -151,11 +152,21 @@ export default function ProfilePage() {
     );
   }
 
+  // Currency display
+  const TZS_TO_USDC_RATE = 1 / 2630;
+  const toggleCurrency = () => setDisplayCurrency(prev => prev === 'TZS' ? 'USDC' : 'TZS');
+  const formatAmount = (tzs: number) => {
+    if (displayCurrency === 'USDC') {
+      return `$${(tzs * TZS_TO_USDC_RATE).toFixed(2)}`;
+    }
+    return formatTZS(tzs);
+  };
+
   const STAT_ITEMS = [
     { label: t.profile.totalTrades, value: stats.totalTrades, icon: ChartBar },
-    { label: t.profile.volumeTraded, value: formatTZS(stats.totalVolume), icon: TrendUp },
+    { label: t.profile.volumeTraded, value: formatAmount(stats.totalVolume), icon: TrendUp },
     { label: t.portfolio.openPositions, value: stats.openPositions, icon: Medal },
-    { label: t.profile.balance, value: formatTZS(user.balanceTzs || 0), icon: Medal },
+    { label: t.profile.balance, value: formatAmount(user.balanceTzs || 0), icon: Medal },
   ];
 
   return (
@@ -204,6 +215,21 @@ export default function ProfilePage() {
 
             {/* Stats */}
             <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl p-4 space-y-3">
+              {/* Currency toggle */}
+              <div className="flex items-center justify-end mb-1">
+                <button
+                  onClick={toggleCurrency}
+                  className="flex items-center gap-1.5 px-2 py-1 text-xs bg-[var(--background)] rounded-lg border border-[var(--card-border)] hover:border-[var(--accent)]/30 transition-colors"
+                >
+                  <img 
+                    src={displayCurrency === 'USDC' ? '/usdc.png' : '/ntzs.png'} 
+                    alt={displayCurrency} 
+                    className="w-3.5 h-3.5"
+                  />
+                  <span className="font-medium">{displayCurrency}</span>
+                  <ArrowsLeftRight size={10} className="text-[var(--muted)]" />
+                </button>
+              </div>
               {STAT_ITEMS.map((s) => (
                 <div key={s.label} className="flex items-center justify-between text-sm">
                   <span className="text-[var(--muted)]">{s.label}</span>
