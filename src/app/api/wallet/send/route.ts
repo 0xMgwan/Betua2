@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
 import { createNotification } from "@/lib/notify";
 
+const USDC_TO_TZS_RATE = 2630;
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
@@ -11,9 +13,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { recipientUsername, amountTzs } = await req.json();
+    const { recipientUsername, amountTzs, amountUsdc, currency } = await req.json();
 
-    if (!recipientUsername || !amountTzs || amountTzs <= 0) {
+    // Support both TZS and USDC amounts
+    const isUsdcSend = currency === 'USDC' && amountUsdc > 0;
+    const requestedAmountTzs = isUsdcSend ? Math.round(amountUsdc * USDC_TO_TZS_RATE) : amountTzs;
+
+    if (!recipientUsername || (!amountTzs && !amountUsdc) || requestedAmountTzs <= 0) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
 
@@ -43,27 +49,62 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Cannot send to yourself" }, { status: 400 });
     }
 
-    // Check balance
+    // Check balance and handle USDC swap if needed
+    let actualAmountToSend = requestedAmountTzs;
+    
     try {
-      const { balanceTzs } = await ntzs.users.getBalance(sender.ntzsUserId);
-      if (balanceTzs < amountTzs) {
-        return NextResponse.json({
-          error: `Insufficient balance. You have ${balanceTzs.toLocaleString()} TZS, need ${amountTzs.toLocaleString()} TZS.`,
-        }, { status: 400 });
+      const { balanceTzs, balanceUsdc } = await ntzs.users.getBalance(sender.ntzsUserId);
+      
+      if (isUsdcSend) {
+        // For USDC sends: check USDC balance, swap to nTZS, then send actual received amount
+        if ((balanceUsdc || 0) < amountUsdc) {
+          return NextResponse.json({
+            error: `Insufficient USDC balance. You have $${(balanceUsdc || 0).toFixed(2)}, need $${amountUsdc.toFixed(2)}.`,
+          }, { status: 400 });
+        }
+        
+        // Swap USDC to nTZS first
+        console.log(`[Send] Swapping $${amountUsdc} USDC → nTZS for user ${sender.ntzsUserId}`);
+        try {
+          const swapResult = await ntzs.swap.executeAndWait({
+            userId: sender.ntzsUserId,
+            fromToken: 'USDC',
+            toToken: 'NTZS',
+            amount: amountUsdc,
+            slippageBps: 100,
+          });
+          console.log(`[Send] Swap completed: ${swapResult.txHash}`);
+          
+          // Get actual nTZS balance after swap (accounts for slippage)
+          const { balanceTzs: newBalanceTzs } = await ntzs.users.getBalance(sender.ntzsUserId);
+          actualAmountToSend = newBalanceTzs; // Send whatever we actually got from the swap
+          console.log(`[Send] After swap, sending actual balance: ${actualAmountToSend} TZS (requested: ${requestedAmountTzs} TZS)`);
+        } catch (swapErr) {
+          console.error("[Send] USDC swap failed:", swapErr);
+          return NextResponse.json({ error: "USDC swap failed. Please try again." }, { status: 500 });
+        }
+      } else {
+        // For TZS sends: check nTZS balance directly
+        if (balanceTzs < requestedAmountTzs) {
+          return NextResponse.json({
+            error: `Insufficient balance. You have ${balanceTzs.toLocaleString()} TZS, need ${requestedAmountTzs.toLocaleString()} TZS.`,
+          }, { status: 400 });
+        }
+        actualAmountToSend = requestedAmountTzs;
       }
     } catch (err) {
       console.error("Balance check failed:", err);
       return NextResponse.json({ error: "Could not verify balance" }, { status: 503 });
     }
 
-    // Execute transfer
-    console.log(`User transfer: ${sender.ntzsUserId} (${sender.username}) → ${recipient.ntzsUserId} (${recipient.username}): ${amountTzs} TZS`);
+    // Execute transfer with actual available amount
+    console.log(`User transfer: ${sender.ntzsUserId} (${sender.username}) → ${recipient.ntzsUserId} (${recipient.username}): ${actualAmountToSend} TZS`);
     
     try {
       const transfer = await ntzs.transfers.create({
         fromUserId: sender.ntzsUserId,
         toUserId: recipient.ntzsUserId,
-        amountTzs,
+        amountTzs: actualAmountToSend,
       });
 
       // Create transaction records for both sender and recipient
@@ -72,7 +113,9 @@ export async function POST(req: NextRequest) {
           {
             userId: sender.id,
             type: "SEND",
-            amountTzs,
+            amountTzs: actualAmountToSend,
+            amountUsdc: isUsdcSend ? Math.round(amountUsdc * 1_000_000) : 0,
+            currency: isUsdcSend ? 'USDC' : 'TZS',
             status: "COMPLETED",
             recipientUsername: recipient.username,
           },
@@ -87,11 +130,14 @@ export async function POST(req: NextRequest) {
       });
 
       // Notify sender
+      const sentAmountDisplay = isUsdcSend 
+        ? `$${amountUsdc.toFixed(2)}` 
+        : `${actualAmountToSend.toLocaleString()} TZS`;
       createNotification({
         userId: sender.id,
         type: "FUNDS_SENT",
         title: "Transfer Sent",
-        message: `Sent ${amountTzs.toLocaleString()} TZS to @${recipient.username}`,
+        message: `Sent ${sentAmountDisplay} to @${recipient.username}`,
         link: `/wallet`,
       });
 
