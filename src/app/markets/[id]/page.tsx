@@ -191,9 +191,17 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
     ? [1, 5, 10, 20] // USDC amounts
     : QUICK_AMOUNTS_TZS;
   
-  // Get user balance
-  const userBalance = user?.balanceTzs || 0;
-  const balanceDisplay = formatAmount(userBalance);
+  // Get user balance based on selected currency
+  const getUserBalance = () => {
+    if (displayCurrency === 'USDC') {
+      return user?.balanceUsdc || 0; // Already a float from nTZS API
+    }
+    return user?.balanceTzs || 0;
+  };
+  const userBalance = getUserBalance();
+  const balanceDisplay = displayCurrency === 'USDC' 
+    ? `$${userBalance.toFixed(2)}` 
+    : formatAmount(userBalance);
   
   // Use translated content if available
   const displayTitle = locale === "sw" && translatedTitle ? translatedTitle : market?.title;
@@ -217,11 +225,11 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
     setTradeError("");
     setTradeSuccess("");
     try {
-      // Send amountUsdc (in micro-USDC) when USDC selected, otherwise amountTzs
+      // Send amountUsdc as float when USDC selected, otherwise amountTzs
       const amountNum = Number(amount);
       const amountInTzs = fromDisplay(amountNum);
       const amountPayload = displayCurrency === 'USDC'
-        ? { amountUsdc: Math.round(amountNum * 1_000_000) } // Convert to micro-USDC
+        ? { amountUsdc: amountNum } // Send as float (e.g., 1.50)
         : { amountTzs: amountInTzs };
       const tradeBody = isMultiOption
         ? { marketId: id, optionIndex: selectedOption, ...amountPayload }

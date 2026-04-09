@@ -175,18 +175,17 @@ export const ntzs = {
   // Swap API - swap between nTZS and USDC on Base
   // Returns SSE stream with status updates
   swap: {
-    // Execute a swap (returns SSE stream)
-    execute: async (data: { 
+    // Execute a swap and wait for completion (handles SSE stream internally)
+    // Returns the final txHash on success, throws on failure
+    executeAndWait: async (data: { 
       userId: string; 
       fromToken: 'USDC' | 'NTZS'; 
       toToken: 'USDC' | 'NTZS'; 
       amount: number;
       slippageBps?: number; // default 100 (1%)
-    }) => {
-      // Note: This returns a streaming response (text/event-stream)
-      // The caller needs to handle the SSE stream
+    }): Promise<{ txHash: string; status: string }> => {
       const url = `${NTZS_BASE_URL}/api/v1/swap`;
-      return fetch(url, {
+      const res = await fetch(url, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${NTZS_API_KEY}`,
@@ -194,6 +193,46 @@ export const ntzs = {
         },
         body: JSON.stringify(data),
       });
+
+      if (!res.ok || !res.body) {
+        const errorText = await res.text();
+        throw new Error(`Swap request failed: ${res.status} ${errorText}`);
+      }
+
+      // Read SSE stream and wait for FILLED or FAILED status
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let lastUpdate: { status: string; message: string; txHash?: string } | null = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const lines = decoder.decode(value).split('\n');
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const update = JSON.parse(line.slice(6));
+            console.log(`[nTZS Swap] ${update.status}: ${update.message}`, update.txHash || '');
+            lastUpdate = update;
+
+            if (update.status === 'FILLED') {
+              return { txHash: update.txHash, status: 'FILLED' };
+            }
+            if (update.status === 'FAILED') {
+              throw new Error(`Swap failed: ${update.message}`);
+            }
+          } catch (parseErr) {
+            // Ignore parse errors for incomplete lines
+          }
+        }
+      }
+
+      // Stream ended without FILLED status
+      if (lastUpdate?.status === 'FILLED') {
+        return { txHash: lastUpdate.txHash || '', status: 'FILLED' };
+      }
+      throw new Error(`Swap stream ended unexpectedly. Last status: ${lastUpdate?.status || 'unknown'}`);
     },
   },
 };

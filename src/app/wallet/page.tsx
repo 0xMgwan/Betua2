@@ -20,6 +20,7 @@ interface Transaction {
   type: string;
   amountTzs: number;
   amountKes: number;
+  amountUsdc: number;
   currency: string;
   status: string;
   phone?: string | null;
@@ -639,9 +640,11 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
           isSend || isBuyShares || isSellShares ? "text-blue-400" : 
           "text-red-400")}>
           {isDeposit || isReceive || isRedeem || isReferral || isCreatorFee ? "+" : "−"}
-          {tx.currency === 'KES' 
-            ? `${(tx.amountKes / 100).toLocaleString()} KES`
-            : formatTZS(tx.amountTzs)}
+          {tx.currency === 'USDC' 
+            ? `$${((tx.amountUsdc || 0) / 1_000_000).toFixed(2)}`
+            : tx.currency === 'KES' 
+              ? `${(tx.amountKes / 100).toLocaleString()} KES`
+              : formatTZS(tx.amountTzs)}
         </p>
         <div className={cn("flex items-center gap-1 justify-end text-xs font-medium mt-0.5", statusConfig.color)}>
           {statusConfig.icon}

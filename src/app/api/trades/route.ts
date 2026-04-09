@@ -42,15 +42,16 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     // Determine payment currency and convert to TZS for AMM calculations
-    // USDC rate: 1 USDC = 2630 TZS, stored as micro-USDC (1 USDC = 1,000,000 micro-USDC)
+    // USDC rate: 1 USDC = 2630 TZS
+    // Note: amountUsdc from frontend is in USDC (float, e.g., 1.50)
+    // balanceUsdc from nTZS API is also a float (e.g., 1.50)
     const USDC_TO_TZS_RATE = 2630;
     
     if (amountUsdc && amountUsdc > 0) {
-      // USDC payment - convert to TZS for AMM (amountUsdc is in micro-USDC)
+      // USDC payment - convert to TZS for AMM
       userCurrency = 'USDC' as Currency;
-      const usdcAmount = amountUsdc / 1_000_000; // Convert micro-USDC to USDC
-      amountTzs = Math.round(usdcAmount * USDC_TO_TZS_RATE);
-      if (amountUsdc < 500_000) { // Minimum 0.5 USDC
+      amountTzs = Math.round(amountUsdc * USDC_TO_TZS_RATE);
+      if (amountUsdc < 0.5) { // Minimum 0.5 USDC
         return NextResponse.json({ error: "Minimum trade is $0.50 USDC" }, { status: 400 });
       }
     } else if (amountKes && amountKes > 0) {
@@ -76,12 +77,19 @@ export async function POST(req: NextRequest) {
 
     // Enforce wallet balance based on user's currency
     if (userCurrency === 'USDC') {
-      // USDC payment - check USDC balance (stored in micro-USDC)
-      const userBalanceUsdc = user.balanceUsdc || 0;
+      // USDC payment - fetch live USDC balance from nTZS API (not stored in DB)
+      let userBalanceUsdc = 0;
+      if (user.ntzsUserId) {
+        try {
+          const bal = await ntzs.users.getBalance(user.ntzsUserId);
+          userBalanceUsdc = bal.balanceUsdc || 0;
+        } catch (err) {
+          console.error("[Trade] Failed to fetch USDC balance:", err);
+        }
+      }
       if (userBalanceUsdc < amountUsdc) {
-        const balanceDisplay = (userBalanceUsdc / 1_000_000).toFixed(2);
         return NextResponse.json({
-          error: `Insufficient USDC balance. You have $${balanceDisplay} — deposit more to trade.`,
+          error: `Insufficient USDC balance. You have $${userBalanceUsdc.toFixed(2)} — deposit more to trade.`,
         }, { status: 400 });
       }
     } else if (userCurrency === 'KES') {
@@ -152,7 +160,40 @@ export async function POST(req: NextRequest) {
     let nkesTransferTxHash: string | undefined;
 
     // Transfer tokens from user → platform escrow
-    if (userCurrency === 'KES') {
+    if (userCurrency === 'USDC' && user.ntzsUserId) {
+      // USDC payment flow:
+      // 1. Swap USDC → nTZS via nTZS swap API
+      // 2. Transfer nTZS to platform escrow
+      try {
+        console.log(`[Trade] USDC payment: swapping $${amountUsdc} USDC → ${amountTzs} TZS for user ${user.ntzsUserId}`);
+        
+        // Step 1: Swap USDC to nTZS
+        const swapResult = await ntzs.swap.executeAndWait({
+          userId: user.ntzsUserId,
+          fromToken: 'USDC',
+          toToken: 'NTZS',
+          amount: amountUsdc,
+          slippageBps: 100, // 1% slippage
+        });
+        console.log(`[Trade] Swap completed: ${swapResult.txHash}`);
+
+        // Step 2: Transfer nTZS to platform escrow
+        if (PLATFORM_NTZS_USER_ID) {
+          const transfer = await ntzs.transfers.create({
+            fromUserId: user.ntzsUserId,
+            toUserId: PLATFORM_NTZS_USER_ID,
+            amountTzs,
+          });
+          ntzsTransferId = transfer.id;
+          console.log(`[Trade] nTZS transfer to escrow: ${ntzsTransferId}`);
+        }
+      } catch (err) {
+        console.error("[Trade] USDC swap/transfer failed:", err);
+        return NextResponse.json({
+          error: "USDC payment failed. Please try again.",
+        }, { status: 500 });
+      }
+    } else if (userCurrency === 'KES') {
       // Kenya user: Transfer NKES tokens to escrow
       try {
         const ntzsUser = await ntzs.users.get(user.ntzsUserId);
@@ -164,7 +205,7 @@ export async function POST(req: NextRequest) {
         console.error("NKES transfer failed:", err);
         // Continue without NKES transfer - use local balance instead
       }
-    } else if (PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
+    } else if (userCurrency === 'TZS' && PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
       // Tanzania user: Transfer nTZS tokens via nTZS API
       try {
         const transfer = await ntzs.transfers.create({
@@ -267,7 +308,8 @@ export async function POST(req: NextRequest) {
             type: "BUY_SHARES",
             amountTzs: userCurrency === 'TZS' ? amountTzs : 0,
             amountKes: userCurrency === 'KES' ? (amountKes || convertCurrency(amountTzs, 'TZS', 'KES')) : 0,
-            amountUsdc: userCurrency === 'USDC' ? amountUsdc : 0,
+            // amountUsdc is stored as micro-USDC (integer), so multiply by 1,000,000
+            amountUsdc: userCurrency === 'USDC' ? Math.round(amountUsdc * 1_000_000) : 0,
             currency: userCurrency,
             status: "COMPLETED",
             recipientUsername: `${market.title} (${tradeSide})`,
@@ -302,9 +344,15 @@ export async function POST(req: NextRequest) {
     // Notification: trade completed
     const userLocale = user.locale || 'en';
     const notifTitle = userLocale === 'sw' ? 'Biashara Imefanikiwa' : 'Trade Successful';
+    // Format amount based on currency
+    const amountDisplay = userCurrency === 'USDC' 
+      ? `$${amountUsdc.toFixed(2)}` 
+      : userCurrency === 'KES'
+        ? `${(amountKes || convertCurrency(amountTzs, 'TZS', 'KES')).toLocaleString()} KES`
+        : `${amountTzs.toLocaleString()} TZS`;
     const notifMessage = userLocale === 'sw'
-      ? `Umenunua hisa za ${tradeSide} katika "${market.title}" kwa ${amountTzs.toLocaleString()} TZS`
-      : `Bought ${tradeSide} shares in "${market.title}" for ${amountTzs.toLocaleString()} TZS`;
+      ? `Umenunua hisa za ${tradeSide} katika "${market.title}" kwa ${amountDisplay}`
+      : `Bought ${tradeSide} shares in "${market.title}" for ${amountDisplay}`;
     
     createNotification({
       userId: session.userId,

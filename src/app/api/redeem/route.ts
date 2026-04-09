@@ -119,7 +119,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Determine user's preferred currency for payout
-    // USDC rate: 1 USDC = 2630 TZS, stored as micro-USDC (1 USDC = 1,000,000 micro-USDC)
+    // USDC rate: 1 USDC = 2630 TZS
+    // USDC is now stored as float (e.g., 1.50), not micro-USDC
     const USDC_TO_TZS_RATE = 2630;
     const preferredCurrency = (user.preferredCurrency as Currency) || getUserCurrency(user.country);
     
@@ -127,23 +128,46 @@ export async function POST(req: NextRequest) {
     let payoutUsdc = 0;
     
     if (preferredCurrency === 'USDC') {
-      // Convert TZS payout to micro-USDC
-      payoutUsdc = Math.round((payoutTzs / USDC_TO_TZS_RATE) * 1_000_000);
-      payoutInUserCurrency = payoutUsdc / 1_000_000; // For display
+      // Convert TZS payout to USDC (float)
+      payoutUsdc = payoutTzs / USDC_TO_TZS_RATE;
+      payoutInUserCurrency = payoutUsdc; // Already in USDC
     } else if (preferredCurrency === 'KES') {
       payoutInUserCurrency = convertCurrency(payoutTzs, 'TZS', 'KES');
     } else {
       payoutInUserCurrency = payoutTzs;
     }
 
-    // Transfer payout from platform escrow → user (only for TZS/KES, USDC is handled locally)
+    // Transfer payout from platform escrow → user
+    // For USDC users: transfer nTZS first, then swap to USDC
     let ntzsTransferId: string | undefined;
     let nkesTransferTxHash: string | undefined;
     
-    if (preferredCurrency === 'USDC') {
-      // USDC payout - handled via local balance (no external transfer needed)
-      // In production, this would integrate with Base network USDC transfers
-      console.log(`USDC payout: ${payoutUsdc} micro-USDC to user ${user.id}`);
+    if (preferredCurrency === 'USDC' && PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
+      // USDC payout: transfer nTZS from escrow, then swap to USDC
+      try {
+        // Step 1: Transfer nTZS from escrow to user
+        const transfer = await ntzs.transfers.create({
+          fromUserId: PLATFORM_NTZS_USER_ID,
+          toUserId: user.ntzsUserId,
+          amountTzs: payoutTzs,
+        });
+        ntzsTransferId = transfer.id;
+        console.log(`[Redeem] nTZS transfer: ${ntzsTransferId}`);
+
+        // Step 2: Swap nTZS → USDC
+        console.log(`[Redeem] Swapping ${payoutTzs} nTZS → USDC for user ${user.ntzsUserId}`);
+        const swapResult = await ntzs.swap.executeAndWait({
+          userId: user.ntzsUserId,
+          fromToken: 'NTZS',
+          toToken: 'USDC',
+          amount: payoutTzs,
+          slippageBps: 100,
+        });
+        console.log(`[Redeem] Swap completed: ${swapResult.txHash}`);
+      } catch (err) {
+        console.error("[Redeem] USDC payout/swap failed:", err);
+        // Continue with local balance update as fallback
+      }
     } else if (preferredCurrency === 'KES') {
       // Kenya user: Transfer NKES from escrow to user
       try {

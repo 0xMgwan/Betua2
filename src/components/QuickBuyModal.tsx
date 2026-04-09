@@ -186,13 +186,13 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
     setError("");
 
     try {
-      // Send amountUsdc (in micro-USDC) when USDC selected, otherwise amountTzs
+      // Send amountUsdc as float when USDC selected, otherwise amountTzs
       const tradeBody = {
         marketId: market.id,
         side: isMultiOption ? undefined : side,
         optionIndex: isMultiOption ? optionIndex : undefined,
         ...(displayCurrency === 'USDC' 
-          ? { amountUsdc: Math.round(amountNum * 1_000_000) } // Convert to micro-USDC
+          ? { amountUsdc: amountNum } // Send as float (e.g., 1.50)
           : { amountTzs: amountInTzs }),
       };
       const res = await fetch("/api/trades", {

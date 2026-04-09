@@ -105,20 +105,36 @@ export async function POST(req: NextRequest) {
     const netPayout = grossPayout - feeAmount;
 
     // Transfer payout: platform escrow → user via NTZS
+    // For USDC users: transfer nTZS first, then swap to USDC
     let ntzsTransferId: string | undefined;
     if (PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
       try {
+        // Step 1: Transfer nTZS from escrow to user
         const transfer = await ntzs.transfers.create({
           fromUserId: PLATFORM_NTZS_USER_ID,
           toUserId: user.ntzsUserId,
           amountTzs: netPayout,
         });
         ntzsTransferId = transfer.id;
+
+        // Step 2: If user prefers USDC, swap nTZS → USDC
+        if (preferredCurrency === 'USDC') {
+          console.log(`[Sell] Swapping ${netPayout} nTZS → USDC for user ${user.ntzsUserId}`);
+          const swapResult = await ntzs.swap.executeAndWait({
+            userId: user.ntzsUserId,
+            fromToken: 'NTZS',
+            toToken: 'USDC',
+            amount: netPayout,
+            slippageBps: 100,
+          });
+          console.log(`[Sell] Swap completed: ${swapResult.txHash}`);
+        }
       } catch (err) {
         if (err instanceof NtzsApiError) {
           return NextResponse.json({ error: err.message || "Payout transfer failed" }, { status: 400 });
         }
-        throw err;
+        console.error("[Sell] Payout/swap failed:", err);
+        return NextResponse.json({ error: "Payout failed. Please try again." }, { status: 500 });
       }
     }
 
@@ -149,8 +165,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Calculate payout in user's preferred currency
+    // USDC is now stored as float (e.g., 1.50), not micro-USDC
     const payoutUsdc = preferredCurrency === 'USDC' 
-      ? Math.round((netPayout / USDC_TO_TZS_RATE) * 1_000_000) 
+      ? netPayout / USDC_TO_TZS_RATE
       : 0;
     const payoutKes = preferredCurrency === 'KES' 
       ? convertCurrency(netPayout, 'TZS', 'KES') 
@@ -203,13 +220,14 @@ export async function POST(req: NextRequest) {
     ]);
 
     // Calculate payout in user's currency for response/notification
+    // payoutUsdc is now a float (e.g., 1.50), not micro-USDC
     const payoutInUserCurrency = preferredCurrency === 'USDC' 
-      ? payoutUsdc / 1_000_000
+      ? payoutUsdc
       : preferredCurrency === 'KES' 
         ? payoutKes 
         : netPayout;
     const payoutDisplay = preferredCurrency === 'USDC'
-      ? `$${(payoutUsdc / 1_000_000).toFixed(2)}`
+      ? `$${payoutUsdc.toFixed(2)}`
       : `${payoutInUserCurrency.toLocaleString()} ${preferredCurrency}`;
 
     // Notification
