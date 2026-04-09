@@ -41,15 +41,15 @@
     "howItWorks": {
       "badge": "Mchakato rahisi",
       "title": "Anzisha Soko ndani ya dakika tu",
-      "subtitle": "Hakuna akaunti ya benki, hakuna kupakia kitambulisho, hakuna kusubiri. Ni simu yako tu!",
+      "subtitle": "Hakuna akaunti ya benki, hakuna kupakia kitambulisho, hakuna kusubiri. Pesa za Simu au USDC.",
       "step": "Hatua",
       "step1": {
         "title": "Fungua akaunti bure",
         "desc": "Jisajili kwa barua pepe yako na uchague jina la mtumiaji. Mkoba wako wa nTZS unaundwa moja kwa moja kwa sekunde."
       },
       "step2": {
-        "title": "Weka pesa kupitia Pesa za Simu",
-        "desc": "Weka kiasi chochote zaidi ya TZS 1,000 na nambari yako ya pesa za simu. Utapata STK push kukamilisha malipo."
+        "title": "Weka pesa kupitia Pesa za Simu au USDC",
+        "desc": "Weka pesa kwa Pesa za Simu (TZS 1,000+) au tuma USDC kwenye mkoba wako wa Base. Chaguzi zote zinakuwezesha kuanza biashara haraka."
       },
       "step3": {
         "title": "Chagua masoko yako",

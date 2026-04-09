@@ -95,14 +95,30 @@ export async function POST(req: NextRequest) {
 
     // ── Check balance & transfer 2,000 TZS creation fee (skip for admins) ────
     const isAdmin = ADMIN_NTZS_USER_IDS.includes(user.ntzsUserId);
+    const USDC_TO_TZS_RATE = 2630;
+    const CREATION_FEE_USDC = CREATION_FEE_TZS / USDC_TO_TZS_RATE;
 
     if (!isAdmin) {
+      // Check both nTZS and USDC balances
+      let balanceTzs = 0;
+      let balanceUsdc = 0;
+      let useUsdc = false;
+
       try {
-        const { balanceTzs } = await ntzs.users.getBalance(user.ntzsUserId);
-        if (balanceTzs < CREATION_FEE_TZS) {
+        const balances = await ntzs.users.getBalance(user.ntzsUserId);
+        balanceTzs = balances.balanceTzs || 0;
+        balanceUsdc = balances.balanceUsdc || 0;
+
+        // Prefer nTZS if sufficient, otherwise try USDC
+        if (balanceTzs >= CREATION_FEE_TZS) {
+          useUsdc = false;
+        } else if (balanceUsdc >= CREATION_FEE_USDC) {
+          useUsdc = true;
+        } else {
+          // Neither balance is sufficient
           return NextResponse.json(
             {
-              error: `Insufficient balance. Creating a market costs ${CREATION_FEE_TZS.toLocaleString()} TZS. Your balance: ${balanceTzs.toLocaleString()} TZS.`,
+              error: `Insufficient balance. Creating a market costs ${CREATION_FEE_TZS.toLocaleString()} TZS (~$${CREATION_FEE_USDC.toFixed(2)}). Your balance: ${balanceTzs.toLocaleString()} TZS / $${balanceUsdc.toFixed(2)} USDC.`,
             },
             { status: 400 }
           );
@@ -121,12 +137,25 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // ── Transfer 2,000 TZS creation fee: user → platform → fee wallet ────
+      // ── Transfer creation fee: user → platform → fee wallet ────
       // ENFORCED: Market creation will fail if fee transfer fails
       if (PLATFORM_NTZS_USER_ID) {
-        console.log(`Market creation fee transfer: ${user.ntzsUserId} (${user.walletAddress}) → ${PLATFORM_NTZS_USER_ID} (${CREATION_FEE_TZS} TZS)`);
-        
         try {
+          // If using USDC, swap to nTZS first
+          if (useUsdc) {
+            console.log(`Market creation: swapping $${CREATION_FEE_USDC.toFixed(2)} USDC → ${CREATION_FEE_TZS} TZS for user ${user.ntzsUserId}`);
+            const swapResult = await ntzs.swap.executeAndWait({
+              userId: user.ntzsUserId,
+              fromToken: 'USDC',
+              toToken: 'NTZS',
+              amount: CREATION_FEE_USDC,
+              slippageBps: 100,
+            });
+            console.log(`Market creation swap completed: ${swapResult.txHash}`);
+          }
+
+          // Transfer nTZS fee to platform
+          console.log(`Market creation fee transfer: ${user.ntzsUserId} (${user.walletAddress}) → ${PLATFORM_NTZS_USER_ID} (${CREATION_FEE_TZS} TZS)`);
           await ntzs.transfers.create({
             fromUserId: user.ntzsUserId,
             toUserId: PLATFORM_NTZS_USER_ID,
@@ -159,7 +188,11 @@ export async function POST(req: NextRequest) {
               { status: 500 }
             );
           }
-          throw err;
+          console.error("Market creation fee failed:", err);
+          return NextResponse.json(
+            { error: "Failed to process market creation fee. Please try again." },
+            { status: 500 }
+          );
         }
       }
     } else {

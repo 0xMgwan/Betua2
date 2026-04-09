@@ -220,8 +220,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Transfer 5% fee from platform escrow → settlement fee wallet (non-blocking, TZS only)
-    if (userCurrency === 'TZS' && PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID && feeAmount > 0) {
+    // Transfer 5% fee from platform escrow → settlement fee wallet (non-blocking)
+    // Fees are always in nTZS (USDC is swapped to nTZS before escrow)
+    if (PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID && feeAmount > 0) {
       ntzs.transfers.create({
         fromUserId: PLATFORM_NTZS_USER_ID,
         toUserId: SETTLEMENT_FEE_NTZS_USER_ID,

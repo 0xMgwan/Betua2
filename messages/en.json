@@ -41,15 +41,15 @@
     "howItWorks": {
       "badge": "Simple process",
       "title": "Up and trading in minutes",
-      "subtitle": "No bank account, no ID upload, no waiting. Just Mobile Money.",
+      "subtitle": "No bank account, no ID upload, no waiting. Mobile Money or USDC.",
       "step": "Step",
       "step1": {
         "title": "Create a free account",
         "desc": "Sign up with just your email and pick a username. Your nTZS smart wallet is created automatically in seconds."
       },
       "step2": {
-        "title": "Deposit via Mobile Money",
-        "desc": "Enter any amount above 1,000 TZS and your mobile money number. You'll get an STK push to complete the payment."
+        "title": "Deposit via Mobile Money or USDC",
+        "desc": "Fund with Mobile Money (1,000+ TZS) or send USDC to your Base wallet. Both options get you trading in seconds."
       },
       "step3": {
         "title": "Pick your markets",

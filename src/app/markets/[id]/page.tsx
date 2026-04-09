@@ -1111,7 +1111,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
                   <button
                     type="submit"
-                    disabled={tradeLoading || !amount || Number(amount) < 100}
+                    disabled={tradeLoading || !amount || Number(amount) < (displayCurrency === 'USDC' ? 0.5 : 100)}
                     className={cn(
                       "w-full py-3.5 font-bold rounded-xl transition-all disabled:opacity-50 text-sm",
                       isMultiOption

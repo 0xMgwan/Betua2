@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useUser } from "@/store/useUser";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
+import { useCurrency } from "@/store/useCurrency";
 import { Footer } from "@/components/Footer";
 import {
   CalendarBlank, Image as ImageIcon, CaretRight, Info,
@@ -21,18 +22,24 @@ import { ALL_PYTH_SYMBOLS } from "@/lib/pyth";
 import { TerminalDatePicker } from "@/components/TerminalDatePicker";
 
 const CREATION_FEE_TZS = 2000;
+const USDC_TO_TZS_RATE = 2630;
 
 export default function CreateMarketPage() {
   const router = useRouter();
   const { t, locale } = useLanguage();
   const { user } = useUser();
+  const { currency: displayCurrency } = useCurrency();
   
   // Currency detection for Kenya/Tanzania users
   const userCurrency: Currency = getUserCurrency(user?.country, user?.phone);
   const isKenya = userCurrency === 'KES';
-  const CREATION_FEE_DISPLAY = isKenya 
-    ? `${Math.round(CREATION_FEE_TZS / 18.5).toLocaleString()} KES` 
-    : `${CREATION_FEE_TZS.toLocaleString()} TZS`;
+  
+  // Display fee in user's selected currency
+  const CREATION_FEE_DISPLAY = displayCurrency === 'USDC'
+    ? `$${(CREATION_FEE_TZS / USDC_TO_TZS_RATE).toFixed(2)}`
+    : isKenya 
+      ? `${Math.round(CREATION_FEE_TZS / 18.5).toLocaleString()} KES` 
+      : `${CREATION_FEE_TZS.toLocaleString()} TZS`;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
