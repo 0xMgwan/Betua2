@@ -36,7 +36,7 @@ export default function CreateMarketPage() {
   
   // Display fee in user's selected currency
   const CREATION_FEE_DISPLAY = displayCurrency === 'USDC'
-    ? `$${(CREATION_FEE_TZS / USDC_TO_TZS_RATE).toFixed(2)}`
+    ? '$1.00' // Round to $1 for simplicity
     : isKenya 
       ? `${Math.round(CREATION_FEE_TZS / 18.5).toLocaleString()} KES` 
       : `${CREATION_FEE_TZS.toLocaleString()} TZS`;
