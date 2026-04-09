@@ -13,6 +13,7 @@ import {
   XCircle, Copy, Check, ArrowsClockwise,
   CurrencyCircleDollar, SmileySad, PaperPlaneRight, Gift, ArrowsLeftRight,
 } from "@phosphor-icons/react";
+import { useCurrency } from "@/store/useCurrency";
 
 interface Transaction {
   id: string;
@@ -43,7 +44,7 @@ export default function WalletPage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [displayCurrency, setDisplayCurrency] = useState<'TZS' | 'USDC'>('TZS');
+  const { currency: displayCurrency, toggleCurrency, formatRaw } = useCurrency();
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -73,10 +74,14 @@ export default function WalletPage() {
     }
   }, [fetchUser]);
 
-  // Initial load
+  // Initial load - fetch user balance and transactions
   useEffect(() => {
-    fetchTransactions().finally(() => setLoading(false));
-  }, [fetchTransactions]);
+    Promise.all([
+      fetchUser(),
+      fetchTransactions()
+    ]).finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-poll while any transaction is PENDING
   useEffect(() => {
@@ -97,15 +102,26 @@ export default function WalletPage() {
 
   // Detect if user is from Kenya
   const isKenya = user?.country === 'KE' || user?.phone?.startsWith('254') || user?.phone?.startsWith('+254');
-  const currency = isKenya ? 'KES' : 'TZS';
-  const balance = isKenya ? (user?.balanceKes || 0) : (user?.balanceTzs || 0);
-  const quickAmounts = isKenya ? QUICK_AMOUNTS_KES : QUICK_AMOUNTS_TZS;
+  
+  // Get balance based on selected currency preference
+  // USDC is now a float from nTZS API (e.g., 6.50 = $6.50)
+  const getBalance = () => {
+    if (displayCurrency === 'USDC') {
+      return user?.balanceUsdc || 0; // Already a float from nTZS API
+    }
+    if (isKenya) {
+      return user?.balanceKes || 0;
+    }
+    return user?.balanceTzs || 0;
+  };
+  const balance = getBalance();
+  const quickAmounts = displayCurrency === 'USDC' 
+    ? [1, 5, 10, 20] 
+    : isKenya ? QUICK_AMOUNTS_KES : QUICK_AMOUNTS_TZS;
 
-  // Currency display toggle (TZS ↔ USDC)
-  const TZS_TO_USDC_RATE = 1 / 2630; // 1 TZS ≈ $0.00038
-  const toggleCurrency = () => setDisplayCurrency(prev => prev === 'TZS' ? 'USDC' : 'TZS');
+  // Format balance for display
   const displayBalance = displayCurrency === 'USDC' 
-    ? balance * TZS_TO_USDC_RATE 
+    ? balance // Already in USDC
     : balance;
 
   async function handleAction(e: React.FormEvent) {
@@ -238,13 +254,13 @@ export default function WalletPage() {
                   </div>
                 </div>
                 <div className="text-4xl font-black mb-0.5 tabular-nums">
-                  {displayCurrency === 'USDC' 
-                    ? `$${displayBalance.toFixed(2)}`
-                    : formatTZS(Math.round(displayBalance))}
+                  {formatRaw(balance)}
                 </div>
-                <p className="text-xs text-[var(--muted)]">
-                  {displayCurrency === 'USDC' ? 'USD Coin' : t.wallet.tanzanianShillings}
-                </p>
+                {displayCurrency !== 'USDC' && (
+                  <p className="text-xs text-[var(--muted)]">
+                    {t.wallet.tanzanianShillings}
+                  </p>
+                )}
 
                 {user.walletAddress && (
                   <button
@@ -290,13 +306,17 @@ export default function WalletPage() {
               <div className="p-5">
                 <p className="text-xs text-[var(--muted)] mb-4 leading-relaxed">
                   {tab === "deposit"
-                    ? isKenya 
-                      ? "Add KES via M-Pesa (Safaricom). NKES tokens will be minted to your wallet."
-                      : t.wallet.depositDescription
+                    ? displayCurrency === 'USDC'
+                      ? "Deposit USDC on Base network to your wallet address above. Your balance will update automatically."
+                      : isKenya 
+                        ? "Add KES via M-Pesa (Safaricom). NKES tokens will be minted to your wallet."
+                        : t.wallet.depositDescription
                     : tab === "withdraw"
-                    ? isKenya
-                      ? "Withdraw KES to your M-Pesa number. NKES tokens will be burned."
-                      : t.wallet.withdrawDescription
+                    ? displayCurrency === 'USDC'
+                      ? "Withdraw USDC to any Base network address."
+                      : isKenya
+                        ? "Withdraw KES to your M-Pesa number. NKES tokens will be burned."
+                        : t.wallet.withdrawDescription
                     : t.wallet.sendDescription}
                 </p>
 
@@ -319,10 +339,93 @@ export default function WalletPage() {
                   )}
                 </AnimatePresence>
 
+                {/* USDC Deposit - Just show wallet address */}
+                {displayCurrency === 'USDC' && tab === "deposit" ? (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-[var(--accent)]/5 border border-[var(--accent)]/20 rounded-xl">
+                      <p className="text-xs font-semibold text-[var(--accent)] mb-2 uppercase tracking-wide">
+                        Deposit USDC on Base
+                      </p>
+                      <p className="text-xs text-[var(--muted)] mb-3">
+                        Send USDC to your wallet address on Base network. Balance updates automatically.
+                      </p>
+                      {user?.walletAddress && (
+                        <button
+                          type="button"
+                          onClick={copyAddress}
+                          className="w-full flex items-center justify-between gap-2 px-3 py-2.5 bg-[var(--background)] rounded-lg border border-[var(--card-border)] hover:border-[var(--accent)]/30 transition-colors group"
+                        >
+                          <span className="text-xs font-mono text-[var(--foreground)] truncate">
+                            {user.walletAddress}
+                          </span>
+                          {copied
+                            ? <Check size={14} className="text-[var(--accent)] shrink-0" weight="bold" />
+                            : <Copy size={14} className="text-[var(--muted)] shrink-0 group-hover:text-[var(--foreground)]" />}
+                        </button>
+                      )}
+                      <p className="text-[10px] text-[var(--muted)] mt-2">
+                        ⚠️ Only send USDC on Base network. Other tokens or networks may be lost.
+                      </p>
+                    </div>
+                  </div>
+                ) : displayCurrency === 'USDC' && tab === "withdraw" ? (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-red-500/5 border border-red-500/20 rounded-xl">
+                      <p className="text-xs font-semibold text-red-400 mb-2 uppercase tracking-wide">
+                        Withdraw USDC on Base
+                      </p>
+                      <p className="text-xs text-[var(--muted)] mb-3">
+                        Send USDC from your wallet to any Base network address.
+                      </p>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-semibold text-[var(--muted)] mb-1.5 uppercase tracking-wide">
+                            Amount (USDC)
+                          </label>
+                          <input
+                            type="number"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            className="w-full px-3 py-2.5 bg-[var(--background)] border border-[var(--card-border)] rounded-lg text-sm focus:outline-none focus:border-red-400 transition-colors font-medium"
+                            placeholder="e.g. 5.00"
+                            step="0.01"
+                            min="0.01"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-[var(--muted)] mb-1.5 uppercase tracking-wide">
+                            Recipient Address
+                          </label>
+                          <input
+                            type="text"
+                            value={recipient}
+                            onChange={(e) => setRecipient(e.target.value)}
+                            className="w-full px-3 py-2.5 bg-[var(--background)] border border-[var(--card-border)] rounded-lg text-sm focus:outline-none focus:border-red-400 transition-colors font-mono"
+                            placeholder="0x..."
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          disabled={!amount || !recipient || actionLoading}
+                          onClick={() => {
+                            setMessage({ type: "error", text: "USDC withdrawals coming soon. Use your connected wallet to send USDC directly." });
+                          }}
+                          className="w-full py-3 font-bold rounded-xl bg-red-500 text-white hover:opacity-90 transition-all disabled:opacity-40 text-sm flex items-center justify-center gap-2"
+                        >
+                          <ArrowUpRight size={16} weight="bold" />
+                          Withdraw USDC
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-[var(--muted)] mt-3">
+                        ⚠️ Double-check the recipient address. Transactions cannot be reversed.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
                 <form onSubmit={handleAction} className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-[var(--muted)] mb-1.5 uppercase tracking-wide">
-                      {t.wallet.amount} ({currency})
+                      {t.wallet.amount} ({displayCurrency})
                     </label>
                     <input
                       type="number"
@@ -414,6 +517,7 @@ export default function WalletPage() {
                       : t.wallet.sendButton}
                   </button>
                 </form>
+                )}
               </div>
             </div>
           </div>

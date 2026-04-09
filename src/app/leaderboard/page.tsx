@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
+import { useCurrency } from "@/store/useCurrency";
 import { UserAvatar } from "@/components/UserAvatar";
 import { UserProfileModal } from "@/components/UserProfileModal";
 import { Footer } from "@/components/Footer";
@@ -36,18 +37,8 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [profileUsername, setProfileUsername] = useState<string | null>(null);
   
-  // Currency detection for Kenya/Tanzania users
-  const userCurrency: Currency = getUserCurrency(user?.country, user?.phone);
-  const isKenya = userCurrency === 'KES';
-  
-  // Format amount in user's currency
-  const formatAmount = (amountTzs: number) => {
-    if (isKenya) {
-      const amountKes = convertCurrency(amountTzs, 'TZS', 'KES');
-      return `KSh ${amountKes.toLocaleString()}`;
-    }
-    return formatTZS(amountTzs);
-  };
+  // Global currency preference
+  const { format: formatAmount } = useCurrency();
 
   useEffect(() => {
     fetch("/api/leaderboard")

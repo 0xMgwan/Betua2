@@ -70,6 +70,16 @@ export interface NtzsUser {
   phone?: string;
   walletAddress: string;
   balanceTzs: number;
+  balanceUsdc?: number; // USDC balance as float (e.g., 6.50 = $6.50)
+}
+
+export interface NtzsSwapQuote {
+  fromToken: string;
+  toToken: string;
+  fromAmount: number;
+  toAmount: number;
+  rate: number;
+  fee: number;
 }
 
 export interface NtzsDeposit {
@@ -111,9 +121,9 @@ export const ntzs = {
     get: (userId: string) =>
       ntzsRequest<NtzsUser>(`/users/${userId}`),
 
-    getBalance: async (userId: string): Promise<{ balanceTzs: number }> => {
+    getBalance: async (userId: string): Promise<{ balanceTzs: number; balanceUsdc: number }> => {
       const user = await ntzsRequest<NtzsUser>(`/users/${userId}`);
-      return { balanceTzs: user.balanceTzs };
+      return { balanceTzs: user.balanceTzs, balanceUsdc: user.balanceUsdc || 0 };
     },
   },
 
@@ -158,6 +168,31 @@ export const ntzs = {
       return ntzsRequest<NtzsWithdrawal>("/withdrawals", {
         method: "POST",
         body: JSON.stringify(payload),
+      });
+    },
+  },
+
+  // Swap API - swap between nTZS and USDC on Base
+  // Returns SSE stream with status updates
+  swap: {
+    // Execute a swap (returns SSE stream)
+    execute: async (data: { 
+      userId: string; 
+      fromToken: 'USDC' | 'NTZS'; 
+      toToken: 'USDC' | 'NTZS'; 
+      amount: number;
+      slippageBps?: number; // default 100 (1%)
+    }) => {
+      // Note: This returns a streaming response (text/event-stream)
+      // The caller needs to handle the SSE stream
+      const url = `${NTZS_BASE_URL}/api/v1/swap`;
+      return fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${NTZS_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
       });
     },
   },

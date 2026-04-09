@@ -34,8 +34,10 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
     if (!position) return NextResponse.json({ error: "You have no position in this market" }, { status: 400 });
 
-    // Determine user's currency
-    const userCurrency: Currency = getUserCurrency(user.country);
+    // Determine user's preferred currency for payout
+    // USDC rate: 1 USDC = 2630 TZS, stored as micro-USDC (1 USDC = 1,000,000 micro-USDC)
+    const USDC_TO_TZS_RATE = 2630;
+    const preferredCurrency = (user.preferredCurrency as Currency) || getUserCurrency(user.country);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mkt = market as any;
@@ -146,6 +148,14 @@ export async function POST(req: NextRequest) {
         : { noShares: { decrement: sharesToSell } };
     }
 
+    // Calculate payout in user's preferred currency
+    const payoutUsdc = preferredCurrency === 'USDC' 
+      ? Math.round((netPayout / USDC_TO_TZS_RATE) * 1_000_000) 
+      : 0;
+    const payoutKes = preferredCurrency === 'KES' 
+      ? convertCurrency(netPayout, 'TZS', 'KES') 
+      : 0;
+
     // Atomic DB transaction: update pools, position, record trade, credit user
     const [updatedMarket, , trade] = await prisma.$transaction([
       prisma.market.update({
@@ -174,32 +184,40 @@ export async function POST(req: NextRequest) {
         data: {
           userId: session.userId,
           type: "SELL_SHARES",
-          amountTzs: userCurrency === 'TZS' ? netPayout : 0,
-          amountKes: userCurrency === 'KES' ? convertCurrency(netPayout, 'TZS', 'KES') : 0,
-          currency: userCurrency,
+          amountTzs: preferredCurrency === 'TZS' ? netPayout : 0,
+          amountKes: payoutKes,
+          amountUsdc: payoutUsdc,
+          currency: preferredCurrency,
           status: "COMPLETED",
           recipientUsername: `${market.title} (${tradeSide})`,
         },
       }),
       prisma.user.update({
         where: { id: session.userId },
-        data: userCurrency === 'KES'
-          ? { balanceKes: { increment: convertCurrency(netPayout, 'TZS', 'KES') } }
-          : { balanceTzs: { increment: netPayout } },
+        data: preferredCurrency === 'USDC'
+          ? { balanceUsdc: { increment: payoutUsdc } }
+          : preferredCurrency === 'KES'
+            ? { balanceKes: { increment: payoutKes } }
+            : { balanceTzs: { increment: netPayout } },
       }),
     ]);
 
-    // Calculate payout in user's currency for response
-    const payoutInUserCurrency = userCurrency === 'KES' 
-      ? convertCurrency(netPayout, 'TZS', 'KES') 
-      : netPayout;
+    // Calculate payout in user's currency for response/notification
+    const payoutInUserCurrency = preferredCurrency === 'USDC' 
+      ? payoutUsdc / 1_000_000
+      : preferredCurrency === 'KES' 
+        ? payoutKes 
+        : netPayout;
+    const payoutDisplay = preferredCurrency === 'USDC'
+      ? `$${(payoutUsdc / 1_000_000).toFixed(2)}`
+      : `${payoutInUserCurrency.toLocaleString()} ${preferredCurrency}`;
 
     // Notification
     createNotification({
       userId: session.userId,
       type: "TRADE",
       title: "Shares Sold",
-      message: `Sold ${sharesToSell} ${tradeSide} shares in "${market.title}" for ${payoutInUserCurrency.toLocaleString()} ${userCurrency}`,
+      message: `Sold ${sharesToSell} ${tradeSide} shares in "${market.title}" for ${payoutDisplay}`,
       link: `/markets/${marketId}`,
     });
 

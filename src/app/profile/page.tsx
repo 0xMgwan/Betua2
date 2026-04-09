@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { FloppyDisk, ChartBar, TrendUp, Medal, Upload, X, Copy, Check, Users, Gift, ArrowsLeftRight } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
+import { useCurrency } from "@/store/useCurrency";
 
 interface Stats {
   totalTrades: number;
@@ -40,7 +41,7 @@ export default function ProfilePage() {
   const [stats, setStats] = useState<Stats>({ totalTrades: 0, totalVolume: 0, openPositions: 0, marketsCreated: 0 });
   const [referral, setReferral] = useState<ReferralData | null>(null);
   const [refCopied, setRefCopied] = useState(false);
-  const [displayCurrency, setDisplayCurrency] = useState<'TZS' | 'USDC'>('TZS');
+  const { currency: displayCurrency, toggleCurrency, format } = useCurrency();
 
   useEffect(() => {
     if (user) {
@@ -152,21 +153,11 @@ export default function ProfilePage() {
     );
   }
 
-  // Currency display
-  const TZS_TO_USDC_RATE = 1 / 2630;
-  const toggleCurrency = () => setDisplayCurrency(prev => prev === 'TZS' ? 'USDC' : 'TZS');
-  const formatAmount = (tzs: number) => {
-    if (displayCurrency === 'USDC') {
-      return `$${(tzs * TZS_TO_USDC_RATE).toFixed(2)}`;
-    }
-    return formatTZS(tzs);
-  };
-
   const STAT_ITEMS = [
     { label: t.profile.totalTrades, value: stats.totalTrades, icon: ChartBar },
-    { label: t.profile.volumeTraded, value: formatAmount(stats.totalVolume), icon: TrendUp },
+    { label: t.profile.volumeTraded, value: format(stats.totalVolume), icon: TrendUp },
     { label: t.portfolio.openPositions, value: stats.openPositions, icon: Medal },
-    { label: t.profile.balance, value: formatAmount(user.balanceTzs || 0), icon: Medal },
+    { label: t.profile.balance, value: format(user.balanceTzs || 0), icon: Medal },
   ];
 
   return (

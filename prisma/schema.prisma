@@ -105,6 +105,7 @@ model Transaction {
   userId            String
   type              String
   amountTzs         Int      @default(0)
+  amountUsdc        Int      @default(0)  // stored in micro-USDC (6 decimals)
   status            String   @default("PENDING")
   ntzsDepositId     String?
   ntzsWithdrawId    String?

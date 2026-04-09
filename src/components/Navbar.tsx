@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS } from "@/lib/utils";
+import { useCurrency } from "@/store/useCurrency";
 import {
   Sun, Moon, TrendUp, ChartBar, Trophy, Wallet,
   User,  Plus, SignOut, List, X, Globe, Bell,
@@ -53,9 +54,20 @@ export function Navbar() {
   const { theme, setTheme } = useTheme();
   const { user, logout } = useUser();
   const { locale, setLocale, t } = useLanguage();
+  const { format: formatBalance, currency: displayCurrency } = useCurrency();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  
+  // Get actual balance based on selected currency
+  const getUserBalance = () => {
+    if (!user) return 0;
+    if (displayCurrency === 'USDC') {
+      return user.balanceUsdc || 0; // Already a float from nTZS API
+    }
+    return user.balanceTzs || 0;
+  };
+  const userBalance = getUserBalance();
 
   // Notification state
   const [notifOpen, setNotifOpen] = useState(false);
@@ -305,7 +317,7 @@ export function Navbar() {
 
               {/* Balance — desktop only */}
               <div className="hidden md:block px-3 py-1.5 bg-[var(--card)] border border-[var(--card-border)] text-[var(--foreground)] text-sm font-medium font-mono">
-                {formatTZS(user.balanceTzs || 0)}
+                {displayCurrency === 'USDC' ? `$${userBalance.toFixed(2)}` : formatBalance(userBalance)}
               </div>
 
               {/* Profile dropdown — visible on all screen sizes */}
@@ -351,7 +363,7 @@ export function Navbar() {
                           </div>
                           {href === "/wallet" && (
                             <span className="text-[10px] text-[var(--accent)] font-bold tabular-nums">
-                              {formatTZS(user.balanceTzs || 0)}
+                              {displayCurrency === 'USDC' ? `$${userBalance.toFixed(2)}` : formatBalance(userBalance)}
                             </span>
                           )}
                         </Link>
@@ -437,7 +449,7 @@ export function Navbar() {
                       </div>
                       {href === "/wallet" && user && (
                         <span className="text-[10px] text-[var(--accent)] font-bold tabular-nums">
-                          {formatTZS(user.balanceTzs || 0)}
+                          {displayCurrency === 'USDC' ? `$${userBalance.toFixed(2)}` : formatBalance(userBalance)}
                         </span>
                       )}
                     </Link>

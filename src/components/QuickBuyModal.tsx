@@ -7,6 +7,7 @@ import { formatTZS } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useUser } from "@/store/useUser";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
+import { useCurrency } from "@/store/useCurrency";
 import { useCart } from "@/store/useCart";
 import { notifications } from "@/lib/notifications";
 import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
@@ -53,20 +54,12 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
   const isResolved = market.status === "RESOLVED";
   const isTradeable = !isExpired && !isResolved;
   
-  // Currency detection for Kenya/Tanzania users
-  const userCurrency: Currency = getUserCurrency(user?.country, user?.phone);
-  const isKenya = userCurrency === 'KES';
-  const QUICK_AMOUNTS = isKenya ? QUICK_AMOUNTS_KES : QUICK_AMOUNTS_TZS;
-  const minAmount = isKenya ? 50 : 500;
-  
-  // Format amount in user's currency
-  const formatAmount = (amountTzs: number) => {
-    if (isKenya) {
-      const amountKes = convertCurrency(amountTzs, 'TZS', 'KES');
-      return `KSh ${amountKes.toLocaleString()}`;
-    }
-    return formatTZS(amountTzs);
-  };
+  // Global currency preference
+  const { format: formatAmount, currency: displayCurrency, fromDisplay } = useCurrency();
+  const QUICK_AMOUNTS = displayCurrency === 'USDC' 
+    ? [1, 2, 5, 10, 20] // USDC amounts
+    : QUICK_AMOUNTS_TZS;
+  const minAmount = displayCurrency === 'USDC' ? 0.5 : 500;
 
   // Fresh pool data fetched from API
   const [freshPools, setFreshPools] = useState<{
@@ -117,7 +110,7 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
   const FEE_PERCENT = 0.05;
   const amountNum = Number(amount) || 0;
   // Convert user input to TZS for AMM calculations
-  const amountInTzs = isKenya ? convertCurrency(amountNum, 'KES', 'TZS') : amountNum;
+  const amountInTzs = fromDisplay(amountNum);
   const feeAmount = Math.round(amountInTzs * FEE_PERCENT);
   const tradeAmount = amountInTzs - feeAmount; // Net amount after 5% fee, same as trade API
   let shares = 0;
@@ -157,7 +150,8 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
 
   const handleAddToCart = () => {
     if (!amount || Number(amount) < minAmount) {
-      setError(locale === "sw" ? `Kiasi lazima kiwe angalau ${isKenya ? 'KES' : 'TZS'} ${minAmount}` : `Amount must be at least ${isKenya ? 'KES' : 'TZS'} ${minAmount}`);
+      const currLabel = displayCurrency === 'USDC' ? '$' : 'TSh';
+      setError(locale === "sw" ? `Kiasi lazima kiwe angalau ${currLabel}${minAmount}` : `Amount must be at least ${currLabel}${minAmount}`);
       return;
     }
 
@@ -166,10 +160,10 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
       marketTitle: market.title,
       side: side,
       optionIndex: optionIndex,
-      amount: Number(amount),
+      amount: amountInTzs, // Store in TZS internally
       estimatedShares: shares,
       currentPrice: price,
-      category: "Market", // You can pass this as a prop if needed
+      category: "Market",
     });
 
     onClose();
@@ -183,7 +177,8 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
     }
 
     if (!amount || Number(amount) < minAmount) {
-      setError(locale === "sw" ? `Kiasi lazima kiwe angalau ${isKenya ? 'KES' : 'TZS'} ${minAmount}` : `Amount must be at least ${isKenya ? 'KES' : 'TZS'} ${minAmount}`);
+      const currLabel = displayCurrency === 'USDC' ? '$' : 'TSh';
+      setError(locale === "sw" ? `Kiasi lazima kiwe angalau ${currLabel}${minAmount}` : `Amount must be at least ${currLabel}${minAmount}`);
       return;
     }
 
@@ -191,15 +186,19 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
     setError("");
 
     try {
+      // Send amountUsdc (in micro-USDC) when USDC selected, otherwise amountTzs
+      const tradeBody = {
+        marketId: market.id,
+        side: isMultiOption ? undefined : side,
+        optionIndex: isMultiOption ? optionIndex : undefined,
+        ...(displayCurrency === 'USDC' 
+          ? { amountUsdc: Math.round(amountNum * 1_000_000) } // Convert to micro-USDC
+          : { amountTzs: amountInTzs }),
+      };
       const res = await fetch("/api/trades", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          marketId: market.id,
-          side: isMultiOption ? undefined : side,
-          optionIndex: isMultiOption ? optionIndex : undefined,
-          ...(isKenya ? { amountKes: Number(amount) } : { amountTzs: Number(amount) }),
-        }),
+        body: JSON.stringify(tradeBody),
       });
 
       const data = await res.json();
@@ -280,22 +279,23 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
                 <div className="flex items-center justify-between text-xs font-mono">
                   <span className="text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Bei ya Hisa" : "Share Price"}</span>
                   <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
-                  <span className="font-bold tabular-nums text-[var(--accent)]">{isKenya ? `KSh ${Math.round(price * 1000 / 18.5)}` : formatTZS(Math.round(price * 1000))}</span>
+                  <span className="font-bold tabular-nums text-[var(--accent)]">{formatAmount(Math.round(price * 1000))}</span>
                 </div>
               </div>
 
               {/* Amount Input - Terminal Style */}
               <div className="mb-4">
                 <label className="block text-[10px] font-mono font-bold text-[var(--muted)] mb-2 uppercase tracking-widest">
-                  &gt; {locale === "sw" ? `Kiasi (${isKenya ? 'KES' : 'TZS'})` : `Amount (${isKenya ? 'KES' : 'TZS'})`}
+                  &gt; {locale === "sw" ? `Kiasi (${displayCurrency})` : `Amount (${displayCurrency})`}
                 </label>
                 <input
                   type="number"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   className="w-full px-4 py-3 bg-[var(--background)] border-2 border-[var(--card-border)] rounded-none text-sm focus:outline-none focus:border-[var(--accent)] focus:shadow-[0_0_10px_rgba(0,229,160,0.2)] transition-all font-mono font-bold tabular-nums"
-                  placeholder={isKenya ? "e.g. 100" : "e.g. 500"}
+                  placeholder={displayCurrency === 'USDC' ? "e.g. 5" : "e.g. 500"}
                   min={minAmount}
+                  step={displayCurrency === 'USDC' ? "0.01" : "1"}
                 />
               </div>
 
@@ -328,7 +328,7 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
                   <div className="flex items-center justify-between text-xs font-mono">
                     <span className="text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Gharama" : "Cost"}</span>
                     <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
-                    <span className="font-bold tabular-nums text-[var(--accent)]">{isKenya ? `KSh ${Math.round(cost)}` : formatTZS(Math.round(cost))}</span>
+                    <span className="font-bold tabular-nums text-[var(--accent)]">{displayCurrency === 'USDC' ? `$${cost.toFixed(2)}` : formatTZS(Math.round(cost))}</span>
                   </div>
 
                   {/* Divider */}
@@ -338,7 +338,7 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
                   <div className="flex items-center justify-between text-xs font-mono">
                     <span className="text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Ukishinda" : "If you win"}</span>
                     <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
-                    <span className="font-bold tabular-nums text-[#00e5a0]">{isKenya ? `KSh ${convertCurrency(payoutIfWin, 'TZS', 'KES').toLocaleString()}` : formatTZS(payoutIfWin)}</span>
+                    <span className="font-bold tabular-nums text-[#00e5a0]">{formatAmount(payoutIfWin)}</span>
                   </div>
                 </div>
               )}

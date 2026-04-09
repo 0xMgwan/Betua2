@@ -114,33 +114,51 @@ export async function POST(req: NextRequest) {
       where: { id: session.userId },
     });
 
-    if (!user || !user.ntzsUserId) {
-      return NextResponse.json({ error: "User wallet not found" }, { status: 404 });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Determine user's currency and calculate payout
-    const userCurrency: Currency = getUserCurrency(user.country);
-    const payoutInUserCurrency = userCurrency === 'KES' 
-      ? convertCurrency(payoutTzs, 'TZS', 'KES') 
-      : payoutTzs;
+    // Determine user's preferred currency for payout
+    // USDC rate: 1 USDC = 2630 TZS, stored as micro-USDC (1 USDC = 1,000,000 micro-USDC)
+    const USDC_TO_TZS_RATE = 2630;
+    const preferredCurrency = (user.preferredCurrency as Currency) || getUserCurrency(user.country);
+    
+    let payoutInUserCurrency: number;
+    let payoutUsdc = 0;
+    
+    if (preferredCurrency === 'USDC') {
+      // Convert TZS payout to micro-USDC
+      payoutUsdc = Math.round((payoutTzs / USDC_TO_TZS_RATE) * 1_000_000);
+      payoutInUserCurrency = payoutUsdc / 1_000_000; // For display
+    } else if (preferredCurrency === 'KES') {
+      payoutInUserCurrency = convertCurrency(payoutTzs, 'TZS', 'KES');
+    } else {
+      payoutInUserCurrency = payoutTzs;
+    }
 
-    // Transfer payout from platform escrow → user
+    // Transfer payout from platform escrow → user (only for TZS/KES, USDC is handled locally)
     let ntzsTransferId: string | undefined;
     let nkesTransferTxHash: string | undefined;
     
-    if (userCurrency === 'KES') {
+    if (preferredCurrency === 'USDC') {
+      // USDC payout - handled via local balance (no external transfer needed)
+      // In production, this would integrate with Base network USDC transfers
+      console.log(`USDC payout: ${payoutUsdc} micro-USDC to user ${user.id}`);
+    } else if (preferredCurrency === 'KES') {
       // Kenya user: Transfer NKES from escrow to user
       try {
-        const ntzsUser = await ntzs.users.get(user.ntzsUserId);
-        const walletAddress = ntzsUser.walletAddress;
-        if (walletAddress) {
-          nkesTransferTxHash = await nkes.transferFromEscrow(walletAddress, payoutInUserCurrency);
+        if (user.ntzsUserId) {
+          const ntzsUser = await ntzs.users.get(user.ntzsUserId);
+          const walletAddress = ntzsUser.walletAddress;
+          if (walletAddress) {
+            nkesTransferTxHash = await nkes.transferFromEscrow(walletAddress, payoutInUserCurrency);
+          }
         }
       } catch (err) {
         console.error("NKES redeem transfer failed:", err);
-        return NextResponse.json({ error: "Transfer failed" }, { status: 500 });
+        // Continue with local balance update
       }
-    } else if (PLATFORM_NTZS_USER_ID) {
+    } else if (PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
       // Tanzania user: Transfer nTZS via nTZS API
       try {
         const transfer = await ntzs.transfers.create({
@@ -151,12 +169,12 @@ export async function POST(req: NextRequest) {
         ntzsTransferId = transfer.id;
       } catch (err) {
         console.error("nTZS redeem transfer failed:", err);
-        return NextResponse.json({ error: "Transfer failed" }, { status: 500 });
+        // Continue with local balance update
       }
     }
 
     // Transfer settlement fee from platform escrow → settlement fee wallet (non-blocking, TZS only)
-    if (userCurrency === 'TZS' && PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID && settlementFee > 0) {
+    if (preferredCurrency === 'TZS' && PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID && settlementFee > 0) {
       ntzs.transfers.create({
         fromUserId: PLATFORM_NTZS_USER_ID,
         toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
@@ -170,17 +188,20 @@ export async function POST(req: NextRequest) {
     await prisma.$transaction([
       prisma.user.update({
         where: { id: session.userId },
-        data: userCurrency === 'KES'
-          ? { balanceKes: { increment: payoutInUserCurrency } }
-          : { balanceTzs: { increment: payoutTzs } },
+        data: preferredCurrency === 'USDC'
+          ? { balanceUsdc: { increment: payoutUsdc } }
+          : preferredCurrency === 'KES'
+            ? { balanceKes: { increment: payoutInUserCurrency } }
+            : { balanceTzs: { increment: payoutTzs } },
       }),
       prisma.transaction.create({
         data: {
           userId: session.userId,
           type: "REDEEM",
-          amountTzs: userCurrency === 'TZS' ? payoutTzs : 0,
-          amountKes: userCurrency === 'KES' ? payoutInUserCurrency : 0,
-          currency: userCurrency,
+          amountTzs: preferredCurrency === 'TZS' ? payoutTzs : 0,
+          amountKes: preferredCurrency === 'KES' ? payoutInUserCurrency : 0,
+          amountUsdc: preferredCurrency === 'USDC' ? payoutUsdc : 0,
+          currency: preferredCurrency,
           status: "COMPLETED",
           recipientUsername: isMultiOption
             ? `${position.market.title} (${(position.market.options as string[])[outcome as number]})`
@@ -190,11 +211,14 @@ export async function POST(req: NextRequest) {
     ]);
 
     // Notification: redemption successful
+    const payoutDisplay = preferredCurrency === 'USDC' 
+      ? `$${(payoutUsdc / 1_000_000).toFixed(2)}`
+      : `${payoutInUserCurrency.toLocaleString()} ${preferredCurrency}`;
     createNotification({
       userId: session.userId,
       type: "REDEEM",
       title: "Winnings Redeemed!",
-      message: `Redeemed ${payoutInUserCurrency.toLocaleString()} ${userCurrency} from "${position.market.title}"`,
+      message: `Redeemed ${payoutDisplay} from "${position.market.title}"`,
       link: `/wallet`,
     });
 
@@ -202,7 +226,8 @@ export async function POST(req: NextRequest) {
       success: true,
       payout: payoutInUserCurrency,
       payoutTzs,
-      currency: userCurrency,
+      payoutUsdc: preferredCurrency === 'USDC' ? payoutUsdc : undefined,
+      currency: preferredCurrency,
       winningShares,
       positionId,
       ntzsTransferId,

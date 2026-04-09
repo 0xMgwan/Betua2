@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { NotificationProvider } from "@/components/NotificationProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { UserProvider } from "@/components/UserProvider";
 import { CartButton, CartModal } from "@/components/Cart";
 import "./globals.css";
 
@@ -50,11 +51,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider>
           <LanguageProvider>
-            <NotificationProvider>
-              {children}
-              <CartButton />
-              <CartModal />
-            </NotificationProvider>
+            <UserProvider>
+              <NotificationProvider>
+                {children}
+                <CartButton />
+                <CartModal />
+              </NotificationProvider>
+            </UserProvider>
           </LanguageProvider>
         </ThemeProvider>
       </body>

@@ -14,7 +14,7 @@ interface User {
   country?: string | null;
   balanceTzs: number;
   balanceKes: number;
-  balanceUsdc: number;
+  balanceUsdc: number; // USDC as float (e.g., 6.50 = $6.50)
   preferredCurrency?: string | null;
 }
 

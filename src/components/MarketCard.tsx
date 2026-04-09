@@ -11,6 +11,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useCart } from "@/store/useCart";
 import { useUser } from "@/store/useUser";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
+import { useCurrency } from "@/store/useCurrency";
 import { QuickBuyModal } from "./QuickBuyModal";
 import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
 
@@ -51,19 +52,17 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
   const { addItem, openCart } = useCart();
   const { user } = useUser();
   
-  // Currency detection for Kenya/Tanzania users
-  const userCurrency: Currency = getUserCurrency(user?.country, user?.phone);
-  const isKenya = userCurrency === 'KES';
+  // Global currency preference
+  const { currency: displayCurrency, format } = useCurrency();
   
-  // Format price in user's currency (TZS price * 1000 for display, then convert if Kenya)
+  // Format price in user's preferred currency (TZS price * 1000 for display)
   const formatPrice = (priceRatio: number) => {
     const priceTzs = Math.round(priceRatio * 1000);
-    if (isKenya) {
-      const priceKes = priceTzs / 18.5;
-      // Show 1 decimal place if needed to differentiate close prices
-      return priceKes < 100 ? priceKes.toFixed(1) : Math.round(priceKes);
+    if (displayCurrency === 'USDC') {
+      const priceUsdc = priceTzs / 2630;
+      return `$${priceUsdc.toFixed(2)}`;
     }
-    return priceTzs;
+    return `TSh ${priceTzs.toLocaleString()}`;
   };
   const [imageError, setImageError] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false);
@@ -385,12 +384,14 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
               <div className="flex items-center gap-3">
                 <span className="flex items-center gap-1">
                   <ChartLineUp size={10} weight="bold" className="text-[var(--accent)]" />
-                  <img src="/ntzs.png" alt="nTZS" className="w-2.5 h-2.5 inline-block opacity-60" />
-                  {market.totalVolume >= 1000000
-                    ? `${(market.totalVolume / 1000000).toFixed(1)}M`
-                    : market.totalVolume >= 1000
-                    ? `${(market.totalVolume / 1000).toFixed(1)}K`
-                    : market.totalVolume}
+                  <img src={displayCurrency === 'USDC' ? '/usdc.png' : '/ntzs.png'} alt={displayCurrency} className="w-2.5 h-2.5 inline-block opacity-60" />
+                  {displayCurrency === 'USDC' 
+                    ? `$${(market.totalVolume / 2630).toFixed(0)}`
+                    : market.totalVolume >= 1000000
+                      ? `${(market.totalVolume / 1000000).toFixed(1)}M`
+                      : market.totalVolume >= 1000
+                      ? `${(market.totalVolume / 1000).toFixed(1)}K`
+                      : market.totalVolume}
                 </span>
                 {market._count && (
                   <span className="flex items-center gap-1">

@@ -20,9 +20,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { marketId, side, optionIndex } = body;
     
-    // Accept either amountTzs or amountKes based on user's currency
+    // Accept amountTzs, amountKes, or amountUsdc based on user's currency preference
     let amountTzs = body.amountTzs;
     let amountKes = body.amountKes;
+    let amountUsdc = body.amountUsdc; // in micro-USDC (6 decimals)
     let userCurrency: Currency = 'TZS';
 
     if (!marketId) {
@@ -40,12 +41,21 @@ export async function POST(req: NextRequest) {
     if (market.status !== "OPEN") return NextResponse.json({ error: "Market is not open" }, { status: 400 });
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    // Determine user's currency and convert to TZS for AMM
-    userCurrency = getUserCurrency(user.country);
-    const marketCurrency = (market as any).currency as Currency || 'TZS';
+    // Determine payment currency and convert to TZS for AMM calculations
+    // USDC rate: 1 USDC = 2630 TZS, stored as micro-USDC (1 USDC = 1,000,000 micro-USDC)
+    const USDC_TO_TZS_RATE = 2630;
     
-    if (userCurrency === 'KES' && amountKes) {
+    if (amountUsdc && amountUsdc > 0) {
+      // USDC payment - convert to TZS for AMM (amountUsdc is in micro-USDC)
+      userCurrency = 'USDC' as Currency;
+      const usdcAmount = amountUsdc / 1_000_000; // Convert micro-USDC to USDC
+      amountTzs = Math.round(usdcAmount * USDC_TO_TZS_RATE);
+      if (amountUsdc < 500_000) { // Minimum 0.5 USDC
+        return NextResponse.json({ error: "Minimum trade is $0.50 USDC" }, { status: 400 });
+      }
+    } else if (amountKes && amountKes > 0) {
       // Kenya user paying in KES - convert to TZS for AMM
+      userCurrency = 'KES';
       amountTzs = convertCurrency(amountKes, 'KES', 'TZS');
     } else if (!amountTzs || amountTzs < 100) {
       return NextResponse.json({ error: "Minimum trade is 100 TZS" }, { status: 400 });
@@ -65,7 +75,16 @@ export async function POST(req: NextRequest) {
     }
 
     // Enforce wallet balance based on user's currency
-    if (userCurrency === 'KES') {
+    if (userCurrency === 'USDC') {
+      // USDC payment - check USDC balance (stored in micro-USDC)
+      const userBalanceUsdc = user.balanceUsdc || 0;
+      if (userBalanceUsdc < amountUsdc) {
+        const balanceDisplay = (userBalanceUsdc / 1_000_000).toFixed(2);
+        return NextResponse.json({
+          error: `Insufficient USDC balance. You have $${balanceDisplay} — deposit more to trade.`,
+        }, { status: 400 });
+      }
+    } else if (userCurrency === 'KES') {
       // Kenya user - check KES balance
       const userBalanceKes = user.balanceKes || 0;
       const requiredKes = amountKes || convertCurrency(amountTzs, 'TZS', 'KES');
@@ -248,6 +267,7 @@ export async function POST(req: NextRequest) {
             type: "BUY_SHARES",
             amountTzs: userCurrency === 'TZS' ? amountTzs : 0,
             amountKes: userCurrency === 'KES' ? (amountKes || convertCurrency(amountTzs, 'TZS', 'KES')) : 0,
+            amountUsdc: userCurrency === 'USDC' ? amountUsdc : 0,
             currency: userCurrency,
             status: "COMPLETED",
             recipientUsername: `${market.title} (${tradeSide})`,
@@ -255,9 +275,11 @@ export async function POST(req: NextRequest) {
         }),
         prisma.user.update({
           where: { id: session.userId },
-          data: userCurrency === 'KES' 
-            ? { balanceKes: { decrement: amountKes || convertCurrency(amountTzs, 'TZS', 'KES') } }
-            : { balanceTzs: { decrement: amountTzs } },
+          data: userCurrency === 'USDC'
+            ? { balanceUsdc: { decrement: amountUsdc } }
+            : userCurrency === 'KES' 
+              ? { balanceKes: { decrement: amountKes || convertCurrency(amountTzs, 'TZS', 'KES') } }
+              : { balanceTzs: { decrement: amountTzs } },
         }),
       ]);
     } catch (dbErr) {

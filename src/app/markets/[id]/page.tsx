@@ -6,6 +6,7 @@ import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS, formatPercent, formatNumber, timeUntil, timeAgo, toEATDateTimeLocal, SPORTS_SUBCATEGORIES } from "@/lib/utils";
 import { convertCurrency, getUserCurrency, formatCurrency, type Currency } from "@/lib/currency";
+import { useCurrency } from "@/store/useCurrency";
 import { getSharesOut, getMultiOptionSharesOut, getPayoutForShares, getMultiOptionPayoutForShares } from "@/lib/amm";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -181,25 +182,18 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
   const isMultiOption = !!(market?.options && market.options.length >= 2);
   
-  // Currency detection for Kenya/Tanzania users (check country AND phone prefix)
-  const userCurrency: Currency = getUserCurrency(user?.country, user?.phone);
-  const isKenya = userCurrency === 'KES';
+  // Global currency preference
+  const { format: formatAmount, currency: displayCurrency, toDisplay, fromDisplay } = useCurrency();
   
-  // Format amount in user's currency
-  const formatAmount = (amountTzs: number) => {
-    if (isKenya) {
-      const amountKes = convertCurrency(amountTzs, 'TZS', 'KES');
-      return `KSh ${amountKes.toLocaleString()}`;
-    }
-    return formatTZS(amountTzs);
-  };
+  // Quick amounts based on currency (in TZS, will be converted for display)
+  const QUICK_AMOUNTS_TZS = [1000, 5000, 10000, 50000];
+  const QUICK_AMOUNTS = displayCurrency === 'USDC' 
+    ? [1, 5, 10, 20] // USDC amounts
+    : QUICK_AMOUNTS_TZS;
   
-  // Quick amounts based on currency
-  const QUICK_AMOUNTS = isKenya ? [100, 500, 1000, 5000] : [1000, 5000, 10000, 50000];
-  
-  // Get user balance in their currency
-  const userBalance = isKenya ? (user?.balanceKes || 0) : (user?.balanceTzs || 0);
-  const balanceDisplay = isKenya ? `KSh ${(userBalance / 100).toLocaleString()}` : formatTZS(userBalance);
+  // Get user balance
+  const userBalance = user?.balanceTzs || 0;
+  const balanceDisplay = formatAmount(userBalance);
   
   // Use translated content if available
   const displayTitle = locale === "sw" && translatedTitle ? translatedTitle : market?.title;
@@ -223,9 +217,15 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
     setTradeError("");
     setTradeSuccess("");
     try {
+      // Send amountUsdc (in micro-USDC) when USDC selected, otherwise amountTzs
+      const amountNum = Number(amount);
+      const amountInTzs = fromDisplay(amountNum);
+      const amountPayload = displayCurrency === 'USDC'
+        ? { amountUsdc: Math.round(amountNum * 1_000_000) } // Convert to micro-USDC
+        : { amountTzs: amountInTzs };
       const tradeBody = isMultiOption
-        ? { marketId: id, optionIndex: selectedOption, ...(isKenya ? { amountKes: Number(amount) } : { amountTzs: Number(amount) }) }
-        : { marketId: id, side, ...(isKenya ? { amountKes: Number(amount) } : { amountTzs: Number(amount) }) };
+        ? { marketId: id, optionIndex: selectedOption, ...amountPayload }
+        : { marketId: id, side, ...amountPayload };
 
       const res = await fetch("/api/trades", {
         method: "POST",
@@ -408,10 +408,11 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   const FEE_PERCENT = 0.05;
   let estimatedShares = 0;
   let estimatedPrice = 0;
-  if (market && amount && Number(amount) >= (isKenya ? 50 : 100)) {
+  const minTradeAmount = displayCurrency === 'USDC' ? 0.5 : 100;
+  if (market && amount && Number(amount) >= minTradeAmount) {
     try {
       // Convert user input to TZS for AMM calculations
-      const amountInTzs = isKenya ? convertCurrency(Number(amount), 'KES', 'TZS') : Number(amount);
+      const amountInTzs = fromDisplay(Number(amount));
       const feeAmt = Math.round(amountInTzs * FEE_PERCENT);
       const tradeAmt = amountInTzs - feeAmt;
       if (isMultiOption && market.optionPools) {
@@ -1009,15 +1010,16 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
                   {/* Amount */}
                   <div>
-                    <label className="block text-sm font-medium mb-1.5">{isKenya ? 'Amount (KES)' : t.market.amount}</label>
+                    <label className="block text-sm font-medium mb-1.5">{displayCurrency === 'USDC' ? 'Amount (USDC)' : t.market.amount}</label>
                     <div className="relative">
                       <input
                         type="number"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
-                        placeholder={isKenya ? "e.g. 500" : "e.g. 5000"}
-                        min={isKenya ? "50" : "100"}
+                        placeholder={displayCurrency === 'USDC' ? "e.g. 5" : "e.g. 5000"}
+                        min={displayCurrency === 'USDC' ? "0.5" : "100"}
+                        step={displayCurrency === 'USDC' ? "0.01" : "1"}
                         required
                       />
                     </div>
@@ -1039,8 +1041,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   {/* Estimate */}
                   {estimatedShares > 0 && market && (() => {
                     const FEE_PCT = 0.05;
-                    const amountInTzs = isKenya ? convertCurrency(Number(amount), 'KES', 'TZS') : Number(amount);
-                    const pot = Math.round(market.totalVolume * (1 - FEE_PCT));
+                    const amountInTzs = fromDisplay(Number(amount));
                     const newPot = Math.round((market.totalVolume + amountInTzs) * (1 - FEE_PCT));
                     let totalSideShares: number;
                     if (isMultiOption) {
@@ -1051,7 +1052,9 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     const payoutIfWin = totalSideShares > 0
                       ? Math.round((estimatedShares / totalSideShares) * newPot * (1 - FEE_PCT))
                       : 0;
-                    const netGain = payoutIfWin - Number(amount);
+                    const avgPriceDisplay = displayCurrency === 'USDC' 
+                      ? `$${(estimatedPrice / 2630).toFixed(4)}`
+                      : `TSh ${estimatedPrice.toFixed(2)}`;
                     return (
                     <div className="p-3 bg-[var(--background)] rounded-xl text-sm space-y-1.5">
                       <div className="flex justify-between">
@@ -1060,13 +1063,13 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-[var(--muted)]">{locale === "sw" ? "Bei ya wastani" : "Avg price"}</span>
-                        <span className="font-medium">{isKenya ? (estimatedPrice / 18.5).toFixed(4) : estimatedPrice.toFixed(4)} {isKenya ? 'KES' : 'TZS'}/share</span>
+                        <span className="font-medium">{avgPriceDisplay}/share</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-[var(--muted)] flex items-center gap-1">
                           {locale === "sw" ? "Unatumia" : "You spend"}
                         </span>
-                        <span className="font-bold text-[var(--foreground)]">{isKenya ? `KSh ${Number(amount).toLocaleString()}` : formatTZS(Number(amount))}</span>
+                        <span className="font-bold text-[var(--foreground)]">{displayCurrency === 'USDC' ? `$${Number(amount).toFixed(2)}` : formatTZS(Number(amount))}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-[var(--muted)] flex items-center gap-1">
@@ -1233,7 +1236,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-[var(--muted)]">{locale === "sw" ? "Bei ya wastani" : "Avg price"}</span>
-                            <span className="font-medium">{isKenya ? (estimatedSellPrice / 18.5).toFixed(4) : estimatedSellPrice.toFixed(4)} {isKenya ? 'KES' : 'TZS'}/share</span>
+                            <span className="font-medium">{displayCurrency === 'USDC' ? `$${(estimatedSellPrice / 2630).toFixed(4)}` : `TSh ${estimatedSellPrice.toFixed(2)}`}/share</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-[var(--muted)]">{locale === "sw" ? "Ada (5%)" : "Fee (5%)"}</span>

@@ -6,6 +6,7 @@ import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS, formatNumber, formatPercent } from "@/lib/utils";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
+import { useCurrency } from "@/store/useCurrency";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
@@ -96,18 +97,8 @@ export default function PortfolioPage() {
   // Expanded position state
   const [expandedPosition, setExpandedPosition] = useState<string | null>(null);
 
-  // Currency detection for Kenya/Tanzania users (check country AND phone prefix)
-  const userCurrency: Currency = getUserCurrency(user?.country, user?.phone);
-  const isKenya = userCurrency === 'KES';
-  
-  // Format amount in user's currency
-  const formatAmount = (amountTzs: number) => {
-    if (isKenya) {
-      const amountKes = convertCurrency(amountTzs, 'TZS', 'KES');
-      return `KSh ${amountKes.toLocaleString()}`;
-    }
-    return formatTZS(amountTzs);
-  };
+  // Global currency preference
+  const { format: formatAmount, currency: displayCurrency } = useCurrency();
 
   useEffect(() => {
     fetch("/api/portfolio")
@@ -332,7 +323,7 @@ export default function PortfolioPage() {
               {/* Stats grid */}
               <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-6">
                 {[
-                  { label: t.portfolio.walletBalance, value: isKenya ? `KSh ${((user.balanceKes || 0) / 100).toLocaleString()}` : formatTZS(user.balanceTzs || 0), color: "text-[var(--accent)]", border: "border-[var(--accent)]/30", icon: <Wallet size={12} weight="fill" className="text-[var(--accent)]" /> },
+                  { label: t.portfolio.walletBalance, value: formatAmount(user.balanceTzs || 0), color: "text-[var(--accent)]", border: "border-[var(--accent)]/30", icon: <Wallet size={12} weight="fill" className="text-[var(--accent)]" /> },
                   { label: t.portfolio.totalInvested, value: formatAmount(totalInvested), color: "text-[var(--foreground)]", border: "border-[var(--card-border)]", icon: <CurrencyDollar size={12} weight="fill" className="text-orange-400" /> },
                   { label: t.portfolio.openPositionsValue, value: formatAmount(Math.round(totalValue)), color: "text-yellow-400", border: "border-yellow-500/30", icon: <ChartLineUp size={12} weight="fill" className="text-yellow-400" /> },
                 ].map((s, i) => (

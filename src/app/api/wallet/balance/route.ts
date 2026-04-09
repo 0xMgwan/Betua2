@@ -9,16 +9,26 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({ 
     where: { id: session.userId },
-    select: { id: true, ntzsUserId: true, balanceTzs: true, walletAddress: true }
+    select: { id: true, ntzsUserId: true, walletAddress: true }
   });
   if (!user?.ntzsUserId) {
-    return NextResponse.json({ balanceTzs: 0, walletAddress: null });
+    return NextResponse.json({ balanceTzs: 0, balanceUsdc: 0, walletAddress: null });
   }
 
   try {
-    const { balanceTzs } = await ntzs.users.getBalance(user.ntzsUserId);
-    return NextResponse.json({ balanceTzs, walletAddress: user.walletAddress });
+    // Fetch nTZS and USDC balances from nTZS API
+    const { balanceTzs, balanceUsdc } = await ntzs.users.getBalance(user.ntzsUserId);
+    
+    return NextResponse.json({ 
+      balanceTzs, 
+      balanceUsdc, // Float from nTZS API (e.g., 6.50 = $6.50)
+      walletAddress: user.walletAddress 
+    });
   } catch {
-    return NextResponse.json({ balanceTzs: 0, walletAddress: user.walletAddress });
+    return NextResponse.json({ 
+      balanceTzs: 0, 
+      balanceUsdc: 0,
+      walletAddress: user.walletAddress 
+    });
   }
 }
