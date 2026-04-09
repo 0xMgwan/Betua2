@@ -326,7 +326,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                             backgroundColor: `${c}08`,
                           }}
                         >
-                          {option.length > 8 ? option.slice(0, 8) + ".." : option} @ {formatPrice(optPrice)}
+                          {option.length > 8 ? option.slice(0, 8) + ".." : option} @ {formatPrice(optPrice)} <span className="opacity-70">({optPrice > 0 ? (1 / optPrice).toFixed(1) : '∞'}x)</span>
                         </button>
                         <button
                           onClick={(e) => handleAddToCart(e, originalOption, idx)}
@@ -350,7 +350,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                       onClick={(e) => handleQuickBuy(e, "YES")}
                       className="flex-1 py-2 px-2 bg-[#00e5a0]/8 border border-[#00e5a0]/50 text-[#00e5a0] font-mono font-bold text-[10px] uppercase tracking-wider transition-all hover:bg-[#00e5a0]/15 hover:border-[#00e5a0] active:scale-[0.97]"
                     >
-                      Yes @ {formatPrice(market.price.yes)}
+                      Yes @ {formatPrice(market.price.yes)} <span className="opacity-70">({(1 / market.price.yes).toFixed(2)}x)</span>
                     </button>
                     <button
                       onClick={(e) => handleAddToCart(e, "YES")}
@@ -365,7 +365,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                       onClick={(e) => handleQuickBuy(e, "NO")}
                       className="flex-1 py-2 px-2 bg-red-500/8 border border-red-500/50 text-red-400 font-mono font-bold text-[10px] uppercase tracking-wider transition-all hover:bg-red-500/15 hover:border-red-500 active:scale-[0.97]"
                     >
-                      No @ {formatPrice(market.price.no)}
+                      No @ {formatPrice(market.price.no)} <span className="opacity-70">({(1 / market.price.no).toFixed(2)}x)</span>
                     </button>
                     <button
                       onClick={(e) => handleAddToCart(e, "NO")}
