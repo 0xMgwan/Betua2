@@ -6,6 +6,7 @@ import { nkes } from "@/lib/nkes";
 import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
 import { notifications } from "@/lib/notifications";
 import { createNotification } from "@/lib/notify";
+import { notifyTradePlaced } from "@/lib/push";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
 
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
@@ -362,6 +363,9 @@ export async function POST(req: NextRequest) {
       message: notifMessage,
       link: `/markets/${marketId}`,
     });
+
+    // Push notification (off-app)
+    notifyTradePlaced(session.userId, market.title, tradeSide, amountTzs, marketId, userLocale).catch(console.error);
 
     return NextResponse.json({
       trade,

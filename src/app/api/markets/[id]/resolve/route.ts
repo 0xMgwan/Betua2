@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { createNotification, createNotifications } from "@/lib/notify";
+import { notifyMarketResolved } from "@/lib/push";
 import { ntzs } from "@/lib/ntzs";
 
 const FEE_PERCENT = parseFloat(process.env.TRANSACTION_FEE_PERCENT || "5") / 100;
@@ -220,6 +221,13 @@ export async function POST(
 
   if (notificationBatch.length > 0) {
     createNotifications(notificationBatch);
+
+    // Push notifications (off-app)
+    for (const n of notificationBatch) {
+      const payoutInfo = payoutSummary.find(p => p !== null);
+      const payout = payoutInfo?.netPayout || 0;
+      notifyMarketResolved(n.userId, market.title, winningLabel, n.type === "WINNINGS", payout, id, "en").catch(console.error);
+    }
   }
 
   // Notify market creator
