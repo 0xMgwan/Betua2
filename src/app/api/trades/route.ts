@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
-import { nkes } from "@/lib/nkes";
+import { bkes } from "@/lib/bkes";
 import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
 import { notifications } from "@/lib/notifications";
 import { createNotification } from "@/lib/notify";
@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
     }
 
     let ntzsTransferId: string | undefined;
-    let nkesTransferTxHash: string | undefined;
+    let bkesTransferTxHash: string | undefined;
 
     // Transfer tokens from user → platform escrow
     if (userCurrency === 'USDC' && user.ntzsUserId) {
@@ -195,17 +195,9 @@ export async function POST(req: NextRequest) {
         }, { status: 500 });
       }
     } else if (userCurrency === 'KES') {
-      // Kenya user: Transfer NKES tokens to escrow
-      try {
-        const ntzsUser = await ntzs.users.get(user.ntzsUserId);
-        const walletAddress = ntzsUser.walletAddress;
-        if (walletAddress) {
-          nkesTransferTxHash = await nkes.transferToEscrow(walletAddress, amountKes || convertCurrency(amountTzs, 'TZS', 'KES'));
-        }
-      } catch (err) {
-        console.error("NKES transfer failed:", err);
-        // Continue without NKES transfer - use local balance instead
-      }
+      // Kenya user: bKES is on-chain, just track locally for now
+      // bKES transfers happen via the bKES contract directly
+      console.log(`[Trade] Kenya user trading ${amountKes || convertCurrency(amountTzs, 'TZS', 'KES')} KES`);
     } else if (userCurrency === 'TZS' && PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
       // Tanzania user: Transfer nTZS tokens via nTZS API
       try {

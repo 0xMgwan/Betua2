@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ntzs } from "@/lib/ntzs";
-import { nkes } from "@/lib/nkes";
+import { bkes } from "@/lib/bkes";
 import { createNotification } from "@/lib/notify";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
 
@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
     // Transfer payout from platform escrow → user
     // For USDC users: transfer nTZS first, then swap to USDC
     let ntzsTransferId: string | undefined;
-    let nkesTransferTxHash: string | undefined;
+    let bkesTransferTxHash: string | undefined;
     
     if (preferredCurrency === 'USDC' && PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
       // USDC payout: transfer nTZS from escrow, then swap to USDC
@@ -169,19 +169,9 @@ export async function POST(req: NextRequest) {
         // Continue with local balance update as fallback
       }
     } else if (preferredCurrency === 'KES') {
-      // Kenya user: Transfer NKES from escrow to user
-      try {
-        if (user.ntzsUserId) {
-          const ntzsUser = await ntzs.users.get(user.ntzsUserId);
-          const walletAddress = ntzsUser.walletAddress;
-          if (walletAddress) {
-            nkesTransferTxHash = await nkes.transferFromEscrow(walletAddress, payoutInUserCurrency);
-          }
-        }
-      } catch (err) {
-        console.error("NKES redeem transfer failed:", err);
-        // Continue with local balance update
-      }
+      // Kenya user: bKES payouts are tracked locally
+      // bKES is on-chain, user can withdraw via offramp when ready
+      console.log(`[Redeem] Kenya user payout: ${payoutInUserCurrency} KES`);
     } else if (PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
       // Tanzania user: Transfer nTZS via nTZS API
       try {
