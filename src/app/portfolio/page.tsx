@@ -98,7 +98,7 @@ export default function PortfolioPage() {
   const [expandedPosition, setExpandedPosition] = useState<string | null>(null);
 
   // Global currency preference
-  const { format: formatAmount, currency: displayCurrency } = useCurrency();
+  const { format: formatAmount, formatRaw, currency: displayCurrency } = useCurrency();
 
   useEffect(() => {
     fetch("/api/portfolio")
@@ -323,7 +323,7 @@ export default function PortfolioPage() {
               {/* Stats grid */}
               <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-6">
                 {[
-                  { label: t.portfolio.walletBalance, value: formatAmount(user.balanceTzs || 0), color: "text-[var(--accent)]", border: "border-[var(--accent)]/30", icon: <Wallet size={12} weight="fill" className="text-[var(--accent)]" /> },
+                  { label: t.portfolio.walletBalance, value: formatRaw(displayCurrency === 'USDC' ? (user.balanceUsdc || 0) : displayCurrency === 'KES' ? (user.balanceKes || 0) : (user.balanceTzs || 0)), color: "text-[var(--accent)]", border: "border-[var(--accent)]/30", icon: <Wallet size={12} weight="fill" className="text-[var(--accent)]" /> },
                   { label: t.portfolio.totalInvested, value: formatAmount(totalInvested), color: "text-[var(--foreground)]", border: "border-[var(--card-border)]", icon: <CurrencyDollar size={12} weight="fill" className="text-orange-400" /> },
                   { label: t.portfolio.openPositionsValue, value: formatAmount(Math.round(totalValue)), color: "text-yellow-400", border: "border-yellow-500/30", icon: <ChartLineUp size={12} weight="fill" className="text-yellow-400" /> },
                 ].map((s, i) => (
