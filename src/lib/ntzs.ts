@@ -179,8 +179,8 @@ export const ntzs = {
     // Returns the final txHash on success, throws on failure
     executeAndWait: async (data: { 
       userId: string; 
-      fromToken: 'USDC' | 'NTZS'; 
-      toToken: 'USDC' | 'NTZS'; 
+      fromToken: 'USDC' | 'NTZS' | 'BKES'; 
+      toToken: 'USDC' | 'NTZS' | 'BKES'; 
       amount: number;
       slippageBps?: number; // default 100 (1%)
     }): Promise<{ txHash: string; status: string }> => {

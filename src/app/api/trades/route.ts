@@ -194,10 +194,40 @@ export async function POST(req: NextRequest) {
           error: "USDC payment failed. Please try again.",
         }, { status: 500 });
       }
-    } else if (userCurrency === 'KES') {
-      // Kenya user: bKES is on-chain, just track locally for now
-      // bKES transfers happen via the bKES contract directly
-      console.log(`[Trade] Kenya user trading ${amountKes || convertCurrency(amountTzs, 'TZS', 'KES')} KES`);
+    } else if (userCurrency === 'KES' && user.ntzsUserId) {
+      // Kenya user: bKES payment flow (same as USDC)
+      // 1. Swap bKES → nTZS via nTZS swap API
+      // 2. Transfer nTZS to platform escrow
+      const kesAmount = amountKes || convertCurrency(amountTzs, 'TZS', 'KES');
+      try {
+        console.log(`[Trade] bKES payment: swapping ${kesAmount} bKES → ${amountTzs} TZS for user ${user.ntzsUserId}`);
+        
+        // Step 1: Swap bKES to nTZS
+        const swapResult = await ntzs.swap.executeAndWait({
+          userId: user.ntzsUserId,
+          fromToken: 'BKES',
+          toToken: 'NTZS',
+          amount: kesAmount,
+          slippageBps: 100, // 1% slippage
+        });
+        console.log(`[Trade] bKES→nTZS swap completed: ${swapResult.txHash}`);
+
+        // Step 2: Transfer nTZS to platform escrow
+        if (PLATFORM_NTZS_USER_ID) {
+          const transfer = await ntzs.transfers.create({
+            fromUserId: user.ntzsUserId,
+            toUserId: PLATFORM_NTZS_USER_ID,
+            amountTzs,
+          });
+          ntzsTransferId = transfer.id;
+          console.log(`[Trade] nTZS transfer to escrow: ${ntzsTransferId}`);
+        }
+      } catch (err) {
+        console.error("[Trade] bKES swap/transfer failed:", err);
+        return NextResponse.json({
+          error: "bKES payment failed. Please try again.",
+        }, { status: 500 });
+      }
     } else if (userCurrency === 'TZS' && PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
       // Tanzania user: Transfer nTZS tokens via nTZS API
       try {

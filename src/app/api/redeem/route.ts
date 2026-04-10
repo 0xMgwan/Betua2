@@ -168,10 +168,34 @@ export async function POST(req: NextRequest) {
         console.error("[Redeem] USDC payout/swap failed:", err);
         // Continue with local balance update as fallback
       }
-    } else if (preferredCurrency === 'KES') {
-      // Kenya user: bKES payouts are tracked locally
-      // bKES is on-chain, user can withdraw via offramp when ready
-      console.log(`[Redeem] Kenya user payout: ${payoutInUserCurrency} KES`);
+    } else if (preferredCurrency === 'KES' && PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
+      // Kenya user: nTZS → bKES payout flow (same as USDC)
+      // 1. Transfer nTZS from escrow to user
+      // 2. Swap nTZS → bKES
+      try {
+        // Step 1: Transfer nTZS from escrow to user
+        const transfer = await ntzs.transfers.create({
+          fromUserId: PLATFORM_NTZS_USER_ID,
+          toUserId: user.ntzsUserId,
+          amountTzs: payoutTzs,
+        });
+        ntzsTransferId = transfer.id;
+        console.log(`[Redeem] nTZS transfer: ${ntzsTransferId}`);
+
+        // Step 2: Swap nTZS → bKES
+        console.log(`[Redeem] Swapping ${payoutTzs} nTZS → bKES for user ${user.ntzsUserId}`);
+        const swapResult = await ntzs.swap.executeAndWait({
+          userId: user.ntzsUserId,
+          fromToken: 'NTZS',
+          toToken: 'BKES',
+          amount: payoutTzs,
+          slippageBps: 100,
+        });
+        console.log(`[Redeem] nTZS→bKES swap completed: ${swapResult.txHash}`);
+      } catch (err) {
+        console.error("[Redeem] bKES payout/swap failed:", err);
+        // Continue with local balance update as fallback
+      }
     } else if (PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
       // Tanzania user: Transfer nTZS via nTZS API
       try {
