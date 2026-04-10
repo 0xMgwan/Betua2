@@ -178,15 +178,22 @@ export async function POST(req: NextRequest) {
         });
         console.log(`[Trade] Swap completed: ${swapResult.txHash}`);
 
-        // Step 2: Transfer nTZS to platform escrow
-        if (PLATFORM_NTZS_USER_ID) {
+        // Step 2: Get actual nTZS balance after swap (may differ due to slippage)
+        const { balanceTzs: actualBalance } = await ntzs.users.getBalance(user.ntzsUserId);
+        const transferAmount = Math.min(actualBalance, amountTzs); // Transfer what we have, up to expected
+        console.log(`[Trade] Post-swap balance: ${actualBalance} TZS, transferring: ${transferAmount} TZS`);
+
+        // Step 3: Transfer nTZS to platform escrow
+        if (PLATFORM_NTZS_USER_ID && transferAmount > 0) {
           const transfer = await ntzs.transfers.create({
             fromUserId: user.ntzsUserId,
             toUserId: PLATFORM_NTZS_USER_ID,
-            amountTzs,
+            amountTzs: transferAmount,
           });
           ntzsTransferId = transfer.id;
           console.log(`[Trade] nTZS transfer to escrow: ${ntzsTransferId}`);
+          // Update amountTzs to actual transferred amount for share calculation
+          amountTzs = transferAmount;
         }
       } catch (err) {
         console.error("[Trade] USDC swap/transfer failed:", err);
@@ -212,15 +219,22 @@ export async function POST(req: NextRequest) {
         });
         console.log(`[Trade] bKES→nTZS swap completed: ${swapResult.txHash}`);
 
-        // Step 2: Transfer nTZS to platform escrow
-        if (PLATFORM_NTZS_USER_ID) {
+        // Step 2: Get actual nTZS balance after swap (may differ due to slippage)
+        const { balanceTzs: actualBalanceKes } = await ntzs.users.getBalance(user.ntzsUserId);
+        const transferAmountKes = Math.min(actualBalanceKes, amountTzs);
+        console.log(`[Trade] Post-swap balance: ${actualBalanceKes} TZS, transferring: ${transferAmountKes} TZS`);
+
+        // Step 3: Transfer nTZS to platform escrow
+        if (PLATFORM_NTZS_USER_ID && transferAmountKes > 0) {
           const transfer = await ntzs.transfers.create({
             fromUserId: user.ntzsUserId,
             toUserId: PLATFORM_NTZS_USER_ID,
-            amountTzs,
+            amountTzs: transferAmountKes,
           });
           ntzsTransferId = transfer.id;
           console.log(`[Trade] nTZS transfer to escrow: ${ntzsTransferId}`);
+          // Update amountTzs to actual transferred amount for share calculation
+          amountTzs = transferAmountKes;
         }
       } catch (err) {
         console.error("[Trade] bKES swap/transfer failed:", err);
