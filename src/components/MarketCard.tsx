@@ -62,6 +62,10 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
       const priceUsdc = priceTzs / 2630;
       return `$${priceUsdc.toFixed(2)}`;
     }
+    if (displayCurrency === 'KES') {
+      const priceKes = Math.round(priceTzs / 18.5);
+      return `KES ${priceKes.toLocaleString()}`;
+    }
     return `TSh ${priceTzs.toLocaleString()}`;
   };
   const [imageError, setImageError] = useState(false);

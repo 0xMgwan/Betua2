@@ -58,8 +58,10 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
   const { format: formatAmount, currency: displayCurrency, fromDisplay } = useCurrency();
   const QUICK_AMOUNTS = displayCurrency === 'USDC' 
     ? [1, 2, 5, 10, 20] // USDC amounts
+    : displayCurrency === 'KES'
+    ? QUICK_AMOUNTS_KES
     : QUICK_AMOUNTS_TZS;
-  const minAmount = displayCurrency === 'USDC' ? 0.5 : 500;
+  const minAmount = displayCurrency === 'USDC' ? 0.5 : displayCurrency === 'KES' ? 50 : 500;
 
   // Fresh pool data fetched from API
   const [freshPools, setFreshPools] = useState<{

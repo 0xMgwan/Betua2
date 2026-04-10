@@ -110,7 +110,7 @@ export default function WalletPage() {
     if (displayCurrency === 'USDC') {
       return user?.balanceUsdc || 0; // Already a float from nTZS API
     }
-    if (isKenya) {
+    if (displayCurrency === 'KES') {
       return user?.balanceKes || 0;
     }
     return user?.balanceTzs || 0;
@@ -118,7 +118,7 @@ export default function WalletPage() {
   const balance = getBalance();
   const quickAmounts = displayCurrency === 'USDC' 
     ? [1, 5, 10, 20] 
-    : isKenya ? QUICK_AMOUNTS_KES : QUICK_AMOUNTS_TZS;
+    : displayCurrency === 'KES' ? QUICK_AMOUNTS_KES : QUICK_AMOUNTS_TZS;
 
   // Format balance for display
   const displayBalance = displayCurrency === 'USDC' 
@@ -227,11 +227,11 @@ export default function WalletPage() {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <img 
-                      src={displayCurrency === 'USDC' ? '/usdc.png' : '/ntzs.png'} 
+                      src={displayCurrency === 'USDC' ? '/usdc.png' : displayCurrency === 'KES' ? '/bkes.png' : '/ntzs.png'} 
                       alt={displayCurrency} 
                       className="w-5 h-5"
                     />
-                    <span className="text-sm font-semibold">{displayCurrency === 'USDC' ? 'USDC' : 'nTZS'}</span>
+                    <span className="text-sm font-semibold">{displayCurrency === 'USDC' ? 'USDC' : displayCurrency === 'KES' ? 'bKES' : 'nTZS'}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     {pendingCount > 0 && (
@@ -246,7 +246,7 @@ export default function WalletPage() {
                       className="flex items-center gap-1 px-2 py-1 text-xs bg-[var(--background)]/60 rounded-lg border border-[var(--card-border)] hover:border-[var(--accent)]/30 transition-colors"
                     >
                       <img 
-                        src={displayCurrency === 'USDC' ? '/ntzs.png' : '/usdc.png'} 
+                        src={displayCurrency === 'TZS' ? '/usdc.png' : displayCurrency === 'USDC' ? '/bkes.png' : '/ntzs.png'} 
                         alt="switch" 
                         className="w-3.5 h-3.5"
                       />
@@ -257,9 +257,14 @@ export default function WalletPage() {
                 <div className="text-4xl font-black mb-0.5 tabular-nums">
                   {formatRaw(balance)}
                 </div>
-                {displayCurrency !== 'USDC' && (
+                {displayCurrency === 'TZS' && (
                   <p className="text-xs text-[var(--muted)]">
                     {t.wallet.tanzanianShillings}
+                  </p>
+                )}
+                {displayCurrency === 'KES' && (
+                  <p className="text-xs text-[var(--muted)]">
+                    Kenya Shillings
                   </p>
                 )}
 
@@ -565,6 +570,7 @@ export default function WalletPage() {
 
 function TxRow({ tx, index }: { tx: Transaction; index: number }) {
   const { t, locale } = useLanguage();
+  const { currency: displayCurrency, formatRaw } = useCurrency();
   const isDeposit = tx.type === "DEPOSIT";
   const isSend = tx.type === "SEND";
   const isReceive = tx.type === "RECEIVE";
@@ -640,10 +646,10 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
           isSend || isBuyShares || isSellShares ? "text-blue-400" : 
           "text-red-400")}>
           {isDeposit || isReceive || isRedeem || isReferral || isCreatorFee ? "+" : "−"}
-          {tx.currency === 'USDC' 
-            ? `$${((tx.amountUsdc || 0) / 1_000_000).toFixed(2)}`
-            : tx.currency === 'KES' 
-              ? `${(tx.amountKes / 100).toLocaleString()} KES`
+          {displayCurrency === 'USDC' 
+            ? `$${((tx.amountUsdc || 0) > 1000 ? (tx.amountUsdc || 0) / 1_000_000 : (tx.amountUsdc || 0)).toFixed(2)}`
+            : displayCurrency === 'KES' 
+              ? `KES ${Math.round(tx.amountKes || 0).toLocaleString()}`
               : formatTZS(tx.amountTzs)}
         </p>
         <div className={cn("flex items-center gap-1 justify-end text-xs font-medium mt-0.5", statusConfig.color)}>

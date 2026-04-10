@@ -187,20 +187,28 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   
   // Quick amounts based on currency (in TZS, will be converted for display)
   const QUICK_AMOUNTS_TZS = [1000, 5000, 10000, 50000];
+  const QUICK_AMOUNTS_KES = [50, 100, 500, 1000];
   const QUICK_AMOUNTS = displayCurrency === 'USDC' 
     ? [1, 5, 10, 20] // USDC amounts
+    : displayCurrency === 'KES'
+    ? QUICK_AMOUNTS_KES
     : QUICK_AMOUNTS_TZS;
   
   // Get user balance based on selected currency
   const getUserBalance = () => {
     if (displayCurrency === 'USDC') {
-      return user?.balanceUsdc || 0; // Already a float from nTZS API
+      return user?.balanceUsdc || 0;
+    }
+    if (displayCurrency === 'KES') {
+      return user?.balanceKes || 0;
     }
     return user?.balanceTzs || 0;
   };
   const userBalance = getUserBalance();
   const balanceDisplay = displayCurrency === 'USDC' 
     ? `$${userBalance.toFixed(2)}` 
+    : displayCurrency === 'KES'
+    ? `KES ${Math.round(userBalance).toLocaleString()}`
     : formatAmount(userBalance);
   
   // Use translated content if available
@@ -230,6 +238,8 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
       const amountInTzs = fromDisplay(amountNum);
       const amountPayload = displayCurrency === 'USDC'
         ? { amountUsdc: amountNum } // Send as float (e.g., 1.50)
+        : displayCurrency === 'KES'
+        ? { amountKes: amountNum }
         : { amountTzs: amountInTzs };
       const tradeBody = isMultiOption
         ? { marketId: id, optionIndex: selectedOption, ...amountPayload }
@@ -416,7 +426,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   const FEE_PERCENT = 0.05;
   let estimatedShares = 0;
   let estimatedPrice = 0;
-  const minTradeAmount = displayCurrency === 'USDC' ? 0.5 : 100;
+  const minTradeAmount = displayCurrency === 'USDC' ? 0.5 : displayCurrency === 'KES' ? 50 : 100;
   if (market && amount && Number(amount) >= minTradeAmount) {
     try {
       // Convert user input to TZS for AMM calculations
@@ -1018,15 +1028,15 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
                   {/* Amount */}
                   <div>
-                    <label className="block text-sm font-medium mb-1.5">{displayCurrency === 'USDC' ? 'Amount (USDC)' : t.market.amount}</label>
+                    <label className="block text-sm font-medium mb-1.5">{displayCurrency === 'USDC' ? 'Amount (USDC)' : displayCurrency === 'KES' ? 'Amount (KES)' : t.market.amount}</label>
                     <div className="relative">
                       <input
                         type="number"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
-                        placeholder={displayCurrency === 'USDC' ? "e.g. 5" : "e.g. 5000"}
-                        min={displayCurrency === 'USDC' ? "0.5" : "100"}
+                        placeholder={displayCurrency === 'USDC' ? "e.g. 5" : displayCurrency === 'KES' ? "e.g. 100" : "e.g. 5000"}
+                        min={displayCurrency === 'USDC' ? "0.5" : displayCurrency === 'KES' ? "50" : "100"}
                         step={displayCurrency === 'USDC' ? "0.01" : "1"}
                         required
                       />
@@ -1062,6 +1072,8 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       : 0;
                     const avgPriceDisplay = displayCurrency === 'USDC' 
                       ? `$${(estimatedPrice / 2630).toFixed(4)}`
+                      : displayCurrency === 'KES'
+                      ? `KES ${(estimatedPrice / 18.5).toFixed(2)}`
                       : `TSh ${estimatedPrice.toFixed(2)}`;
                     return (
                     <div className="p-3 bg-[var(--background)] rounded-xl text-sm space-y-1.5">
@@ -1077,7 +1089,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                         <span className="text-[var(--muted)] flex items-center gap-1">
                           {locale === "sw" ? "Unatumia" : "You spend"}
                         </span>
-                        <span className="font-bold text-[var(--foreground)]">{displayCurrency === 'USDC' ? `$${Number(amount).toFixed(2)}` : formatTZS(Number(amount))}</span>
+                        <span className="font-bold text-[var(--foreground)]">{displayCurrency === 'USDC' ? `$${Number(amount).toFixed(2)}` : displayCurrency === 'KES' ? `KES ${Math.round(Number(amount)).toLocaleString()}` : formatTZS(Number(amount))}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-[var(--muted)] flex items-center gap-1">
@@ -1111,7 +1123,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
                   <button
                     type="submit"
-                    disabled={tradeLoading || !amount || Number(amount) < (displayCurrency === 'USDC' ? 0.5 : 100)}
+                    disabled={tradeLoading || !amount || Number(amount) < (displayCurrency === 'USDC' ? 0.5 : displayCurrency === 'KES' ? 50 : 100)}
                     className={cn(
                       "w-full py-3.5 font-bold rounded-xl transition-all disabled:opacity-50 text-sm",
                       isMultiOption
@@ -1244,7 +1256,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-[var(--muted)]">{locale === "sw" ? "Bei ya wastani" : "Avg price"}</span>
-                            <span className="font-medium">{displayCurrency === 'USDC' ? `$${(estimatedSellPrice / 2630).toFixed(4)}` : `TSh ${estimatedSellPrice.toFixed(2)}`}/share</span>
+                            <span className="font-medium">{displayCurrency === 'USDC' ? `$${(estimatedSellPrice / 2630).toFixed(4)}` : displayCurrency === 'KES' ? `KES ${(estimatedSellPrice / 18.5).toFixed(2)}` : `TSh ${estimatedSellPrice.toFixed(2)}`}/share</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-[var(--muted)]">{locale === "sw" ? "Ada (5%)" : "Fee (5%)"}</span>
