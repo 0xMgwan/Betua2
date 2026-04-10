@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
         });
         ntzsTransferId = transfer.id;
 
-        // Step 2: If user prefers USDC, swap nTZS → USDC
+        // Step 2: If user prefers USDC or KES, swap nTZS to their currency
         if (preferredCurrency === 'USDC') {
           console.log(`[Sell] Swapping ${netPayout} nTZS → USDC for user ${user.ntzsUserId}`);
           const swapResult = await ntzs.swap.executeAndWait({
@@ -128,6 +128,16 @@ export async function POST(req: NextRequest) {
             slippageBps: 100,
           });
           console.log(`[Sell] Swap completed: ${swapResult.txHash}`);
+        } else if (preferredCurrency === 'KES') {
+          console.log(`[Sell] Swapping ${netPayout} nTZS → bKES for user ${user.ntzsUserId}`);
+          const swapResult = await ntzs.swap.executeAndWait({
+            userId: user.ntzsUserId,
+            fromToken: 'NTZS',
+            toToken: 'BKES',
+            amount: netPayout,
+            slippageBps: 100,
+          });
+          console.log(`[Sell] nTZS→bKES swap completed: ${swapResult.txHash}`);
         }
       } catch (err) {
         if (err instanceof NtzsApiError) {
