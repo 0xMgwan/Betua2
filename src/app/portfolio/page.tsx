@@ -12,7 +12,7 @@ import Link from "next/link";
 import {
   TrendUp, Clock, Terminal, Lightning, Wallet, ChartLineUp,
   CurrencyDollar, Trophy, Eye, ArrowRight, CheckCircle, XCircle,
-  Pulse, WarningCircle, ShareNetwork, CaretDown,
+  Pulse, WarningCircle, ShareNetwork, CaretDown, ArrowsLeftRight,
 } from "@phosphor-icons/react";
 import { getPayoutForShares, getMultiOptionPayoutForShares, getPrice, getMultiOptionPrices } from "@/lib/amm";
 import { cn } from "@/lib/utils";
@@ -98,7 +98,7 @@ export default function PortfolioPage() {
   const [expandedPosition, setExpandedPosition] = useState<string | null>(null);
 
   // Global currency preference
-  const { format: formatAmount, formatRaw, currency: displayCurrency } = useCurrency();
+  const { format: formatAmount, formatRaw, currency: displayCurrency, toggleCurrency } = useCurrency();
 
   useEffect(() => {
     fetch("/api/portfolio")
@@ -313,10 +313,22 @@ export default function PortfolioPage() {
                 transition={{ delay: 0.1 }}
                 className="mb-6 font-mono"
               >
-                <p className="text-[var(--accent)] text-xs mb-1">
-                  <span className="text-[var(--muted)]">[SYS]</span> {t.portfolio.title}
-                </p>
-                <p className="text-[var(--muted)] text-[10px]">@{user.username || user.email}</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[var(--accent)] text-xs mb-1">
+                      <span className="text-[var(--muted)]">[SYS]</span> {t.portfolio.title}
+                    </p>
+                    <p className="text-[var(--muted)] text-[10px]">@{user.username || user.email}</p>
+                  </div>
+                  <button
+                    onClick={toggleCurrency}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs bg-[var(--background)] rounded-lg border border-[var(--card-border)] hover:border-[var(--accent)]/30 transition-colors"
+                  >
+                    <img src={displayCurrency === 'USDC' ? '/usdc.png' : displayCurrency === 'KES' ? '/bkes.png' : '/ntzs.png'} alt="" className="w-4 h-4" />
+                    <span className="font-mono">{displayCurrency === 'USDC' ? 'USD' : displayCurrency === 'KES' ? 'KES' : 'TZS'}</span>
+                    <ArrowsLeftRight size={12} className="text-[var(--muted)]" />
+                  </button>
+                </div>
                 <div className="h-px bg-gradient-to-r from-[var(--accent)]/50 via-[var(--accent)]/20 to-transparent mt-3" />
               </motion.div>
 
