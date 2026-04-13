@@ -22,6 +22,12 @@ export async function GET(
         },
         orderBy: { createdAt: "asc" },
       },
+      comments: {
+        include: {
+          user: { select: { username: true, avatarUrl: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      },
       creator: {
         select: { username: true, displayName: true, avatarUrl: true },
       },

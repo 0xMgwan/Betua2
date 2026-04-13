@@ -56,6 +56,7 @@ model Event {
   updatedAt   DateTime  @updatedAt
 
   markets     Market[]
+  comments    Comment[]
   creator     User      @relation("EventCreator", fields: [creatorId], references: [id])
   partner     Partner?  @relation(fields: [partnerId], references: [id])
 
@@ -168,10 +169,12 @@ model ReferralReward {
 model Comment {
   id        String   @id @default(cuid())
   userId    String
-  marketId  String
+  marketId  String?
+  eventId   String?
   body      String
   createdAt DateTime @default(now())
-  market    Market   @relation(fields: [marketId], references: [id])
+  market    Market?   @relation(fields: [marketId], references: [id])
+  event     Event?    @relation(fields: [eventId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
 }
 

@@ -17,6 +17,13 @@ import {
   WhatsappLogo, XLogo, TelegramLogo, ShareNetwork,
 } from "@phosphor-icons/react";
 
+interface Comment {
+  id: string;
+  body: string;
+  createdAt: string;
+  user: { username: string; avatarUrl?: string | null };
+}
+
 interface Market {
   id: string;
   title: string;
@@ -47,6 +54,7 @@ interface EventData {
   totalVolume: number;
   totalTrades: number;
   markets: Market[];
+  comments: Comment[];
   creator: { username: string; displayName?: string | null; avatarUrl?: string | null };
 }
 
@@ -57,6 +65,9 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
   const { format: formatAmount, currency } = useCurrency();
   const [event, setEvent] = useState<EventData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [comment, setComment] = useState("");
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"markets" | "comments">("markets");
 
   useEffect(() => {
     fetch(`/api/events/${id}`)
@@ -64,6 +75,27 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
       .then((d) => setEvent(d.event))
       .finally(() => setLoading(false));
   }, [id]);
+
+  async function handleComment(e: React.FormEvent) {
+    e.preventDefault();
+    if (!comment.trim() || !user || !event) return;
+    setCommentLoading(true);
+    try {
+      const res = await fetch(`/api/events/${id}/comment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: comment }),
+      });
+      if (res.ok) {
+        setComment("");
+        // Refresh event data to show new comment
+        const refreshed = await fetch(`/api/events/${id}`).then(r => r.json());
+        setEvent(refreshed.event);
+      }
+    } finally {
+      setCommentLoading(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -101,18 +133,18 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Event Header */}
+      <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
+        {/* Event Header - Compact */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-4 sm:mb-6"
         >
-          {/* Category & Status */}
-          <div className="flex flex-wrap items-center gap-2 mb-3">
+          {/* Top row: Tags + Edit button */}
+          <div className="flex items-center gap-1.5 mb-2 flex-wrap">
             <Link 
               href={`/markets?category=${event.category}`}
-              className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider bg-[#00e5a0]/20 text-[#00e5a0] border border-[#00e5a0]/30 hover:bg-[#00e5a0]/30 transition-colors"
+              className="px-2 py-0.5 text-[10px] font-bold uppercase bg-[#00e5a0]/20 text-[#00e5a0] border border-[#00e5a0]/30"
             >
               {event.category}
             </Link>
@@ -121,62 +153,88 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
               return (
                 <Link 
                   href={`/markets?category=${event.category}&subCategory=${event.subCategory}`}
-                  className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/30 transition-colors flex items-center gap-1.5"
+                  className="px-2 py-0.5 text-[10px] font-bold uppercase bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center gap-1"
                 >
                   {subCatInfo?.icon?.startsWith('/') ? (
-                    <Image src={subCatInfo.icon} alt={event.subCategory} width={14} height={14} className="object-contain" />
+                    <Image src={subCatInfo.icon} alt={event.subCategory} width={12} height={12} className="object-contain" />
                   ) : (
-                    <span>{subCatInfo?.icon}</span>
+                    <span className="text-[10px]">{subCatInfo?.icon}</span>
                   )}
                   {event.subCategory}
                 </Link>
               );
             })()}
             {isLive && (
-              <span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1">
-                <Pulse size={12} weight="fill" className="animate-pulse" /> LIVE
+              <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1">
+                <Pulse size={10} weight="fill" className="animate-pulse" /> LIVE
               </span>
             )}
             {isUpcoming && (
-              <span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
+              <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-blue-500/20 text-blue-400 border border-blue-500/30">
                 UPCOMING
               </span>
             )}
-            {/* Edit Event button for creator */}
-            {user && event.creator.username === user.username && (
-              <Link
-                href={`/events/${id}/edit`}
-                className="ml-auto px-2.5 py-1 text-xs font-bold uppercase tracking-wider bg-[var(--card)] text-[var(--muted)] border border-[var(--card-border)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors flex items-center gap-1"
+            {/* Edit + Share on right */}
+            <div className="ml-auto flex items-center gap-1">
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(`${event.title} - Bet now! ${typeof window !== 'undefined' ? window.location.href : ''}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1 text-[#25D366] hover:bg-[#25D366]/20 rounded"
               >
-                <PencilSimple size={12} />
-                Edit
-              </Link>
-            )}
+                <WhatsappLogo size={16} weight="fill" />
+              </a>
+              <a
+                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(event.title)}&url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1 text-[var(--muted)] hover:bg-[var(--foreground)]/10 rounded"
+              >
+                <XLogo size={16} weight="fill" />
+              </a>
+              <a
+                href={`https://t.me/share/url?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}&text=${encodeURIComponent(event.title)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1 text-[#0088cc] hover:bg-[#0088cc]/20 rounded"
+              >
+                <TelegramLogo size={16} weight="fill" />
+              </a>
+              {user && event.creator.username === user.username && (
+                <Link
+                  href={`/events/${id}/edit`}
+                  className="px-2 py-0.5 text-[10px] font-bold uppercase bg-[var(--card)] text-[var(--muted)] border border-[var(--card-border)] hover:border-[var(--accent)] hover:text-[var(--accent)] flex items-center gap-1"
+                >
+                  <PencilSimple size={10} />
+                  Edit
+                </Link>
+              )}
+            </div>
           </div>
 
-          {/* Title & Image */}
-          <div className="flex gap-4 items-start">
+          {/* Title row with image */}
+          <div className="flex gap-3 items-start">
             {event.imageUrl && (
-              <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-[var(--card-border)]">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden flex-shrink-0 bg-[var(--card-border)]">
                 <Image
                   src={event.imageUrl}
                   alt={event.title}
-                  width={80}
-                  height={80}
+                  width={64}
+                  height={64}
                   className="w-full h-full object-cover"
                 />
               </div>
             )}
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold mb-2">{event.title}</h1>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg sm:text-xl font-bold leading-tight">{event.title}</h1>
               {event.description && (
-                <p className="text-[var(--muted)] text-sm mb-3">{event.description}</p>
+                <p className="text-[var(--muted)] text-xs sm:text-sm line-clamp-2 mt-0.5">{event.description}</p>
               )}
-              <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--muted)]">
+              {/* Stats row */}
+              <div className="flex items-center gap-3 mt-1.5 text-xs text-[var(--muted)]">
                 <span className="flex items-center gap-1">
-                  <Calendar size={14} />
+                  <Calendar size={12} />
                   {new Date(event.startsAt).toLocaleDateString(locale === "sw" ? "sw-TZ" : "en-US", {
-                    weekday: "short",
                     month: "short",
                     day: "numeric",
                     hour: "2-digit",
@@ -184,90 +242,132 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
                   })}
                 </span>
                 <span className="flex items-center gap-1">
-                  <TrendUp size={14} />
                   <img 
                     src={currency === 'USDC' ? '/usdc.png' : '/ntzs.png'} 
                     alt={currency} 
-                    className="w-3.5 h-3.5 inline-block" 
+                    className="w-3 h-3" 
                   />
                   {formatAmount(event.totalVolume)}
                 </span>
                 <span className="flex items-center gap-1">
-                  <Lightning size={14} weight="fill" className="text-yellow-400" />
+                  <Lightning size={12} weight="fill" className="text-yellow-400" />
                   {event.totalTrades}
                 </span>
-              </div>
-              
-              {/* Share Links */}
-              <div className="flex items-center gap-2 mt-3">
-                <span className="text-xs text-[var(--muted)]">{locale === "sw" ? "Shiriki:" : "Share:"}</span>
-                <a
-                  href={`https://wa.me/?text=${encodeURIComponent(`${event.title} - ${locale === "sw" ? "Piga dau sasa!" : "Bet now!"} ${typeof window !== 'undefined' ? window.location.href : ''}`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-1.5 rounded-lg hover:bg-[#25D366]/20 text-[#25D366] transition-colors"
-                  title="Share on WhatsApp"
-                >
-                  <WhatsappLogo size={18} weight="fill" />
-                </a>
-                <a
-                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${event.title} - ${locale === "sw" ? "Piga dau sasa!" : "Bet now!"}`)}&url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-1.5 rounded-lg hover:bg-[var(--foreground)]/10 text-[var(--foreground)] transition-colors"
-                  title="Share on X"
-                >
-                  <XLogo size={18} weight="fill" />
-                </a>
-                <a
-                  href={`https://t.me/share/url?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}&text=${encodeURIComponent(`${event.title} - ${locale === "sw" ? "Piga dau sasa!" : "Bet now!"}`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-1.5 rounded-lg hover:bg-[#0088cc]/20 text-[#0088cc] transition-colors"
-                  title="Share on Telegram"
-                >
-                  <TelegramLogo size={18} weight="fill" />
-                </a>
               </div>
             </div>
           </div>
         </motion.div>
 
-        {/* Markets Grid */}
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold">
-            {locale === "sw" ? "Masoko" : "Markets"} ({event.markets.length})
-          </h2>
-          <Link
-            href={`/events/${id}/add-market`}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-bold border-2 border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-[#0a0a0a] transition-colors"
-          >
-            <Plus size={14} weight="bold" />
-            Add Market
-          </Link>
-        </div>
-
-        <div className="space-y-3">
-          <AnimatePresence>
-            {event.markets.map((market, idx) => (
-              <MarketRow key={market.id} market={market} index={idx} formatAmount={formatAmount} locale={locale} />
-            ))}
-          </AnimatePresence>
-        </div>
-
-        {event.markets.length === 0 && (
-          <div className="text-center py-12 text-[var(--muted)]">
-            <p>No markets yet for this event.</p>
-            {user && event.creator.username === user.username && (
-              <Link
-                href={`/events/${id}/add-market`}
-                className="inline-block mt-4 px-4 py-2 bg-[var(--accent)] text-[#0a0a0a] font-bold border-2 border-[var(--accent)] hover:bg-[var(--accent)]/90 transition-colors"
+        {/* Tabs - Markets & Comments */}
+        <div className="mb-4">
+          <div className="flex border-b border-[var(--card-border)] mb-4">
+            {(["markets", "comments"] as const).map((tb) => (
+              <button
+                key={tb}
+                onClick={() => setActiveTab(tb)}
+                className={cn(
+                  "flex-1 py-3 text-sm font-bold uppercase tracking-wider transition-all",
+                  activeTab === tb
+                    ? "text-[var(--accent)] border-b-2 border-[var(--accent)]"
+                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                )}
               >
-                Create First Market
-              </Link>
-            )}
+                {tb === "markets" 
+                  ? `${locale === "sw" ? "Masoko" : "Markets"} (${event.markets.length})`
+                  : `${locale === "sw" ? "Maoni" : "Comments"} (${event.comments.length})`
+                }
+              </button>
+            ))}
           </div>
-        )}
+
+          {activeTab === "markets" ? (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold">
+                  {locale === "sw" ? "Masoko" : "Markets"} ({event.markets.length})
+                </h2>
+                <Link
+                  href={`/events/${id}/add-market`}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-bold border-2 border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-[#0a0a0a] transition-colors"
+                >
+                  <Plus size={14} weight="bold" />
+                  Add Market
+                </Link>
+              </div>
+
+              <div className="space-y-3">
+                <AnimatePresence>
+                  {event.markets.map((market, idx) => (
+                    <MarketRow key={market.id} market={market} index={idx} formatAmount={formatAmount} locale={locale} />
+                  ))}
+                </AnimatePresence>
+              </div>
+
+              {event.markets.length === 0 && (
+                <div className="text-center py-12 text-[var(--muted)]">
+                  <p>No markets yet for this event.</p>
+                  {user && event.creator.username === user.username && (
+                    <Link
+                      href={`/events/${id}/add-market`}
+                      className="inline-block mt-4 px-4 py-2 bg-[var(--accent)] text-[#0a0a0a] font-bold border-2 border-[var(--accent)] hover:bg-[var(--accent)]/90 transition-colors"
+                    >
+                      Create First Market
+                    </Link>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            /* Comments Tab */
+            <div className="space-y-4">
+              {user && (
+                <form onSubmit={handleComment} className="flex gap-2">
+                  <input
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder={locale === "sw" ? "Shiriki mawazo yako…" : "Share your thoughts…"}
+                    className="flex-1 px-3 py-2 bg-[var(--background)] border border-[var(--card-border)] rounded-lg text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
+                  />
+                  <button
+                    type="submit"
+                    disabled={commentLoading || !comment.trim()}
+                    className="p-2 bg-orange-500 text-white rounded-lg disabled:opacity-50 hover:bg-orange-600 transition-all"
+                  >
+                    {commentLoading ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <span className="text-sm font-bold">Post</span>
+                    )}
+                  </button>
+                </form>
+              )}
+              <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+                {event.comments.length === 0 ? (
+                  <p className="text-center text-[var(--muted)] text-sm py-8">
+                    {locale === "sw" ? "Hakuna maoni bado" : "No comments yet"}
+                  </p>
+                ) : (
+                  event.comments.map((c) => (
+                    <div key={c.id} className="flex gap-3 py-3 border-b border-[var(--card-border)] last:border-0">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--accent)]/20 flex items-center justify-center text-[var(--accent)] text-xs font-bold">
+                        {c.user.username[0].toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-bold">{c.user.username}</span>
+                          <span className="text-xs text-[var(--muted)]">
+                            {new Date(c.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="text-sm text-[var(--foreground)]">{c.body}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
       <Footer />
     </div>
