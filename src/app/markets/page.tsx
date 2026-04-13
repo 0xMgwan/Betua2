@@ -7,7 +7,7 @@ import { MarketCard } from "@/components/MarketCard";
 import { OnboardingPopup } from "@/components/OnboardingPopup";
 import { QuickBuyModal } from "@/components/QuickBuyModal";
 import { motion, AnimatePresence } from "framer-motion";
-import { MagnifyingGlass, Plus, Funnel, Stack, CaretRight, ShoppingCart, CaretDown } from "@phosphor-icons/react";
+import { MagnifyingGlass, Plus, Funnel, Stack, CaretRight, ShoppingCart, CaretDown, Lightning, Check } from "@phosphor-icons/react";
 import Link from "next/link";
 import { CATEGORIES, SPORTS_SUBCATEGORIES } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -64,16 +64,28 @@ interface EventCardProps {
 
 function EventCard({ eventId, eventTitle, markets, category, subCategory, imageUrl, index }: EventCardProps) {
   const { locale } = useLanguage();
-  const { format: formatAmount } = useCurrency();
+  const { format: formatAmount, currency } = useCurrency();
   const { addItem } = useCart();
   const [quickBuyOpen, setQuickBuyOpen] = useState(false);
   const [selectedMarket, setSelectedMarket] = useState<EventMarket | null>(null);
   const [selectedSide, setSelectedSide] = useState<string>("yes");
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | undefined>();
   const [expandedMarket, setExpandedMarket] = useState<string | null>(null);
+  const [addedToCart, setAddedToCart] = useState<string | null>(null); // Track which item was just added
 
   const totalVolume = markets.reduce((sum, m) => sum + (m.totalVolume || 0), 0);
   const totalTrades = markets.reduce((sum, m) => sum + (m._count?.trades || 0), 0);
+
+  // Format volume as K/M
+  const formatVolume = (vol: number) => {
+    if (currency === 'USDC') {
+      const usdVol = vol / 2630;
+      return usdVol >= 1000 ? `$${(usdVol / 1000).toFixed(1)}K` : `$${usdVol.toFixed(0)}`;
+    }
+    if (vol >= 1000000) return `${(vol / 1000000).toFixed(1)}M`;
+    if (vol >= 1000) return `${(vol / 1000).toFixed(1)}K`;
+    return vol.toString();
+  };
 
   const handleBuyClick = (market: EventMarket, side: string, optionIdx?: number, e?: React.MouseEvent) => {
     e?.preventDefault();
@@ -91,6 +103,10 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
     const price = optionIdx !== undefined 
       ? (market.optionPrices?.[optionIdx] || 0.25)
       : (side === "yes" ? prices.yes : prices.no);
+    
+    const cartKey = `${market.id}-${side}-${optionIdx ?? ''}`;
+    setAddedToCart(cartKey);
+    setTimeout(() => setAddedToCart(null), 1500); // Reset after 1.5s
     
     addItem({
       marketId: market.id,
@@ -221,9 +237,14 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
                                   </button>
                                   <button
                                     onClick={(e) => handleAddToCart(m, `option_${i}`, i, e)}
-                                    className="p-0.5 text-purple-400 hover:bg-purple-500/20 rounded"
+                                    className={cn(
+                                      "p-0.5 rounded transition-all",
+                                      addedToCart === `${m.id}-option_${i}-${i}`
+                                        ? "bg-green-500/30 text-green-400"
+                                        : "text-purple-400 hover:bg-purple-500/20"
+                                    )}
                                   >
-                                    <ShoppingCart size={10} />
+                                    {addedToCart === `${m.id}-option_${i}-${i}` ? <Check size={10} weight="bold" /> : <ShoppingCart size={10} />}
                                   </button>
                                 </div>
                               );
@@ -245,9 +266,14 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
                       </button>
                       <button
                         onClick={(e) => handleAddToCart(m, "yes", undefined, e)}
-                        className="p-1 bg-[#00e5a0]/10 text-[#00e5a0] hover:bg-[#00e5a0]/20 border border-[#00e5a0]/30"
+                        className={cn(
+                          "p-1 border transition-all",
+                          addedToCart === `${m.id}-yes-`
+                            ? "bg-green-500/30 text-green-400 border-green-500/30"
+                            : "bg-[#00e5a0]/10 text-[#00e5a0] hover:bg-[#00e5a0]/20 border-[#00e5a0]/30"
+                        )}
                       >
-                        <ShoppingCart size={10} />
+                        {addedToCart === `${m.id}-yes-` ? <Check size={10} weight="bold" /> : <ShoppingCart size={10} />}
                       </button>
                     </div>
                     <div className="flex-1 flex items-center gap-1">
@@ -259,9 +285,14 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
                       </button>
                       <button
                         onClick={(e) => handleAddToCart(m, "no", undefined, e)}
-                        className="p-1 bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30"
+                        className={cn(
+                          "p-1 border transition-all",
+                          addedToCart === `${m.id}-no-`
+                            ? "bg-green-500/30 text-green-400 border-green-500/30"
+                            : "bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/30"
+                        )}
                       >
-                        <ShoppingCart size={10} />
+                        {addedToCart === `${m.id}-no-` ? <Check size={10} weight="bold" /> : <ShoppingCart size={10} />}
                       </button>
                     </div>
                   </div>
@@ -280,11 +311,16 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
         <div className="px-3 py-2 border-t border-[var(--card-border)] flex items-center justify-between">
           <div className="flex items-center gap-3 text-[10px] font-mono text-[var(--muted)]">
             <span className="flex items-center gap-1">
-              <span className="text-orange-400">◎</span>
-              {totalVolume.toLocaleString()}
+              <img 
+                src={currency === 'USDC' ? '/usdc.png' : '/ntzs.png'} 
+                alt={currency} 
+                className="w-3 h-3" 
+              />
+              {formatVolume(totalVolume)}
             </span>
             <span className="flex items-center gap-1">
-              ⚡ {totalTrades}
+              <Lightning size={10} weight="fill" className="text-yellow-400" />
+              {totalTrades}
             </span>
           </div>
           <Link href={`/events/${eventId}`}>
