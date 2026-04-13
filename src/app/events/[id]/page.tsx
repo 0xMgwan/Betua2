@@ -5,11 +5,13 @@ import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { QuickBuyModal } from "@/components/QuickBuyModal";
+import { UserAvatar } from "@/components/UserAvatar";
+import { UserProfileModal } from "@/components/UserProfileModal";
 import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/store/useCurrency";
 import { useCart } from "@/store/useCart";
-import { formatTZS, formatNumber, timeUntil, cn, SPORTS_SUBCATEGORIES } from "@/lib/utils";
+import { formatTZS, formatNumber, timeUntil, timeAgo, cn, SPORTS_SUBCATEGORIES } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock, TrendUp, ChartLineUp, Lightning, CaretRight,
@@ -68,6 +70,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
   const [comment, setComment] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"markets" | "comments">("markets");
+  const [profileUsername, setProfileUsername] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/events/${id}`)
@@ -349,14 +352,24 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
                 ) : (
                   event.comments.map((c) => (
                     <div key={c.id} className="flex gap-3 py-3 border-b border-[var(--card-border)] last:border-0">
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--accent)]/20 flex items-center justify-center text-[var(--accent)] text-xs font-bold">
-                        {c.user.username[0].toUpperCase()}
+                      <div className="flex-shrink-0">
+                        <UserAvatar 
+                          username={c.user.username} 
+                          avatarUrl={c.user.avatarUrl} 
+                          size="sm" 
+                          onClick={setProfileUsername} 
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-bold">{c.user.username}</span>
-                          <span className="text-xs text-[var(--muted)]">
-                            {new Date(c.createdAt).toLocaleDateString()}
+                          <button 
+                            onClick={() => setProfileUsername(c.user.username)} 
+                            className="text-sm font-bold hover:text-[var(--accent)] transition-colors"
+                          >
+                            @{c.user.username}
+                          </button>
+                          <span className="text-xs text-[var(--muted)]" title={new Date(c.createdAt).toLocaleString()}>
+                            {timeAgo(c.createdAt)}
                           </span>
                         </div>
                         <p className="text-sm text-[var(--foreground)]">{c.body}</p>
@@ -370,6 +383,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
         </div>
       </div>
       <Footer />
+      <UserProfileModal username={profileUsername} onClose={() => setProfileUsername(null)} />
     </div>
   );
 }
