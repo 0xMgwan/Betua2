@@ -403,7 +403,7 @@ function MarketRow({
 }) {
   const { addItem } = useCart();
   const [quickBuyOpen, setQuickBuyOpen] = useState(false);
-  const [selectedSide, setSelectedSide] = useState<string>("yes");
+  const [selectedSide, setSelectedSide] = useState<string>("YES");
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | undefined>();
   
   const isMultiOption = market.options && market.options.length >= 2;
@@ -418,7 +418,7 @@ function MarketRow({
   const handleAddToCart = (side: string, optionIdx?: number) => {
     const price = optionIdx !== undefined 
       ? (market.optionPrices?.[optionIdx] || 0.25)
-      : (side === "yes" ? market.price.yes : market.price.no);
+      : (side === "YES" ? market.price.yes : market.price.no);
     
     addItem({
       marketId: market.id,
@@ -521,13 +521,13 @@ function MarketRow({
               {!isResolved && (
                 <div className="flex border-t border-[#00e5a0]/30">
                   <button
-                    onClick={() => handleBuyClick("yes")}
+                    onClick={() => handleBuyClick("YES")}
                     className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] font-bold bg-[#00e5a0]/20 text-[#00e5a0] hover:bg-[#00e5a0]/30 transition-colors"
                   >
                     BUY
                   </button>
                   <button
-                    onClick={() => handleAddToCart("yes")}
+                    onClick={() => handleAddToCart("YES")}
                     className="px-2 py-1.5 bg-[#00e5a0]/10 text-[#00e5a0] hover:bg-[#00e5a0]/20 transition-colors border-l border-[#00e5a0]/30"
                     title="Add to cart"
                   >
@@ -556,13 +556,13 @@ function MarketRow({
               {!isResolved && (
                 <div className="flex border-t border-red-500/30">
                   <button
-                    onClick={() => handleBuyClick("no")}
+                    onClick={() => handleBuyClick("NO")}
                     className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] font-bold bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
                   >
                     BUY
                   </button>
                   <button
-                    onClick={() => handleAddToCart("no")}
+                    onClick={() => handleAddToCart("NO")}
                     className="px-2 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors border-l border-red-500/30"
                     title="Add to cart"
                   >
