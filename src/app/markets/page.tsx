@@ -5,15 +5,308 @@ import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
 import { MarketCard } from "@/components/MarketCard";
 import { OnboardingPopup } from "@/components/OnboardingPopup";
-import { motion } from "framer-motion";
-import { MagnifyingGlass, Plus, Funnel } from "@phosphor-icons/react";
+import { QuickBuyModal } from "@/components/QuickBuyModal";
+import { motion, AnimatePresence } from "framer-motion";
+import { MagnifyingGlass, Plus, Funnel, Stack, CaretRight, ShoppingCart, CaretDown } from "@phosphor-icons/react";
 import Link from "next/link";
 import { CATEGORIES, SPORTS_SUBCATEGORIES } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useCurrency } from "@/store/useCurrency";
+import { useCart } from "@/store/useCart";
 import { Footer } from "@/components/Footer";
 import { ActivityTicker } from "@/components/ActivityTicker";
 import { EmailSubscribe } from "@/components/EmailSubscribe";
+
+// Event Card Component with Quick Buy
+interface EventMarket {
+  id: string;
+  title: string;
+  price?: { yes: number; no: number } | number; // Can be object or number
+  yesPool?: number;
+  noPool?: number;
+  options?: string[];
+  optionPools?: number[];
+  optionPrices?: number[];
+  totalVolume?: number;
+  status?: string;
+  resolvesAt?: string;
+  _count?: { trades: number };
+}
+
+// Helper to get yes/no prices from market
+function getMarketPrices(m: EventMarket): { yes: number; no: number } {
+  if (typeof m.price === 'object' && m.price !== null) {
+    return { yes: m.price.yes || 0.5, no: m.price.no || 0.5 };
+  }
+  if (typeof m.price === 'number' && !isNaN(m.price)) {
+    return { yes: m.price, no: 1 - m.price };
+  }
+  // Calculate from pools if available
+  if (m.yesPool && m.noPool) {
+    const total = m.yesPool + m.noPool;
+    if (total > 0) {
+      return { yes: m.noPool / total, no: m.yesPool / total };
+    }
+  }
+  return { yes: 0.5, no: 0.5 };
+}
+
+interface EventCardProps {
+  eventId: string;
+  eventTitle: string;
+  markets: EventMarket[];
+  category: string;
+  subCategory?: string;
+  imageUrl?: string;
+  index: number;
+}
+
+function EventCard({ eventId, eventTitle, markets, category, subCategory, imageUrl, index }: EventCardProps) {
+  const { locale } = useLanguage();
+  const { format: formatAmount } = useCurrency();
+  const { addItem } = useCart();
+  const [quickBuyOpen, setQuickBuyOpen] = useState(false);
+  const [selectedMarket, setSelectedMarket] = useState<EventMarket | null>(null);
+  const [selectedSide, setSelectedSide] = useState<string>("yes");
+  const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | undefined>();
+  const [expandedMarket, setExpandedMarket] = useState<string | null>(null);
+
+  const totalVolume = markets.reduce((sum, m) => sum + (m.totalVolume || 0), 0);
+  const totalTrades = markets.reduce((sum, m) => sum + (m._count?.trades || 0), 0);
+
+  const handleBuyClick = (market: EventMarket, side: string, optionIdx?: number, e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    setSelectedMarket(market);
+    setSelectedSide(side);
+    setSelectedOptionIndex(optionIdx);
+    setQuickBuyOpen(true);
+  };
+
+  const handleAddToCart = (market: EventMarket, side: string, optionIdx?: number, e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    const prices = getMarketPrices(market);
+    const price = optionIdx !== undefined 
+      ? (market.optionPrices?.[optionIdx] || 0.25)
+      : (side === "yes" ? prices.yes : prices.no);
+    
+    addItem({
+      marketId: market.id,
+      marketTitle: market.title,
+      side: optionIdx !== undefined ? (market.options?.[optionIdx] || `Option ${optionIdx}`) : side.toUpperCase(),
+      optionIndex: optionIdx,
+      amount: 1000,
+      estimatedShares: 1000 / (price || 0.5),
+      currentPrice: price,
+      category: category,
+    });
+  };
+
+  const toggleExpand = (marketId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setExpandedMarket(expandedMarket === marketId ? null : marketId);
+  };
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.05 }}
+        className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl overflow-hidden hover:border-orange-500/50 transition-all"
+      >
+        {/* Tags row */}
+        <div className="px-3 pt-3 flex flex-wrap items-center gap-1.5">
+          <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 bg-orange-500/20 text-orange-400 border border-orange-500/30">
+            <Stack size={10} weight="fill" className="inline mr-1" />
+            {markets.length} markets
+          </span>
+          <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 bg-[#00e5a0]/10 text-[#00e5a0] border border-[#00e5a0]/30">
+            {category}
+          </span>
+          {subCategory && (
+            <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+              {subCategory}
+            </span>
+          )}
+        </div>
+        
+        {/* Image + Title - Clickable to event page */}
+        <Link href={`/events/${eventId}`}>
+          <div className="p-3 flex gap-3 group">
+            {imageUrl && (
+              <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-[var(--card-border)]">
+                <Image
+                  src={imageUrl}
+                  alt={eventTitle}
+                  width={56}
+                  height={56}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            <h3 className="font-bold text-sm group-hover:text-orange-400 transition-colors line-clamp-2 flex-1">
+              {eventTitle}
+            </h3>
+          </div>
+        </Link>
+        
+        {/* Markets with Buy Options */}
+        <div className="px-3 pb-2 space-y-2">
+          {markets.slice(0, 3).map((m) => {
+            const isMultiOption = m.options && m.options.length >= 2;
+            const prices = getMarketPrices(m);
+            const yesPrice = prices.yes;
+            const noPrice = prices.no;
+            const isExpanded = expandedMarket === m.id;
+            
+            return (
+              <div key={m.id} className="bg-[var(--background)] rounded-lg p-2">
+                <Link href={`/markets/${m.id}`}>
+                  <p className="text-xs font-medium mb-2 hover:text-[var(--accent)] transition-colors truncate">
+                    {m.title}
+                  </p>
+                </Link>
+                
+                {isMultiOption ? (
+                  // Multi-option with dropdown
+                  <div>
+                    <button
+                      onClick={(e) => toggleExpand(m.id, e)}
+                      className="w-full flex items-center justify-between px-2 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded text-xs"
+                    >
+                      <span className="text-purple-400 font-mono">{m.options?.length} options</span>
+                      <CaretDown 
+                        size={12} 
+                        className={cn("text-purple-400 transition-transform", isExpanded && "rotate-180")} 
+                      />
+                    </button>
+                    <AnimatePresence>
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="pt-2 space-y-1">
+                            {m.options?.slice(0, 4).map((opt, i) => {
+                              const optPrice = m.optionPrices?.[i] || (1 / (m.options?.length || 4));
+                              return (
+                                <div key={i} className="flex items-center justify-between gap-2 text-[10px]">
+                                  <span className="truncate flex-1 text-[var(--muted)]">{opt}</span>
+                                  <span className="font-mono text-purple-400">{Math.round(optPrice * 100)}%</span>
+                                  <button
+                                    onClick={(e) => handleBuyClick(m, `option_${i}`, i, e)}
+                                    className="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 border border-purple-500/30 hover:bg-purple-500/30 font-bold"
+                                  >
+                                    BUY
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleAddToCart(m, `option_${i}`, i, e)}
+                                    className="p-0.5 text-purple-400 hover:bg-purple-500/20 rounded"
+                                  >
+                                    <ShoppingCart size={10} />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                ) : (
+                  // Binary YES/NO
+                  <div className="flex gap-1.5">
+                    <div className="flex-1 flex items-center gap-1">
+                      <button
+                        onClick={(e) => handleBuyClick(m, "yes", undefined, e)}
+                        className="flex-1 py-1 text-[10px] font-bold bg-[#00e5a0]/20 text-[#00e5a0] border border-[#00e5a0]/30 hover:bg-[#00e5a0]/30"
+                      >
+                        YES {Math.round(yesPrice * 100)}%
+                      </button>
+                      <button
+                        onClick={(e) => handleAddToCart(m, "yes", undefined, e)}
+                        className="p-1 bg-[#00e5a0]/10 text-[#00e5a0] hover:bg-[#00e5a0]/20 border border-[#00e5a0]/30"
+                      >
+                        <ShoppingCart size={10} />
+                      </button>
+                    </div>
+                    <div className="flex-1 flex items-center gap-1">
+                      <button
+                        onClick={(e) => handleBuyClick(m, "no", undefined, e)}
+                        className="flex-1 py-1 text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
+                      >
+                        NO {Math.round(noPrice * 100)}%
+                      </button>
+                      <button
+                        onClick={(e) => handleAddToCart(m, "no", undefined, e)}
+                        className="p-1 bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30"
+                      >
+                        <ShoppingCart size={10} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {markets.length > 3 && (
+            <Link href={`/events/${eventId}`} className="block text-[10px] text-orange-400 text-center hover:underline">
+              +{markets.length - 3} more markets →
+            </Link>
+          )}
+        </div>
+        
+        {/* Footer */}
+        <div className="px-3 py-2 border-t border-[var(--card-border)] flex items-center justify-between">
+          <div className="flex items-center gap-3 text-[10px] font-mono text-[var(--muted)]">
+            <span className="flex items-center gap-1">
+              <span className="text-orange-400">◎</span>
+              {totalVolume.toLocaleString()}
+            </span>
+            <span className="flex items-center gap-1">
+              ⚡ {totalTrades}
+            </span>
+          </div>
+          <Link href={`/events/${eventId}`}>
+            <CaretRight size={14} className="text-orange-400 hover:translate-x-1 transition-transform" />
+          </Link>
+        </div>
+      </motion.div>
+
+      {/* Quick Buy Modal */}
+      {selectedMarket && (() => {
+        const modalPrices = getMarketPrices(selectedMarket);
+        return (
+          <QuickBuyModal
+            isOpen={quickBuyOpen}
+            onClose={() => setQuickBuyOpen(false)}
+            market={{
+              id: selectedMarket.id,
+              title: selectedMarket.title,
+              price: modalPrices,
+              optionPrices: selectedMarket.optionPrices,
+              yesPool: selectedMarket.yesPool || 10000,
+              noPool: selectedMarket.noPool || 10000,
+              optionPools: selectedMarket.optionPools,
+              resolvesAt: selectedMarket.resolvesAt,
+              status: selectedMarket.status,
+              totalVolume: selectedMarket.totalVolume,
+            }}
+            side={selectedSide}
+            optionIndex={selectedOptionIndex}
+            displaySide={selectedOptionIndex !== undefined ? selectedMarket.options?.[selectedOptionIndex] : selectedSide.toUpperCase()}
+          />
+        );
+      })()}
+    </>
+  );
+}
 
 function MarketsContent() {
   const { t, locale } = useLanguage();
@@ -178,15 +471,89 @@ function MarketsContent() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {markets.map((m: unknown, i) => (
-              <MarketCard
-                key={(m as { id: string }).id}
-                market={m as Parameters<typeof MarketCard>[0]["market"]}
-                index={i}
-              />
-            ))}
-          </div>
+          (() => {
+            // Group markets by event
+            interface MarketWithEvent {
+              id: string;
+              eventId?: string | null;
+              event?: { id: string; title: string; imageUrl?: string; category?: string; subCategory?: string } | null;
+              title: string;
+              imageUrl?: string;
+              category: string;
+              subCategory?: string;
+              price: { yes: number; no: number };
+              yesPool?: number;
+              noPool?: number;
+              options?: string[];
+              optionPools?: number[];
+              optionPrices?: number[];
+              totalVolume: number;
+              resolvesAt: string;
+              _count?: { trades: number };
+            }
+            
+            const eventGroups = new Map<string, { event: { id: string; title: string; imageUrl?: string; category?: string; subCategory?: string }; markets: MarketWithEvent[] }>();
+            const standaloneMarkets: MarketWithEvent[] = [];
+            
+            (markets as MarketWithEvent[]).forEach((m) => {
+              if (m.eventId && m.event) {
+                if (!eventGroups.has(m.eventId)) {
+                  eventGroups.set(m.eventId, { event: m.event, markets: [] });
+                }
+                eventGroups.get(m.eventId)!.markets.push(m);
+              } else {
+                standaloneMarkets.push(m);
+              }
+            });
+
+            const allItems: Array<{ type: 'event'; eventId: string; event: { id: string; title: string; imageUrl?: string; category?: string; subCategory?: string }; markets: MarketWithEvent[] } | { type: 'market'; market: MarketWithEvent }> = [];
+            
+            // Add events first
+            eventGroups.forEach((group, eventId) => {
+              allItems.push({ type: 'event', eventId, ...group });
+            });
+            
+            // Add standalone markets
+            standaloneMarkets.forEach((m) => {
+              allItems.push({ type: 'market', market: m });
+            });
+
+            return (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {allItems.map((item, i) => {
+                  if (item.type === 'event') {
+                    const firstMarket = item.markets[0];
+                    const eventData = item.event as { id: string; title: string; imageUrl?: string; category?: string; subCategory?: string };
+                    // Use event's image/category if available, fall back to first market
+                    const eventImage = eventData.imageUrl || firstMarket.imageUrl;
+                    const eventCategory = eventData.category || firstMarket.category;
+                    const eventSubCategory = eventData.subCategory || firstMarket.subCategory;
+                    
+                    return (
+                      <EventCard
+                        key={item.eventId}
+                        eventId={item.eventId}
+                        eventTitle={eventData.title}
+                        markets={item.markets as EventMarket[]}
+                        category={eventCategory}
+                        subCategory={eventSubCategory}
+                        imageUrl={eventImage}
+                        index={i}
+                      />
+                    );
+                  } else {
+                    return (
+                      <MarketCard
+                        key={item.market.id}
+                        market={item.market as unknown as Parameters<typeof MarketCard>[0]["market"]}
+                        index={i}
+                      />
+                    );
+                  }
+                })}
+              </div>
+            );
+          })()
         )}
       </div>
       

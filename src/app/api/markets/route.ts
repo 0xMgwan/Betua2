@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
       },
       include: {
         creator: { select: { username: true, avatarUrl: true } },
+        event: { select: { id: true, title: true, imageUrl: true, category: true, subCategory: true } },
         _count: { select: { trades: true, comments: true } },
       },
       orderBy: sort === "volume" ? { totalVolume: "desc" } : { createdAt: "desc" },

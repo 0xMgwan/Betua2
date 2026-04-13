@@ -162,10 +162,10 @@ export function CartModal() {
                             {item.side}
                           </span>
                           <span className="text-[10px] sm:text-xs font-mono text-[var(--muted)]">
-                            ~{item.estimatedShares.toFixed(0)} {locale === "sw" ? "hisa" : "shares"}
+                            ~{(item.estimatedShares || 0).toFixed(0)} {locale === "sw" ? "hisa" : "shares"}
                           </span>
                           <span className="text-[10px] sm:text-xs font-mono text-[#00e5a0]">
-                            → {formatAmount(Math.round(item.estimatedShares * 1000 * 0.95))}
+                            → {formatAmount(Math.round((item.estimatedShares || 0) * 1000 * 0.95))}
                           </span>
                         </div>
                       </div>

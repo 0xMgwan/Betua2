@@ -17,6 +17,7 @@ import {
   Bank, SoccerBall, FilmSlate, CurrencyBtc, Briefcase,
   Flask, CloudSun, Crosshair, Terminal, Lightning,
   CheckSquare, ListBullets, TextT, AlignLeft, Eye, Globe,
+  Calendar, Stack,
 } from "@phosphor-icons/react";
 import { ALL_PYTH_SYMBOLS } from "@/lib/pyth";
 import { TerminalDatePicker } from "@/components/TerminalDatePicker";
@@ -51,9 +52,19 @@ export default function CreateMarketPage() {
     imageUrl: "",
   });
 
-  // Market type: "binary" (YES/NO) or "multi" (custom options)
-  const [marketType, setMarketType] = useState<"binary" | "multi">("binary");
+  // Market type: "binary" (YES/NO), "multi" (custom options), or "event" (multiple markets)
+  const [marketType, setMarketType] = useState<"binary" | "multi" | "event">("binary");
   const [customOptions, setCustomOptions] = useState<string[]>(["", ""]);
+
+  // Event markets (when marketType === "event")
+  interface EventMarket {
+    id: string;
+    title: string;
+    type: "binary" | "multi";
+    options?: string[];
+  }
+  const [eventMarkets, setEventMarkets] = useState<EventMarket[]>([]);
+  const [newEventMarket, setNewEventMarket] = useState({ title: "", type: "binary" as "binary" | "multi", options: ["", ""] });
 
   function addOption() {
     if (customOptions.length >= 10) return;
@@ -185,6 +196,12 @@ export default function CreateMarketPage() {
       return setError("Set a target price for FX & Commodities market auto-resolution");
     }
 
+    // Event validation
+    if (marketType === "event") {
+      if (!form.title) return setError(locale === "sw" ? "Weka jina la tukio" : "Enter event name");
+      if (eventMarkets.length === 0) return setError(locale === "sw" ? "Ongeza angalau soko 1" : "Add at least 1 market");
+    }
+
     setLoading(true);
     setError("");
 
@@ -197,6 +214,43 @@ export default function CreateMarketPage() {
         finalImageUrl = uploaded;
       }
 
+      // EVENT CREATION FLOW
+      if (marketType === "event") {
+        // Step 1: Create the event
+        const eventRes = await fetch("/api/events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: form.title,
+            description: form.description,
+            category: form.category,
+            subCategory: form.subCategory,
+            imageUrl: finalImageUrl,
+            startsAt: form.resolvesAt,
+          }),
+        });
+        const eventData = await eventRes.json();
+        if (!eventRes.ok) return setError(eventData.error || "Failed to create event");
+
+        const eventId = eventData.event.id;
+
+        // Step 2: Create each market under the event
+        for (const market of eventMarkets) {
+          await fetch(`/api/events/${eventId}/markets`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: market.title,
+              options: market.type === "multi" ? market.options : undefined,
+            }),
+          });
+        }
+
+        router.push(`/events/${eventId}`);
+        return;
+      }
+
+      // REGULAR MARKET CREATION FLOW
       const body: Record<string, unknown> = {
         ...form,
         imageUrl: finalImageUrl,
@@ -441,7 +495,7 @@ export default function CreateMarketPage() {
                     <ListBullets size={12} weight="bold" />
                     {locale === "sw" ? "Aina ya Soko" : "Market Type"}
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <button
                       type="button"
                       onClick={() => setMarketType("binary")}
@@ -476,7 +530,31 @@ export default function CreateMarketPage() {
                         </span>
                       </div>
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setMarketType("event")}
+                      className={cn(
+                        "py-3 text-sm font-mono font-bold transition-all",
+                        marketType === "event"
+                          ? "border-2 border-orange-500/50 bg-[var(--background)] shadow-[0_0_15px_rgba(249,115,22,0.08)]"
+                          : "border border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--foreground)]/30 bg-[var(--background)]"
+                      )}
+                    >
+                      <div className="flex items-center justify-center gap-1.5">
+                        <Stack size={14} weight="fill" className={marketType === "event" ? "text-orange-400" : ""} />
+                        <span className={marketType === "event" ? "text-orange-400" : ""}>
+                          {locale === "sw" ? "TUKIO" : "EVENT"}
+                        </span>
+                      </div>
+                    </button>
                   </div>
+                  {marketType === "event" && (
+                    <p className="text-[10px] font-mono text-orange-400/80 mt-2">
+                      {locale === "sw" 
+                        ? "Unda tukio lenye masoko mengi (mfano: Liverpool vs Fulham → nani atashinda, goli la kwanza, n.k.)"
+                        : "Create an event with multiple markets (e.g., Liverpool vs Fulham → who wins, first goal, etc.)"}
+                    </p>
+                  )}
                 </motion.div>
 
                 {/* Custom Options */}
@@ -526,6 +604,128 @@ export default function CreateMarketPage() {
                         {locale === "sw" ? "ONGEZA" : "ADD_OPTION"}
                       </button>
                     )}
+                  </motion.div>
+                )}
+
+                {/* Event Markets */}
+                {marketType === "event" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="border border-orange-500/20 bg-orange-500/5 p-4 space-y-3"
+                  >
+                    <label className="flex items-center gap-2 text-[10px] font-mono text-orange-400 mb-2 uppercase tracking-wider">
+                      <Stack size={10} weight="bold" />
+                      {locale === "sw" ? "Masoko ya Tukio" : "Event Markets"} ({eventMarkets.length})
+                    </label>
+
+                    {/* Existing markets */}
+                    {eventMarkets.map((market, i) => (
+                      <div key={market.id} className="flex items-center gap-2 p-2 bg-[var(--background)] border border-orange-500/20">
+                        <span className="w-6 h-6 flex items-center justify-center text-[10px] font-mono font-black border border-orange-500/40 text-orange-400">
+                          {i + 1}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-mono truncate">{market.title}</p>
+                          <p className="text-[10px] text-[var(--muted)]">
+                            {market.type === "binary" ? "YES/NO" : `${market.options?.length || 0} options`}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setEventMarkets(eventMarkets.filter(m => m.id !== market.id))}
+                          className="p-1.5 text-red-400 hover:bg-red-500/10 transition-colors"
+                        >
+                          <Trash size={14} />
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* Add new market form */}
+                    <div className="border border-dashed border-orange-500/30 p-3 space-y-2">
+                      <input
+                        type="text"
+                        value={newEventMarket.title}
+                        onChange={(e) => setNewEventMarket({ ...newEventMarket, title: e.target.value })}
+                        placeholder={locale === "sw" ? "Swali la soko, mfano: Je Liverpool itashinda?" : "Market question, e.g., Will Liverpool win?"}
+                        className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--card-border)] text-sm font-mono focus:outline-none focus:border-orange-500/50"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setNewEventMarket({ ...newEventMarket, type: "binary" })}
+                          className={cn(
+                            "flex-1 py-1.5 text-xs font-mono transition-all",
+                            newEventMarket.type === "binary"
+                              ? "bg-[var(--accent)]/20 border border-[var(--accent)]/50 text-[var(--accent)]"
+                              : "border border-[var(--card-border)] text-[var(--muted)]"
+                          )}
+                        >
+                          YES/NO
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNewEventMarket({ ...newEventMarket, type: "multi" })}
+                          className={cn(
+                            "flex-1 py-1.5 text-xs font-mono transition-all",
+                            newEventMarket.type === "multi"
+                              ? "bg-purple-500/20 border border-purple-500/50 text-purple-400"
+                              : "border border-[var(--card-border)] text-[var(--muted)]"
+                          )}
+                        >
+                          MULTI
+                        </button>
+                      </div>
+                      {newEventMarket.type === "multi" && (
+                        <div className="space-y-1">
+                          {newEventMarket.options.map((opt, i) => (
+                            <input
+                              key={i}
+                              type="text"
+                              value={opt}
+                              onChange={(e) => {
+                                const newOpts = [...newEventMarket.options];
+                                newOpts[i] = e.target.value;
+                                setNewEventMarket({ ...newEventMarket, options: newOpts });
+                              }}
+                              placeholder={`${locale === "sw" ? "Chaguo" : "Option"} ${i + 1}`}
+                              className="w-full px-2 py-1.5 bg-[var(--background)] border border-[var(--card-border)] text-xs font-mono"
+                            />
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => setNewEventMarket({ ...newEventMarket, options: [...newEventMarket.options, ""] })}
+                            className="text-[10px] text-purple-400 hover:underline"
+                          >
+                            + {locale === "sw" ? "Ongeza chaguo" : "Add option"}
+                          </button>
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!newEventMarket.title.trim()) return;
+                          const validOptions = newEventMarket.type === "multi" 
+                            ? newEventMarket.options.filter(o => o.trim()) 
+                            : undefined;
+                          if (newEventMarket.type === "multi" && (!validOptions || validOptions.length < 2)) return;
+                          setEventMarkets([
+                            ...eventMarkets,
+                            {
+                              id: Date.now().toString(),
+                              title: newEventMarket.title,
+                              type: newEventMarket.type,
+                              options: validOptions,
+                            },
+                          ]);
+                          setNewEventMarket({ title: "", type: "binary", options: ["", ""] });
+                        }}
+                        className="w-full py-2 border border-orange-500/50 text-orange-400 text-xs font-mono font-bold hover:bg-orange-500/10 transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <Plus size={12} weight="bold" />
+                        {locale === "sw" ? "ONGEZA SOKO" : "ADD MARKET"}
+                      </button>
+                    </div>
                   </motion.div>
                 )}
 
@@ -604,7 +804,7 @@ export default function CreateMarketPage() {
                 {/* Separator */}
                 <div className="h-px bg-gradient-to-r from-transparent via-[var(--card-border)] to-transparent" />
 
-                {/* ── QUESTION ── */}
+                {/* ── QUESTION / EVENT NAME ── */}
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -612,7 +812,9 @@ export default function CreateMarketPage() {
                 >
                   <label className="flex items-center gap-2 text-xs font-mono text-[var(--accent)] mb-2 uppercase tracking-wider">
                     <TextT size={12} weight="bold" />
-                    {t.markets.createMarket.question}
+                    {marketType === "event" 
+                      ? (locale === "sw" ? "Jina la Tukio" : "Event Name")
+                      : t.markets.createMarket.question}
                     {isFxCommodities && <span className="text-[var(--muted)] normal-case">(auto-generated)</span>}
                   </label>
                   <textarea
@@ -620,9 +822,11 @@ export default function CreateMarketPage() {
                     onChange={(e) => setForm({ ...form, title: e.target.value })}
                     className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--card-border)] text-sm font-mono focus:outline-none focus:border-[var(--accent)]/50 focus:shadow-[0_0_15px_rgba(0,229,160,0.05)] transition-all resize-none placeholder:text-[var(--muted)]/50"
                     placeholder={
-                      isFxCommodities
-                        ? "Will EUR/USD reach 1.15 by end of 2025?"
-                        : "Will CCM win the 2025 Tanzanian general election?"
+                      marketType === "event"
+                        ? (locale === "sw" ? "Liverpool vs Fulham - EPL" : "Liverpool vs Fulham - EPL")
+                        : isFxCommodities
+                          ? "Will EUR/USD reach 1.15 by end of 2025?"
+                          : "Will CCM win the 2025 Tanzanian general election?"
                     }
                     rows={2}
                     maxLength={200}
@@ -653,7 +857,7 @@ export default function CreateMarketPage() {
                   />
                 </motion.div>
 
-                {/* ── RESOLUTION DATE ── */}
+                {/* ── RESOLUTION DATE / EVENT START ── */}
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -661,7 +865,9 @@ export default function CreateMarketPage() {
                 >
                   <label className="flex items-center gap-2 text-xs font-mono text-[var(--accent)] mb-2 uppercase tracking-wider">
                     <CalendarBlank size={12} weight="bold" />
-                    {t.markets.createMarket.resolutionDate}
+                    {marketType === "event" 
+                      ? (locale === "sw" ? "Wakati wa Tukio" : "Event Start Time")
+                      : t.markets.createMarket.resolutionDate}
                   </label>
                   
                   <TerminalDatePicker
@@ -772,13 +978,25 @@ export default function CreateMarketPage() {
                   <motion.div
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="border-2 border-[var(--accent)]/30 bg-[var(--background)]"
+                    className={cn(
+                      "border-2 bg-[var(--background)]",
+                      marketType === "event" ? "border-orange-500/30" : "border-[var(--accent)]/30"
+                    )}
                   >
                     {/* Preview title bar */}
-                    <div className="bg-[var(--accent)]/5 border-b border-[var(--accent)]/20 px-3 py-2 flex items-center gap-2">
-                      <Eye size={12} weight="fill" className="text-[var(--accent)]" />
-                      <span className="text-[10px] font-mono text-[var(--accent)] uppercase tracking-wider">
+                    <div className={cn(
+                      "border-b px-3 py-2 flex items-center gap-2",
+                      marketType === "event" 
+                        ? "bg-orange-500/5 border-orange-500/20" 
+                        : "bg-[var(--accent)]/5 border-[var(--accent)]/20"
+                    )}>
+                      <Eye size={12} weight="fill" className={marketType === "event" ? "text-orange-400" : "text-[var(--accent)]"} />
+                      <span className={cn(
+                        "text-[10px] font-mono uppercase tracking-wider",
+                        marketType === "event" ? "text-orange-400" : "text-[var(--accent)]"
+                      )}>
                         {locale === "sw" ? "Hakiki" : "Preview"}
+                        {marketType === "event" && ` · ${locale === "sw" ? "Tukio" : "Event"}`}
                       </span>
                     </div>
                     <div className="p-4">
@@ -786,6 +1004,11 @@ export default function CreateMarketPage() {
                         <span className={cn("text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 border", catConfig[form.category]?.color || "text-[var(--muted)]", catConfig[form.category]?.border || "border-[var(--card-border)]")}>
                           [{form.category}]
                         </span>
+                        {marketType === "event" && (
+                          <span className="text-[10px] font-mono text-orange-400 border border-orange-500/30 px-1.5 py-0.5">
+                            {eventMarkets.length} {locale === "sw" ? "masoko" : "markets"}
+                          </span>
+                        )}
                         {isFxCommodities && (
                           <span className="text-[10px] font-mono text-orange-400 border border-orange-500/30 px-1.5 py-0.5">PYTH</span>
                         )}
@@ -796,20 +1019,51 @@ export default function CreateMarketPage() {
                             ? `Will ${pythConfig.symbol} be ${pythConfig.operator === "above" ? "≥" : "≤"} $${parseFloat(pythConfig.targetPrice).toLocaleString()} USD by resolution?`
                             : "")}
                       </p>
-                      <div className="flex flex-wrap gap-2 text-[10px] font-mono">
-                        {marketType === "multi" && customOptions.filter(o => o.trim()).length >= 2 ? (
-                          customOptions.filter(o => o.trim()).map((opt, i) => (
-                            <span key={i} className={cn("px-2 py-0.5 border", optColors[i % optColors.length])}>
-                              {opt.trim().slice(0, 15)} {Math.round(100 / customOptions.filter(o => o.trim()).length)}%
-                            </span>
-                          ))
-                        ) : (
-                          <>
-                            <span className="px-2 py-0.5 border border-[#00e5a0]/30 text-[#00e5a0]">YES 50%</span>
-                            <span className="px-2 py-0.5 border border-red-500/30 text-red-400">NO 50%</span>
-                          </>
-                        )}
-                      </div>
+
+                      {/* Event preview - show all markets */}
+                      {marketType === "event" && eventMarkets.length > 0 ? (
+                        <div className="space-y-2">
+                          {eventMarkets.map((market, i) => (
+                            <div key={market.id} className="p-2 bg-[var(--card)] border border-[var(--card-border)]">
+                              <p className="text-xs font-mono mb-1.5">{market.title}</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {market.type === "binary" ? (
+                                  <>
+                                    <span className="px-1.5 py-0.5 text-[9px] border border-[#00e5a0]/30 text-[#00e5a0]">YES 50%</span>
+                                    <span className="px-1.5 py-0.5 text-[9px] border border-red-500/30 text-red-400">NO 50%</span>
+                                  </>
+                                ) : (
+                                  market.options?.map((opt, j) => (
+                                    <span key={j} className={cn("px-1.5 py-0.5 text-[9px] border", optColors[j % optColors.length])}>
+                                      {opt.slice(0, 12)} {Math.round(100 / (market.options?.length || 1))}%
+                                    </span>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : marketType === "event" ? (
+                        <p className="text-[10px] font-mono text-[var(--muted)]">
+                          {locale === "sw" ? "Ongeza masoko hapo juu..." : "Add markets above..."}
+                        </p>
+                      ) : (
+                        /* Regular market preview */
+                        <div className="flex flex-wrap gap-2 text-[10px] font-mono">
+                          {marketType === "multi" && customOptions.filter(o => o.trim()).length >= 2 ? (
+                            customOptions.filter(o => o.trim()).map((opt, i) => (
+                              <span key={i} className={cn("px-2 py-0.5 border", optColors[i % optColors.length])}>
+                                {opt.trim().slice(0, 15)} {Math.round(100 / customOptions.filter(o => o.trim()).length)}%
+                              </span>
+                            ))
+                          ) : (
+                            <>
+                              <span className="px-2 py-0.5 border border-[#00e5a0]/30 text-[#00e5a0]">YES 50%</span>
+                              <span className="px-2 py-0.5 border border-red-500/30 text-red-400">NO 50%</span>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 )}
@@ -835,7 +1089,9 @@ export default function CreateMarketPage() {
                   ) : (
                     <>
                       <Lightning size={16} weight="fill" />
-                      {t.markets.createMarket.submit} · {CREATION_FEE_DISPLAY}
+                      {marketType === "event" 
+                        ? (locale === "sw" ? "UNDA TUKIO" : "CREATE EVENT")
+                        : t.markets.createMarket.submit} · {CREATION_FEE_DISPLAY}
                       <CaretRight size={16} weight="bold" />
                     </>
                   )}

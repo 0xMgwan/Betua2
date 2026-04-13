@@ -28,6 +28,7 @@ model User {
   preferredCurrency String?        @default("TZS")  // TZS, KES, USDC, NGN
   country         String?          @default("TZ")
   comments        Comment[]
+  eventsCreated   Event[]          @relation("EventCreator")
   marketsCreated  Market[]         @relation("MarketCreator")
   notifications   Notification[]
   positions       Position[]
@@ -37,8 +38,36 @@ model User {
   referrals       User[]           @relation("Referrals")
 }
 
+// Event container - groups multiple markets for the same real-world event
+// e.g., "Liverpool vs Fulham" event contains markets for winner, first scorer, total goals, etc.
+model Event {
+  id          String    @id @default(cuid())
+  title       String    // "Liverpool vs Fulham"
+  description String?
+  category    String    // "Sports"
+  subCategory String?   // "EPL"
+  imageUrl    String?
+  startsAt    DateTime  // When the event starts (e.g., match kickoff)
+  endsAt      DateTime? // When the event ends (optional)
+  status      String    @default("UPCOMING") // UPCOMING, LIVE, ENDED
+  creatorId   String
+  partnerId   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  markets     Market[]
+  creator     User      @relation("EventCreator", fields: [creatorId], references: [id])
+  partner     Partner?  @relation(fields: [partnerId], references: [id])
+
+  @@index([category])
+  @@index([startsAt])
+  @@index([status])
+  @@index([partnerId])
+}
+
 model Market {
   id           String     @id @default(cuid())
+  eventId      String?    // NEW: Link to parent event (null for standalone markets)
   title        String
   description  String
   category     String
@@ -61,11 +90,13 @@ model Market {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   comments     Comment[]
+  event        Event?     @relation(fields: [eventId], references: [id])
   creator      User       @relation("MarketCreator", fields: [creatorId], references: [id])
   partner      Partner?   @relation(fields: [partnerId], references: [id])
   positions    Position[]
   trades       Trade[]
 
+  @@index([eventId])
   @@index([partnerId])
 }
 
@@ -191,6 +222,7 @@ model Partner {
   passwordHash  String?
   rawApiKey     String?
   apiLogs       ApiLog[]
+  events        Event[]
   markets       Market[]
   users         PartnerUser[]
 
