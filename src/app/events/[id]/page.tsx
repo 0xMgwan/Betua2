@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock, TrendUp, ChartLineUp, Lightning, CaretRight,
   CheckCircle, XCircle, Pulse, Calendar, MapPin, ShoppingCart, Plus, PencilSimple,
+  WhatsappLogo, XLogo, TelegramLogo, ShareNetwork,
 } from "@phosphor-icons/react";
 
 interface Market {
@@ -53,7 +54,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
   const { id } = use(params);
   const { user } = useUser();
   const { t, locale } = useLanguage();
-  const { format: formatAmount } = useCurrency();
+  const { format: formatAmount, currency } = useCurrency();
   const [event, setEvent] = useState<EventData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -184,13 +185,49 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
                 </span>
                 <span className="flex items-center gap-1">
                   <TrendUp size={14} />
-                  <span className="text-orange-400">◎</span>
+                  <img 
+                    src={currency === 'USDC' ? '/usdc.png' : '/ntzs.png'} 
+                    alt={currency} 
+                    className="w-3.5 h-3.5 inline-block" 
+                  />
                   {formatAmount(event.totalVolume)}
                 </span>
                 <span className="flex items-center gap-1">
                   <Lightning size={14} weight="fill" className="text-yellow-400" />
                   {event.totalTrades}
                 </span>
+              </div>
+              
+              {/* Share Links */}
+              <div className="flex items-center gap-2 mt-3">
+                <span className="text-xs text-[var(--muted)]">{locale === "sw" ? "Shiriki:" : "Share:"}</span>
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(`${event.title} - ${locale === "sw" ? "Piga dau sasa!" : "Bet now!"} ${typeof window !== 'undefined' ? window.location.href : ''}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1.5 rounded-lg hover:bg-[#25D366]/20 text-[#25D366] transition-colors"
+                  title="Share on WhatsApp"
+                >
+                  <WhatsappLogo size={18} weight="fill" />
+                </a>
+                <a
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${event.title} - ${locale === "sw" ? "Piga dau sasa!" : "Bet now!"}`)}&url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1.5 rounded-lg hover:bg-[var(--foreground)]/10 text-[var(--foreground)] transition-colors"
+                  title="Share on X"
+                >
+                  <XLogo size={18} weight="fill" />
+                </a>
+                <a
+                  href={`https://t.me/share/url?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}&text=${encodeURIComponent(`${event.title} - ${locale === "sw" ? "Piga dau sasa!" : "Bet now!"}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1.5 rounded-lg hover:bg-[#0088cc]/20 text-[#0088cc] transition-colors"
+                  title="Share on Telegram"
+                >
+                  <TelegramLogo size={18} weight="fill" />
+                </a>
               </div>
             </div>
           </div>

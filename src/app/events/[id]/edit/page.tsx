@@ -364,9 +364,9 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
               </h3>
               <Link
                 href={`/events/${eventId}/add-market`}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm font-bold bg-[var(--accent)] text-[#0a0a0a] hover:opacity-90 transition-colors"
+                className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold bg-orange-500 text-white border-2 border-orange-400 hover:bg-orange-600 transition-colors rounded-lg shadow-lg"
               >
-                <Plus size={14} />
+                <Plus size={16} weight="bold" />
                 Add Market
               </Link>
             </div>
@@ -410,13 +410,13 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
             className={cn(
               "w-full py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2",
               loading || uploadingImage || !form.title || !form.startsAt
-                ? "bg-[var(--card-border)] text-[var(--muted)] cursor-not-allowed"
-                : "bg-[var(--accent)] text-[#0a0a0a] hover:opacity-90"
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-orange-500 text-white hover:bg-orange-600 shadow-lg"
             )}
           >
             {loading || uploadingImage ? (
               <>
-                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 {uploadingImage ? "Uploading..." : "Saving..."}
               </>
             ) : (
