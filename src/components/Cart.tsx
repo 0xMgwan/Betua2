@@ -165,7 +165,7 @@ export function CartModal() {
                             ~{(item.estimatedShares || 0).toFixed(0)} {locale === "sw" ? "hisa" : "shares"}
                           </span>
                           <span className="text-[10px] sm:text-xs font-mono text-[#00e5a0]">
-                            → {formatAmount(Math.round((item.estimatedShares || 0) * 1000 * 0.95))}
+                            → {formatAmount(Math.round((item.estimatedShares || 0) * 0.95))}
                           </span>
                         </div>
                       </div>
@@ -223,7 +223,7 @@ export function CartModal() {
                     {locale === "sw" ? "Ukishinda" : "If correct"}
                   </span>
                   <span className="text-base sm:text-lg font-bold text-[#00e5a0]">
-                    {formatAmount(Math.round(items.reduce((sum, item) => sum + item.estimatedShares * 1000 * 0.95, 0)))}
+                    {formatAmount(Math.round(items.reduce((sum, item) => sum + (item.estimatedShares || 0) * 0.95, 0)))}
                   </span>
                 </div>
 

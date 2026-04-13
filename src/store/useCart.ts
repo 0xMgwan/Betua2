@@ -53,9 +53,10 @@ export const useCart = create<CartStore>()(
           items: state.items.map((item) => {
             if (item.id === id) {
               // Recalculate estimated shares based on new amount and current price
+              // shares = amount / price (if price is 0.5, you get 2 shares per unit)
               const estimatedShares = item.currentPrice > 0 
-                ? Math.round(amount / (item.currentPrice * 1000))
-                : item.estimatedShares;
+                ? amount / item.currentPrice
+                : amount * 2; // Default to 50% price
               return { ...item, amount, estimatedShares };
             }
             return item;
