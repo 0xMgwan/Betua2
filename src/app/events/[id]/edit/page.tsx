@@ -339,9 +339,9 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
               )}
             </div>
 
-            {/* Start Date */}
+            {/* Resolution Date */}
             <div>
-              <label className="block text-sm font-medium mb-2">Event Start Time</label>
+              <label className="block text-sm font-medium mb-2">Event Resolution Time</label>
               <TerminalDatePicker
                 selected={form.startsAt ? new Date(form.startsAt) : null}
                 onChange={(date) => setForm({ ...form, startsAt: date ? date.toISOString() : "" })}

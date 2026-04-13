@@ -147,7 +147,7 @@ export default function CreateEventPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Event Start Time *</label>
+            <label className="block text-sm font-medium mb-2">Event Resolution Time *</label>
             <input
               type="datetime-local"
               value={startsAt}
