@@ -298,7 +298,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
               <div className="space-y-3">
                 <AnimatePresence>
                   {event.markets.map((market, idx) => (
-                    <MarketRow key={market.id} market={market} index={idx} formatAmount={formatAmount} locale={locale} />
+                    <MarketRow key={market.id} market={market} index={idx} formatAmount={formatAmount} locale={locale} currency={currency} />
                   ))}
                 </AnimatePresence>
               </div>
@@ -379,11 +379,13 @@ function MarketRow({
   index,
   formatAmount,
   locale,
+  currency,
 }: {
   market: Market;
   index: number;
   formatAmount: (n: number) => string;
   locale: string;
+  currency: string;
 }) {
   const { addItem } = useCart();
   const [quickBuyOpen, setQuickBuyOpen] = useState(false);
@@ -562,7 +564,11 @@ function MarketRow({
         <div className="flex items-center gap-4 mt-3 text-xs text-[var(--muted)]">
           <span className="flex items-center gap-1">
             <TrendUp size={12} />
-            <span className="text-orange-400">◎</span>
+            <img 
+              src={currency === 'USDC' ? '/usdc.png' : '/ntzs.png'} 
+              alt={currency} 
+              className="w-3 h-3" 
+            />
             {formatAmount(market.totalVolume)}
           </span>
           <span className="flex items-center gap-1">
