@@ -91,7 +91,7 @@ export async function PATCH(
   }
 
   const body = await request.json();
-  const { title, description, imageUrl, startsAt, endsAt, status } = body;
+  const { title, description, imageUrl, startsAt, endsAt, status, category, subCategory } = body;
 
   const updatedEvent = await prisma.event.update({
     where: { id },
@@ -102,6 +102,8 @@ export async function PATCH(
       ...(startsAt && { startsAt: new Date(startsAt) }),
       ...(endsAt !== undefined && { endsAt: endsAt ? new Date(endsAt) : null }),
       ...(status && { status }),
+      ...(category && { category }),
+      ...(subCategory !== undefined && { subCategory }),
     },
     include: {
       markets: true,

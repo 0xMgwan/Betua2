@@ -9,11 +9,11 @@ import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/store/useCurrency";
 import { useCart } from "@/store/useCart";
-import { formatTZS, formatNumber, timeUntil, cn } from "@/lib/utils";
+import { formatTZS, formatNumber, timeUntil, cn, SPORTS_SUBCATEGORIES } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock, TrendUp, ChartLineUp, Lightning, CaretRight,
-  CheckCircle, XCircle, Pulse, Calendar, MapPin, ShoppingCart, Plus,
+  CheckCircle, XCircle, Pulse, Calendar, MapPin, ShoppingCart, Plus, PencilSimple,
 } from "@phosphor-icons/react";
 
 interface Market {
@@ -109,14 +109,28 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
         >
           {/* Category & Status */}
           <div className="flex flex-wrap items-center gap-2 mb-3">
-            <span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider bg-[#00e5a0]/20 text-[#00e5a0] border border-[#00e5a0]/30">
+            <Link 
+              href={`/markets?category=${event.category}`}
+              className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider bg-[#00e5a0]/20 text-[#00e5a0] border border-[#00e5a0]/30 hover:bg-[#00e5a0]/30 transition-colors"
+            >
               {event.category}
-            </span>
-            {event.subCategory && (
-              <span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-                {event.subCategory}
-              </span>
-            )}
+            </Link>
+            {event.subCategory && (() => {
+              const subCatInfo = SPORTS_SUBCATEGORIES.find(s => s.value === event.subCategory);
+              return (
+                <Link 
+                  href={`/markets?category=${event.category}&subCategory=${event.subCategory}`}
+                  className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/30 transition-colors flex items-center gap-1.5"
+                >
+                  {subCatInfo?.icon?.startsWith('/') ? (
+                    <Image src={subCatInfo.icon} alt={event.subCategory} width={14} height={14} className="object-contain" />
+                  ) : (
+                    <span>{subCatInfo?.icon}</span>
+                  )}
+                  {event.subCategory}
+                </Link>
+              );
+            })()}
             {isLive && (
               <span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1">
                 <Pulse size={12} weight="fill" className="animate-pulse" /> LIVE
@@ -126,6 +140,16 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
               <span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
                 UPCOMING
               </span>
+            )}
+            {/* Edit Event button for creator */}
+            {user && event.creator.username === user.username && (
+              <Link
+                href={`/events/${id}/edit`}
+                className="ml-auto px-2.5 py-1 text-xs font-bold uppercase tracking-wider bg-[var(--card)] text-[var(--muted)] border border-[var(--card-border)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors flex items-center gap-1"
+              >
+                <PencilSimple size={12} />
+                Edit
+              </Link>
             )}
           </div>
 

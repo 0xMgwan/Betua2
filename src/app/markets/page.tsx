@@ -124,14 +124,28 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
             <Stack size={10} weight="fill" className="inline mr-1" />
             {markets.length} markets
           </span>
-          <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 bg-[#00e5a0]/10 text-[#00e5a0] border border-[#00e5a0]/30">
+          <Link 
+            href={`/markets?category=${category}`}
+            className="text-[10px] font-mono uppercase px-1.5 py-0.5 bg-[#00e5a0]/10 text-[#00e5a0] border border-[#00e5a0]/30 hover:bg-[#00e5a0]/20 transition-colors"
+          >
             {category}
-          </span>
-          {subCategory && (
-            <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-              {subCategory}
-            </span>
-          )}
+          </Link>
+          {subCategory && (() => {
+            const subCatInfo = SPORTS_SUBCATEGORIES.find(s => s.value === subCategory);
+            return (
+              <Link 
+                href={`/markets?category=${category}&subCategory=${subCategory}`}
+                className="text-[10px] font-mono uppercase px-1.5 py-0.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/20 transition-colors flex items-center gap-1"
+              >
+                {subCatInfo?.icon?.startsWith('/') ? (
+                  <Image src={subCatInfo.icon} alt={subCategory} width={12} height={12} className="object-contain" />
+                ) : (
+                  <span>{subCatInfo?.icon}</span>
+                )}
+                {subCategory}
+              </Link>
+            );
+          })()}
         </div>
         
         {/* Image + Title - Clickable to event page */}
