@@ -65,17 +65,18 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
         const res = await fetch(`/api/events/${eventId}`);
         if (res.ok) {
           const data = await res.json();
-          setEvent(data);
+          const eventData = data.event || data; // Handle both formats
+          setEvent(eventData);
           setForm({
-            title: data.title || "",
-            description: data.description || "",
-            category: data.category || "Sports",
-            subCategory: data.subCategory || "",
-            startsAt: data.startsAt ? new Date(data.startsAt).toISOString() : "",
-            imageUrl: data.imageUrl || "",
+            title: eventData.title || "",
+            description: eventData.description || "",
+            category: eventData.category || "Sports",
+            subCategory: eventData.subCategory || "",
+            startsAt: eventData.startsAt ? new Date(eventData.startsAt).toISOString() : "",
+            imageUrl: eventData.imageUrl || "",
           });
-          if (data.imageUrl) {
-            setImagePreview(data.imageUrl);
+          if (eventData.imageUrl) {
+            setImagePreview(eventData.imageUrl);
           }
         }
       } catch (err) {
@@ -119,7 +120,7 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!user || !event) return;
-    if (event.creator.username !== user.username) {
+    if (event.creator?.username && event.creator.username !== user.username) {
       setError("You can only edit your own events");
       return;
     }
@@ -186,7 +187,7 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
     );
   }
 
-  if (user?.username !== event.creator.username) {
+  if (!user || (event.creator?.username && user.username !== event.creator.username)) {
     return (
       <div className="min-h-screen">
         <Navbar />
