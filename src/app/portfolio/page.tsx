@@ -447,6 +447,34 @@ export default function PortfolioPage() {
                         const isExpired = p.market.status === "EXPIRED" || (p.market.status === "OPEN" && new Date(p.market.resolvesAt) < new Date());
                         const isOpen = p.market.status === "OPEN" && !isExpired;
                         return positionFilter === "open" ? isOpen : positionFilter === "expired" ? isExpired : isResolved;
+                      }).sort((a, b) => {
+                        // For resolved positions: sort unredeemed wins first, then redeemed, then losses
+                        if (positionFilter === "resolved") {
+                          const isMultiOptA = !!(a.market.options && a.market.options.length >= 2);
+                          const isMultiOptB = !!(b.market.options && b.market.options.length >= 2);
+                          
+                          const wonA = isMultiOptA
+                            ? !!(a.optionShares && a.market.outcome !== null && (a.optionShares[String(a.market.outcome)] || 0) > 0)
+                            : ((a.market.outcome === 1 && a.yesShares > 0) || (a.market.outcome === 0 && a.noShares > 0));
+                          const wonB = isMultiOptB
+                            ? !!(b.optionShares && b.market.outcome !== null && (b.optionShares[String(b.market.outcome)] || 0) > 0)
+                            : ((b.market.outcome === 1 && b.yesShares > 0) || (b.market.outcome === 0 && b.noShares > 0));
+                          
+                          // Unredeemed wins first (currentValue > 0 means not redeemed)
+                          const unredeemedWinA = wonA && a.currentValue > 0;
+                          const unredeemedWinB = wonB && b.currentValue > 0;
+                          
+                          if (unredeemedWinA && !unredeemedWinB) return -1;
+                          if (!unredeemedWinA && unredeemedWinB) return 1;
+                          
+                          // Then redeemed wins
+                          if (wonA && !wonB) return -1;
+                          if (!wonA && wonB) return 1;
+                          
+                          // Then by most recent
+                          return new Date(b.market.resolvesAt).getTime() - new Date(a.market.resolvesAt).getTime();
+                        }
+                        return 0;
                       }).map((p, i) => {
                         const isResolved = p.market.status === "RESOLVED";
                         const isExpired = p.market.status === "EXPIRED" || (p.market.status === "OPEN" && new Date(p.market.resolvesAt) < new Date());
