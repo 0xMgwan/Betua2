@@ -932,7 +932,12 @@ export default function PortfolioPage() {
                         {" "}
                         ({filter === "all" 
                           ? createdMarkets.length 
-                          : createdMarkets.filter(m => m.status === filter).length
+                          : createdMarkets.filter(m => {
+                              const isResolved = m.status === "RESOLVED";
+                              const isExpired = m.status === "EXPIRED" || (m.status === "OPEN" && new Date(m.resolvesAt) < new Date());
+                              const isOpen = m.status === "OPEN" && !isExpired;
+                              return filter === "OPEN" ? isOpen : filter === "EXPIRED" ? isExpired : isResolved;
+                            }).length
                         })
                       </button>
                     ))}
@@ -941,9 +946,17 @@ export default function PortfolioPage() {
                   {/* Markets list */}
                   <div className="space-y-2">
                   {(() => {
-                    const filteredMarkets = createdMarkets.filter(
-                      market => createdMarketFilter === "all" || market.status === createdMarketFilter
-                    );
+                    const filteredMarkets = createdMarkets.filter(market => {
+                      if (createdMarketFilter === "all") return true;
+                      
+                      const isResolved = market.status === "RESOLVED";
+                      const isExpired = market.status === "EXPIRED" || (market.status === "OPEN" && new Date(market.resolvesAt) < new Date());
+                      const isOpen = market.status === "OPEN" && !isExpired;
+                      
+                      return createdMarketFilter === "OPEN" ? isOpen 
+                        : createdMarketFilter === "EXPIRED" ? isExpired 
+                        : isResolved;
+                    });
 
                     if (filteredMarkets.length === 0) {
                       return (
