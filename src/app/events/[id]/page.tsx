@@ -482,7 +482,7 @@ function MarketRow({
                   </span>
                   <div className="flex items-center gap-2">
                     <span className={cn("font-mono text-xs", isWinner ? "text-[#00e5a0]" : "text-[var(--muted)]")}>
-                      {Math.round(price * 100)}%
+                      {(price * 100) % 1 === 0 ? Math.round(price * 100) : (price * 100).toFixed(1)}%
                     </span>
                     {!isResolved && (
                       <>
@@ -528,7 +528,7 @@ function MarketRow({
                   "font-bold",
                   isResolved && market.outcome === 1 ? "text-[#00e5a0]" : ""
                 )}>
-                  {Math.round(market.price.yes * 100)}%
+                  {(market.price.yes * 100) % 1 === 0 ? Math.round(market.price.yes * 100) : (market.price.yes * 100).toFixed(1)}%
                 </div>
               </div>
               {!isResolved && (
@@ -563,7 +563,7 @@ function MarketRow({
                   "font-bold",
                   isResolved && market.outcome === 0 ? "text-red-400" : ""
                 )}>
-                  {Math.round(market.price.no * 100)}%
+                  {(market.price.no * 100) % 1 === 0 ? Math.round(market.price.no * 100) : (market.price.no * 100).toFixed(1)}%
                 </div>
               </div>
               {!isResolved && (
