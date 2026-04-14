@@ -90,6 +90,13 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
       .finally(() => setLoading(false));
   }, [id]);
 
+  // Refresh event data (called after trades to update prices)
+  const refreshEvent = async () => {
+    const res = await fetch(`/api/events/${id}`);
+    const data = await res.json();
+    if (data.event) setEvent(data.event);
+  };
+
   async function handleComment(e: React.FormEvent) {
     e.preventDefault();
     if (!comment.trim() || !user || !event) return;
@@ -312,7 +319,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
               <div className="space-y-3">
                 <AnimatePresence>
                   {event.markets.map((market, idx) => (
-                    <MarketRow key={market.id} market={market} index={idx} formatAmount={formatAmount} formatVolume={formatVolume} locale={locale} currency={currency} />
+                    <MarketRow key={market.id} market={market} index={idx} formatAmount={formatAmount} formatVolume={formatVolume} locale={locale} currency={currency} onTradeSuccess={refreshEvent} />
                   ))}
                 </AnimatePresence>
               </div>
@@ -406,6 +413,7 @@ function MarketRow({
   formatVolume,
   locale,
   currency,
+  onTradeSuccess,
 }: {
   market: Market;
   index: number;
@@ -413,6 +421,7 @@ function MarketRow({
   formatVolume: (n: number) => string;
   locale: string;
   currency: string;
+  onTradeSuccess?: () => void;
 }) {
   const { addItem } = useCart();
   const [quickBuyOpen, setQuickBuyOpen] = useState(false);
@@ -635,6 +644,7 @@ function MarketRow({
         side={selectedSide}
         optionIndex={selectedOptionIndex}
         displaySide={selectedOptionIndex !== undefined ? market.options?.[selectedOptionIndex] : selectedSide.toUpperCase()}
+        onSuccess={onTradeSuccess}
       />
     </>
   );

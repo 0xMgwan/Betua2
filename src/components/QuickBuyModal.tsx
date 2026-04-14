@@ -15,6 +15,7 @@ import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
 interface QuickBuyModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
   market: {
     id: string;
     title: string;
@@ -38,7 +39,7 @@ interface QuickBuyModalProps {
 const QUICK_AMOUNTS_TZS = [500, 1000, 2000, 5000, 10000];
 const QUICK_AMOUNTS_KES = [50, 100, 200, 500, 1000];
 
-export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, displaySide }: QuickBuyModalProps) {
+export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, optionIndex, displaySide }: QuickBuyModalProps) {
   console.log('[QuickBuyModal] Received - side:', side, 'displaySide:', displaySide, 'optionIndex:', optionIndex);
   
   const { t, locale } = useLanguage();
@@ -215,6 +216,9 @@ export function QuickBuyModal({ isOpen, onClose, market, side, optionIndex, disp
       
       // Send push notification
       notifications.notifyTrade(market.title, side, Number(amount), market.id, locale);
+      
+      // Call onSuccess to refresh data
+      onSuccess?.();
       
       setTimeout(() => {
         onClose();
