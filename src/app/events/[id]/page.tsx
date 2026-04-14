@@ -72,6 +72,17 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
   const [activeTab, setActiveTab] = useState<"markets" | "comments">("markets");
   const [profileUsername, setProfileUsername] = useState<string | null>(null);
 
+  // Format volume as K/M
+  const formatVolume = (vol: number) => {
+    if (currency === 'USDC') {
+      const usdVol = vol / 2630;
+      return usdVol >= 1000 ? `$${(usdVol / 1000).toFixed(1)}K` : `$${usdVol.toFixed(0)}`;
+    }
+    if (vol >= 1000000) return `${(vol / 1000000).toFixed(1)}M`;
+    if (vol >= 1000) return `${(vol / 1000).toFixed(1)}K`;
+    return vol.toString();
+  };
+
   useEffect(() => {
     fetch(`/api/events/${id}`)
       .then((r) => r.json())
@@ -250,7 +261,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
                     alt={currency} 
                     className="w-3 h-3" 
                   />
-                  {formatAmount(event.totalVolume)}
+                  {formatVolume(event.totalVolume)}
                 </span>
                 <span className="flex items-center gap-1">
                   <Lightning size={12} weight="fill" className="text-yellow-400" />
@@ -301,7 +312,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
               <div className="space-y-3">
                 <AnimatePresence>
                   {event.markets.map((market, idx) => (
-                    <MarketRow key={market.id} market={market} index={idx} formatAmount={formatAmount} locale={locale} currency={currency} />
+                    <MarketRow key={market.id} market={market} index={idx} formatAmount={formatAmount} formatVolume={formatVolume} locale={locale} currency={currency} />
                   ))}
                 </AnimatePresence>
               </div>
@@ -392,12 +403,14 @@ function MarketRow({
   market,
   index,
   formatAmount,
+  formatVolume,
   locale,
   currency,
 }: {
   market: Market;
   index: number;
   formatAmount: (n: number) => string;
+  formatVolume: (n: number) => string;
   locale: string;
   currency: string;
 }) {
@@ -583,7 +596,7 @@ function MarketRow({
               alt={currency} 
               className="w-3 h-3" 
             />
-            {formatAmount(market.totalVolume)}
+            {formatVolume(market.totalVolume)}
           </span>
           <span className="flex items-center gap-1">
             <Lightning size={12} weight="fill" className="text-yellow-400" />
