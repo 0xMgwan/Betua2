@@ -7,6 +7,7 @@ import { Footer } from "@/components/Footer";
 import { QuickBuyModal } from "@/components/QuickBuyModal";
 import { UserAvatar } from "@/components/UserAvatar";
 import { UserProfileModal } from "@/components/UserProfileModal";
+import { EventChart } from "@/components/EventChart";
 import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/store/useCurrency";
@@ -278,6 +279,11 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
             </div>
           </div>
         </motion.div>
+
+        {/* Event Overview Chart */}
+        {event.markets.length > 0 && (
+          <EventChart markets={event.markets} className="mb-6" />
+        )}
 
         {/* Tabs - Markets & Comments */}
         <div className="mb-4">
