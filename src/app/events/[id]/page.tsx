@@ -8,6 +8,7 @@ import { QuickBuyModal } from "@/components/QuickBuyModal";
 import { UserAvatar } from "@/components/UserAvatar";
 import { UserProfileModal } from "@/components/UserProfileModal";
 import { EventChart } from "@/components/EventChart";
+import { ActivityTicker } from "@/components/ActivityTicker";
 import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/store/useCurrency";
@@ -155,6 +156,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
   return (
     <div className="min-h-screen">
       <Navbar />
+      <ActivityTicker />
       <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
         {/* Event Header - Compact */}
         <motion.div
