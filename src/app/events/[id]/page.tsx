@@ -8,7 +8,6 @@ import { QuickBuyModal } from "@/components/QuickBuyModal";
 import { UserAvatar } from "@/components/UserAvatar";
 import { UserProfileModal } from "@/components/UserProfileModal";
 import { EventChart } from "@/components/EventChart";
-import { ActivityTicker } from "@/components/ActivityTicker";
 import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/store/useCurrency";
@@ -156,8 +155,9 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
   return (
     <div className="min-h-screen">
       <Navbar />
-      <ActivityTicker />
-      <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
+      <div className="max-w-6xl mx-auto px-4 py-4 sm:py-6">
+        <div className="flex gap-6">
+          <div className="flex-1 min-w-0">
         {/* Event Header - Compact */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -407,9 +407,110 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
             </div>
           )}
         </div>
+          </div>
+          {/* Activity Sidebar */}
+          <div className="hidden xl:block w-72 flex-shrink-0">
+            <div className="sticky top-4">
+              <ActivitySidebar />
+            </div>
+          </div>
+        </div>
       </div>
       <Footer />
       <UserProfileModal username={profileUsername} onClose={() => setProfileUsername(null)} />
+    </div>
+  );
+}
+
+function ActivitySidebar() {
+  const { locale } = useLanguage();
+  const [activities, setActivities] = useState<{
+    id: string; type: string; timestamp: string;
+    user: { username: string };
+    market: { id: string; title: string };
+    details: { side?: string; amountTzs?: number; outcome?: string };
+  }[]>([]);
+
+  useEffect(() => {
+    const fetch_ = async () => {
+      try {
+        const res = await fetch("/api/activity?limit=20");
+        if (res.ok) { const d = await res.json(); setActivities(d.activities || []); }
+      } catch { /* */ }
+    };
+    fetch_();
+    const i = setInterval(fetch_, 30000);
+    return () => clearInterval(i);
+  }, []);
+
+  const fmtAmt = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : `${n}`;
+
+  return (
+    <div className="border border-[var(--card-border)] bg-[var(--card)] overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--card-border)] bg-[var(--background)]">
+        <div className="flex gap-1">
+          <div className="w-1.5 h-1.5 rounded-full bg-red-500/70" />
+          <div className="w-1.5 h-1.5 rounded-full bg-yellow-500/70" />
+          <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]/70" />
+        </div>
+        <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-[var(--accent)]">LIVE ACTIVITY</span>
+        <span className="w-1.5 h-1.5 bg-[var(--accent)] animate-pulse ml-auto" />
+      </div>
+
+      {/* Feed */}
+      <div className="divide-y divide-[var(--card-border)] max-h-[calc(100vh-120px)] overflow-y-auto">
+        {activities.length === 0 ? (
+          <div className="px-3 py-6 text-center text-[10px] font-mono text-[var(--muted)]">
+            <span className="animate-pulse">▌</span> Awaiting activity...
+          </div>
+        ) : (
+          activities.map((a) => {
+            const isTrade = a.type === "TRADE";
+            const isBuy = isTrade && !a.details.side?.startsWith("SELL");
+            const side = a.details.side || "";
+            return (
+              <Link key={a.id} href={`/markets/${a.market.id}`}>
+                <div className="px-3 py-2 hover:bg-[var(--background)] transition-colors">
+                  <div className="flex items-center gap-1.5 font-mono">
+                    <span className="text-[9px] text-[var(--muted)]">&gt;</span>
+                    <span className="text-[10px] font-medium text-[var(--foreground)] truncate">
+                      @{a.user.username}
+                    </span>
+                    {isTrade ? (
+                      <>
+                        <span className={cn("text-[9px] font-bold shrink-0", isBuy ? "text-[var(--accent)]" : "text-red-400")}>
+                          {isBuy ? (locale === "sw" ? "alinunua" : "bought") : (locale === "sw" ? "aliuza" : "sold")}
+                        </span>
+                        <span className={cn(
+                          "px-1 border text-[8px] font-bold shrink-0",
+                          side === "YES" ? "border-[#00e5a0]/30 text-[#00e5a0]"
+                            : side === "NO" ? "border-red-500/30 text-red-400"
+                            : "border-[#00b4d8]/30 text-[#00b4d8]"
+                        )}>
+                          {side}
+                        </span>
+                        {a.details.amountTzs && (
+                          <span className={cn("text-[9px] font-bold ml-auto shrink-0", isBuy ? "text-[var(--accent)]" : "text-red-400")}>
+                            {isBuy ? "+" : "-"}{fmtAmt(a.details.amountTzs)}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-[9px] text-purple-400 font-bold shrink-0 truncate">
+                        resolved → {a.details.outcome}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[9px] text-[var(--muted)] truncate mt-0.5 pl-3 font-mono">
+                    {a.market.title}
+                  </div>
+                </div>
+              </Link>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }
