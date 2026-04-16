@@ -8,6 +8,7 @@ import { QuickBuyModal } from "@/components/QuickBuyModal";
 import { UserAvatar } from "@/components/UserAvatar";
 import { UserProfileModal } from "@/components/UserProfileModal";
 import { EventChart } from "@/components/EventChart";
+import { ActivityTicker } from "@/components/ActivityTicker";
 import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/store/useCurrency";
@@ -155,9 +156,9 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
   return (
     <div className="min-h-screen">
       <Navbar />
-      {/* Mobile activity bar - top, same as markets page */}
+      {/* Mobile activity ticker - top, same as markets page */}
       <div className="xl:hidden">
-        <ActivitySidebar marketIds={event.markets.map(m => m.id)} compact />
+        <ActivityTicker marketIds={event.markets.map(m => m.id)} />
       </div>
       <div className="max-w-6xl mx-auto px-4 py-4 sm:py-6">
         <div className="flex gap-6">
@@ -418,6 +419,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
               <ActivitySidebar marketIds={event.markets.map(m => m.id)} />
             </div>
           </div>
+          
         </div>
       </div>
       <Footer />

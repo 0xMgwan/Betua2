@@ -26,7 +26,7 @@ function formatTZS(amount: number): string {
   return amount.toLocaleString();
 }
 
-export function ActivityTicker({ className }: { className?: string }) {
+export function ActivityTicker({ className, marketIds }: { className?: string; marketIds?: string[] }) {
   const { locale } = useLanguage();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -35,11 +35,20 @@ export function ActivityTicker({ className }: { className?: string }) {
   useEffect(() => {
     const fetchActivity = async () => {
       try {
-        const res = await fetch("/api/activity?limit=10");
-        if (res.ok) {
-          const data = await res.json();
-          setActivities(data.activities || []);
+        let fetched: Activity[] = [];
+        if (marketIds && marketIds.length > 0) {
+          const results = await Promise.all(
+            marketIds.map(id => fetch(`/api/activity?marketId=${id}&limit=10`).then(r => r.ok ? r.json() : { activities: [] }))
+          );
+          const merged = results.flatMap((d: { activities: Activity[] }) => d.activities || []);
+          merged.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+          const seen = new Set<string>();
+          fetched = merged.filter(a => { if (seen.has(a.id)) return false; seen.add(a.id); return true; }).slice(0, 10);
+        } else {
+          const res = await fetch("/api/activity?limit=10");
+          if (res.ok) { const data = await res.json(); fetched = data.activities || []; }
         }
+        setActivities(fetched);
       } catch (err) {
         console.error("Failed to fetch activity:", err);
       } finally {
@@ -50,7 +59,7 @@ export function ActivityTicker({ className }: { className?: string }) {
     fetchActivity();
     const interval = setInterval(fetchActivity, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [marketIds?.join(',')]);
 
   // Rotate through activities
   useEffect(() => {
