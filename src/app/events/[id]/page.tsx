@@ -155,6 +155,10 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
   return (
     <div className="min-h-screen">
       <Navbar />
+      {/* Mobile activity bar - top, same as markets page */}
+      <div className="xl:hidden">
+        <ActivitySidebar marketIds={event.markets.map(m => m.id)} compact />
+      </div>
       <div className="max-w-6xl mx-auto px-4 py-4 sm:py-6">
         <div className="flex gap-6">
           <div className="flex-1 min-w-0">
@@ -407,10 +411,6 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
             </div>
           )}
         </div>
-          </div>
-          {/* Mobile activity bar - above footer */}
-          <div className="xl:hidden mt-6">
-            <ActivitySidebar marketIds={event.markets.map(m => m.id)} compact />
           </div>
           {/* Desktop sidebar */}
           <div className="hidden xl:block w-64 flex-shrink-0">
