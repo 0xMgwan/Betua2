@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock, TrendUp, ChartLineUp, Lightning, CaretRight,
   CheckCircle, XCircle, Pulse, Calendar, MapPin, ShoppingCart, Plus, PencilSimple,
-  WhatsappLogo, XLogo, TelegramLogo, ShareNetwork,
+  WhatsappLogo, XLogo, TelegramLogo, ShareNetwork, Check,
 } from "@phosphor-icons/react";
 
 interface Comment {
@@ -433,6 +433,7 @@ function MarketRow({
   const [quickBuyOpen, setQuickBuyOpen] = useState(false);
   const [selectedSide, setSelectedSide] = useState<string>("YES");
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | undefined>();
+  const [addedToCart, setAddedToCart] = useState<string | null>(null);
   
   const isMultiOption = market.options && market.options.length >= 2;
   const isResolved = market.status === "RESOLVED";
@@ -448,6 +449,10 @@ function MarketRow({
       ? (market.optionPrices?.[optionIdx] || 0.25)
       : (side === "YES" ? market.price.yes : market.price.no);
     
+    const cartKey = optionIdx !== undefined ? `${market.id}-option_${optionIdx}` : `${market.id}-${side}`;
+    setAddedToCart(cartKey);
+    setTimeout(() => setAddedToCart(null), 1500);
+
     addItem({
       marketId: market.id,
       marketTitle: market.title,
@@ -509,10 +514,15 @@ function MarketRow({
                         </button>
                         <button
                           onClick={() => handleAddToCart(`option_${i}`, i)}
-                          className="p-1 text-purple-400 hover:bg-purple-500/20 transition-colors rounded"
+                          className={cn(
+                            "p-1 rounded transition-all",
+                            addedToCart === `${market.id}-option_${i}`
+                              ? "bg-green-500/30 text-green-400"
+                              : "text-purple-400 hover:bg-purple-500/20"
+                          )}
                           title="Add to cart"
                         >
-                          <ShoppingCart size={12} />
+                          {addedToCart === `${market.id}-option_${i}` ? <Check size={12} weight="bold" /> : <ShoppingCart size={12} />}
                         </button>
                       </>
                     )}
@@ -556,10 +566,15 @@ function MarketRow({
                   </button>
                   <button
                     onClick={() => handleAddToCart("YES")}
-                    className="px-2 py-1.5 bg-[#00e5a0]/10 text-[#00e5a0] hover:bg-[#00e5a0]/20 transition-colors border-l border-[#00e5a0]/30"
+                    className={cn(
+                      "px-2 py-1.5 transition-all border-l",
+                      addedToCart === `${market.id}-YES`
+                        ? "bg-green-500/30 text-green-400 border-green-500/30"
+                        : "bg-[#00e5a0]/10 text-[#00e5a0] hover:bg-[#00e5a0]/20 border-[#00e5a0]/30"
+                    )}
                     title="Add to cart"
                   >
-                    <ShoppingCart size={10} />
+                    {addedToCart === `${market.id}-YES` ? <Check size={10} weight="bold" /> : <ShoppingCart size={10} />}
                   </button>
                 </div>
               )}
@@ -591,10 +606,15 @@ function MarketRow({
                   </button>
                   <button
                     onClick={() => handleAddToCart("NO")}
-                    className="px-2 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors border-l border-red-500/30"
+                    className={cn(
+                      "px-2 py-1.5 transition-all border-l",
+                      addedToCart === `${market.id}-NO`
+                        ? "bg-green-500/30 text-green-400 border-green-500/30"
+                        : "bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/30"
+                    )}
                     title="Add to cart"
                   >
-                    <ShoppingCart size={10} />
+                    {addedToCart === `${market.id}-NO` ? <Check size={10} weight="bold" /> : <ShoppingCart size={10} />}
                   </button>
                 </div>
               )}
