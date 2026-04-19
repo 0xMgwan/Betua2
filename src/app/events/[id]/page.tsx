@@ -18,8 +18,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock, TrendUp, ChartLineUp, Lightning, CaretRight,
   CheckCircle, XCircle, Pulse, Calendar, MapPin, ShoppingCart, Plus, PencilSimple,
-  WhatsappLogo, XLogo, TelegramLogo, ShareNetwork, Check,
+  WhatsappLogo, XLogo, TelegramLogo, ShareNetwork, Check, QrCode,
 } from "@phosphor-icons/react";
+import { QRCodeModal } from "@/components/QRCodeModal";
 
 interface Comment {
   id: string;
@@ -69,6 +70,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
   const { format: formatAmount, currency } = useCurrency();
   const [event, setEvent] = useState<EventData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showQR, setShowQR] = useState(false);
   const [comment, setComment] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"markets" | "comments">("markets");
@@ -229,6 +231,13 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
               >
                 <TelegramLogo size={16} weight="fill" />
               </a>
+              <button
+                onClick={() => setShowQR(true)}
+                className="p-1 text-[var(--muted)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded transition-all"
+                title="Get QR code"
+              >
+                <QrCode size={16} weight="bold" />
+              </button>
               {user && event.creator.username === user.username && (
                 <Link
                   href={`/events/${id}/edit`}
@@ -424,6 +433,12 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
       </div>
       <Footer />
       <UserProfileModal username={profileUsername} onClose={() => setProfileUsername(null)} />
+      <QRCodeModal
+        isOpen={showQR}
+        onClose={() => setShowQR(false)}
+        url={`${typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL || ''}/events/${id}`}
+        title={event?.title || ''}
+      />
     </div>
   );
 }

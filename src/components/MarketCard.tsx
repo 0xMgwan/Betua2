@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Clock, TrendUp, UsersThree, Lightning, Timer, ChartLineUp, ShoppingCart, Check } from "@phosphor-icons/react";
+import { Clock, TrendUp, UsersThree, Lightning, Timer, ChartLineUp, ShoppingCart, Check, QrCode } from "@phosphor-icons/react";
 import { formatTZS, formatNumber, timeUntil, SPORTS_SUBCATEGORIES } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -13,6 +13,7 @@ import { useUser } from "@/store/useUser";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
 import { useCurrency } from "@/store/useCurrency";
 import { QuickBuyModal } from "./QuickBuyModal";
+import { QRCodeModal } from "./QRCodeModal";
 import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
 
 interface Market {
@@ -69,6 +70,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
     return `TSh ${priceTzs.toLocaleString()}`;
   };
   const [imageError, setImageError] = useState(false);
+  const [showQR, setShowQR] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [selectedSide, setSelectedSide] = useState<string | null>(null);
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
@@ -404,14 +406,31 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                   </span>
                 )}
               </div>
-              {market.creator && (
-                <span className="text-[var(--muted)]/70 truncate max-w-[80px]">
-                  @{market.creator.username}
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {market.creator && (
+                  <span className="text-[var(--muted)]/70 truncate max-w-[80px]">
+                    @{market.creator.username}
+                  </span>
+                )}
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowQR(true); }}
+                  className="p-1 rounded text-[var(--muted)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 transition-all"
+                  title="Get QR code"
+                >
+                  <QrCode size={13} weight="bold" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
+
+      {/* QR Code Modal */}
+      <QRCodeModal
+        isOpen={showQR}
+        onClose={() => setShowQR(false)}
+        url={`${typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL || ''}/markets/${market.id}`}
+        title={market.title}
+      />
 
       {/* Quick Buy Modal */}
       {showBuyModal && selectedSide && (
