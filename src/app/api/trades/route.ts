@@ -356,10 +356,10 @@ export async function POST(req: NextRequest) {
         prisma.user.update({
           where: { id: session.userId },
           data: userCurrency === 'USDC'
-            ? { balanceUsdc: { decrement: amountUsdc } }
-            : userCurrency === 'KES' 
-              ? { balanceKes: { decrement: amountKes || convertCurrency(amountTzs, 'TZS', 'KES') } }
-              : { balanceTzs: { decrement: amountTzs } },
+            ? { balanceUsdc: { decrement: amountUsdc }, preferredCurrency: 'USDC' }
+            : userCurrency === 'KES'
+              ? { balanceKes: { decrement: amountKes || convertCurrency(amountTzs, 'TZS', 'KES') }, preferredCurrency: 'KES' }
+              : { balanceTzs: { decrement: amountTzs }, preferredCurrency: 'TZS' },
         }),
       ]);
     } catch (dbErr) {

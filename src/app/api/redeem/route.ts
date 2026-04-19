@@ -249,8 +249,8 @@ export async function POST(req: NextRequest) {
     ]);
 
     // Notification: redemption successful
-    const payoutDisplay = preferredCurrency === 'USDC' 
-      ? `$${(payoutUsdc / 1_000_000).toFixed(2)}`
+    const payoutDisplay = preferredCurrency === 'USDC'
+      ? `$${payoutUsdc.toFixed(2)}`
       : `${payoutInUserCurrency.toLocaleString()} ${preferredCurrency}`;
     createNotification({
       userId: session.userId,
