@@ -6,8 +6,9 @@ import { Navbar } from "@/components/Navbar";
 import { MarketCard } from "@/components/MarketCard";
 import { OnboardingPopup } from "@/components/OnboardingPopup";
 import { QuickBuyModal } from "@/components/QuickBuyModal";
+import { QRCodeModal } from "@/components/QRCodeModal";
 import { motion, AnimatePresence } from "framer-motion";
-import { MagnifyingGlass, Plus, Funnel, Stack, CaretRight, ShoppingCart, CaretDown, Lightning, Check } from "@phosphor-icons/react";
+import { MagnifyingGlass, Plus, Funnel, Stack, CaretRight, ShoppingCart, CaretDown, Lightning, Check, QrCode } from "@phosphor-icons/react";
 import Link from "next/link";
 import { CATEGORIES, SPORTS_SUBCATEGORIES } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -72,6 +73,7 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | undefined>();
   const [expandedMarket, setExpandedMarket] = useState<string | null>(null);
   const [addedToCart, setAddedToCart] = useState<string | null>(null); // Track which item was just added
+  const [showQR, setShowQR] = useState(false);
 
   const totalVolume = markets.reduce((sum, m) => sum + (m.totalVolume || 0), 0);
   const totalTrades = markets.reduce((sum, m) => sum + (m._count?.trades || 0), 0);
@@ -323,11 +325,28 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
               {totalTrades}
             </span>
           </div>
-          <Link href={`/events/${eventId}`}>
-            <CaretRight size={14} className="text-orange-400 hover:translate-x-1 transition-transform" />
-          </Link>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowQR(true); }}
+              className="p-1 rounded text-[var(--muted)] hover:text-orange-400 hover:bg-orange-400/10 transition-all"
+              title="Get QR code"
+            >
+              <QrCode size={13} weight="bold" />
+            </button>
+            <Link href={`/events/${eventId}`}>
+              <CaretRight size={14} className="text-orange-400 hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
         </div>
       </motion.div>
+
+      {/* QR Code Modal */}
+      <QRCodeModal
+        isOpen={showQR}
+        onClose={() => setShowQR(false)}
+        url={`${typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL || ''}/events/${eventId}`}
+        title={eventTitle}
+      />
 
       {/* Quick Buy Modal */}
       {selectedMarket && (() => {

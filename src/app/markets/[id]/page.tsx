@@ -14,10 +14,11 @@ import {
   Clock, TrendUp, UsersThree, ChatCircle,
   CheckCircle, XCircle, Warning, PaperPlaneTilt,
   ShareNetwork, WhatsappLogo, XLogo, FacebookLogo, TelegramLogo,
-  PencilSimple,
+  PencilSimple, QrCode,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { ShareCardButton } from "@/components/ShareCard";
+import { QRCodeModal } from "@/components/QRCodeModal";
 import { UserAvatar } from "@/components/UserAvatar";
 import { UserProfileModal } from "@/components/UserProfileModal";
 import { Footer } from "@/components/Footer";
@@ -88,6 +89,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   const [profileUsername, setProfileUsername] = useState<string | null>(null);
 
   // Edit state
+  const [showQR, setShowQR] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState({
     title: "",
@@ -627,6 +629,13 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   >
                     <TelegramLogo size={14} weight="fill" />
                   </a>
+                  <button
+                    onClick={() => setShowQR(true)}
+                    className="p-1 text-[var(--muted)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded transition-all"
+                    title="Get QR code"
+                  >
+                    <QrCode size={14} weight="bold" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -1620,6 +1629,12 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
       </AnimatePresence>
       <Footer />
       <UserProfileModal username={profileUsername} onClose={() => setProfileUsername(null)} />
+      <QRCodeModal
+        isOpen={showQR}
+        onClose={() => setShowQR(false)}
+        url={`${typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL || ''}/markets/${id}`}
+        title={market?.title || ''}
+      />
     </div>
   );
 }
