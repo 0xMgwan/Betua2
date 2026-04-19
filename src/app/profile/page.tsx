@@ -253,6 +253,42 @@ export default function ProfilePage() {
                   <span className="font-bold">{s.value}</span>
                 </div>
               ))}
+
+              {/* Creator rewards row — only shown if user has earned something */}
+              {creatorRewards && creatorRewards.totalEarned > 0 && (
+                <>
+                  <div className="border-t border-[var(--card-border)] pt-3 mt-1">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Star size={12} weight="fill" className="text-yellow-400" />
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-yellow-400">
+                        {locale === "sw" ? "Zawadi za Muundaji" : "Creator Rewards"}
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-[var(--muted)]">{locale === "sw" ? "Masoko Yaliyoundwa" : "Markets Created"}</span>
+                        <span className="font-bold">{creatorRewards.marketsCreated}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-[var(--muted)]">{locale === "sw" ? "Yaliotatuliwa" : "Resolved"}</span>
+                        <span className="font-bold">{creatorRewards.marketsResolved}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-[var(--muted)]">{locale === "sw" ? "Jumla Iliyoingizwa" : "Total Earned"}</span>
+                        <span className="font-bold text-yellow-400">{format(creatorRewards.totalEarned)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* If user has created markets but not earned yet, show count */}
+              {creatorRewards && creatorRewards.marketsCreated > 0 && creatorRewards.totalEarned === 0 && (
+                <div className="flex items-center justify-between text-sm border-t border-[var(--card-border)] pt-3">
+                  <span className="text-[var(--muted)]">{locale === "sw" ? "Masoko Yaliyoundwa" : "Markets Created"}</span>
+                  <span className="font-bold">{creatorRewards.marketsCreated}</span>
+                </div>
+              )}
             </div>
 
             {/* Wallet address */}
