@@ -79,7 +79,7 @@ export function QRCodeModal({ isOpen, onClose, url, title }: QRCodeModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-mono font-bold text-sm uppercase tracking-wider text-[var(--accent)]">
-            Scan to Bet
+            Scan to Trade
           </h2>
           <button
             onClick={onClose}
