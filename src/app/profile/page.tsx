@@ -7,7 +7,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS } from "@/lib/utils";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { FloppyDisk, ChartBar, TrendUp, Medal, Upload, X, Copy, Check, Users, Gift, ArrowsLeftRight } from "@phosphor-icons/react";
+import { FloppyDisk, ChartBar, TrendUp, Medal, Upload, X, Copy, Check, Users, Gift, ArrowsLeftRight, Storefront, Star, Lightning } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/store/useCurrency";
 
@@ -26,6 +26,26 @@ interface ReferralData {
   referrals: { username: string; joinedAt: string }[];
 }
 
+interface CreatorMarket {
+  id: string;
+  title: string;
+  status: string;
+  totalVolume: number;
+  category: string;
+  createdAt: string;
+  resolvesAt: string;
+  creatorFeeEarned: number | null;
+  feeEarnedAt: string | null;
+}
+
+interface CreatorRewardsData {
+  totalEarned: number;
+  marketsCreated: number;
+  marketsResolved: number;
+  rewardCount: number;
+  markets: CreatorMarket[];
+}
+
 export default function ProfilePage() {
   const { user, setUser, fetchUser } = useUser();
   const { t, locale } = useLanguage();
@@ -41,6 +61,7 @@ export default function ProfilePage() {
   const [stats, setStats] = useState<Stats>({ totalTrades: 0, totalVolume: 0, openPositions: 0, marketsCreated: 0 });
   const [referral, setReferral] = useState<ReferralData | null>(null);
   const [refCopied, setRefCopied] = useState(false);
+  const [creatorRewards, setCreatorRewards] = useState<CreatorRewardsData | null>(null);
   const { currency: displayCurrency, toggleCurrency, format } = useCurrency();
 
   useEffect(() => {
@@ -68,6 +89,10 @@ export default function ProfilePage() {
     fetch("/api/referral")
       .then((r) => r.json())
       .then((d) => { if (d.referralCode) setReferral(d); })
+      .catch(() => {});
+    fetch("/api/creator-rewards")
+      .then((r) => r.json())
+      .then((d) => { if (d.marketsCreated !== undefined) setCreatorRewards(d); })
       .catch(() => {});
   }, []);
 
@@ -158,6 +183,7 @@ export default function ProfilePage() {
     { label: t.profile.volumeTraded, value: format(stats.totalVolume), icon: TrendUp },
     { label: t.portfolio.openPositions, value: stats.openPositions, icon: Medal },
     { label: t.profile.balance, value: format(user.balanceTzs || 0), icon: Medal },
+    { label: locale === "sw" ? "Masoko Yaliyoundwa" : "Markets Created", value: creatorRewards?.marketsCreated ?? 0, icon: Storefront },
   ];
 
   return (
@@ -338,6 +364,93 @@ export default function ProfilePage() {
                           <span className="text-[var(--muted)] text-[10px]">
                             {new Date(r.joinedAt).toLocaleDateString()}
                           </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {/* Creator Rewards */}
+            {creatorRewards && creatorRewards.marketsCreated > 0 && (
+              <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl p-4 space-y-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Star size={16} weight="fill" className="text-yellow-400" />
+                  <h3 className="font-bold text-sm">{locale === "sw" ? "Zawadi za Muundaji" : "Creator Rewards"}</h3>
+                </div>
+                <p className="text-xs text-[var(--muted)]">
+                  {locale === "sw"
+                    ? "Pata 1% ya sauti ya kila soko unaloundwa linalotatuliwa."
+                    : "Earn 1% of volume on every market you create when it resolves."}
+                </p>
+
+                {/* Summary stats */}
+                <div className="grid grid-cols-3 gap-1.5">
+                  <div className="bg-[var(--background)] rounded-lg p-2 text-center">
+                    <div className="flex items-center justify-center gap-0.5 mb-0.5">
+                      <Storefront size={10} className="text-[var(--accent)]" />
+                    </div>
+                    <p className="font-bold text-sm">{creatorRewards.marketsCreated}</p>
+                    <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Yaliyoundwa" : "Created"}</p>
+                  </div>
+                  <div className="bg-[var(--background)] rounded-lg p-2 text-center">
+                    <div className="flex items-center justify-center gap-0.5 mb-0.5">
+                      <Lightning size={10} weight="fill" className="text-blue-400" />
+                    </div>
+                    <p className="font-bold text-sm">{creatorRewards.marketsResolved}</p>
+                    <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Yaliotatuliwa" : "Resolved"}</p>
+                  </div>
+                  <div className="bg-[var(--background)] rounded-lg p-2 text-center">
+                    <div className="flex items-center justify-center gap-0.5 mb-0.5">
+                      <TrendUp size={10} className="text-yellow-400" />
+                    </div>
+                    <p className="font-bold text-sm text-yellow-400">{creatorRewards.rewardCount}</p>
+                    <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Malipo" : "Payouts"}</p>
+                  </div>
+                </div>
+
+                {/* Total earned */}
+                <div className="flex items-center justify-between bg-yellow-400/10 border border-yellow-400/20 rounded-lg px-3 py-2">
+                  <span className="text-xs text-[var(--muted)]">{locale === "sw" ? "Jumla Iliyoingizwa" : "Total Earned"}</span>
+                  <span className="font-bold text-sm text-yellow-400">
+                    {format(creatorRewards.totalEarned)}
+                  </span>
+                </div>
+
+                {/* Market breakdown */}
+                {creatorRewards.markets.length > 0 && (
+                  <div className="pt-1 border-t border-[var(--card-border)]">
+                    <p className="text-[10px] text-[var(--muted)] mb-1.5 font-medium uppercase tracking-wider">
+                      {locale === "sw" ? "Masoko Yako" : "Your Markets"}
+                    </p>
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                      {creatorRewards.markets.map((m) => (
+                        <div
+                          key={m.id}
+                          className="flex items-center justify-between gap-2 text-xs"
+                        >
+                          <a
+                            href={`/markets/${m.id}`}
+                            className="truncate flex-1 hover:text-[var(--accent)] transition-colors"
+                            title={m.title}
+                          >
+                            {m.title}
+                          </a>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {m.status === "RESOLVED" ? (
+                              m.creatorFeeEarned !== null ? (
+                                <span className="font-mono text-yellow-400 text-[10px]">
+                                  +{format(m.creatorFeeEarned)}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-[var(--muted)]">—</span>
+                              )
+                            ) : (
+                              <span className="text-[10px] px-1 py-0.5 bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20">
+                                OPEN
+                              </span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
