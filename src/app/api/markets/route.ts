@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { title, description, category, subCategory, resolvesAt, imageUrl, pythSymbol, pythTargetPrice, pythOperator, options } = body;
+    const { title, description, category, subCategory, resolvesAt, imageUrl, pythSymbol, pythTargetPrice, pythOperator, options, initialProb, optionProbs } = body;
 
     // For crypto markets with Pyth config, title can be auto-generated
     const effectiveTitle = title ||
@@ -214,11 +214,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Maximum 10 options allowed" }, { status: 400 });
     }
 
-    // For multi-option: create equal pools per option
+    // For multi-option: seed pools from optionProbs if provided, else equal
+    // Formula: pool_i = POOL_PER_OPTION / (n * p_i)
+    // This satisfies getMultiOptionPrices: P(i) = (1/pool_i) / Σ(1/pool_j) = p_i
     const POOL_PER_OPTION = 5000;
+    const n = isMultiOption ? options.length : 0;
+    const hasValidProbs = isMultiOption
+      && Array.isArray(optionProbs)
+      && optionProbs.length === options.length
+      && optionProbs.every((p: number) => p > 0)
+      && Math.abs(optionProbs.reduce((s: number, p: number) => s + p, 0) - 100) <= 1;
+
     const optionPools = isMultiOption
-      ? options.map(() => POOL_PER_OPTION)
+      ? hasValidProbs
+        ? options.map((_: unknown, i: number) => Math.round(POOL_PER_OPTION / (n * (optionProbs[i] / 100))))
+        : options.map(() => POOL_PER_OPTION)
       : null;
+
+    // Binary pool seeding from initial probability
+    // P(YES) = noPool / (yesPool + noPool) = p  →  noPool = p * L, yesPool = (1-p) * L
+    const TOTAL_LIQUIDITY = 200000;
+    const p = (!isMultiOption && initialProb != null)
+      ? Math.max(1, Math.min(99, Number(initialProb))) / 100
+      : 0.5;
+    const initYesPool = Math.round((1 - p) * TOTAL_LIQUIDITY);
+    const initNoPool  = Math.round(p * TOTAL_LIQUIDITY);
 
     // Create market and optionally record fee transaction (skip for admins)
     const market = isAdmin
@@ -238,9 +258,9 @@ export async function POST(req: NextRequest) {
             })(),
             creatorId: session.userId,
             currency: marketCurrency,
-            yesPool: isMultiOption ? 0 : 100000,
-            noPool: isMultiOption ? 0 : 100000,
-            liquidity: isMultiOption ? POOL_PER_OPTION * options.length : 200000,
+            yesPool: isMultiOption ? 0 : initYesPool,
+            noPool: isMultiOption ? 0 : initNoPool,
+            liquidity: isMultiOption ? POOL_PER_OPTION * options.length : TOTAL_LIQUIDITY,
             options: isMultiOption ? options : undefined,
             optionPools: optionPools || undefined,
           },
@@ -265,7 +285,7 @@ export async function POST(req: NextRequest) {
                 currency: marketCurrency,
                 yesPool: isMultiOption ? 0 : 100000,
                 noPool: isMultiOption ? 0 : 100000,
-                liquidity: isMultiOption ? POOL_PER_OPTION * options.length : 200000,
+                liquidity: isMultiOption ? POOL_PER_OPTION * options.length : TOTAL_LIQUIDITY,
                 options: isMultiOption ? options : undefined,
                 optionPools: optionPools || undefined,
               },
