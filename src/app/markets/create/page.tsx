@@ -52,9 +52,14 @@ export default function CreateMarketPage() {
     imageUrl: "",
   });
 
+  // Initial probability for binary markets (1–99, default 50)
+  const [initialProb, setInitialProb] = useState(50);
+
   // Market type: "binary" (YES/NO), "multi" (custom options), or "event" (multiple markets)
   const [marketType, setMarketType] = useState<"binary" | "multi" | "event">("binary");
   const [customOptions, setCustomOptions] = useState<string[]>(["", ""]);
+  // Per-option probabilities for multi-option markets (must sum to 100)
+  const [optionProbs, setOptionProbs] = useState<number[]>([50, 50]);
 
   // Event markets (when marketType === "event")
   interface EventMarket {
@@ -66,20 +71,38 @@ export default function CreateMarketPage() {
   const [eventMarkets, setEventMarkets] = useState<EventMarket[]>([]);
   const [newEventMarket, setNewEventMarket] = useState({ title: "", type: "binary" as "binary" | "multi", options: ["", ""] });
 
+  const optionProbsTotal = optionProbs.reduce((s, p) => s + p, 0);
+
   function addOption() {
     if (customOptions.length >= 10) return;
     setCustomOptions([...customOptions, ""]);
+    setOptionProbs([...optionProbs, 0]);
   }
 
   function removeOption(index: number) {
     if (customOptions.length <= 2) return;
     setCustomOptions(customOptions.filter((_, i) => i !== index));
+    setOptionProbs(optionProbs.filter((_, i) => i !== index));
   }
 
   function updateOption(index: number, value: string) {
     const updated = [...customOptions];
     updated[index] = value;
     setCustomOptions(updated);
+  }
+
+  function updateOptionProb(index: number, value: number) {
+    const updated = [...optionProbs];
+    updated[index] = Math.max(1, Math.min(98, value));
+    setOptionProbs(updated);
+  }
+
+  // Distribute remaining probability evenly across all options
+  function distributeEvenly() {
+    const n = customOptions.length;
+    const base = Math.floor(100 / n);
+    const remainder = 100 - base * n;
+    setOptionProbs(optionProbs.map((_, i) => base + (i < remainder ? 1 : 0)));
   }
 
   // Pyth-specific state (only for FX & Commodities markets)
@@ -257,6 +280,11 @@ export default function CreateMarketPage() {
         resolvesAt: form.resolvesAt || defaultDate,
       };
 
+      // Add initial probability for binary markets
+      if (marketType === "binary") {
+        body.initialProb = initialProb;
+      }
+
       // Add custom options for multi-option markets
       if (marketType === "multi") {
         const validOptions = customOptions.map(o => o.trim()).filter(Boolean);
@@ -264,7 +292,15 @@ export default function CreateMarketPage() {
           setLoading(false);
           return setError(locale === "sw" ? "Ongeza angalau chaguzi 2" : "Add at least 2 options");
         }
+        // Validate probabilities sum to 100
+        const probsForValid = optionProbs.slice(0, validOptions.length);
+        const probSum = probsForValid.reduce((s, p) => s + p, 0);
+        if (Math.abs(probSum - 100) > 1) {
+          setLoading(false);
+          return setError(locale === "sw" ? `Uwezekano lazima uwe 100% (sasa: ${probSum}%)` : `Probabilities must sum to 100% (currently: ${probSum}%)`);
+        }
         body.options = validOptions;
+        body.optionProbs = probsForValid;
       }
 
       // Add Pyth data for FX & Commodities markets
@@ -557,6 +593,66 @@ export default function CreateMarketPage() {
                   )}
                 </motion.div>
 
+                {/* ── INITIAL PROBABILITY (binary only) ── */}
+                {marketType === "binary" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="border border-[var(--accent)]/20 bg-[var(--accent)]/5 p-4 space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <label className="flex items-center gap-2 text-[10px] font-mono text-[var(--accent)] uppercase tracking-wider">
+                        <ChartLine size={10} weight="bold" />
+                        {locale === "sw" ? "Uwezekano wa Awali" : "Starting Probability"}
+                      </label>
+                      <span className="text-[10px] font-mono text-[var(--muted)]">
+                        {locale === "sw" ? "YES → gawio kubwa" : "YES → bigger payout"}
+                      </span>
+                    </div>
+
+                    {/* Slider */}
+                    <div className="space-y-2">
+                      <input
+                        type="range"
+                        min={1}
+                        max={99}
+                        value={initialProb}
+                        onChange={(e) => setInitialProb(Number(e.target.value))}
+                        className="w-full accent-[#00e5a0] h-1 cursor-pointer"
+                      />
+                      <div className="flex justify-between text-[9px] font-mono text-[var(--muted)]">
+                        <span>1%</span>
+                        <span>50%</span>
+                        <span>99%</span>
+                      </div>
+                    </div>
+
+                    {/* Multiplier display */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="p-2 bg-[var(--background)] border border-[#00e5a0]/20">
+                        <p className="text-[10px] font-mono text-[var(--muted)] mb-0.5">YES</p>
+                        <p className="text-sm font-mono font-bold text-[#00e5a0]">{initialProb}%</p>
+                        <p className="text-[10px] font-mono text-[var(--accent)]">
+                          ×{(100 / initialProb).toFixed(1)}x {locale === "sw" ? "kurudi" : "return"}
+                        </p>
+                      </div>
+                      <div className="p-2 bg-[var(--background)] border border-red-500/20">
+                        <p className="text-[10px] font-mono text-[var(--muted)] mb-0.5">NO</p>
+                        <p className="text-sm font-mono font-bold text-red-400">{100 - initialProb}%</p>
+                        <p className="text-[10px] font-mono text-red-400">
+                          ×{(100 / (100 - initialProb)).toFixed(1)}x {locale === "sw" ? "kurudi" : "return"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <p className="text-[9px] font-mono text-[var(--muted)]">
+                      {locale === "sw"
+                        ? "Uwezekano mdogo → gawio kubwa. Mfano: YES 10% = ×10x kwa washindi."
+                        : "Lower probability → bigger payout. E.g., YES 10% = ×10x for winners."}
+                    </p>
+                  </motion.div>
+                )}
+
                 {/* Custom Options */}
                 {marketType === "multi" && (
                   <motion.div
@@ -564,10 +660,36 @@ export default function CreateMarketPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="border border-purple-500/20 bg-purple-500/5 p-4 space-y-2"
                   >
-                    <label className="flex items-center gap-2 text-[10px] font-mono text-purple-400 mb-2 uppercase tracking-wider">
-                      <ListBullets size={10} weight="bold" />
-                      {locale === "sw" ? "Chaguzi" : "Options"} ({customOptions.filter(o => o.trim()).length}/{customOptions.length})
-                    </label>
+                    {/* Header row */}
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="flex items-center gap-2 text-[10px] font-mono text-purple-400 uppercase tracking-wider">
+                        <ListBullets size={10} weight="bold" />
+                        {locale === "sw" ? "Chaguzi" : "Options"} ({customOptions.filter(o => o.trim()).length}/{customOptions.length})
+                      </label>
+                      <button
+                        type="button"
+                        onClick={distributeEvenly}
+                        className="text-[9px] font-mono text-purple-400 border border-purple-500/30 px-2 py-0.5 hover:bg-purple-500/10 transition-colors"
+                      >
+                        {locale === "sw" ? "GAWANYA SAWA" : "DISTRIBUTE_EVENLY"}
+                      </button>
+                    </div>
+
+                    {/* Column headers */}
+                    <div className="flex items-center gap-2 px-1 mb-1">
+                      <span className="w-7 shrink-0" />
+                      <span className="flex-1 text-[9px] font-mono text-[var(--muted)] uppercase">
+                        {locale === "sw" ? "Chaguo" : "Option"}
+                      </span>
+                      <span className="w-20 text-[9px] font-mono text-[var(--muted)] uppercase text-center">
+                        {locale === "sw" ? "% Nafasi" : "% Chance"}
+                      </span>
+                      <span className="w-14 text-[9px] font-mono text-[var(--muted)] uppercase text-center">
+                        {locale === "sw" ? "Gawio" : "Payout"}
+                      </span>
+                      <span className="w-7 shrink-0" />
+                    </div>
+
                     {customOptions.map((opt, i) => (
                       <motion.div
                         key={i}
@@ -576,7 +698,7 @@ export default function CreateMarketPage() {
                         transition={{ delay: i * 0.04 }}
                         className="flex items-center gap-2"
                       >
-                        <span className={cn("w-7 h-7 flex items-center justify-center text-[10px] font-mono font-black border", optColors[i % optColors.length])}>
+                        <span className={cn("w-7 h-7 shrink-0 flex items-center justify-center text-[10px] font-mono font-black border", optColors[i % optColors.length])}>
                           {String.fromCharCode(65 + i)}
                         </span>
                         <input
@@ -587,13 +709,44 @@ export default function CreateMarketPage() {
                           className="flex-1 px-3 py-2 bg-[var(--background)] border border-[var(--card-border)] text-sm font-mono focus:outline-none focus:border-purple-500/50 transition-colors"
                           maxLength={100}
                         />
+                        {/* Probability input */}
+                        <div className="w-20 flex items-center gap-1">
+                          <input
+                            type="number"
+                            min={1}
+                            max={98}
+                            value={optionProbs[i] ?? 0}
+                            onChange={(e) => updateOptionProb(i, Number(e.target.value))}
+                            className="w-full px-2 py-2 bg-[var(--background)] border border-purple-500/30 text-sm font-mono text-purple-300 focus:outline-none focus:border-purple-500/60 transition-colors text-center"
+                          />
+                          <span className="text-[10px] font-mono text-[var(--muted)]">%</span>
+                        </div>
+                        {/* Implied multiplier */}
+                        <span className="w-14 text-[10px] font-mono text-center text-purple-400">
+                          ×{optionProbs[i] > 0 ? (100 / optionProbs[i]).toFixed(1) : "∞"}x
+                        </span>
                         {customOptions.length > 2 && (
-                          <button type="button" onClick={() => removeOption(i)} className="p-1.5 text-red-400 hover:bg-red-500/10 transition-colors">
+                          <button type="button" onClick={() => removeOption(i)} className="w-7 p-1.5 text-red-400 hover:bg-red-500/10 transition-colors">
                             <Trash size={14} />
                           </button>
                         )}
+                        {customOptions.length <= 2 && <span className="w-7" />}
                       </motion.div>
                     ))}
+
+                    {/* Probability total */}
+                    <div className={cn(
+                      "flex items-center justify-between px-2 py-1.5 border text-[10px] font-mono mt-1",
+                      Math.abs(optionProbsTotal - 100) <= 1
+                        ? "border-[var(--accent)]/30 bg-[var(--accent)]/5 text-[var(--accent)]"
+                        : "border-red-500/30 bg-red-500/5 text-red-400"
+                    )}>
+                      <span>{locale === "sw" ? "Jumla ya Uwezekano" : "Total Probability"}</span>
+                      <span className="font-bold">
+                        {optionProbsTotal}% {Math.abs(optionProbsTotal - 100) <= 1 ? "✓" : `(${optionProbsTotal > 100 ? "−" : "+"}${Math.abs(100 - optionProbsTotal)} needed)`}
+                      </span>
+                    </div>
+
                     {customOptions.length < 10 && (
                       <button
                         type="button"
@@ -1031,6 +1184,7 @@ export default function CreateMarketPage() {
                                   <>
                                     <span className="px-1.5 py-0.5 text-[9px] border border-[#00e5a0]/30 text-[#00e5a0]">YES 50%</span>
                                     <span className="px-1.5 py-0.5 text-[9px] border border-red-500/30 text-red-400">NO 50%</span>
+                                    <span className="px-1.5 py-0.5 text-[9px] border border-[var(--card-border)] text-[var(--muted)]">equal odds</span>
                                   </>
                                 ) : (
                                   market.options?.map((opt, j) => (
@@ -1051,15 +1205,21 @@ export default function CreateMarketPage() {
                         /* Regular market preview */
                         <div className="flex flex-wrap gap-2 text-[10px] font-mono">
                           {marketType === "multi" && customOptions.filter(o => o.trim()).length >= 2 ? (
-                            customOptions.filter(o => o.trim()).map((opt, i) => (
-                              <span key={i} className={cn("px-2 py-0.5 border", optColors[i % optColors.length])}>
-                                {opt.trim().slice(0, 15)} {Math.round(100 / customOptions.filter(o => o.trim()).length)}%
-                              </span>
-                            ))
+                            <>
+                              {customOptions.map((opt, i) => opt.trim() ? (
+                                <span key={i} className={cn("px-2 py-0.5 border", optColors[i % optColors.length])}>
+                                  {opt.trim().slice(0, 15)} {optionProbs[i] ?? 0}% · ×{optionProbs[i] > 0 ? (100 / optionProbs[i]).toFixed(1) : "∞"}x
+                                </span>
+                              ) : null)}
+                            </>
                           ) : (
                             <>
-                              <span className="px-2 py-0.5 border border-[#00e5a0]/30 text-[#00e5a0]">YES 50%</span>
-                              <span className="px-2 py-0.5 border border-red-500/30 text-red-400">NO 50%</span>
+                              <span className="px-2 py-0.5 border border-[#00e5a0]/30 text-[#00e5a0]">
+                                YES {initialProb}% · ×{(100 / initialProb).toFixed(1)}x
+                              </span>
+                              <span className="px-2 py-0.5 border border-red-500/30 text-red-400">
+                                NO {100 - initialProb}% · ×{(100 / (100 - initialProb)).toFixed(1)}x
+                              </span>
                             </>
                           )}
                         </div>
