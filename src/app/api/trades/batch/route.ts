@@ -190,7 +190,8 @@ export async function POST(req: NextRequest) {
         }
 
         // Update market pools
-        const marketUpdateData: Record<string, unknown> = {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const marketUpdateData: any = {
           totalVolume: { increment: trade.amountTzs },
         };
         if (isMultiOption && newOptionPools) {
@@ -222,7 +223,8 @@ export async function POST(req: NextRequest) {
         });
 
         if (existingPosition) {
-          const updateData: Record<string, unknown> = {};
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const updateData: any = {};
           if (isMultiOption && trade.optionIndex !== undefined) {
             const optShares = (existingPosition.optionShares as Record<string, number>) || {};
             optShares[String(trade.optionIndex)] = (optShares[String(trade.optionIndex)] || 0) + Math.round(sharesOut);
@@ -233,7 +235,8 @@ export async function POST(req: NextRequest) {
           }
           await tx.position.update({ where: { id: existingPosition.id }, data: updateData });
         } else {
-          const createData: Record<string, unknown> = {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const createData: any = {
             userId: user.id,
             marketId: trade.marketId,
             yesShares: 0,
@@ -258,7 +261,8 @@ export async function POST(req: NextRequest) {
       }
 
       // Deduct balance and save preferredCurrency
-      const userUpdate: Record<string, unknown> = { preferredCurrency: userCurrency };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const userUpdate: any = { preferredCurrency: userCurrency };
       if (userCurrency === "USDC") {
         userUpdate.balanceUsdc = { decrement: totalAmountUsdc };
       } else if (userCurrency === "KES") {
