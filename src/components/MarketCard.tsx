@@ -145,11 +145,11 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
     
     if (isMultiOption && optionIndex !== undefined && market.optionPrices) {
       currentPrice = market.optionPrices[optionIndex];
-      // Estimate shares (simplified - actual calculation happens at checkout)
-      estimatedShares = Math.round(defaultAmount / (currentPrice * 1000));
+      // Estimate shares: amount / price (price is 0–1 decimal)
+      estimatedShares = currentPrice > 0 ? Math.round(defaultAmount / currentPrice) : defaultAmount * 2;
     } else {
       currentPrice = side === "YES" ? market.price.yes : market.price.no;
-      estimatedShares = Math.round(defaultAmount / (currentPrice * 1000));
+      estimatedShares = currentPrice > 0 ? Math.round(defaultAmount / currentPrice) : defaultAmount * 2;
     }
     
     addItem({
