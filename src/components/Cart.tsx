@@ -40,12 +40,18 @@ export function CartModal() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   
-  // Currency detection for Kenya/Tanzania users
-  const userCurrency: Currency = getUserCurrency(user?.country, user?.phone);
+  // Currency detection: preferredCurrency takes priority, then country/phone
+  const userCurrency: Currency =
+    (user?.preferredCurrency as Currency) ||
+    getUserCurrency(user?.country, user?.phone);
   const isKenya = userCurrency === 'KES';
+  const isUsdc = userCurrency === 'USDC';
   
   // Format amount in user's currency
   const formatAmount = (amountTzs: number) => {
+    if (isUsdc) {
+      return `$${(amountTzs / 2630).toFixed(2)}`;
+    }
     if (isKenya) {
       const amountKes = convertCurrency(amountTzs, 'TZS', 'KES');
       return `KSh ${amountKes.toLocaleString()}`;
@@ -67,8 +73,11 @@ export function CartModal() {
           trades: items.map((item) => ({
             marketId: item.marketId,
             side: item.side,
-            // Convert KES to TZS for API if user is Kenyan
-            ...(isKenya ? { amountKes: item.amount } : { amountTzs: item.amount }),
+            ...(isUsdc
+              ? { amountUsdc: item.amount / 2630 } // item.amount is in TZS, convert to USDC
+              : isKenya
+                ? { amountKes: item.amount }
+                : { amountTzs: item.amount }),
             optionIndex: item.optionIndex,
           })),
         }),
