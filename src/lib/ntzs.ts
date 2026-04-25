@@ -211,28 +211,34 @@ export const ntzs = {
         const lines = decoder.decode(value).split('\n');
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
-          try {
-            const update = JSON.parse(line.slice(6));
-            console.log(`[nTZS Swap] ${update.status}: ${update.message}`, update.txHash || '');
-            lastUpdate = update;
 
-            if (update.status === 'FILLED') {
-              return { txHash: update.txHash, status: 'FILLED' };
-            }
-            if (update.status === 'FAILED') {
-              throw new Error(`Swap failed: ${update.message}`);
-            }
-          } catch (parseErr) {
-            // Ignore parse errors for incomplete lines
+          // Only catch JSON parse errors — not business-logic throws
+          let update: { status: string; message: string; txHash?: string };
+          try {
+            update = JSON.parse(line.slice(6));
+          } catch {
+            continue; // incomplete/malformed SSE line — skip
+          }
+
+          console.log(`[nTZS Swap] ${update.status}: ${update.message}`, update.txHash || '');
+          lastUpdate = update;
+
+          if (update.status === 'FILLED') {
+            return { txHash: update.txHash ?? '', status: 'FILLED' };
+          }
+          if (update.status === 'FAILED') {
+            throw new Error(`Swap failed: ${update.message}`);
           }
         }
       }
 
-      // Stream ended without FILLED status
+      // Stream ended without a terminal status
       if (lastUpdate?.status === 'FILLED') {
         return { txHash: lastUpdate.txHash || '', status: 'FILLED' };
       }
-      throw new Error(`Swap stream ended unexpectedly. Last status: ${lastUpdate?.status || 'unknown'}`);
+      throw new Error(
+        `Swap failed: ${lastUpdate?.message || `unexpected stream end (last status: ${lastUpdate?.status ?? 'none'})`}`
+      );
     },
   },
 };
