@@ -144,7 +144,12 @@ export async function POST(req: NextRequest) {
       } catch (err) {
         const detail = err instanceof Error ? err.message : String(err);
         console.error("[BatchTrade] USDC swap failed:", detail);
-        return NextResponse.json({ error: `USDC payment failed: ${detail}` }, { status: 500 });
+        const isLiquidity = detail.toLowerCase().includes("liquidity");
+        return NextResponse.json({
+          error: isLiquidity
+            ? "USDC swap temporarily unavailable due to low liquidity. Please try a smaller amount or use TZS."
+            : `USDC payment failed: ${detail}`,
+        }, { status: 500 });
       }
     }
 

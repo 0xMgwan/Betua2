@@ -198,8 +198,11 @@ export async function POST(req: NextRequest) {
       } catch (err) {
         const detail = err instanceof Error ? err.message : String(err);
         console.error("[Trade] USDC swap/transfer failed:", detail);
+        const isLiquidity = detail.toLowerCase().includes("liquidity");
         return NextResponse.json({
-          error: `USDC payment failed: ${detail}`,
+          error: isLiquidity
+            ? "USDC swap temporarily unavailable due to low liquidity. Please try a smaller amount or use TZS."
+            : `USDC payment failed: ${detail}`,
         }, { status: 500 });
       }
     } else if (userCurrency === 'KES' && user.ntzsUserId) {
