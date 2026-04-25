@@ -196,9 +196,10 @@ export async function POST(req: NextRequest) {
           amountTzs = transferAmount;
         }
       } catch (err) {
-        console.error("[Trade] USDC swap/transfer failed:", err);
+        const detail = err instanceof Error ? err.message : String(err);
+        console.error("[Trade] USDC swap/transfer failed:", detail);
         return NextResponse.json({
-          error: "USDC payment failed. Please try again.",
+          error: `USDC payment failed: ${detail}`,
         }, { status: 500 });
       }
     } else if (userCurrency === 'KES' && user.ntzsUserId) {

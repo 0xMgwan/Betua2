@@ -142,9 +142,9 @@ export async function POST(req: NextRequest) {
         });
         console.log(`[BatchTrade] USDC swap completed: ${swapResult.txHash}`);
       } catch (err) {
-        console.error("[BatchTrade] USDC swap failed:", err);
-        const msg = err instanceof NtzsApiError ? err.message : "USDC payment failed. Please try again.";
-        return NextResponse.json({ error: msg }, { status: 500 });
+        const detail = err instanceof Error ? err.message : String(err);
+        console.error("[BatchTrade] USDC swap failed:", detail);
+        return NextResponse.json({ error: `USDC payment failed: ${detail}` }, { status: 500 });
       }
     }
 
