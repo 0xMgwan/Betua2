@@ -1268,27 +1268,43 @@ export default function CreateMarketPage() {
                         className="w-full bg-[var(--card)] border border-[var(--card-border)] rounded-lg pl-12 pr-4 py-2.5 font-mono text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
                       />
                     </div>
-                    {seedAmount && parseInt(seedAmount) >= 1000 && (
-                      <div className="text-xs text-[var(--muted)] space-y-1 font-mono border-t border-[var(--card-border)] pt-2">
-                        <div className="flex justify-between">
-                          <span>{locale === "sw" ? "Unaweka" : "You deposit"}</span>
-                          <span className="text-[var(--foreground)]">TSh {parseInt(seedAmount).toLocaleString()}</span>
+                    {seedAmount && parseInt(seedAmount) >= 1000 && (() => {
+                      const seed = parseInt(seedAmount);
+                      const validOpts = customOptions.filter(o => o.trim());
+                      const isMulti = marketType === "multi" && validOpts.length >= 2;
+                      const nOptions = isMulti ? validOpts.length : 2;
+                      // Fraction creator gets back: only winning side (1/nOptions) pays out, after fees
+                      const winFraction = 1 / nOptions;
+                      const estReturn = Math.round(seed * winFraction * 0.9025);
+                      const splitLabel = isMulti
+                        ? validOpts.map((o, i) => `${Math.round(100 / nOptions)}% ${o.trim().slice(0, 8) || `Opt ${i+1}`}`).join(' · ')
+                        : "50% YES · 50% NO";
+                      return (
+                        <div className="text-xs text-[var(--muted)] space-y-1 font-mono border-t border-[var(--card-border)] pt-2">
+                          <div className="flex justify-between">
+                            <span>{locale === "sw" ? "Unaweka" : "You deposit"}</span>
+                            <span className="text-[var(--foreground)]">TSh {seed.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>{locale === "sw" ? "Imegawanywa" : "Split"}</span>
+                            <span className="text-right max-w-[55%] truncate">{splitLabel}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>{locale === "sw" ? "Fees (entry + azimio)" : "Fees (entry + settlement)"}</span>
+                            <span>5% + 5% = ~9.75%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>{locale === "sw" ? "Unapata baada ya azimio (wastani)" : "Avg return at resolution"}</span>
+                            <span className="text-[#00e5a0]">~TSh {estReturn.toLocaleString()} <span className="text-[var(--muted)]">({Math.round(winFraction * 90.25)}% of seed)</span></span>
+                          </div>
+                          <p className="text-[var(--muted)] text-[10px] pt-1">
+                            {locale === "sw"
+                              ? "Upande unaoshinda unarudi (baada ya ada); upande unaopoteza unagawanywa kwa washindi"
+                              : "Winning side redeems back after fees · Losing side goes to winners' pot · Same fees as any bettor"}
+                          </p>
                         </div>
-                        <div className="flex justify-between">
-                          <span>{locale === "sw" ? "Imegawanywa" : "Split"}</span>
-                          <span>50% YES · 50% NO</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>{locale === "sw" ? "Unapata baada ya azimio (wastani)" : "You get back at resolution (avg)"}</span>
-                          <span className="text-[#00e5a0]">~TSh {Math.round(parseInt(seedAmount) * 0.5 * 0.9025).toLocaleString()}</span>
-                        </div>
-                        <p className="text-[var(--muted)] text-[10px] pt-1">
-                          {locale === "sw"
-                            ? "Upande unaoshinda unarudi; upande unaopoteza unagawanywa kwa washindi"
-                            : "Winning side redeems back · Losing side funds winners' pot"}
-                        </p>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </motion.div>
                 )}
 
