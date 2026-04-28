@@ -57,6 +57,7 @@ export default function CreateMarketPage() {
 
   // Optional liquidity seed: creator deposits real TZS to back the market pot
   const [seedAmount, setSeedAmount] = useState("");
+  const [seedDistribution, setSeedDistribution] = useState<"equal" | "proportional">("equal");
 
   // Market type: "binary" (YES/NO), "multi" (custom options), or "event" (multiple markets)
   const [marketType, setMarketType] = useState<"binary" | "multi" | "event">("binary");
@@ -326,7 +327,8 @@ export default function CreateMarketPage() {
         const minSeedTzs = displayCurrency === 'USDC' ? Math.round(0.5 * USDC_TO_TZS_RATE) : 1000; // $0.50 min for USDC
         if (seedTzs >= minSeedTzs) {
           body.seedAmount = seedTzs;
-          body.seedCurrency = displayCurrency; // tell API to swap if USDC
+          body.seedCurrency = displayCurrency;
+          body.seedDistribution = seedDistribution;
         }
       }
 
@@ -1277,6 +1279,28 @@ export default function CreateMarketPage() {
                         className="w-full bg-[var(--card)] border border-[var(--card-border)] rounded-lg pl-10 pr-4 py-2.5 font-mono text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
                       />
                     </div>
+                    {/* Distribution toggle — shown when seed has a value */}
+                    {seedAmount && parseFloat(seedAmount) > 0 && (
+                      <div className="flex gap-1.5">
+                        {(["equal", "proportional"] as const).map((mode) => (
+                          <button
+                            key={mode}
+                            type="button"
+                            onClick={() => setSeedDistribution(mode)}
+                            className={`flex-1 py-1.5 text-xs font-mono border transition-colors rounded-lg ${
+                              seedDistribution === mode
+                                ? "border-[var(--accent)] text-[var(--accent)] bg-[var(--accent)]/10"
+                                : "border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--accent)]/50"
+                            }`}
+                          >
+                            {mode === "equal"
+                              ? (locale === "sw" ? "SAWA SAWA" : "EQUAL SPLIT")
+                              : (locale === "sw" ? "KWA UWEZEKANO" : "BY PROBABILITY")}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
                     {seedAmount && parseFloat(seedAmount) > 0 && (() => {
                       const seedRaw = parseFloat(seedAmount);
                       const isUsdc = displayCurrency === 'USDC';
@@ -1286,15 +1310,33 @@ export default function CreateMarketPage() {
                       const validOpts = customOptions.filter(o => o.trim());
                       const isMulti = marketType === "multi" && validOpts.length >= 2;
                       const nOptions = isMulti ? validOpts.length : 2;
-                      const winFraction = 1 / nOptions;
+
+                      // Calculate win fraction based on distribution mode
+                      let winFraction: number;
+                      let splitLabel: string;
+                      if (seedDistribution === "proportional") {
+                        if (isMulti) {
+                          const probs = optionProbs.slice(0, validOpts.length);
+                          const total = probs.reduce((s, p) => s + p, 0) || 100;
+                          winFraction = Math.max(...probs) / total; // best-case: highest prob option wins
+                          splitLabel = validOpts.map((o, i) => `${optionProbs[i] ?? Math.round(100/nOptions)}% ${o.trim().slice(0, 8) || `Opt ${i+1}`}`).join(' · ');
+                        } else {
+                          const yesPct = initialProb;
+                          winFraction = Math.max(yesPct, 100 - yesPct) / 100;
+                          splitLabel = `${yesPct}% YES · ${100 - yesPct}% NO`;
+                        }
+                      } else {
+                        winFraction = 1 / nOptions;
+                        splitLabel = isMulti
+                          ? validOpts.map((o, i) => `${Math.round(100 / nOptions)}% ${o.trim().slice(0, 8) || `Opt ${i+1}`}`).join(' · ')
+                          : "50% YES · 50% NO";
+                      }
+
                       const estReturnTzs = Math.round(seedTzs * winFraction * 0.9025);
                       const depositDisplay = isUsdc ? `$${seedRaw.toFixed(2)}` : `TSh ${seedTzs.toLocaleString()}`;
                       const returnDisplay = isUsdc
                         ? `$${(estReturnTzs / USDC_TO_TZS_RATE).toFixed(2)}`
                         : `TSh ${estReturnTzs.toLocaleString()}`;
-                      const splitLabel = isMulti
-                        ? validOpts.map((o, i) => `${Math.round(100 / nOptions)}% ${o.trim().slice(0, 8) || `Opt ${i+1}`}`).join(' · ')
-                        : "50% YES · 50% NO";
                       return (
                         <div className="text-xs text-[var(--muted)] space-y-1 font-mono border-t border-[var(--card-border)] pt-2">
                           <div className="flex justify-between">

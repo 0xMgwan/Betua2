@@ -327,12 +327,18 @@ export async function POST(
               }).catch(e => console.error('[LP auto-redeem] fee transfer failed:', e));
             }
 
+            const seededTotal = mktAny.seedAmount as number;
+            const winSideSeeded = Math.round(seededTotal / 2); // approx winning-side cost
+            const lpPnl = payoutTzs - winSideSeeded;
+            const pnlStr = lpPnl >= 0
+              ? `+${lpPnl.toLocaleString()} TZS profit`
+              : `${lpPnl.toLocaleString()} TZS (${Math.abs(Math.round((lpPnl / seededTotal) * 100))}% LP cost)`;
             createNotification({
               userId: market.creatorId,
               type: 'REDEEM',
-              title: 'Seed Liquidity Returned!',
-              message: `Your LP seed for "${market.title}" was auto-redeemed: ${payoutTzs.toLocaleString()} TZS`,
-              link: '/wallet',
+              title: '💧 LP Seed Returned!',
+              message: `"${market.title}" resolved ${winningLabel}. Seeded: ${seededTotal.toLocaleString()} TZS → Got back: ${payoutTzs.toLocaleString()} TZS (${pnlStr})`,
+              link: '/profile',
             });
             console.log(`[LP auto-redeem] Creator ${market.creatorId} paid ${payoutTzs} TZS for market ${id}`);
           } catch (e) {

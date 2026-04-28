@@ -66,9 +66,10 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { title, description, category, subCategory, resolvesAt, imageUrl, pythSymbol, pythTargetPrice, pythOperator, options, initialProb, optionProbs, seedAmount: rawSeedAmount, seedCurrency } = body;
+    const { title, description, category, subCategory, resolvesAt, imageUrl, pythSymbol, pythTargetPrice, pythOperator, options, initialProb, optionProbs, seedAmount: rawSeedAmount, seedCurrency, seedDistribution } = body;
     const seedAmount = Math.max(0, Math.round(Number(rawSeedAmount) || 0));
     const isSeedUsdc = seedCurrency === 'USDC';
+    const useProportionalSeed = seedDistribution === 'proportional';
 
     // For crypto markets with Pyth config, title can be auto-generated
     const effectiveTitle = title ||
@@ -334,25 +335,30 @@ export async function POST(req: NextRequest) {
         )[0];
 
     // ── Create seeded position for creator (if they seeded) ──────────────────
-    // Seed is split: half on YES, half on NO (or evenly across options)
+    // Seed split: equal (default) or proportional to initial probability
     // At resolution creator redeems their winning-side shares like any bettor
     if (effectiveSeed > 0) {
       try {
         const ENTRY_FEE = 0.05;
-        const halfSeed = Math.floor(effectiveSeed / 2);
-        const netHalf = Math.round(halfSeed * (1 - ENTRY_FEE));
 
         if (isMultiOption && optionPools) {
-          // Split evenly across all options
-          const perOption = Math.floor(effectiveSeed / options.length);
-          const netPerOption = Math.round(perOption * (1 - ENTRY_FEE));
+          // Compute per-option seed amounts
+          let seedPerOption: number[];
+          if (useProportionalSeed && Array.isArray(optionProbs) && optionProbs.length === options.length) {
+            const totalProb = optionProbs.reduce((s: number, p: number) => s + p, 0) || 100;
+            seedPerOption = optionProbs.map((p: number) => Math.round(effectiveSeed * (p / totalProb)));
+          } else {
+            const perOption = Math.floor(effectiveSeed / options.length);
+            seedPerOption = options.map(() => perOption);
+          }
+
           const optionSharesMap: Record<string, number> = {};
           const currentPools = [...(optionPools as number[])];
-
           for (let i = 0; i < options.length; i++) {
-            const result = getMultiOptionSharesOut(netPerOption, i, currentPools);
+            const netAmt = Math.round(seedPerOption[i] * (1 - ENTRY_FEE));
+            if (netAmt <= 0) continue;
+            const result = getMultiOptionSharesOut(netAmt, i, currentPools);
             optionSharesMap[String(i)] = Math.round(result.shares);
-            // update pools for subsequent calculations
             result.newPools.forEach((p, idx) => { currentPools[idx] = p; });
           }
 
@@ -365,9 +371,12 @@ export async function POST(req: NextRequest) {
             }),
           ]);
         } else {
-          // Binary: half on YES, half on NO
-          const yesResult = getSharesOut(netHalf, market.noPool, market.yesPool);
-          const noResult  = getSharesOut(netHalf, market.yesPool, market.noPool);
+          // Binary: split by prob or 50/50
+          const yesPct = useProportionalSeed ? Math.max(1, Math.min(99, Number(initialProb) || 50)) : 50;
+          const yesSeed = Math.round(effectiveSeed * yesPct / 100);
+          const noSeed  = effectiveSeed - yesSeed;
+          const yesResult = getSharesOut(Math.round(yesSeed * (1 - ENTRY_FEE)), market.noPool, market.yesPool);
+          const noResult  = getSharesOut(Math.round(noSeed  * (1 - ENTRY_FEE)), market.yesPool, market.noPool);
           const yesShares = Math.round(yesResult.shares);
           const noShares  = Math.round(noResult.shares);
 
@@ -376,10 +385,10 @@ export async function POST(req: NextRequest) {
               data: { userId: session.userId, marketId: market.id, yesShares, noShares },
             }),
             prisma.trade.create({
-              data: { userId: session.userId, marketId: market.id, side: "YES", amountTzs: halfSeed, shares: yesShares, price: yesResult.avgPrice },
+              data: { userId: session.userId, marketId: market.id, side: "YES", amountTzs: yesSeed, shares: yesShares, price: yesResult.avgPrice },
             }),
             prisma.trade.create({
-              data: { userId: session.userId, marketId: market.id, side: "NO", amountTzs: halfSeed, shares: noShares, price: noResult.avgPrice },
+              data: { userId: session.userId, marketId: market.id, side: "NO", amountTzs: noSeed, shares: noShares, price: noResult.avgPrice },
             }),
             prisma.transaction.create({
               data: { userId: session.userId, type: "SEED_LIQUIDITY", amountTzs: effectiveSeed, currency: marketCurrency, status: "COMPLETED", recipientUsername: effectiveTitle },
