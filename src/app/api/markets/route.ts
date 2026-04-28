@@ -218,7 +218,7 @@ export async function POST(req: NextRequest) {
     // For multi-option: seed pools from optionProbs if provided, else equal
     // Formula: pool_i = POOL_PER_OPTION / (n * p_i)
     // This satisfies getMultiOptionPrices: P(i) = (1/pool_i) / Σ(1/pool_j) = p_i
-    const POOL_PER_OPTION = 5000;
+    const POOL_PER_OPTION = 100000;
     const n = isMultiOption ? options.length : 0;
     const hasValidProbs = isMultiOption
       && Array.isArray(optionProbs)
@@ -234,7 +234,7 @@ export async function POST(req: NextRequest) {
 
     // Binary pool seeding from initial probability
     // P(YES) = noPool / (yesPool + noPool) = p  →  noPool = p * L, yesPool = (1-p) * L
-    const TOTAL_LIQUIDITY = 200000;
+    const TOTAL_LIQUIDITY = 1000000;
     const p = (!isMultiOption && initialProb != null)
       ? Math.max(1, Math.min(99, Number(initialProb))) / 100
       : 0.5;

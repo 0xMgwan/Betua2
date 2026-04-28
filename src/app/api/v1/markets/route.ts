@@ -267,7 +267,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Pool configuration
-    const POOL_PER_OPTION = 5000;
+    const POOL_PER_OPTION = 100000;
     const optionPools = isMultiOption ? options.map(() => POOL_PER_OPTION) : null;
 
     // Parse resolvesAt date
@@ -294,9 +294,9 @@ export async function POST(req: NextRequest) {
           resolvesAt: resolveDate,
           creatorId: user.id,
           partnerId: partner.partnerId, // IMPORTANT: Scopes market to partner's platform
-          yesPool: isMultiOption ? 0 : 100000,
-          noPool: isMultiOption ? 0 : 100000,
-          liquidity: isMultiOption ? POOL_PER_OPTION * options.length : 200000,
+          yesPool: isMultiOption ? 0 : 500000,
+          noPool: isMultiOption ? 0 : 500000,
+          liquidity: isMultiOption ? POOL_PER_OPTION * options.length : 1000000,
           options: isMultiOption ? options : undefined,
           optionPools: optionPools || undefined,
         },
