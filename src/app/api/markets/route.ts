@@ -66,8 +66,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { title, description, category, subCategory, resolvesAt, imageUrl, pythSymbol, pythTargetPrice, pythOperator, options, initialProb, optionProbs, seedAmount: rawSeedAmount } = body;
+    const { title, description, category, subCategory, resolvesAt, imageUrl, pythSymbol, pythTargetPrice, pythOperator, options, initialProb, optionProbs, seedAmount: rawSeedAmount, seedCurrency } = body;
     const seedAmount = Math.max(0, Math.round(Number(rawSeedAmount) || 0));
+    const isSeedUsdc = seedCurrency === 'USDC';
 
     // For crypto markets with Pyth config, title can be auto-generated
     const effectiveTitle = title ||
@@ -211,14 +212,26 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: `Seed amount cannot exceed ${MAX_SEED.toLocaleString()} TZS` }, { status: 400 });
       }
       try {
-        // Transfer seed from creator → platform escrow (same as a regular trade)
+        // If creator is paying in USDC, swap to nTZS first
+        if (isSeedUsdc && PLATFORM_NTZS_USER_ID) {
+          const seedUsdc = seedAmount / USDC_TO_TZS_RATE;
+          console.log(`Seed: swapping $${seedUsdc.toFixed(2)} USDC → ${seedAmount} TZS for ${user.ntzsUserId}`);
+          await ntzs.swap.executeAndWait({
+            userId: user.ntzsUserId,
+            fromToken: 'USDC',
+            toToken: 'NTZS',
+            amount: seedUsdc,
+            slippageBps: 100,
+          });
+        }
+        // Transfer seed (nTZS) from creator → platform escrow
         await ntzs.transfers.create({
           fromUserId: user.ntzsUserId,
           toUserId: PLATFORM_NTZS_USER_ID,
           amountTzs: seedAmount,
         });
         effectiveSeed = seedAmount;
-        console.log(`Market seed: ${user.ntzsUserId} → escrow, ${seedAmount} TZS`);
+        console.log(`Market seed: ${user.ntzsUserId} → escrow, ${seedAmount} TZS (paid in ${isSeedUsdc ? 'USDC' : 'TZS'})`);
       } catch (seedErr) {
         console.error("Seed transfer failed:", seedErr);
         if (seedErr instanceof NtzsApiError) {

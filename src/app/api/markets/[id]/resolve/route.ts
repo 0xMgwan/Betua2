@@ -230,6 +230,119 @@ export async function POST(
     }
   }
 
+  // ── Auto-redeem LP seed position (creator only, if they seeded) ──────────
+  // Regular users still redeem manually. Only the creator's seeded position
+  // is auto-paid — they seeded both sides so manual redeem would be confusing.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mktAny = market as any;
+  if (mktAny.seedAmount > 0) {
+    const creatorPosition = market.positions.find(p => p.userId === market.creatorId);
+    // Always mark creator's LP position as redeemed (even if no winning shares — losing side gets nothing)
+    if (creatorPosition && !creatorPosition.redeemed && (hasNoWinners || totalWinningShares === 0)) {
+      prisma.position.update({ where: { id: creatorPosition.id }, data: { redeemed: true } })
+        .catch(e => console.error('[LP] failed to mark losing position redeemed:', e));
+    }
+    if (creatorPosition && !creatorPosition.redeemed && !hasNoWinners && totalWinningShares > 0) {
+      // Check creator has winning shares
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const cp = creatorPosition as any;
+      let creatorWinShares = 0;
+      if (isMultiOption) {
+        const optShares = (cp.optionShares as Record<string, number>) || {};
+        creatorWinShares = optShares[String(winningOutcome)] || 0;
+      } else {
+        creatorWinShares = winningOutcome === 1 ? creatorPosition.yesShares : creatorPosition.noShares;
+      }
+
+      if (creatorWinShares > 0) {
+        // Fire-and-forget: auto-redeem creator's LP position
+        (async () => {
+          try {
+            // Lock position atomically
+            const lock = await prisma.position.updateMany({
+              where: { id: creatorPosition.id, redeemed: false },
+              data: { redeemed: true },
+            });
+            if (lock.count === 0) return; // already redeemed
+
+            const grossPayout = Math.round((creatorWinShares / totalWinningShares) * pot);
+            const settlementFee = Math.round(grossPayout * FEE_PERCENT);
+            const payoutTzs = grossPayout - settlementFee;
+
+            // Get creator wallet details
+            const creator = await prisma.user.findUnique({
+              where: { id: market.creatorId },
+              select: { ntzsUserId: true, preferredCurrency: true, country: true, phone: true },
+            });
+            if (!creator?.ntzsUserId || !PLATFORM_NTZS_USER_ID) return;
+
+            const { getUserCurrency } = await import('@/lib/currency');
+            const creatorCurrency = (creator.preferredCurrency as string) || getUserCurrency(creator.country, creator.phone);
+
+            // Transfer payout from escrow → creator
+            await ntzs.transfers.create({
+              fromUserId: PLATFORM_NTZS_USER_ID,
+              toUserId: creator.ntzsUserId,
+              amountTzs: payoutTzs,
+            });
+
+            // If USDC creator, swap nTZS → USDC
+            if (creatorCurrency === 'USDC') {
+              await ntzs.swap.executeAndWait({
+                userId: creator.ntzsUserId,
+                fromToken: 'NTZS',
+                toToken: 'USDC',
+                amount: payoutTzs,
+                slippageBps: 100,
+              }).catch(e => console.error('[LP auto-redeem] USDC swap failed:', e));
+            }
+
+            // Update balance + record transaction
+            await prisma.$transaction([
+              prisma.user.update({
+                where: { id: market.creatorId },
+                data: creatorCurrency === 'USDC'
+                  ? { balanceUsdc: { increment: payoutTzs / 2630 } }
+                  : { balanceTzs: { increment: payoutTzs } },
+              }),
+              prisma.transaction.create({
+                data: {
+                  userId: market.creatorId,
+                  type: 'LP_REDEEM',
+                  amountTzs: creatorCurrency === 'TZS' ? payoutTzs : 0,
+                  amountUsdc: creatorCurrency === 'USDC' ? payoutTzs / 2630 : 0,
+                  currency: creatorCurrency,
+                  status: 'COMPLETED',
+                  recipientUsername: `LP seed return: ${market.title}`,
+                },
+              }),
+            ]);
+
+            // Settlement fee (non-blocking)
+            if (SETTLEMENT_FEE_NTZS_USER_ID && settlementFee > 0) {
+              ntzs.transfers.create({
+                fromUserId: PLATFORM_NTZS_USER_ID,
+                toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
+                amountTzs: settlementFee,
+              }).catch(e => console.error('[LP auto-redeem] fee transfer failed:', e));
+            }
+
+            createNotification({
+              userId: market.creatorId,
+              type: 'REDEEM',
+              title: 'Seed Liquidity Returned!',
+              message: `Your LP seed for "${market.title}" was auto-redeemed: ${payoutTzs.toLocaleString()} TZS`,
+              link: '/wallet',
+            });
+            console.log(`[LP auto-redeem] Creator ${market.creatorId} paid ${payoutTzs} TZS for market ${id}`);
+          } catch (e) {
+            console.error('[LP auto-redeem] failed (non-fatal):', e);
+          }
+        })();
+      }
+    }
+  }
+
   // Notify market creator
   createNotification({
     userId: session.userId,
