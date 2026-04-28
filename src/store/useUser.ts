@@ -1,5 +1,7 @@
 "use client";
 import { create } from "zustand";
+import { getUserCurrency } from "@/lib/currency";
+import { useCurrency } from "@/store/useCurrency";
 
 interface User {
   id: string;
@@ -38,6 +40,17 @@ export const useUser = create<UserStore>((set) => ({
       const res = await fetch("/api/auth/me");
       const data = await res.json();
       set({ user: data.user, loading: false });
+
+      // Sync display currency to user's preference or country default
+      if (data.user) {
+        const u = data.user;
+        const detectedCurrency =
+          (u.preferredCurrency as 'TZS' | 'KES' | 'USDC') ||
+          getUserCurrency(u.country, u.phone);
+        if (detectedCurrency === 'TZS' || detectedCurrency === 'KES' || detectedCurrency === 'USDC') {
+          useCurrency.getState().setCurrency(detectedCurrency);
+        }
+      }
     } catch {
       set({ user: null, loading: false });
     }

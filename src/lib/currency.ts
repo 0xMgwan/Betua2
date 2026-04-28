@@ -113,17 +113,24 @@ export function fromTZS(amount: number, currency: Currency): number {
  * Get user's default currency based on country
  */
 export function getUserCurrency(country?: string | null, phone?: string | null): Currency {
+  // Tanzania → nTZS
+  if (country === 'TZ') return 'TZS';
+  // Kenya → KES
   if (country === 'KE') return 'KES';
+  // Nigeria → NGN
   if (country === 'NG') return 'NGN';
-  if (country === 'US' || country === 'GB' || country === 'EU') return 'USDC';
-  
-  // Detect from phone prefix
+
+  // Detect from phone prefix (overrides country if set)
   if (phone) {
+    if (phone.startsWith('255') || phone.startsWith('+255')) return 'TZS';
     if (phone.startsWith('254') || phone.startsWith('+254')) return 'KES';
     if (phone.startsWith('234') || phone.startsWith('+234')) return 'NGN';
   }
-  
-  return 'TZS';
+
+  // All other countries (international users) → USDC by default
+  if (country && country !== '') return 'USDC';
+
+  return 'TZS'; // fallback when country is completely unknown
 }
 
 /**
