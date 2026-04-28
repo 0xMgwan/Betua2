@@ -32,6 +32,7 @@ interface MarketData {
   subCategory?: string | null;
   imageUrl?: string | null;
   totalVolume: number;
+  seedAmount?: number;
   yesPool: number;
   noPool: number;
   resolvesAt: string;
@@ -600,6 +601,11 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       <TrendUp size={10} />
                       {formatAmount(market.totalVolume)} vol
                     </span>
+                    {market.seedAmount && market.seedAmount > 0 ? (
+                      <span className="flex items-center gap-0.5 text-[#00e5a0]" title="Creator seeded this market with real liquidity">
+                        💧 {formatAmount(market.seedAmount)} seeded
+                      </span>
+                    ) : null}
                     <span className="flex items-center gap-0.5">
                       <UsersThree size={10} />
                       {market._count.trades}

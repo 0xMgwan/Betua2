@@ -55,6 +55,9 @@ export default function CreateMarketPage() {
   // Initial probability for binary markets (1–99, default 50)
   const [initialProb, setInitialProb] = useState(50);
 
+  // Optional liquidity seed: creator deposits real TZS to back the market pot
+  const [seedAmount, setSeedAmount] = useState("");
+
   // Market type: "binary" (YES/NO), "multi" (custom options), or "event" (multiple markets)
   const [marketType, setMarketType] = useState<"binary" | "multi" | "event">("binary");
   const [customOptions, setCustomOptions] = useState<string[]>(["", ""]);
@@ -312,6 +315,12 @@ export default function CreateMarketPage() {
         if (!body.title) {
           body.title = `Will ${pythConfig.symbol} be ${pythConfig.operator} $${parseFloat(pythConfig.targetPrice).toLocaleString()} USD by resolution?`;
         }
+      }
+
+      // Add optional seed
+      const parsedSeed = parseInt(seedAmount.replace(/,/g, ""), 10);
+      if (!isNaN(parsedSeed) && parsedSeed >= 1000) {
+        body.seedAmount = parsedSeed;
       }
 
       const res = await fetch("/api/markets", {
@@ -1225,6 +1234,61 @@ export default function CreateMarketPage() {
                         </div>
                       )}
                     </div>
+                  </motion.div>
+                )}
+
+                {/* ── SEED LIQUIDITY ── */}
+                {marketType !== "event" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-3 p-4 border border-[var(--card-border)] rounded-xl bg-[var(--background)]"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-mono text-sm font-bold text-[var(--foreground)]">
+                          {locale === "sw" ? "SEED LIKWIDITI (HIARI)" : "SEED LIQUIDITY (OPTIONAL)"}
+                        </p>
+                        <p className="text-xs text-[var(--muted)] mt-0.5">
+                          {locale === "sw"
+                            ? "Weka TZS halisi ili watumiaji wa kwanza wapate malipo makubwa zaidi"
+                            : "Deposit real TZS so early traders see bigger payouts"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] font-mono text-sm">TSh</span>
+                      <input
+                        type="number"
+                        min="1000"
+                        step="1000"
+                        placeholder="e.g. 50000"
+                        value={seedAmount}
+                        onChange={e => setSeedAmount(e.target.value)}
+                        className="w-full bg-[var(--card)] border border-[var(--card-border)] rounded-lg pl-12 pr-4 py-2.5 font-mono text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
+                      />
+                    </div>
+                    {seedAmount && parseInt(seedAmount) >= 1000 && (
+                      <div className="text-xs text-[var(--muted)] space-y-1 font-mono border-t border-[var(--card-border)] pt-2">
+                        <div className="flex justify-between">
+                          <span>{locale === "sw" ? "Unaweka" : "You deposit"}</span>
+                          <span className="text-[var(--foreground)]">TSh {parseInt(seedAmount).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>{locale === "sw" ? "Imegawanywa" : "Split"}</span>
+                          <span>50% YES · 50% NO</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>{locale === "sw" ? "Unapata baada ya azimio (wastani)" : "You get back at resolution (avg)"}</span>
+                          <span className="text-[#00e5a0]">~TSh {Math.round(parseInt(seedAmount) * 0.5 * 0.9025).toLocaleString()}</span>
+                        </div>
+                        <p className="text-[var(--muted)] text-[10px] pt-1">
+                          {locale === "sw"
+                            ? "Upande unaoshinda unarudi; upande unaopoteza unagawanywa kwa washindi"
+                            : "Winning side redeems back · Losing side funds winners' pot"}
+                        </p>
+                      </div>
+                    )}
                   </motion.div>
                 )}
 

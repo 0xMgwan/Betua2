@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { getPrice, getMultiOptionPrices } from "@/lib/amm";
+import { getPrice, getMultiOptionPrices, getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
 import { createNotification } from "@/lib/notify";
 import { getUserCurrency } from "@/lib/currency";
@@ -66,7 +66,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { title, description, category, subCategory, resolvesAt, imageUrl, pythSymbol, pythTargetPrice, pythOperator, options, initialProb, optionProbs } = body;
+    const { title, description, category, subCategory, resolvesAt, imageUrl, pythSymbol, pythTargetPrice, pythOperator, options, initialProb, optionProbs, seedAmount: rawSeedAmount } = body;
+    const seedAmount = Math.max(0, Math.round(Number(rawSeedAmount) || 0));
 
     // For crypto markets with Pyth config, title can be auto-generated
     const effectiveTitle = title ||
@@ -201,8 +202,34 @@ export async function POST(req: NextRequest) {
       console.log(`Admin user ${user.ntzsUserId} creating market - fee waived`);
     }
 
-    // Note: Balance is managed by nTZS, not local DB
-    // ─────────────────────────────────────────────────────────────────────
+    // ── Optional liquidity seed: creator deposits real TZS into the market ──
+    const MIN_SEED = 1000;
+    const MAX_SEED = 10_000_000; // 10M TZS cap
+    let effectiveSeed = 0;
+    if (seedAmount >= MIN_SEED) {
+      if (seedAmount > MAX_SEED) {
+        return NextResponse.json({ error: `Seed amount cannot exceed ${MAX_SEED.toLocaleString()} TZS` }, { status: 400 });
+      }
+      try {
+        // Transfer seed from creator → platform escrow (same as a regular trade)
+        await ntzs.transfers.create({
+          fromUserId: user.ntzsUserId,
+          toUserId: PLATFORM_NTZS_USER_ID,
+          amountTzs: seedAmount,
+        });
+        effectiveSeed = seedAmount;
+        console.log(`Market seed: ${user.ntzsUserId} → escrow, ${seedAmount} TZS`);
+      } catch (seedErr) {
+        console.error("Seed transfer failed:", seedErr);
+        if (seedErr instanceof NtzsApiError) {
+          return NextResponse.json(
+            { error: `Seed transfer failed: ${seedErr.message}` },
+            { status: 400 }
+          );
+        }
+        return NextResponse.json({ error: "Seed transfer failed. Check your balance." }, { status: 400 });
+      }
+    }
 
     // For Crypto markets with Pyth, store config as metadata in description
     const finalDescription = pythSymbol && pythTargetPrice
@@ -242,55 +269,37 @@ export async function POST(req: NextRequest) {
     const initNoPool  = Math.round(p * TOTAL_LIQUIDITY);
 
     // Create market and optionally record fee transaction (skip for admins)
+    // Helper to parse resolvesAt as EAT (GMT+3)
+    const parseResolvesAt = () => {
+      const [datePart, timePart] = resolvesAt.split('T');
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [hour, minute] = timePart.split(':').map(Number);
+      return new Date(Date.UTC(year, month - 1, day, hour - 3, minute));
+    };
+
+    const marketData = {
+      title: effectiveTitle,
+      description: finalDescription,
+      category,
+      subCategory: category === "Sports" ? subCategory || null : null,
+      imageUrl,
+      resolvesAt: parseResolvesAt(),
+      creatorId: session.userId,
+      currency: marketCurrency,
+      yesPool: isMultiOption ? 0 : initYesPool,
+      noPool: isMultiOption ? 0 : initNoPool,
+      liquidity: isMultiOption ? POOL_PER_OPTION * options.length : TOTAL_LIQUIDITY,
+      options: isMultiOption ? options : undefined,
+      optionPools: optionPools || undefined,
+      seedAmount: effectiveSeed,
+      totalVolume: effectiveSeed, // seed immediately backs the pot
+    };
+
     const market = isAdmin
-      ? await prisma.market.create({
-          data: {
-            title: effectiveTitle,
-            description: finalDescription,
-            category,
-            subCategory: category === "Sports" ? subCategory || null : null,
-            imageUrl,
-            resolvesAt: (() => {
-              // Parse as EAT (GMT+3) - subtract 3 hours to get UTC
-              const [datePart, timePart] = resolvesAt.split('T');
-              const [year, month, day] = datePart.split('-').map(Number);
-              const [hour, minute] = timePart.split(':').map(Number);
-              return new Date(Date.UTC(year, month - 1, day, hour - 3, minute));
-            })(),
-            creatorId: session.userId,
-            currency: marketCurrency,
-            yesPool: isMultiOption ? 0 : initYesPool,
-            noPool: isMultiOption ? 0 : initNoPool,
-            liquidity: isMultiOption ? POOL_PER_OPTION * options.length : TOTAL_LIQUIDITY,
-            options: isMultiOption ? options : undefined,
-            optionPools: optionPools || undefined,
-          },
-        })
+      ? await prisma.market.create({ data: marketData })
       : (
           await prisma.$transaction([
-            prisma.market.create({
-              data: {
-                title: effectiveTitle,
-                description: finalDescription,
-                category,
-                subCategory: category === "Sports" ? subCategory || null : null,
-                imageUrl,
-                resolvesAt: (() => {
-                  // Parse as EAT (GMT+3) - subtract 3 hours to get UTC
-                  const [datePart, timePart] = resolvesAt.split('T');
-                  const [year, month, day] = datePart.split('-').map(Number);
-                  const [hour, minute] = timePart.split(':').map(Number);
-                  return new Date(Date.UTC(year, month - 1, day, hour - 3, minute));
-                })(),
-                creatorId: session.userId,
-                currency: marketCurrency,
-                yesPool: isMultiOption ? 0 : 100000,
-                noPool: isMultiOption ? 0 : 100000,
-                liquidity: isMultiOption ? POOL_PER_OPTION * options.length : TOTAL_LIQUIDITY,
-                options: isMultiOption ? options : undefined,
-                optionPools: optionPools || undefined,
-              },
-            }),
+            prisma.market.create({ data: { ...marketData, yesPool: isMultiOption ? 0 : initYesPool, noPool: isMultiOption ? 0 : initNoPool } }),
             prisma.transaction.create({
               data: {
                 userId: session.userId,
@@ -311,12 +320,73 @@ export async function POST(req: NextRequest) {
           ])
         )[0];
 
+    // ── Create seeded position for creator (if they seeded) ──────────────────
+    // Seed is split: half on YES, half on NO (or evenly across options)
+    // At resolution creator redeems their winning-side shares like any bettor
+    if (effectiveSeed > 0) {
+      try {
+        const ENTRY_FEE = 0.05;
+        const halfSeed = Math.floor(effectiveSeed / 2);
+        const netHalf = Math.round(halfSeed * (1 - ENTRY_FEE));
+
+        if (isMultiOption && optionPools) {
+          // Split evenly across all options
+          const perOption = Math.floor(effectiveSeed / options.length);
+          const netPerOption = Math.round(perOption * (1 - ENTRY_FEE));
+          const optionSharesMap: Record<string, number> = {};
+          const currentPools = [...(optionPools as number[])];
+
+          for (let i = 0; i < options.length; i++) {
+            const result = getMultiOptionSharesOut(netPerOption, i, currentPools);
+            optionSharesMap[String(i)] = Math.round(result.shares);
+            // update pools for subsequent calculations
+            result.newPools.forEach((p, idx) => { currentPools[idx] = p; });
+          }
+
+          await prisma.$transaction([
+            prisma.position.create({
+              data: { userId: session.userId, marketId: market.id, yesShares: 0, noShares: 0, optionShares: optionSharesMap },
+            }),
+            prisma.transaction.create({
+              data: { userId: session.userId, type: "SEED_LIQUIDITY", amountTzs: effectiveSeed, currency: marketCurrency, status: "COMPLETED", recipientUsername: effectiveTitle },
+            }),
+          ]);
+        } else {
+          // Binary: half on YES, half on NO
+          const yesResult = getSharesOut(netHalf, market.noPool, market.yesPool);
+          const noResult  = getSharesOut(netHalf, market.yesPool, market.noPool);
+          const yesShares = Math.round(yesResult.shares);
+          const noShares  = Math.round(noResult.shares);
+
+          await prisma.$transaction([
+            prisma.position.create({
+              data: { userId: session.userId, marketId: market.id, yesShares, noShares },
+            }),
+            prisma.trade.create({
+              data: { userId: session.userId, marketId: market.id, side: "YES", amountTzs: halfSeed, shares: yesShares, price: yesResult.avgPrice },
+            }),
+            prisma.trade.create({
+              data: { userId: session.userId, marketId: market.id, side: "NO", amountTzs: halfSeed, shares: noShares, price: noResult.avgPrice },
+            }),
+            prisma.transaction.create({
+              data: { userId: session.userId, type: "SEED_LIQUIDITY", amountTzs: effectiveSeed, currency: marketCurrency, status: "COMPLETED", recipientUsername: effectiveTitle },
+            }),
+          ]);
+        }
+
+        console.log(`Market ${market.id} seeded with ${effectiveSeed} TZS by creator ${session.userId}`);
+      } catch (seedPosErr) {
+        // Non-fatal: market is created and funds transferred, position record just failed
+        console.error("Failed to create seed position records (non-fatal):", seedPosErr);
+      }
+    }
+
     // Notification: market created
     createNotification({
       userId: session.userId,
       type: "MARKET_CREATED",
       title: "Market Created",
-      message: `Your market "${effectiveTitle}" is now live!`,
+      message: `Your market "${effectiveTitle}" is now live!${effectiveSeed > 0 ? ` Seeded with ${effectiveSeed.toLocaleString()} TZS.` : ""}`,
       link: `/markets/${market.id}`,
     });
 

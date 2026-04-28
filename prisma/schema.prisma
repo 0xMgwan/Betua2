@@ -83,6 +83,7 @@ model Market {
   resolvesAt   DateTime
   resolvedAt   DateTime?
   totalVolume  Int        @default(0)
+  seedAmount   Int        @default(0)   // Real TZS seeded by creator at creation
   yesPool      Int        @default(100000)
   noPool       Int        @default(100000)
   liquidity    Int        @default(200000)
