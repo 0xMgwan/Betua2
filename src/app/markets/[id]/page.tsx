@@ -7,7 +7,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS, formatPercent, formatNumber, timeUntil, timeAgo, toEATDateTimeLocal, SPORTS_SUBCATEGORIES } from "@/lib/utils";
 import { convertCurrency, getUserCurrency, formatCurrency, type Currency } from "@/lib/currency";
 import { useCurrency } from "@/store/useCurrency";
-import { getSharesOut, getMultiOptionSharesOut, getPayoutForShares, getMultiOptionPayoutForShares } from "@/lib/amm";
+import { getSharesOut, getMultiOptionSharesOut, getPayoutForShares, getMultiOptionPayoutForShares, getPrice, getMultiOptionPrices } from "@/lib/amm";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
@@ -1069,15 +1069,19 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   {estimatedShares > 0 && market && (() => {
                     const FEE_PCT = 0.05;
                     const amountInTzs = fromDisplay(Number(amount));
-                    const newPot = Math.round((market.totalVolume + amountInTzs) * (1 - FEE_PCT));
-                    let totalSideShares: number;
-                    if (isMultiOption) {
-                      totalSideShares = (market.totalOptionShares?.[String(selectedOption)] || 0) + estimatedShares;
+                    const netAmountIn = Math.round(amountInTzs * (1 - FEE_PCT));
+                    // Price-based payout: standard prediction market display
+                    // Shows what you'd win at current market odds (netAmount / probability × (1 - settlement fee))
+                    let currentOddsPrice: number;
+                    if (isMultiOption && market.optionPools) {
+                      const prices = getMultiOptionPrices(market.optionPools as number[]);
+                      currentOddsPrice = prices[selectedOption] ?? 0.5;
                     } else {
-                      totalSideShares = (side === "YES" ? market.totalYesShares : market.totalNoShares) + estimatedShares;
+                      const prices = getPrice(market.yesPool, market.noPool);
+                      currentOddsPrice = side === "YES" ? prices.yes : prices.no;
                     }
-                    const payoutIfWin = totalSideShares > 0
-                      ? Math.round((estimatedShares / totalSideShares) * newPot * (1 - FEE_PCT))
+                    const payoutIfWin = currentOddsPrice > 0
+                      ? Math.round(netAmountIn / currentOddsPrice * (1 - FEE_PCT))
                       : 0;
                     const avgPriceDisplay = displayCurrency === 'USDC' 
                       ? `$${(estimatedPrice / 2630).toFixed(4)}`

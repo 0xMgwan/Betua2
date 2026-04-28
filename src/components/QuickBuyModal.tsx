@@ -10,7 +10,7 @@ import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency"
 import { useCurrency } from "@/store/useCurrency";
 import { useCart } from "@/store/useCart";
 import { notifications } from "@/lib/notifications";
-import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
+import { getSharesOut, getMultiOptionSharesOut, getPrice, getMultiOptionPrices } from "@/lib/amm";
 
 interface QuickBuyModalProps {
   isOpen: boolean;
@@ -137,17 +137,19 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
   }
   const cost = amountNum;
 
-  // Proportional pot distribution payout (matching market detail page)
-  const totalVolume = pools.totalVolume || 0;
-  const newPot = Math.round((totalVolume + amountInTzs) * (1 - FEE_PERCENT));
-  let totalSideShares = 0;
-  if (isMultiOption) {
-    totalSideShares = ((pools.totalOptionShares as Record<string, number>)?.[String(optionIndex)] || 0) + shares;
+  // Price-based payout: standard prediction market display
+  // Shows what you'd win at current market odds (netAmount / probability × (1 - settlement fee))
+  const netAmountIn = Math.round(amountInTzs * (1 - FEE_PERCENT));
+  let currentOddsPrice: number;
+  if (isMultiOption && pools.optionPools && pools.optionPools.length > 0) {
+    const prices = getMultiOptionPrices(pools.optionPools);
+    currentOddsPrice = prices[optionIndex ?? 0] ?? 0.5;
   } else {
-    totalSideShares = ((side === "YES" ? pools.totalYesShares : pools.totalNoShares) || 0) + shares;
+    const prices = getPrice(pools.yesPool, pools.noPool);
+    currentOddsPrice = side === "YES" ? prices.yes : prices.no;
   }
-  const payoutIfWin = totalSideShares > 0
-    ? Math.round((shares / totalSideShares) * newPot * (1 - FEE_PERCENT))
+  const payoutIfWin = currentOddsPrice > 0
+    ? Math.round(netAmountIn / currentOddsPrice * (1 - FEE_PERCENT))
     : 0;
   const netGain = payoutIfWin - amountNum;
 
