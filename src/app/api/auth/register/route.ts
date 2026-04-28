@@ -32,8 +32,13 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await bcrypt.hash(password, 12);
 
-    // Detect country from phone number
-    const country = phone?.startsWith('254') || phone?.startsWith('+254') ? 'KE' : 'TZ';
+    // Detect country: Vercel sets x-vercel-ip-country on every request
+    const ipCountry = req.headers.get('x-vercel-ip-country') || '';
+    // Phone prefix takes priority over IP (more accurate for phone users)
+    let country = ipCountry || 'TZ';
+    if (phone?.startsWith('255') || phone?.startsWith('+255')) country = 'TZ';
+    else if (phone?.startsWith('254') || phone?.startsWith('+254')) country = 'KE';
+    else if (phone?.startsWith('234') || phone?.startsWith('+234')) country = 'NG';
 
     const user = await prisma.user.create({
       data: { email, username, displayName: username, phone, passwordHash, referredById, country },
