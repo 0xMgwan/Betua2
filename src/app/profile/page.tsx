@@ -504,88 +504,106 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* LP Rewards */}
-            {lpRewards && lpRewards.marketsSeeded > 0 && (
+            {/* LP Rewards — always shown to creators */}
+            {lpRewards && (
               <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl p-4 space-y-3">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-base">💧</span>
-                  <h3 className="font-bold text-sm">{locale === "sw" ? "Zawadi za LP" : "LP Liquidity Rewards"}</h3>
+                  <h3 className="font-bold text-sm">{locale === "sw" ? "Likwiditi ya LP" : "LP Liquidity"}</h3>
                 </div>
-                <p className="text-xs text-[var(--muted)]">
-                  {locale === "sw"
-                    ? "Masoko uliyoyapa likwiditi. Upande unaoshinda unarudi; upande unaopoteza unafadhili washindi."
-                    : "Markets you seeded with liquidity. Winning side returns to you; losing side funds winners."}
-                </p>
 
-                {/* Summary stats */}
-                <div className="grid grid-cols-3 gap-1.5">
-                  <div className="bg-[var(--background)] rounded-lg p-2 text-center">
-                    <p className="font-bold text-sm">{lpRewards.marketsSeeded}</p>
-                    <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Seeded" : "Seeded"}</p>
-                  </div>
-                  <div className="bg-[var(--background)] rounded-lg p-2 text-center">
-                    <p className="font-bold text-sm">{lpRewards.marketsResolved}</p>
-                    <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Resolved" : "Resolved"}</p>
-                  </div>
-                  <div className="bg-[var(--background)] rounded-lg p-2 text-center">
-                    <p className={`font-bold text-sm ${lpRewards.netPnl >= 0 ? "text-[var(--accent)]" : "text-red-400"}`}>
-                      {lpRewards.netPnl >= 0 ? "+" : ""}{format(lpRewards.netPnl)}
+                {lpRewards.marketsSeeded === 0 ? (
+                  /* Empty state — encourage seeding */
+                  <div className="text-center py-3 space-y-2">
+                    <p className="text-xs text-[var(--muted)]">
+                      {locale === "sw"
+                        ? "Bado hujaweka likwiditi. Weka TZS au USDC kwenye soko unalouunda ili watumiaji wa kwanza wapate malipo makubwa."
+                        : "You haven't seeded any markets yet. Add TZS or USDC when creating a market so early traders see bigger payouts — you get the winning side back automatically."}
                     </p>
-                    <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider">Net P&L</p>
+                    <a
+                      href="/markets/create"
+                      className="inline-block text-xs font-mono text-[var(--accent)] border border-[var(--accent)]/40 px-3 py-1.5 rounded-lg hover:bg-[var(--accent)]/10 transition-colors"
+                    >
+                      {locale === "sw" ? "UNDA SOKO →" : "CREATE MARKET →"}
+                    </a>
                   </div>
-                </div>
-
-                {/* Totals */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between bg-[var(--background)] rounded-lg px-3 py-2">
-                    <span className="text-xs text-[var(--muted)]">{locale === "sw" ? "Jumla Iliyowekwa" : "Total Seeded"}</span>
-                    <span className="font-bold text-sm">{format(lpRewards.totalSeeded)}</span>
-                  </div>
-                  <div className="flex items-center justify-between bg-[var(--background)] rounded-lg px-3 py-2">
-                    <span className="text-xs text-[var(--muted)]">{locale === "sw" ? "Jumla Iliyorudishwa" : "Total Returned"}</span>
-                    <span className="font-bold text-sm text-[var(--accent)]">{format(lpRewards.totalReturned)}</span>
-                  </div>
-                </div>
-
-                {/* Per-market breakdown */}
-                {lpRewards.markets.length > 0 && (
-                  <div className="pt-1 border-t border-[var(--card-border)]">
-                    <p className="text-[10px] text-[var(--muted)] mb-1.5 font-medium uppercase tracking-wider">
-                      {locale === "sw" ? "Masoko Yaliyopewa Likwiditi" : "Seeded Markets"}
+                ) : (
+                  <>
+                    <p className="text-xs text-[var(--muted)]">
+                      {locale === "sw"
+                        ? "Upande unaoshinda unarudi otomatiki; upande unaopoteza unafadhili washindi."
+                        : "Winning side auto-returned at resolution · Losing side funds winners' pot."}
                     </p>
-                    <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                      {lpRewards.markets.map((m) => (
-                        <div key={m.id} className="flex items-center justify-between gap-2 text-xs">
-                          <a
-                            href={`/markets/${m.id}`}
-                            className="truncate flex-1 hover:text-[var(--accent)] transition-colors"
-                            title={m.title}
-                          >
-                            {m.title}
-                          </a>
-                          <div className="flex items-center gap-1.5 shrink-0 text-right">
-                            {m.status === "RESOLVED" ? (
-                              m.returned !== null ? (
-                                <div className="text-right">
-                                  <span className={`font-mono text-[10px] ${(m.pnl ?? 0) >= 0 ? "text-[var(--accent)]" : "text-red-400"}`}>
-                                    {(m.pnl ?? 0) >= 0 ? "+" : ""}{format(m.pnl ?? 0)}
-                                  </span>
-                                  <p className="text-[9px] text-[var(--muted)]">{m.outcomeLabel ?? "resolved"}</p>
-                                </div>
-                              ) : (
-                                <span className="text-[10px] text-[var(--muted)]">seeded {format(m.seeded)}</span>
-                              )
-                            ) : (
-                              <div className="text-right">
-                                <span className="text-[10px] px-1 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20">OPEN</span>
-                                <p className="text-[9px] text-[var(--muted)] mt-0.5">{format(m.seeded)} seeded</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+
+                    {/* Summary stats */}
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <div className="bg-[var(--background)] rounded-lg p-2 text-center">
+                        <p className="font-bold text-sm">{lpRewards.marketsSeeded}</p>
+                        <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider">Seeded</p>
+                      </div>
+                      <div className="bg-[var(--background)] rounded-lg p-2 text-center">
+                        <p className="font-bold text-sm">{lpRewards.marketsResolved}</p>
+                        <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider">Resolved</p>
+                      </div>
+                      <div className="bg-[var(--background)] rounded-lg p-2 text-center">
+                        <p className={`font-bold text-sm ${lpRewards.netPnl >= 0 ? "text-[var(--accent)]" : "text-orange-400"}`}>
+                          {lpRewards.netPnl >= 0 ? "+" : ""}{format(lpRewards.netPnl)}
+                        </p>
+                        <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider">Net P&L</p>
+                      </div>
                     </div>
-                  </div>
+
+                    {/* Totals */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between bg-[var(--background)] rounded-lg px-3 py-2">
+                        <span className="text-xs text-[var(--muted)]">{locale === "sw" ? "Jumla Iliyowekwa" : "Total Seeded"}</span>
+                        <span className="font-bold text-sm">{format(lpRewards.totalSeeded)}</span>
+                      </div>
+                      <div className="flex items-center justify-between bg-[var(--background)] rounded-lg px-3 py-2">
+                        <span className="text-xs text-[var(--muted)]">{locale === "sw" ? "Jumla Iliyorudishwa" : "Total Returned"}</span>
+                        <span className="font-bold text-sm text-[var(--accent)]">{format(lpRewards.totalReturned)}</span>
+                      </div>
+                    </div>
+
+                    {/* Per-market breakdown */}
+                    <div className="pt-1 border-t border-[var(--card-border)]">
+                      <p className="text-[10px] text-[var(--muted)] mb-1.5 font-medium uppercase tracking-wider">
+                        {locale === "sw" ? "Masoko Yaliyopewa Likwiditi" : "Seeded Markets"}
+                      </p>
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                        {lpRewards.markets.map((m) => (
+                          <div key={m.id} className="flex items-center justify-between gap-2 text-xs">
+                            <a
+                              href={`/markets/${m.id}`}
+                              className="truncate flex-1 hover:text-[var(--accent)] transition-colors"
+                              title={m.title}
+                            >
+                              {m.title}
+                            </a>
+                            <div className="flex items-center gap-1.5 shrink-0 text-right">
+                              {m.status === "RESOLVED" ? (
+                                m.returned !== null ? (
+                                  <div className="text-right">
+                                    <span className={`font-mono text-[10px] block ${(m.pnl ?? 0) >= 0 ? "text-[var(--accent)]" : "text-orange-400"}`}>
+                                      {(m.pnl ?? 0) >= 0 ? "+" : ""}{format(m.pnl ?? 0)}
+                                    </span>
+                                    <span className="text-[9px] text-[var(--muted)]">{m.outcomeLabel ?? "resolved"}</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-[10px] text-[var(--muted)]">seeded {format(m.seeded)}</span>
+                                )
+                              ) : (
+                                <div className="text-right">
+                                  <span className="text-[10px] px-1 py-0.5 bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20">LIVE</span>
+                                  <p className="text-[9px] text-[var(--muted)] mt-0.5">{format(m.seeded)} seeded</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             )}

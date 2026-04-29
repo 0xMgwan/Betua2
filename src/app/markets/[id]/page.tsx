@@ -597,15 +597,18 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                         ACTIVE
                       </span>
                     )}
-                    <span className="flex items-center gap-0.5">
+                    <span className="flex items-center gap-1">
                       <TrendUp size={10} />
                       {formatAmount(market.totalVolume)} vol
+                      {market.seedAmount && market.seedAmount > 0 ? (
+                        <span
+                          className="text-[#00e5a0] text-[9px] font-mono border border-[#00e5a0]/30 rounded px-1 py-0.5 leading-none"
+                          title="Creator backed this market with real liquidity"
+                        >
+                          💧 LP
+                        </span>
+                      ) : null}
                     </span>
-                    {market.seedAmount && market.seedAmount > 0 ? (
-                      <span className="flex items-center gap-0.5 text-[#00e5a0]" title="Creator seeded this market with real liquidity">
-                        💧 {formatAmount(market.seedAmount)} seeded
-                      </span>
-                    ) : null}
                     <span className="flex items-center gap-0.5">
                       <UsersThree size={10} />
                       {market._count.trades}
@@ -651,7 +654,17 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
             {/* ── Volume + Stats bar ── */}
             <div className="flex items-center justify-between px-1 text-xs font-mono text-[var(--muted)]">
-              <span>{formatAmount(market.totalVolume)} vol</span>
+              <span className="flex items-center gap-1.5">
+                {formatAmount(market.totalVolume)} vol
+                {market.seedAmount && market.seedAmount > 0 ? (
+                  <span
+                    className="text-[#00e5a0] text-[9px] border border-[#00e5a0]/30 rounded px-1 py-0.5 leading-none"
+                    title="Creator backed this market with real liquidity"
+                  >
+                    💧 LP
+                  </span>
+                ) : null}
+              </span>
               <span>{market._count.trades} {t.market.trades}</span>
             </div>
 

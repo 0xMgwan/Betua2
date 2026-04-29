@@ -339,7 +339,8 @@ export async function POST(req: NextRequest) {
     // At resolution creator redeems their winning-side shares like any bettor
     if (effectiveSeed > 0) {
       try {
-        const ENTRY_FEE = 0.05;
+        // No entry fee on LP seed — creator already transferred full amount to escrow.
+        // Standard settlement fee still applies at resolution payout.
 
         if (isMultiOption && optionPools) {
           // Compute per-option seed amounts
@@ -355,7 +356,7 @@ export async function POST(req: NextRequest) {
           const optionSharesMap: Record<string, number> = {};
           const currentPools = [...(optionPools as number[])];
           for (let i = 0; i < options.length; i++) {
-            const netAmt = Math.round(seedPerOption[i] * (1 - ENTRY_FEE));
+            const netAmt = Math.round(seedPerOption[i]); // full amount, no entry fee
             if (netAmt <= 0) continue;
             const result = getMultiOptionSharesOut(netAmt, i, currentPools);
             optionSharesMap[String(i)] = Math.round(result.shares);
@@ -375,8 +376,8 @@ export async function POST(req: NextRequest) {
           const yesPct = useProportionalSeed ? Math.max(1, Math.min(99, Number(initialProb) || 50)) : 50;
           const yesSeed = Math.round(effectiveSeed * yesPct / 100);
           const noSeed  = effectiveSeed - yesSeed;
-          const yesResult = getSharesOut(Math.round(yesSeed * (1 - ENTRY_FEE)), market.noPool, market.yesPool);
-          const noResult  = getSharesOut(Math.round(noSeed  * (1 - ENTRY_FEE)), market.yesPool, market.noPool);
+          const yesResult = getSharesOut(yesSeed, market.noPool, market.yesPool); // full amount, no entry fee
+          const noResult  = getSharesOut(noSeed,  market.yesPool, market.noPool);
           const yesShares = Math.round(yesResult.shares);
           const noShares  = Math.round(noResult.shares);
 
