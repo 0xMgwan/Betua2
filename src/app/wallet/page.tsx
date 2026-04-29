@@ -581,6 +581,8 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
   const isCreateMarket = tx.type === "CREATE_MARKET";
   const isReferral = tx.type === "REFERRAL_REWARD";
   const isCreatorFee = tx.type === "CREATOR_FEE";
+  const isLpRedeem = tx.type === "LP_REDEEM";
+  const isSeedLiquidity = tx.type === "SEED_LIQUIDITY";
 
   const statusConfig = {
     COMPLETED: { icon: <CheckCircle size={13} weight="fill" className="text-[var(--accent)]" />, label: locale === "sw" ? "Imethibitishwa" : "Confirmed", color: "text-[var(--accent)]" },
@@ -598,15 +600,17 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
       <div className="flex items-center gap-3">
         <div className={cn(
           "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-          isDeposit || isReceive || isRedeem || isReferral || isCreatorFee ? "bg-[var(--accent)]/10" : 
-          isSend || isBuyShares || isSellShares ? "bg-blue-500/10" : 
+          isDeposit || isReceive || isRedeem || isReferral || isCreatorFee || isLpRedeem ? "bg-[var(--accent)]/10" :
+          isSend || isBuyShares || isSellShares || isSeedLiquidity ? "bg-blue-500/10" :
           isCreateMarket ? "bg-purple-500/10" :
           "bg-red-500/10"
         )}>
-          {isReferral
+          {isReferral || isCreatorFee
             ? <Gift size={18} weight="bold" className="text-[var(--accent)]" />
-            : isCreatorFee
-            ? <Gift size={18} weight="bold" className="text-[var(--accent)]" />
+            : isLpRedeem
+            ? <span className="text-base">💧</span>
+            : isSeedLiquidity
+            ? <span className="text-base">💧</span>
             : isDeposit || isReceive || isRedeem
             ? <ArrowDownLeft size={18} weight="bold" className="text-[var(--accent)]" />
             : isCreateMarket
@@ -619,9 +623,11 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
           <p className="text-sm font-semibold">
             {isReferral ? (locale === "sw" ? "Bonasi ya Referral" : "Referral Reward") :
              isCreatorFee ? (locale === "sw" ? "Ada ya Muundaji" : "Creator Fee") :
-             isDeposit ? t.wallet.deposit : 
-             isReceive ? (locale === "sw" ? "Pokea" : "Receive") : 
-             isSend ? t.wallet.send : 
+             isLpRedeem ? (locale === "sw" ? "Faida ya LP Imerudishwa" : "LP Seed Returned") :
+             isSeedLiquidity ? (locale === "sw" ? "Mbegu ya Soko" : "Market Seeded") :
+             isDeposit ? t.wallet.deposit :
+             isReceive ? (locale === "sw" ? "Pokea" : "Receive") :
+             isSend ? t.wallet.send :
              isBuyShares ? (locale === "sw" ? "Nunua Hisa" : "Buy Shares") :
              isSellShares ? (locale === "sw" ? "Uza Hisa" : "Sell Shares") :
              isRedeem ? (locale === "sw" ? "Komboa" : "Redeem") :
@@ -634,18 +640,18 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
             {isSend && tx.recipientUsername && <span className="ml-1.5 opacity-70">→ @{tx.recipientUsername}</span>}
             {isReceive && tx.recipientUsername && <span className="ml-1.5 opacity-70">← @{tx.recipientUsername}</span>}
             {isReferral && tx.recipientUsername && <span className="ml-1.5 opacity-70">← @{tx.recipientUsername}</span>}
-            {(isBuyShares || isSellShares || isRedeem || isCreateMarket || isCreatorFee) && tx.recipientUsername && <span className="ml-1.5 opacity-70 line-clamp-1">· {tx.recipientUsername}</span>}
+            {(isBuyShares || isSellShares || isRedeem || isCreateMarket || isCreatorFee || isLpRedeem || isSeedLiquidity) && tx.recipientUsername && <span className="ml-1.5 opacity-70 line-clamp-1">· {tx.recipientUsername}</span>}
           </p>
         </div>
       </div>
 
       <div className="text-right">
-        <p className={cn("font-black text-sm tabular-nums", 
-          isDeposit || isReceive || isRedeem || isReferral || isCreatorFee ? "text-[var(--accent)]" : 
+        <p className={cn("font-black text-sm tabular-nums",
+          isDeposit || isReceive || isRedeem || isReferral || isCreatorFee || isLpRedeem ? "text-[var(--accent)]" :
           isCreateMarket ? "text-purple-400" :
-          isSend || isBuyShares || isSellShares ? "text-blue-400" : 
+          isSend || isBuyShares || isSellShares || isSeedLiquidity ? "text-blue-400" :
           "text-red-400")}>
-          {isDeposit || isReceive || isRedeem || isReferral || isCreatorFee ? "+" : "−"}
+          {isDeposit || isReceive || isRedeem || isReferral || isCreatorFee || isLpRedeem ? "+" : "−"}
           {displayCurrency === 'USDC' 
             ? `$${((tx.amountUsdc || 0) > 1000 ? (tx.amountUsdc || 0) / 1_000_000 : (tx.amountUsdc || 0)).toFixed(2)}`
             : displayCurrency === 'KES' 
