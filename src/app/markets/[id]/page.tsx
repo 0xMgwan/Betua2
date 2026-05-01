@@ -1673,7 +1673,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 60, opacity: 0 }}
               transition={{ type: "spring", damping: 28, stiffness: 320 }}
-              className="relative w-full max-w-sm bg-[var(--card)] border border-[var(--accent)]/30 rounded-2xl overflow-hidden shadow-[0_0_60px_rgba(0,229,160,0.12)]"
+              className="relative w-full max-w-sm bg-[var(--card)] border border-[var(--accent)]/30 rounded-2xl overflow-y-auto max-h-[90vh] shadow-[0_0_60px_rgba(0,229,160,0.12)]"
               onClick={e => e.stopPropagation()}
             >
               <div className="h-1 w-full bg-gradient-to-r from-[var(--accent)]/0 via-[var(--accent)] to-[var(--accent)]/0" />
@@ -1700,12 +1700,12 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                 {(() => {
                   if (isMultiOption && market.optionPools) {
                     const prices = getMultiOptionPrices(market.optionPools as number[]);
-                    const top = [...prices.map((p, i) => ({ label: market.options![i], prob: Math.round(p * 100), i }))]
-                      .sort((a, b) => b.prob - a.prob)
-                      .slice(0, 3);
+                    const allOptions = prices.map((p, i) => ({ label: market.options![i], prob: Math.round(p * 100), i }))
+                      .sort((a, b) => b.prob - a.prob);
+                    const useTwoCol = allOptions.length >= 4;
                     return (
-                      <div className="grid gap-1.5">
-                        {top.map(o => (
+                      <div className={`grid gap-1.5 ${useTwoCol ? "grid-cols-2" : ""}`}>
+                        {allOptions.map(o => (
                           <div key={o.i} className="flex items-center justify-between bg-[var(--background)] border border-[var(--card-border)] rounded-lg px-3 py-2 font-mono text-xs">
                             <span className="text-[var(--muted)] truncate mr-2">{o.label}</span>
                             <span className="font-black text-[var(--accent)] shrink-0">{o.prob}%</span>
@@ -1739,7 +1739,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     const oddsSnap = isMultiOption && market.optionPools
                       ? getMultiOptionPrices(market.optionPools as number[])
                           .map((p, i) => `${market.options![i]}: ${Math.round(p * 100)}%`)
-                          .slice(0, 3).join(" · ")
+                          .join(" · ")
                       : `YES ${Math.round(market.price.yes * 100)}% · NO ${Math.round(market.price.no * 100)}%`;
                     const waMsg = `📊 *${title}*\n${oddsSnap}\n\nPredict on Guap 👇\n${marketUrl}`;
                     const tgMsg = `📊 ${title} — ${oddsSnap}. Make your prediction on Guap!`;
@@ -1797,7 +1797,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 60, opacity: 0 }}
               transition={{ type: "spring", damping: 28, stiffness: 320 }}
-              className="relative w-full max-w-sm bg-[var(--card)] border border-[var(--accent)]/30 rounded-2xl overflow-hidden shadow-[0_0_60px_rgba(0,229,160,0.15)]"
+              className="relative w-full max-w-sm bg-[var(--card)] border border-[var(--accent)]/30 rounded-2xl overflow-y-auto max-h-[90vh] shadow-[0_0_60px_rgba(0,229,160,0.15)]"
               onClick={e => e.stopPropagation()}
             >
               {/* Header glow bar */}
