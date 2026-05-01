@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
     // Use the dedicated /api/og route — avoids redirect issues with WhatsApp
     const baseUrl = "https://guap.gold";
-    const ogImageUrl = `${baseUrl}/api/og/markets/${id}`;
+    const ogImageUrl = `${baseUrl}/api/og/markets/${id}?v=2`;
 
     return {
       title: `${market.title} — GUAP`,
