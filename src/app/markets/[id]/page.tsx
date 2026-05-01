@@ -1664,7 +1664,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 pb-4 sm:p-4"
             onClick={() => setShowMarketShareModal(false)}
           >
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
@@ -1673,11 +1673,11 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 60, opacity: 0 }}
               transition={{ type: "spring", damping: 28, stiffness: 320 }}
-              className="relative w-full max-w-sm bg-[var(--card)] border border-[var(--accent)]/30 rounded-2xl overflow-y-auto max-h-[90vh] shadow-[0_0_60px_rgba(0,229,160,0.12)]"
+              className="relative w-full max-w-md bg-[var(--card)] border border-[var(--accent)]/30 rounded-2xl overflow-y-auto max-h-[90vh] shadow-[0_0_60px_rgba(0,229,160,0.12)]"
               onClick={e => e.stopPropagation()}
             >
               <div className="h-1 w-full bg-gradient-to-r from-[var(--accent)]/0 via-[var(--accent)] to-[var(--accent)]/0" />
-              <div className="p-5 space-y-4">
+              <div className="p-4 space-y-4">
                 {/* Header */}
                 <div className="flex items-center gap-3">
                   {market.imageUrl ? (
@@ -1748,22 +1748,18 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(marketUrl)}&text=${encodeURIComponent(tgMsg)}`;
                     const xUrl  = `https://twitter.com/intent/tweet?text=${encodeURIComponent(xMsg)}&url=${encodeURIComponent(marketUrl)}`;
                     return (
-                      <div className="grid grid-cols-3 gap-2">
-                        <a href={waUrl} target="_blank" rel="noopener noreferrer"
-                          className="flex flex-col items-center gap-1.5 py-3 rounded-xl bg-[#25D366]/10 border border-[#25D366]/20 hover:bg-[#25D366]/20 transition-colors">
-                          <WhatsappLogo size={22} weight="fill" className="text-[#25D366]" />
-                          <span className="text-[10px] font-mono font-bold text-[#25D366]">WhatsApp</span>
-                        </a>
-                        <a href={tgUrl} target="_blank" rel="noopener noreferrer"
-                          className="flex flex-col items-center gap-1.5 py-3 rounded-xl bg-[#229ED9]/10 border border-[#229ED9]/20 hover:bg-[#229ED9]/20 transition-colors">
-                          <TelegramLogo size={22} weight="fill" className="text-[#229ED9]" />
-                          <span className="text-[10px] font-mono font-bold text-[#229ED9]">Telegram</span>
-                        </a>
-                        <a href={xUrl} target="_blank" rel="noopener noreferrer"
-                          className="flex flex-col items-center gap-1.5 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
-                          <XLogo size={22} weight="fill" className="text-white" />
-                          <span className="text-[10px] font-mono font-bold text-white">X / Twitter</span>
-                        </a>
+                      <div className="flex gap-2">
+                        {[
+                          { href: waUrl, bg: "bg-[#25D366]/10", border: "border-[#25D366]/20", hover: "hover:bg-[#25D366]/20", color: "text-[#25D366]", icon: <WhatsappLogo size={22} weight="fill" />, label: "WhatsApp" },
+                          { href: tgUrl, bg: "bg-[#229ED9]/10", border: "border-[#229ED9]/20", hover: "hover:bg-[#229ED9]/20", color: "text-[#229ED9]", icon: <TelegramLogo size={22} weight="fill" />, label: "Telegram" },
+                          { href: xUrl,  bg: "bg-white/5",       border: "border-white/10",     hover: "hover:bg-white/10",     color: "text-white",     icon: <XLogo size={22} weight="fill" />,        label: "X / Twitter" },
+                        ].map(s => (
+                          <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
+                            className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl ${s.bg} border ${s.border} ${s.hover} transition-colors ${s.color}`}>
+                            {s.icon}
+                            <span className="text-[10px] font-mono font-bold">{s.label}</span>
+                          </a>
+                        ))}
                       </div>
                     );
                   })()}
@@ -1797,7 +1793,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 60, opacity: 0 }}
               transition={{ type: "spring", damping: 28, stiffness: 320 }}
-              className="relative w-full max-w-sm bg-[var(--card)] border border-[var(--accent)]/30 rounded-2xl overflow-y-auto max-h-[90vh] shadow-[0_0_60px_rgba(0,229,160,0.15)]"
+              className="relative w-full max-w-md bg-[var(--card)] border border-[var(--accent)]/30 rounded-2xl overflow-y-auto max-h-[90vh] shadow-[0_0_60px_rgba(0,229,160,0.15)]"
               onClick={e => e.stopPropagation()}
             >
               {/* Header glow bar */}
@@ -1857,22 +1853,18 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(marketUrl)}&text=${encodeURIComponent(`🔥 I just bet ${betStr} on ${sharePayload.label} — "${market.title}". Odds: ${odds}. Join me on Guap!`)}`;
                     const xUrl  = `https://twitter.com/intent/tweet?text=${encodeURIComponent(`🔥 I just bet ${betStr} on "${market.title}" — ${sharePayload.label} @ ${odds} odds. Join me on Guap 👇`)}&url=${encodeURIComponent(marketUrl)}`;
                     return (
-                      <div className="grid grid-cols-3 gap-2">
-                        <a href={waUrl} target="_blank" rel="noopener noreferrer"
-                          className="flex flex-col items-center gap-1.5 py-3 rounded-xl bg-[#25D366]/10 border border-[#25D366]/20 hover:bg-[#25D366]/20 transition-colors">
-                          <WhatsappLogo size={22} weight="fill" className="text-[#25D366]" />
-                          <span className="text-[10px] font-mono font-bold text-[#25D366]">WhatsApp</span>
-                        </a>
-                        <a href={tgUrl} target="_blank" rel="noopener noreferrer"
-                          className="flex flex-col items-center gap-1.5 py-3 rounded-xl bg-[#229ED9]/10 border border-[#229ED9]/20 hover:bg-[#229ED9]/20 transition-colors">
-                          <TelegramLogo size={22} weight="fill" className="text-[#229ED9]" />
-                          <span className="text-[10px] font-mono font-bold text-[#229ED9]">Telegram</span>
-                        </a>
-                        <a href={xUrl} target="_blank" rel="noopener noreferrer"
-                          className="flex flex-col items-center gap-1.5 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
-                          <XLogo size={22} weight="fill" className="text-white" />
-                          <span className="text-[10px] font-mono font-bold text-white">X / Twitter</span>
-                        </a>
+                      <div className="flex gap-2">
+                        {[
+                          { href: waUrl, bg: "bg-[#25D366]/10", border: "border-[#25D366]/20", hover: "hover:bg-[#25D366]/20", color: "text-[#25D366]", icon: <WhatsappLogo size={22} weight="fill" />, label: "WhatsApp" },
+                          { href: tgUrl, bg: "bg-[#229ED9]/10", border: "border-[#229ED9]/20", hover: "hover:bg-[#229ED9]/20", color: "text-[#229ED9]", icon: <TelegramLogo size={22} weight="fill" />, label: "Telegram" },
+                          { href: xUrl,  bg: "bg-white/5",       border: "border-white/10",     hover: "hover:bg-white/10",     color: "text-white",     icon: <XLogo size={22} weight="fill" />,        label: "X / Twitter" },
+                        ].map(s => (
+                          <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
+                            className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl ${s.bg} border ${s.border} ${s.hover} transition-colors ${s.color}`}>
+                            {s.icon}
+                            <span className="text-[10px] font-mono font-bold">{s.label}</span>
+                          </a>
+                        ))}
                       </div>
                     );
                   })()}
