@@ -32,7 +32,6 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     if (isMulti) {
       const prices = getMultiOptionPrices(pools!);
       const oddsStr = opts!
-        .slice(0, 3)
         .map((o: string, i: number) => `${o}: ${Math.round(prices[i] * 100)}%`)
         .join(" · ");
       desc = `${oddsStr} — ${market.description?.slice(0, 80) || market.title}`;

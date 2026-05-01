@@ -83,7 +83,7 @@ export async function GET(
       ? `${totalVolume} TZS vol`
       : "";
 
-  return new ImageResponse(
+  const imgResponse = new ImageResponse(
     (
       <div
         style={{
@@ -403,4 +403,7 @@ export async function GET(
     ),
     { width: W, height: H }
   );
+  // Allow WhatsApp/crawlers to cache for 5 min, force re-fetch after
+  imgResponse.headers.set("Cache-Control", "public, max-age=300, s-maxage=300, stale-while-revalidate=60");
+  return imgResponse;
 }
