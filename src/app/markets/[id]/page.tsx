@@ -93,6 +93,9 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   // Profile modal state
   const [profileUsername, setProfileUsername] = useState<string | null>(null);
 
+  // Share modal
+  const [showMarketShareModal, setShowMarketShareModal] = useState(false);
+
   // Edit state
   const [showQR, setShowQR] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -630,32 +633,18 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     </span>
                   </div>
                 </div>
-                {/* Share icons */}
-                <div className="flex gap-1 flex-shrink-0">
-                  <a
-                    href={`https://wa.me/?text=${encodeURIComponent(`${displayTitle} - Predict now on GUAP! ${typeof window !== 'undefined' ? window.location.href : ''}`)}`}
-                    target="_blank" rel="noopener noreferrer"
-                    className="p-1 text-[#25D366] hover:bg-[#25D366]/10 rounded transition-all"
+                {/* Share button */}
+                <div className="flex gap-1.5 flex-shrink-0">
+                  <button
+                    onClick={() => setShowMarketShareModal(true)}
+                    className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-mono font-bold text-[var(--accent)] border border-[var(--accent)]/30 rounded-lg hover:bg-[var(--accent)]/10 transition-all"
                   >
-                    <WhatsappLogo size={14} weight="fill" />
-                  </a>
-                  <a
-                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${displayTitle} - Predict now on GUAP!`)}&url=${typeof window !== 'undefined' ? encodeURIComponent(window.location.href) : ''}`}
-                    target="_blank" rel="noopener noreferrer"
-                    className="p-1 text-[var(--foreground)] hover:bg-[var(--foreground)]/10 rounded transition-all"
-                  >
-                    <XLogo size={14} weight="fill" />
-                  </a>
-                  <a
-                    href={`https://t.me/share/url?url=${typeof window !== 'undefined' ? encodeURIComponent(window.location.href) : ''}&text=${encodeURIComponent(displayTitle || '')}`}
-                    target="_blank" rel="noopener noreferrer"
-                    className="p-1 text-[#0088cc] hover:bg-[#0088cc]/10 rounded transition-all"
-                  >
-                    <TelegramLogo size={14} weight="fill" />
-                  </a>
+                    <ShareNetwork size={13} weight="bold" />
+                    Share
+                  </button>
                   <button
                     onClick={() => setShowQR(true)}
-                    className="p-1 text-[var(--muted)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded transition-all"
+                    className="p-1.5 text-[var(--muted)] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-lg transition-all"
                     title="Get QR code"
                   >
                     <QrCode size={14} weight="bold" />
@@ -1667,6 +1656,130 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
       </AnimatePresence>
       <Footer />
       <UserProfileModal username={profileUsername} onClose={() => setProfileUsername(null)} />
+
+      {/* ── Market Share Modal (no trade required) ── */}
+      <AnimatePresence>
+        {showMarketShareModal && market && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+            onClick={() => setShowMarketShareModal(false)}
+          >
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+            <motion.div
+              initial={{ y: 60, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 60, opacity: 0 }}
+              transition={{ type: "spring", damping: 28, stiffness: 320 }}
+              className="relative w-full max-w-sm bg-[var(--card)] border border-[var(--accent)]/30 rounded-2xl overflow-hidden shadow-[0_0_60px_rgba(0,229,160,0.12)]"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="h-1 w-full bg-gradient-to-r from-[var(--accent)]/0 via-[var(--accent)] to-[var(--accent)]/0" />
+              <div className="p-5 space-y-4">
+                {/* Header */}
+                <div className="flex items-center gap-3">
+                  {market.imageUrl ? (
+                    <img src={market.imageUrl} className="w-10 h-10 rounded-xl object-cover shrink-0 border border-[var(--card-border)]" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/20 flex items-center justify-center shrink-0">
+                      <ShareNetwork size={18} weight="bold" className="text-[var(--accent)]" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-mono font-bold text-sm text-[var(--foreground)] uppercase tracking-wider">Share Market</p>
+                    <p className="text-xs text-[var(--muted)] line-clamp-1">{displayTitle || market.title}</p>
+                  </div>
+                  <button onClick={() => setShowMarketShareModal(false)} className="ml-auto text-[var(--muted)] hover:text-[var(--foreground)] shrink-0">
+                    <XCircle size={20} />
+                  </button>
+                </div>
+
+                {/* Live odds snapshot */}
+                {(() => {
+                  if (isMultiOption && market.optionPools) {
+                    const prices = getMultiOptionPrices(market.optionPools as number[]);
+                    const top = [...prices.map((p, i) => ({ label: market.options![i], prob: Math.round(p * 100), i }))]
+                      .sort((a, b) => b.prob - a.prob)
+                      .slice(0, 3);
+                    return (
+                      <div className="grid gap-1.5">
+                        {top.map(o => (
+                          <div key={o.i} className="flex items-center justify-between bg-[var(--background)] border border-[var(--card-border)] rounded-lg px-3 py-2 font-mono text-xs">
+                            <span className="text-[var(--muted)] truncate mr-2">{o.label}</span>
+                            <span className="font-black text-[var(--accent)] shrink-0">{o.prob}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }
+                  const yesP = Math.round(market.price.yes * 100);
+                  return (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-[#00e5a0]/5 border border-[#00e5a0]/20 rounded-xl p-3 text-center font-mono">
+                        <p className="text-[10px] text-[var(--muted)] uppercase mb-1">YES</p>
+                        <p className="text-2xl font-black text-[#00e5a0]">{yesP}%</p>
+                      </div>
+                      <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-3 text-center font-mono">
+                        <p className="text-[10px] text-[var(--muted)] uppercase mb-1">NO</p>
+                        <p className="text-2xl font-black text-red-400">{100 - yesP}%</p>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Share buttons */}
+                <div>
+                  <p className="text-[10px] text-[var(--muted)] uppercase tracking-wide font-mono mb-2">Share with friends 👇</p>
+                  {(() => {
+                    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://guap.gold";
+                    const marketUrl = `${appUrl}/markets/${id}`;
+                    const title = displayTitle || market.title;
+                    const oddsSnap = isMultiOption && market.optionPools
+                      ? getMultiOptionPrices(market.optionPools as number[])
+                          .map((p, i) => `${market.options![i]}: ${Math.round(p * 100)}%`)
+                          .slice(0, 3).join(" · ")
+                      : `YES ${Math.round(market.price.yes * 100)}% · NO ${Math.round(market.price.no * 100)}%`;
+                    const waMsg = `📊 *${title}*\n${oddsSnap}\n\nPredict on Guap 👇\n${marketUrl}`;
+                    const tgMsg = `📊 ${title} — ${oddsSnap}. Make your prediction on Guap!`;
+                    const xMsg  = `📊 "${title}" — ${oddsSnap} · Predict on Guap 👇`;
+                    const waUrl = `https://wa.me/?text=${encodeURIComponent(waMsg)}`;
+                    const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(marketUrl)}&text=${encodeURIComponent(tgMsg)}`;
+                    const xUrl  = `https://twitter.com/intent/tweet?text=${encodeURIComponent(xMsg)}&url=${encodeURIComponent(marketUrl)}`;
+                    return (
+                      <div className="grid grid-cols-3 gap-2">
+                        <a href={waUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex flex-col items-center gap-1.5 py-3 rounded-xl bg-[#25D366]/10 border border-[#25D366]/20 hover:bg-[#25D366]/20 transition-colors">
+                          <WhatsappLogo size={22} weight="fill" className="text-[#25D366]" />
+                          <span className="text-[10px] font-mono font-bold text-[#25D366]">WhatsApp</span>
+                        </a>
+                        <a href={tgUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex flex-col items-center gap-1.5 py-3 rounded-xl bg-[#229ED9]/10 border border-[#229ED9]/20 hover:bg-[#229ED9]/20 transition-colors">
+                          <TelegramLogo size={22} weight="fill" className="text-[#229ED9]" />
+                          <span className="text-[10px] font-mono font-bold text-[#229ED9]">Telegram</span>
+                        </a>
+                        <a href={xUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex flex-col items-center gap-1.5 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                          <XLogo size={22} weight="fill" className="text-white" />
+                          <span className="text-[10px] font-mono font-bold text-white">X / Twitter</span>
+                        </a>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                <button
+                  onClick={() => setShowMarketShareModal(false)}
+                  className="w-full py-2.5 font-mono text-xs font-bold text-[var(--muted)] hover:text-[var(--foreground)] border border-[var(--card-border)] rounded-xl transition-colors"
+                >
+                  CLOSE
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Trade Success / Share Modal ── */}
       <AnimatePresence>

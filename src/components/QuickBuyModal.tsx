@@ -288,6 +288,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                 <span className="inline-block w-2 h-3 sm:h-4 bg-[var(--accent)] ml-1 animate-pulse"></span>
               </div>
 
+              {!success && <>
               {/* Price Info - Terminal Style */}
               <div className="mb-4 p-3 bg-[var(--background)] border-2 border-[var(--card-border)]">
                 <div className="flex items-center justify-between text-xs font-mono">
@@ -356,6 +357,8 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                   </div>
                 </div>
               )}
+
+              </>}
 
               {/* Success / Share Block */}
               {success && sharePayload && (() => {
