@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
+import { getSharesOut, getMultiOptionSharesOut, getPrice, getMultiOptionPrices } from "@/lib/amm";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
 import { createNotification } from "@/lib/notify";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
@@ -160,6 +160,8 @@ export async function POST(req: NextRequest) {
       side: string;
       shares: number;
       amount: number;
+      oddsPrice: number;
+      payoutIfWin: number;
     }> = [];
 
     // ── Process each trade in a DB transaction ────────────────────────────
@@ -180,12 +182,16 @@ export async function POST(req: NextRequest) {
         let newNoPool = market.noPool;
         let newOptionPools = market.optionPools as number[] | null;
 
+        let oddsPrice = 0.5;
         if (isMultiOption && trade.optionIndex !== undefined) {
           if (!newOptionPools) throw new Error("Invalid market state: missing option pools");
+          oddsPrice = getMultiOptionPrices(newOptionPools)[trade.optionIndex] ?? 0.5;
           const result = getMultiOptionSharesOut(netAmount, trade.optionIndex, newOptionPools);
           sharesOut = result.shares;
           newOptionPools = result.newPools;
         } else {
+          const prices = getPrice(market.yesPool, market.noPool);
+          oddsPrice = trade.side === "YES" ? prices.yes : prices.no;
           const result = trade.side === "YES"
             ? getSharesOut(netAmount, market.noPool, market.yesPool)
             : getSharesOut(netAmount, market.yesPool, market.noPool);
@@ -193,6 +199,7 @@ export async function POST(req: NextRequest) {
           newYesPool = trade.side === "YES" ? result.newPoolOut : result.newPoolIn;
           newNoPool = trade.side === "NO" ? result.newPoolOut : result.newPoolIn;
         }
+        const payoutIfWin = oddsPrice > 0 ? Math.round((netAmount / oddsPrice) * (1 - FEE_PERCENT)) : 0;
 
         // Update market pools
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -262,6 +269,8 @@ export async function POST(req: NextRequest) {
           side: trade.side,
           shares: sharesOut,
           amount: trade.amountTzs,
+          oddsPrice,
+          payoutIfWin,
         });
       }
 

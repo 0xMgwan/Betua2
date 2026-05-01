@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, TrendUp, TrendDown, ShoppingCart } from "@phosphor-icons/react";
+import { X, TrendUp, TrendDown, ShoppingCart, CheckCircle, XCircle, WhatsappLogo, TelegramLogo, XLogo } from "@phosphor-icons/react";
 import { formatTZS } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useUser } from "@/store/useUser";
@@ -50,6 +50,9 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [sharePayload, setSharePayload] = useState<{
+    label: string; shares: number; amountTzs: number; payoutIfWin: number; oddsPrice: number;
+  } | null>(null);
   
   const isExpired = market.resolvesAt ? new Date(market.resolvesAt) < new Date() : false;
   const isResolved = market.status === "RESOLVED";
@@ -213,18 +216,21 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
         return;
       }
 
-      // Success - show message, send notification, and close modal after 2 seconds
+      // Build share payload
+      const oddsPrice = data.oddsPrice ?? (isMultiOption
+        ? (getMultiOptionPrices(market.optionPools as number[])[optionIndex ?? 0] ?? 0.5)
+        : (side === "YES" ? market.price.yes : market.price.no));
+      setSharePayload({
+        label: displaySide || side,
+        shares: Math.round(data.shares),
+        amountTzs: amountInTzs,
+        payoutIfWin: data.payoutIfWin ?? 0,
+        oddsPrice,
+      });
+
       setSuccess(true);
-      
-      // Send push notification
       notifications.notifyTrade(market.title, side, Number(amount), market.id, locale);
-      
-      // Call onSuccess to refresh data
       onSuccess?.();
-      
-      setTimeout(() => {
-        onClose();
-      }, 2000);
     } catch (err) {
       setError(locale === "sw" ? "Kosa la mtandao" : "Network error");
     } finally {
@@ -351,22 +357,76 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                 </div>
               )}
 
-              {/* Success Message - Terminal Style */}
-              {success && (
-                <div className="mb-4 p-4 bg-[#00e5a0]/10 border-2 border-[#00e5a0] shadow-[0_0_20px_rgba(0,229,160,0.3)]">
-                  <div className="flex items-center gap-2 text-[#00e5a0] mb-2 font-mono">
-                    <span className="text-lg">✓</span>
-                    <span className="font-bold uppercase tracking-wider">
-                      {locale === "sw" ? "Imefanikiwa!" : "Success!"}
-                    </span>
+              {/* Success / Share Block */}
+              {success && sharePayload && (() => {
+                const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://guap.gold";
+                const marketUrl = `${appUrl}/markets/${market.id}`;
+                const odds = `${Math.round(sharePayload.oddsPrice * 100)}%`;
+                const betStr = formatTZS(sharePayload.amountTzs);
+                const msg = `🔥 I just bet ${betStr} on *${sharePayload.label}* — "${market.title}"\nOdds: ${odds} | Payout if correct: ${formatTZS(sharePayload.payoutIfWin)}\n\nJoin me on Guap 👇\n${marketUrl}`;
+                const waUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+                const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(marketUrl)}&text=${encodeURIComponent(`🔥 I just bet ${betStr} on ${sharePayload.label} — "${market.title}". Odds: ${odds}. Join me on Guap!`)}`;
+                const xUrl  = `https://twitter.com/intent/tweet?text=${encodeURIComponent(`🔥 I just bet ${betStr} on "${market.title}" — ${sharePayload.label} @ ${odds}. Join me on Guap 👇`)}&url=${encodeURIComponent(marketUrl)}`;
+                return (
+                  <div className="mb-4 space-y-3">
+                    {/* Confirmed bar */}
+                    <div className="p-3 bg-[#00e5a0]/10 border-2 border-[#00e5a0] shadow-[0_0_20px_rgba(0,229,160,0.2)]">
+                      <div className="flex items-center gap-2 text-[#00e5a0] mb-2 font-mono">
+                        <CheckCircle size={16} weight="fill" />
+                        <span className="font-bold uppercase tracking-wider text-xs">Trade Confirmed</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 font-mono text-[10px]">
+                        <div className="bg-[var(--background)] border border-[var(--card-border)] p-2 text-center">
+                          <p className="text-[var(--muted)] uppercase mb-1">You bet</p>
+                          <p className="font-bold text-[var(--foreground)]">{betStr}</p>
+                        </div>
+                        <div className="bg-[var(--background)] border border-[var(--accent)]/30 p-2 text-center">
+                          <p className="text-[var(--muted)] uppercase mb-1">Position</p>
+                          <p className="font-bold text-[var(--accent)] truncate">{sharePayload.label}</p>
+                        </div>
+                        <div className="bg-[var(--background)] border border-[var(--card-border)] p-2 text-center">
+                          <p className="text-[var(--muted)] uppercase mb-1">Odds</p>
+                          <p className="font-bold text-[var(--foreground)]">{odds}</p>
+                        </div>
+                      </div>
+                      <div className="mt-2 p-2 bg-[var(--background)] border border-[var(--accent)]/20 flex items-center justify-between font-mono text-[10px]">
+                        <span className="text-[var(--muted)] uppercase">If correct, you get</span>
+                        <div className="text-right">
+                          <span className="font-black text-[#00e5a0]">{formatTZS(sharePayload.payoutIfWin)}</span>
+                          <span className={`ml-2 ${sharePayload.payoutIfWin > sharePayload.amountTzs ? "text-[#00e5a0]" : "text-[var(--muted)]"}`}>
+                            ({sharePayload.payoutIfWin > sharePayload.amountTzs ? "+" : ""}{formatTZS(sharePayload.payoutIfWin - sharePayload.amountTzs)})
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Share row */}
+                    <div>
+                      <p className="text-[9px] text-[var(--muted)] uppercase tracking-widest font-mono mb-1.5">Share your call 🔥</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        <a href={waUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex flex-col items-center gap-1 py-2.5 border border-[#25D366]/30 bg-[#25D366]/10 hover:bg-[#25D366]/20 transition-colors">
+                          <WhatsappLogo size={18} weight="fill" className="text-[#25D366]" />
+                          <span className="text-[9px] font-mono font-bold text-[#25D366]">WhatsApp</span>
+                        </a>
+                        <a href={tgUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex flex-col items-center gap-1 py-2.5 border border-[#229ED9]/30 bg-[#229ED9]/10 hover:bg-[#229ED9]/20 transition-colors">
+                          <TelegramLogo size={18} weight="fill" className="text-[#229ED9]" />
+                          <span className="text-[9px] font-mono font-bold text-[#229ED9]">Telegram</span>
+                        </a>
+                        <a href={xUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex flex-col items-center gap-1 py-2.5 border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
+                          <XLogo size={18} weight="fill" className="text-white" />
+                          <span className="text-[9px] font-mono font-bold text-white">X / Twitter</span>
+                        </a>
+                      </div>
+                    </div>
+                    <button onClick={onClose}
+                      className="w-full py-2 font-mono text-[10px] font-bold text-[var(--muted)] hover:text-[var(--foreground)] border border-[var(--card-border)] uppercase tracking-widest transition-colors">
+                      CLOSE
+                    </button>
                   </div>
-                  <p className="text-xs font-mono text-[var(--foreground)]">
-                    {locale === "sw" 
-                      ? `Umenunua hisa ${shares} za ${displaySide || side}!`
-                      : `Bought ${shares} ${displaySide || side} shares!`}
-                  </p>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Error - Terminal Style */}
               {error && !success && (

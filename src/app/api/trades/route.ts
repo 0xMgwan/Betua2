@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
 import { bkes } from "@/lib/bkes";
-import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
+import { getSharesOut, getMultiOptionSharesOut, getPrice, getMultiOptionPrices } from "@/lib/amm";
 import { notifications } from "@/lib/notifications";
 import { createNotification } from "@/lib/notify";
 import { notifyTradePlaced } from "@/lib/push";
@@ -137,16 +137,22 @@ export async function POST(req: NextRequest) {
     let newPools: number[] | undefined;
     const tradeSide = isMultiOption ? (mkt.options as string[])[optionIndex] : side;
 
+    // oddsPrice = implied probability (0–1) BEFORE the trade (entry price the user sees)
+    let oddsPrice: number;
+
     if (isMultiOption) {
       const pools = mkt.optionPools as number[];
       if (!pools || !Array.isArray(pools)) {
         return NextResponse.json({ error: "Invalid market state: missing option pools" }, { status: 500 });
       }
+      oddsPrice = getMultiOptionPrices(pools)[optionIndex] ?? 0.5;
       const result = getMultiOptionSharesOut(tradeAmount, optionIndex, pools);
       shares = result.shares;
       avgPrice = result.avgPrice;
       newPools = result.newPools;
     } else {
+      const prices = getPrice(market.yesPool, market.noPool);
+      oddsPrice = side === "YES" ? prices.yes : prices.no;
       const result =
         side === "YES"
           ? getSharesOut(tradeAmount, market.noPool, market.yesPool)
@@ -407,14 +413,17 @@ export async function POST(req: NextRequest) {
     // Push notification (off-app)
     notifyTradePlaced(session.userId, market.title, tradeSide, amountTzs, marketId, userLocale).catch(console.error);
 
-    // Estimated payout if this position wins (price-based, at current odds)
-    const netAmtForPayout = tradeAmount; // already after entry fee
-    const payoutIfWin = avgPrice > 0 ? Math.round(netAmtForPayout / avgPrice * (1 - FEE_PERCENT)) : 0;
+    // payoutIfWin: Polymarket-standard price-based estimate
+    // tradeAmount = net after entry fee; oddsPrice = implied probability (0–1)
+    const payoutIfWin = oddsPrice > 0
+      ? Math.round((tradeAmount / oddsPrice) * (1 - FEE_PERCENT))
+      : 0;
 
     return NextResponse.json({
       trade,
       shares: Math.round(shares),
-      price: avgPrice,
+      price: avgPrice,      // TZS/share (for display in trade panel)
+      oddsPrice,            // probability 0–1 (for modal odds % and payoutIfWin)
       payoutIfWin,
       market: updatedMarket,
       fee: feeAmount,

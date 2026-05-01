@@ -77,7 +77,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   const [tradeSuccess, setTradeSuccess] = useState("");
   const [showShareModal, setShowShareModal] = useState(false);
   const [sharePayload, setSharePayload] = useState<{
-    label: string; shares: number; amountTzs: number; payoutIfWin: number; price: number;
+    label: string; shares: number; amountTzs: number; payoutIfWin: number; oddsPrice: number;
   } | null>(null);
 
   // Sell state
@@ -263,14 +263,15 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
       } else {
         const label = isMultiOption ? market!.options![selectedOption] : side;
         const amtTzs = fromDisplay(Number(amount));
+        const oddsPrice = data.oddsPrice ?? (isMultiOption
+          ? (getMultiOptionPrices(market!.optionPools as number[])[selectedOption] ?? 0.5)
+          : (side === "YES" ? market!.price.yes : market!.price.no));
         setSharePayload({
           label,
           shares: Math.round(data.shares),
           amountTzs: amtTzs,
           payoutIfWin: data.payoutIfWin ?? 0,
-          price: data.price ?? (isMultiOption
-            ? (getMultiOptionPrices(market!.optionPools as number[])[selectedOption] ?? 0.5)
-            : (side === "YES" ? market!.price.yes : market!.price.no)),
+          oddsPrice,
         });
         setShowShareModal(true);
         setTradeSuccess(`Got ${Math.round(data.shares)} ${label} shares!`);
@@ -1709,7 +1710,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   {[
                     { label: "You bet", value: formatTZS(sharePayload.amountTzs) },
                     { label: "Position", value: sharePayload.label, accent: true },
-                    { label: "Odds", value: `${Math.round(sharePayload.price * 100)}%` },
+                    { label: "Odds", value: `${Math.round(sharePayload.oddsPrice * 100)}%` },
                   ].map(s => (
                     <div key={s.label} className="bg-[var(--background)] border border-[var(--card-border)] rounded-xl p-2.5 text-center">
                       <p className="text-[10px] text-[var(--muted)] uppercase tracking-wide font-mono mb-1">{s.label}</p>
@@ -1736,7 +1737,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   {(() => {
                     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://guap.gold";
                     const marketUrl = `${appUrl}/markets/${id}`;
-                    const odds = `${Math.round(sharePayload.price * 100)}%`;
+                    const odds = `${Math.round(sharePayload.oddsPrice * 100)}%`;
                     const betStr = formatTZS(sharePayload.amountTzs);
                     const msg = `🔥 I just bet ${betStr} on *${sharePayload.label}* — "${market.title}"\nOdds: ${odds} | Payout if correct: ${formatTZS(sharePayload.payoutIfWin)}\n\nJoin me on Guap 👇\n${marketUrl}`;
                     const waUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
