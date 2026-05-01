@@ -211,15 +211,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Transfer settlement fee from platform escrow → settlement fee wallet (non-blocking, TZS only)
+    // Transfer settlement fee — delayed 1.5s so the main transfer's blockchain tx
+    // is confirmed before we send another from the same platform wallet (avoids nonce collision)
     if (preferredCurrency === 'TZS' && PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID && settlementFee > 0) {
-      ntzs.transfers.create({
-        fromUserId: PLATFORM_NTZS_USER_ID,
-        toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
-        amountTzs: settlementFee,
-      }).catch((feeErr) => {
-        console.error("Settlement fee transfer failed (non-fatal):", feeErr);
-      });
+      setTimeout(() => {
+        ntzs.transfers.create({
+          fromUserId: PLATFORM_NTZS_USER_ID,
+          toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
+          amountTzs: settlementFee,
+        }).catch((feeErr) => {
+          console.error("Settlement fee transfer failed (non-fatal):", feeErr);
+        });
+      }, 1500);
     }
 
     // Add balance and create transaction record (position already marked as redeemed above)
