@@ -407,10 +407,15 @@ export async function POST(req: NextRequest) {
     // Push notification (off-app)
     notifyTradePlaced(session.userId, market.title, tradeSide, amountTzs, marketId, userLocale).catch(console.error);
 
+    // Estimated payout if this position wins (price-based, at current odds)
+    const netAmtForPayout = tradeAmount; // already after entry fee
+    const payoutIfWin = avgPrice > 0 ? Math.round(netAmtForPayout / avgPrice * (1 - FEE_PERCENT)) : 0;
+
     return NextResponse.json({
       trade,
       shares: Math.round(shares),
       price: avgPrice,
+      payoutIfWin,
       market: updatedMarket,
       fee: feeAmount,
       feePercent: Math.round(FEE_PERCENT * 100),

@@ -1332,7 +1332,8 @@ export default function CreateMarketPage() {
                           : "50% YES · 50% NO";
                       }
 
-                      const estReturnTzs = Math.round(seedTzs * winFraction * 0.9025);
+                      // No entry fee on LP seed — only 5% settlement fee at resolution
+                      const estReturnTzs = Math.round(seedTzs * winFraction * 0.95);
                       const depositDisplay = isUsdc ? `$${seedRaw.toFixed(2)}` : `TSh ${seedTzs.toLocaleString()}`;
                       const returnDisplay = isUsdc
                         ? `$${(estReturnTzs / USDC_TO_TZS_RATE).toFixed(2)}`
@@ -1348,17 +1349,17 @@ export default function CreateMarketPage() {
                             <span className="text-right max-w-[55%] truncate">{splitLabel}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span>{locale === "sw" ? "Fees (entry + azimio)" : "Fees (entry + settlement)"}</span>
-                            <span>5% + 5% = ~9.75%</span>
+                            <span>{locale === "sw" ? "Ada (azimio tu)" : "Fee (settlement only)"}</span>
+                            <span className="text-[#00e5a0]">5% <span className="text-[var(--muted)]">· no entry fee</span></span>
                           </div>
                           <div className="flex justify-between">
                             <span>{locale === "sw" ? "Unapata baada ya azimio (wastani)" : "Avg return at resolution"}</span>
-                            <span className="text-[#00e5a0]">{returnDisplay} <span className="text-[var(--muted)]">({Math.round(winFraction * 90.25)}% of seed)</span></span>
+                            <span className="text-[#00e5a0]">{returnDisplay} <span className="text-[var(--muted)]">({Math.round(winFraction * 95)}% of seed)</span></span>
                           </div>
                           <p className="text-[var(--muted)] text-[10px] pt-1">
                             {locale === "sw"
                               ? "Malipo ya mwisho yanarejeshwa otomatiki · Upande unaopoteza unagawanywa kwa washindi"
-                              : "LP payout auto-sent at resolution · Losing side funds winners · Same fees as any bettor"}
+                              : "LP payout auto-sent at resolution · Losing side funds winners · No entry fee on seed"}
                           </p>
                         </div>
                       );

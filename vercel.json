@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/push/check-positions",
-      "schedule": "0 12 * * *"
+      "schedule": "0 */4 * * *"
     }
   ]
 }

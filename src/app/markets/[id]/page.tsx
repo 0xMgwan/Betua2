@@ -75,6 +75,10 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   const [tradeLoading, setTradeLoading] = useState(false);
   const [tradeError, setTradeError] = useState("");
   const [tradeSuccess, setTradeSuccess] = useState("");
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [sharePayload, setSharePayload] = useState<{
+    label: string; shares: number; amountTzs: number; payoutIfWin: number; price: number;
+  } | null>(null);
 
   // Sell state
   const [sellShares, setSellShares] = useState("");
@@ -258,11 +262,21 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
         setTradeError(data.error || "Trade failed");
       } else {
         const label = isMultiOption ? market!.options![selectedOption] : side;
+        const amtTzs = fromDisplay(Number(amount));
+        setSharePayload({
+          label,
+          shares: Math.round(data.shares),
+          amountTzs: amtTzs,
+          payoutIfWin: data.payoutIfWin ?? 0,
+          price: data.price ?? (isMultiOption
+            ? (getMultiOptionPrices(market!.optionPools as number[])[selectedOption] ?? 0.5)
+            : (side === "YES" ? market!.price.yes : market!.price.no)),
+        });
+        setShowShareModal(true);
         setTradeSuccess(`Got ${Math.round(data.shares)} ${label} shares!`);
         setAmount("");
         await loadMarket();
         fetchUser();
-        setTimeout(() => setTradeSuccess(""), 4000);
       }
     } catch {
       setTradeError("Network error");
@@ -1652,6 +1666,116 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
       </AnimatePresence>
       <Footer />
       <UserProfileModal username={profileUsername} onClose={() => setProfileUsername(null)} />
+
+      {/* ── Trade Success / Share Modal ── */}
+      <AnimatePresence>
+        {showShareModal && sharePayload && market && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+            onClick={() => setShowShareModal(false)}
+          >
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+            <motion.div
+              initial={{ y: 60, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 60, opacity: 0 }}
+              transition={{ type: "spring", damping: 28, stiffness: 320 }}
+              className="relative w-full max-w-sm bg-[var(--card)] border border-[var(--accent)]/30 rounded-2xl overflow-hidden shadow-[0_0_60px_rgba(0,229,160,0.15)]"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header glow bar */}
+              <div className="h-1 w-full bg-gradient-to-r from-[var(--accent)]/0 via-[var(--accent)] to-[var(--accent)]/0" />
+
+              <div className="p-5 space-y-4">
+                {/* Confirm icon + title */}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/20 flex items-center justify-center shrink-0">
+                    <CheckCircle size={22} weight="fill" className="text-[var(--accent)]" />
+                  </div>
+                  <div>
+                    <p className="font-mono font-bold text-sm text-[var(--foreground)] uppercase tracking-wider">Trade Confirmed</p>
+                    <p className="text-xs text-[var(--muted)] line-clamp-1">{market.title}</p>
+                  </div>
+                  <button onClick={() => setShowShareModal(false)} className="ml-auto text-[var(--muted)] hover:text-[var(--foreground)]">
+                    <XCircle size={20} />
+                  </button>
+                </div>
+
+                {/* Stats grid */}
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: "You bet", value: formatTZS(sharePayload.amountTzs) },
+                    { label: "Position", value: sharePayload.label, accent: true },
+                    { label: "Odds", value: `${Math.round(sharePayload.price * 100)}%` },
+                  ].map(s => (
+                    <div key={s.label} className="bg-[var(--background)] border border-[var(--card-border)] rounded-xl p-2.5 text-center">
+                      <p className="text-[10px] text-[var(--muted)] uppercase tracking-wide font-mono mb-1">{s.label}</p>
+                      <p className={`text-sm font-black font-mono ${s.accent ? "text-[var(--accent)]" : "text-[var(--foreground)]"}`}>{s.value}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="bg-[var(--accent)]/5 border border-[var(--accent)]/20 rounded-xl p-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] text-[var(--muted)] uppercase tracking-wide font-mono">If correct, you get</p>
+                    <p className="text-lg font-black text-[var(--accent)] font-mono">{formatTZS(sharePayload.payoutIfWin)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] text-[var(--muted)] font-mono">Profit</p>
+                    <p className={`text-sm font-bold font-mono ${sharePayload.payoutIfWin > sharePayload.amountTzs ? "text-[var(--accent)]" : "text-[var(--muted)]"}`}>
+                      {sharePayload.payoutIfWin > sharePayload.amountTzs ? "+" : ""}{formatTZS(sharePayload.payoutIfWin - sharePayload.amountTzs)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Share prompt */}
+                <div>
+                  <p className="text-[10px] text-[var(--muted)] uppercase tracking-wide font-mono mb-2">Share your call 🔥</p>
+                  {(() => {
+                    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://guap.gold";
+                    const marketUrl = `${appUrl}/markets/${id}`;
+                    const odds = `${Math.round(sharePayload.price * 100)}%`;
+                    const betStr = formatTZS(sharePayload.amountTzs);
+                    const msg = `🔥 I just bet ${betStr} on *${sharePayload.label}* — "${market.title}"\nOdds: ${odds} | Payout if correct: ${formatTZS(sharePayload.payoutIfWin)}\n\nJoin me on Guap 👇\n${marketUrl}`;
+                    const waUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+                    const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(marketUrl)}&text=${encodeURIComponent(`🔥 I just bet ${betStr} on ${sharePayload.label} — "${market.title}". Odds: ${odds}. Join me on Guap!`)}`;
+                    const xUrl  = `https://twitter.com/intent/tweet?text=${encodeURIComponent(`🔥 I just bet ${betStr} on "${market.title}" — ${sharePayload.label} @ ${odds} odds. Join me on Guap 👇`)}&url=${encodeURIComponent(marketUrl)}`;
+                    return (
+                      <div className="grid grid-cols-3 gap-2">
+                        <a href={waUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex flex-col items-center gap-1.5 py-3 rounded-xl bg-[#25D366]/10 border border-[#25D366]/20 hover:bg-[#25D366]/20 transition-colors">
+                          <WhatsappLogo size={22} weight="fill" className="text-[#25D366]" />
+                          <span className="text-[10px] font-mono font-bold text-[#25D366]">WhatsApp</span>
+                        </a>
+                        <a href={tgUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex flex-col items-center gap-1.5 py-3 rounded-xl bg-[#229ED9]/10 border border-[#229ED9]/20 hover:bg-[#229ED9]/20 transition-colors">
+                          <TelegramLogo size={22} weight="fill" className="text-[#229ED9]" />
+                          <span className="text-[10px] font-mono font-bold text-[#229ED9]">Telegram</span>
+                        </a>
+                        <a href={xUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex flex-col items-center gap-1.5 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                          <XLogo size={22} weight="fill" className="text-white" />
+                          <span className="text-[10px] font-mono font-bold text-white">X / Twitter</span>
+                        </a>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="w-full py-2.5 font-mono text-xs font-bold text-[var(--muted)] hover:text-[var(--foreground)] border border-[var(--card-border)] rounded-xl transition-colors"
+                >
+                  CLOSE
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <QRCodeModal
         isOpen={showQR}
         onClose={() => setShowQR(false)}
