@@ -96,6 +96,13 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   // Share modal
   const [showMarketShareModal, setShowMarketShareModal] = useState(false);
 
+  // Related markets
+  const [relatedMarkets, setRelatedMarkets] = useState<{
+    id: string; title: string; category: string; imageUrl?: string | null;
+    totalVolume: number; yesPool: number; noPool: number;
+    options?: string[] | null; optionPools?: number[] | null; status: string;
+  }[]>([]);
+
   // Edit state
   const [showQR, setShowQR] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -189,6 +196,21 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
       setTranslatedOptions(null);
     }
   }, [locale, market?.id, translatedTitle]);
+
+  // Fetch related markets when market loads
+  useEffect(() => {
+    if (!market) return;
+    const params = new URLSearchParams({ category: market.category, sort: "volume" });
+    fetch(`/api/markets?${params}`)
+      .then(r => r.json())
+      .then(data => {
+        const others = (data.markets || []).filter(
+          (m: { id: string }) => m.id !== market.id
+        ).slice(0, 6);
+        setRelatedMarkets(others);
+      })
+      .catch(() => {});
+  }, [market?.id, market?.category]);
 
   const isMultiOption = !!(market?.options && market.options.length >= 2);
   
@@ -1358,6 +1380,72 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
           </div>
         </div>
       </div>
+
+      {/* ── Related Markets ── */}
+      {relatedMarkets.length > 0 && (
+        <div className="max-w-6xl mx-auto px-4 pb-10">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="h-px flex-1 bg-[var(--card-border)]" />
+            <span className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-widest">
+              {locale === "sw" ? "Masoko Yanayohusiana" : "Related Markets"}
+            </span>
+            <div className="h-px flex-1 bg-[var(--card-border)]" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {relatedMarkets.map(rm => {
+              const isMulti = Array.isArray(rm.options) && rm.options.length >= 2 && Array.isArray(rm.optionPools);
+              let probLabel = "";
+              if (isMulti) {
+                const pools = rm.optionPools as number[];
+                const inv = pools.reduce((s, p) => s + 1 / Math.max(p, 1), 0);
+                const probs = pools.map(p => Math.round(((1 / Math.max(p, 1)) / inv) * 100));
+                const maxIdx = probs.indexOf(Math.max(...probs));
+                probLabel = `${rm.options![maxIdx]}: ${probs[maxIdx]}%`;
+              } else {
+                const total = (rm.yesPool || 0) + (rm.noPool || 0);
+                const yes = total > 0 ? Math.round((rm.noPool / total) * 100) : 50;
+                probLabel = `YES ${yes}%`;
+              }
+              const vol = rm.totalVolume >= 1_000_000
+                ? `${(rm.totalVolume / 1_000_000).toFixed(1)}M`
+                : rm.totalVolume >= 1000
+                ? `${Math.round(rm.totalVolume / 1000)}K`
+                : `${rm.totalVolume}`;
+              return (
+                <Link key={rm.id} href={`/markets/${rm.id}`}
+                  className="group flex gap-3 bg-[var(--card)] border border-[var(--card-border)] hover:border-[var(--accent)]/40 rounded-xl p-3 transition-all hover:shadow-[0_0_12px_rgba(0,229,160,0.06)]"
+                >
+                  {rm.imageUrl ? (
+                    <div className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0">
+                      <Image src={rm.imageUrl} alt={rm.title} fill className="object-cover" sizes="56px" />
+                    </div>
+                  ) : (
+                    <div className="w-14 h-14 rounded-lg flex-shrink-0 bg-[var(--accent)]/5 border border-[var(--accent)]/10 flex items-center justify-center">
+                      <TrendUp size={20} className="text-[var(--accent)]/40" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold leading-snug line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
+                      {rm.title}
+                    </p>
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <span className="text-[11px] font-mono font-bold text-[var(--accent)]">{probLabel}</span>
+                      {rm.totalVolume > 0 && (
+                        <span className="text-[10px] font-mono text-[var(--muted)]">· {vol} TZS vol</span>
+                      )}
+                    </div>
+                    {rm.status === "RESOLVED" && (
+                      <span className="mt-1 inline-block text-[9px] font-mono uppercase tracking-wider bg-[var(--muted)]/10 text-[var(--muted)] px-1.5 py-0.5 rounded">
+                        Resolved
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Edit Market Modal */}
       <AnimatePresence>
