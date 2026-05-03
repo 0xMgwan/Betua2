@@ -1377,75 +1377,67 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
               </>)}
               </div>
             </div>
+
+            {/* ── Related Markets (desktop: under trade panel) ── */}
+            {relatedMarkets.length > 0 && (
+              <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-xl overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--card-border)]">
+                  <div className="w-1.5 h-1.5 bg-[var(--accent)]/50" />
+                  <span className="text-[9px] font-mono text-[var(--muted)] uppercase tracking-wider">
+                    {locale === "sw" ? "MASOKO.YANAYOHUSIANA" : "RELATED.MARKETS"}
+                  </span>
+                </div>
+                <div className="divide-y divide-[var(--card-border)]">
+                  {relatedMarkets.map(rm => {
+                    const rmIsMulti = Array.isArray(rm.options) && rm.options.length >= 2 && Array.isArray(rm.optionPools);
+                    let probLabel = "";
+                    if (rmIsMulti) {
+                      const pools = rm.optionPools as number[];
+                      const inv = pools.reduce((s, p) => s + 1 / Math.max(p, 1), 0);
+                      const probs = pools.map(p => Math.round(((1 / Math.max(p, 1)) / inv) * 100));
+                      const maxIdx = probs.indexOf(Math.max(...probs));
+                      probLabel = `${rm.options![maxIdx]}: ${probs[maxIdx]}%`;
+                    } else {
+                      const total = (rm.yesPool || 0) + (rm.noPool || 0);
+                      const yes = total > 0 ? Math.round((rm.noPool / total) * 100) : 50;
+                      probLabel = `YES ${yes}%`;
+                    }
+                    return (
+                      <Link key={rm.id} href={`/markets/${rm.id}`}
+                        className="group flex items-center gap-3 px-4 py-3 hover:bg-[var(--accent)]/5 transition-colors"
+                      >
+                        {rm.imageUrl ? (
+                          <div className="relative w-9 h-9 rounded-lg overflow-hidden flex-shrink-0">
+                            <Image src={rm.imageUrl} alt={rm.title} fill className="object-cover" sizes="36px" />
+                          </div>
+                        ) : (
+                          <div className="w-9 h-9 rounded-lg flex-shrink-0 bg-[var(--accent)]/5 border border-[var(--accent)]/10 flex items-center justify-center">
+                            <TrendUp size={14} className="text-[var(--accent)]/40" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold leading-snug line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
+                            {rm.title}
+                          </p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[10px] font-mono font-bold text-[var(--accent)]">{probLabel}</span>
+                            {rm.totalVolume > 0 && (
+                              <span className="text-[9px] font-mono text-[var(--muted)]">· {formatAmount(rm.totalVolume)} vol</span>
+                            )}
+                          </div>
+                        </div>
+                        {rm.status === "RESOLVED" && (
+                          <span className="text-[9px] font-mono text-[var(--muted)] flex-shrink-0">✓</span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
-
-      {/* ── Related Markets ── */}
-      {relatedMarkets.length > 0 && (
-        <div className="max-w-6xl mx-auto px-4 pb-10">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="h-px flex-1 bg-[var(--card-border)]" />
-            <span className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-widest">
-              {locale === "sw" ? "Masoko Yanayohusiana" : "Related Markets"}
-            </span>
-            <div className="h-px flex-1 bg-[var(--card-border)]" />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {relatedMarkets.map(rm => {
-              const isMulti = Array.isArray(rm.options) && rm.options.length >= 2 && Array.isArray(rm.optionPools);
-              let probLabel = "";
-              if (isMulti) {
-                const pools = rm.optionPools as number[];
-                const inv = pools.reduce((s, p) => s + 1 / Math.max(p, 1), 0);
-                const probs = pools.map(p => Math.round(((1 / Math.max(p, 1)) / inv) * 100));
-                const maxIdx = probs.indexOf(Math.max(...probs));
-                probLabel = `${rm.options![maxIdx]}: ${probs[maxIdx]}%`;
-              } else {
-                const total = (rm.yesPool || 0) + (rm.noPool || 0);
-                const yes = total > 0 ? Math.round((rm.noPool / total) * 100) : 50;
-                probLabel = `YES ${yes}%`;
-              }
-              const vol = rm.totalVolume >= 1_000_000
-                ? `${(rm.totalVolume / 1_000_000).toFixed(1)}M`
-                : rm.totalVolume >= 1000
-                ? `${Math.round(rm.totalVolume / 1000)}K`
-                : `${rm.totalVolume}`;
-              return (
-                <Link key={rm.id} href={`/markets/${rm.id}`}
-                  className="group flex gap-3 bg-[var(--card)] border border-[var(--card-border)] hover:border-[var(--accent)]/40 rounded-xl p-3 transition-all hover:shadow-[0_0_12px_rgba(0,229,160,0.06)]"
-                >
-                  {rm.imageUrl ? (
-                    <div className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0">
-                      <Image src={rm.imageUrl} alt={rm.title} fill className="object-cover" sizes="56px" />
-                    </div>
-                  ) : (
-                    <div className="w-14 h-14 rounded-lg flex-shrink-0 bg-[var(--accent)]/5 border border-[var(--accent)]/10 flex items-center justify-center">
-                      <TrendUp size={20} className="text-[var(--accent)]/40" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold leading-snug line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
-                      {rm.title}
-                    </p>
-                    <div className="mt-1.5 flex items-center gap-2">
-                      <span className="text-[11px] font-mono font-bold text-[var(--accent)]">{probLabel}</span>
-                      {rm.totalVolume > 0 && (
-                        <span className="text-[10px] font-mono text-[var(--muted)]">· {vol} TZS vol</span>
-                      )}
-                    </div>
-                    {rm.status === "RESOLVED" && (
-                      <span className="mt-1 inline-block text-[9px] font-mono uppercase tracking-wider bg-[var(--muted)]/10 text-[var(--muted)] px-1.5 py-0.5 rounded">
-                        Resolved
-                      </span>
-                    )}
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Edit Market Modal */}
       <AnimatePresence>
