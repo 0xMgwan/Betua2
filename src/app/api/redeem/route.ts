@@ -143,58 +143,44 @@ export async function POST(req: NextRequest) {
     let bkesTransferTxHash: string | undefined;
     
     if (preferredCurrency === 'USDC' && PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
-      // USDC payout: transfer nTZS from escrow, then swap to USDC
       try {
-        // Step 1: Transfer nTZS from escrow to user
         const transfer = await ntzs.transfers.create({
           fromUserId: PLATFORM_NTZS_USER_ID,
           toUserId: user.ntzsUserId,
           amountTzs: payoutTzs,
         });
         ntzsTransferId = transfer.id;
-        console.log(`[Redeem] nTZS transfer: ${ntzsTransferId}`);
-
-        // Step 2: Swap nTZS → USDC
-        console.log(`[Redeem] Swapping ${payoutTzs} nTZS → USDC for user ${user.ntzsUserId}`);
-        const swapResult = await ntzs.swap.executeAndWait({
+        await ntzs.swap.executeAndWait({
           userId: user.ntzsUserId,
           fromToken: 'NTZS',
           toToken: 'USDC',
           amount: payoutTzs,
           slippageBps: 100,
         });
-        console.log(`[Redeem] Swap completed: ${swapResult.txHash}`);
       } catch (err) {
         console.error("[Redeem] USDC payout/swap failed:", err);
-        // Continue with local balance update as fallback
+        await prisma.position.update({ where: { id: positionId }, data: { redeemed: false } });
+        return NextResponse.json({ error: "Transfer failed. Please try again in a moment." }, { status: 500 });
       }
     } else if (preferredCurrency === 'KES' && PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
-      // Kenya user: nTZS → bKES payout flow (same as USDC)
-      // 1. Transfer nTZS from escrow to user
-      // 2. Swap nTZS → bKES
       try {
-        // Step 1: Transfer nTZS from escrow to user
         const transfer = await ntzs.transfers.create({
           fromUserId: PLATFORM_NTZS_USER_ID,
           toUserId: user.ntzsUserId,
           amountTzs: payoutTzs,
         });
         ntzsTransferId = transfer.id;
-        console.log(`[Redeem] nTZS transfer: ${ntzsTransferId}`);
-
-        // Step 2: Swap nTZS → bKES
-        console.log(`[Redeem] Swapping ${payoutTzs} nTZS → bKES for user ${user.ntzsUserId}`);
-        const swapResult = await ntzs.swap.executeAndWait({
+        await ntzs.swap.executeAndWait({
           userId: user.ntzsUserId,
           fromToken: 'NTZS',
           toToken: 'BKES',
           amount: payoutTzs,
           slippageBps: 100,
         });
-        console.log(`[Redeem] nTZS→bKES swap completed: ${swapResult.txHash}`);
       } catch (err) {
-        console.error("[Redeem] bKES payout/swap failed:", err);
-        // Continue with local balance update as fallback
+        console.error("[Redeem] KES payout/swap failed:", err);
+        await prisma.position.update({ where: { id: positionId }, data: { redeemed: false } });
+        return NextResponse.json({ error: "Transfer failed. Please try again in a moment." }, { status: 500 });
       }
     } else if (PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
       // Tanzania user: Transfer nTZS via nTZS API
