@@ -278,30 +278,47 @@ export async function POST(
               where: { id: market.creatorId },
               select: { ntzsUserId: true, preferredCurrency: true, country: true, phone: true },
             });
-            if (!creator?.ntzsUserId || !PLATFORM_NTZS_USER_ID) return;
 
             const { getUserCurrency } = await import('@/lib/currency');
-            const creatorCurrency = (creator.preferredCurrency as string) || getUserCurrency(creator.country, creator.phone);
+            const creatorCurrency = creator
+              ? ((creator.preferredCurrency as string) || getUserCurrency(creator.country, creator.phone))
+              : 'TZS';
 
-            // Transfer payout from escrow → creator
-            await ntzs.transfers.create({
-              fromUserId: PLATFORM_NTZS_USER_ID,
-              toUserId: creator.ntzsUserId,
-              amountTzs: payoutTzs,
-            });
-
-            // If USDC creator, swap nTZS → USDC
-            if (creatorCurrency === 'USDC') {
-              await ntzs.swap.executeAndWait({
-                userId: creator.ntzsUserId,
-                fromToken: 'NTZS',
-                toToken: 'USDC',
-                amount: payoutTzs,
-                slippageBps: 100,
-              }).catch(e => console.error('[LP auto-redeem] USDC swap failed:', e));
+            // Try nTZS transfer — non-fatal if it fails (balance still credited locally)
+            if (creator?.ntzsUserId && PLATFORM_NTZS_USER_ID) {
+              try {
+                await ntzs.transfers.create({
+                  fromUserId: PLATFORM_NTZS_USER_ID,
+                  toUserId: creator.ntzsUserId,
+                  amountTzs: payoutTzs,
+                });
+                // If USDC creator, swap nTZS → USDC
+                if (creatorCurrency === 'USDC') {
+                  await ntzs.swap.executeAndWait({
+                    userId: creator.ntzsUserId,
+                    fromToken: 'NTZS',
+                    toToken: 'USDC',
+                    amount: payoutTzs,
+                    slippageBps: 100,
+                  }).catch(e => console.error('[LP auto-redeem] USDC swap failed:', e));
+                }
+                // Settlement fee (delayed to avoid nonce collision)
+                if (SETTLEMENT_FEE_NTZS_USER_ID && settlementFee > 0) {
+                  setTimeout(() => {
+                    ntzs.transfers.create({
+                      fromUserId: PLATFORM_NTZS_USER_ID,
+                      toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
+                      amountTzs: settlementFee,
+                    }).catch(e => console.error('[LP auto-redeem] fee transfer failed:', e));
+                  }, 1500);
+                }
+              } catch (transferErr) {
+                // nTZS transfer failed — log it but still credit local balance below
+                console.error('[LP auto-redeem] nTZS transfer failed (balance will still be credited locally):', transferErr);
+              }
             }
 
-            // Update balance + record transaction
+            // Always update balance + record transaction regardless of nTZS result
             await prisma.$transaction([
               prisma.user.update({
                 where: { id: market.creatorId },
@@ -322,17 +339,8 @@ export async function POST(
               }),
             ]);
 
-            // Settlement fee (non-blocking)
-            if (SETTLEMENT_FEE_NTZS_USER_ID && settlementFee > 0) {
-              ntzs.transfers.create({
-                fromUserId: PLATFORM_NTZS_USER_ID,
-                toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
-                amountTzs: settlementFee,
-              }).catch(e => console.error('[LP auto-redeem] fee transfer failed:', e));
-            }
-
             const seededTotal = mktAny.seedAmount as number;
-            const winSideSeeded = Math.round(seededTotal / 2); // approx winning-side cost
+            const winSideSeeded = Math.round(seededTotal / 2);
             const lpPnl = payoutTzs - winSideSeeded;
             const pnlStr = lpPnl >= 0
               ? `+${lpPnl.toLocaleString()} TZS profit`
