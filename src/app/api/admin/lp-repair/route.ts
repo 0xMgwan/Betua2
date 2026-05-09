@@ -141,22 +141,22 @@ export async function POST(req: NextRequest) {
     await prisma.position.update({ where: { id: creatorPos.id }, data: { redeemed: true } });
   }
 
-  // Try nTZS transfer
-  let ntzsOk = false;
-  if (PLATFORM_NTZS_USER_ID && creator?.ntzsUserId) {
-    try {
-      await ntzs.transfers.create({
-        fromUserId: PLATFORM_NTZS_USER_ID,
-        toUserId: creator.ntzsUserId,
-        amountTzs: payoutTzs,
-      });
-      ntzsOk = true;
-    } catch (e) {
-      console.error("[lp-repair] nTZS transfer failed:", e);
-    }
+  // nTZS transfer must succeed first — real money, not just local balance
+  if (!PLATFORM_NTZS_USER_ID || !creator?.ntzsUserId) {
+    return NextResponse.json({ error: "Missing nTZS config — cannot transfer" }, { status: 500 });
   }
 
-  // Update balance + create LP_REDEEM tx regardless (local balance always credited)
+  try {
+    await ntzs.transfers.create({
+      fromUserId: PLATFORM_NTZS_USER_ID,
+      toUserId: creator.ntzsUserId,
+      amountTzs: payoutTzs,
+    });
+  } catch (e) {
+    return NextResponse.json({ error: "nTZS transfer failed — position not credited. Try again.", detail: String(e) }, { status: 500 });
+  }
+
+  // Transfer confirmed — now credit local balance + record transaction
   await prisma.$transaction([
     prisma.user.update({
       where: { id: market.creatorId },
@@ -177,9 +177,8 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     success: true,
     payoutTzs,
-    ntzsTransferred: ntzsOk,
     creatorWinShares,
     totalWinShares,
-    note: ntzsOk ? "Full payout complete" : "Balance credited locally — nTZS transfer failed, retry manually if needed",
+    note: "nTZS transfer confirmed + balance credited",
   });
 }

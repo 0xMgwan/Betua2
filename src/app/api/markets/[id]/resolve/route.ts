@@ -284,41 +284,49 @@ export async function POST(
               ? ((creator.preferredCurrency as string) || getUserCurrency(creator.country, creator.phone))
               : 'TZS';
 
-            // Try nTZS transfer — non-fatal if it fails (balance still credited locally)
-            if (creator?.ntzsUserId && PLATFORM_NTZS_USER_ID) {
-              try {
-                await ntzs.transfers.create({
-                  fromUserId: PLATFORM_NTZS_USER_ID,
-                  toUserId: creator.ntzsUserId,
-                  amountTzs: payoutTzs,
-                });
-                // If USDC creator, swap nTZS → USDC
-                if (creatorCurrency === 'USDC') {
-                  await ntzs.swap.executeAndWait({
-                    userId: creator.ntzsUserId,
-                    fromToken: 'NTZS',
-                    toToken: 'USDC',
-                    amount: payoutTzs,
-                    slippageBps: 100,
-                  }).catch(e => console.error('[LP auto-redeem] USDC swap failed:', e));
-                }
-                // Settlement fee (delayed to avoid nonce collision)
-                if (SETTLEMENT_FEE_NTZS_USER_ID && settlementFee > 0) {
-                  setTimeout(() => {
-                    ntzs.transfers.create({
-                      fromUserId: PLATFORM_NTZS_USER_ID,
-                      toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
-                      amountTzs: settlementFee,
-                    }).catch(e => console.error('[LP auto-redeem] fee transfer failed:', e));
-                  }, 1500);
-                }
-              } catch (transferErr) {
-                // nTZS transfer failed — log it but still credit local balance below
-                console.error('[LP auto-redeem] nTZS transfer failed (balance will still be credited locally):', transferErr);
-              }
+            // nTZS transfer MUST succeed — if it fails, unmark position so creator can retry
+            if (!creator?.ntzsUserId || !PLATFORM_NTZS_USER_ID) {
+              // No nTZS config — release lock and bail
+              await prisma.position.update({ where: { id: creatorPosition.id }, data: { redeemed: false } });
+              console.error('[LP auto-redeem] Missing ntzsUserId or PLATFORM_NTZS_USER_ID — position reset for retry');
+              return;
             }
 
-            // Always update balance + record transaction regardless of nTZS result
+            try {
+              await ntzs.transfers.create({
+                fromUserId: PLATFORM_NTZS_USER_ID,
+                toUserId: creator.ntzsUserId,
+                amountTzs: payoutTzs,
+              });
+            } catch (transferErr) {
+              // Transfer failed — release lock so next resolve/repair attempt can retry
+              await prisma.position.update({ where: { id: creatorPosition.id }, data: { redeemed: false } });
+              console.error('[LP auto-redeem] nTZS transfer failed — position reset for retry:', transferErr);
+              return;
+            }
+
+            // Transfer succeeded — now credit local balance + record transaction
+            if (creatorCurrency === 'USDC') {
+              await ntzs.swap.executeAndWait({
+                userId: creator.ntzsUserId,
+                fromToken: 'NTZS',
+                toToken: 'USDC',
+                amount: payoutTzs,
+                slippageBps: 100,
+              }).catch(e => console.error('[LP auto-redeem] USDC swap failed:', e));
+            }
+
+            // Settlement fee (delayed 1.5s to avoid nonce collision)
+            if (SETTLEMENT_FEE_NTZS_USER_ID && settlementFee > 0) {
+              setTimeout(() => {
+                ntzs.transfers.create({
+                  fromUserId: PLATFORM_NTZS_USER_ID,
+                  toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
+                  amountTzs: settlementFee,
+                }).catch(e => console.error('[LP auto-redeem] fee transfer failed:', e));
+              }, 1500);
+            }
+
             await prisma.$transaction([
               prisma.user.update({
                 where: { id: market.creatorId },
