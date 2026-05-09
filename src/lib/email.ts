@@ -189,3 +189,57 @@ export async function sendWelcomeEmail(to: string, locale: string = 'en', unsubs
     to, subject, html,
   });
 }
+
+export async function sendPasswordResetEmail(to: string, resetToken: string) {
+  const name = getName(to);
+  const resetUrl = `${BASE_URL}/auth/reset-password?token=${resetToken}`;
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#000;font-family:'Courier New',monospace;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#000;padding:20px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#0a0a0a;border:1px solid #00e5a0;">
+        <tr><td style="background:#1a1a1a;padding:12px 20px;border-bottom:1px solid #333;">
+          <span style="display:inline-block;width:12px;height:12px;background:#ff5f56;border-radius:50%;margin-right:8px;"></span>
+          <span style="display:inline-block;width:12px;height:12px;background:#ffbd2e;border-radius:50%;margin-right:8px;"></span>
+          <span style="display:inline-block;width:12px;height:12px;background:#27ca40;border-radius:50%;"></span>
+          <span style="margin-left:12px;color:#666;font-size:11px;">password_reset.sh</span>
+        </td></tr>
+        <tr><td style="padding:40px;text-align:center;">
+          <h1 style="margin:0 0 4px;color:#00e5a0;font-size:40px;font-weight:900;letter-spacing:-2px;">GUAP</h1>
+          <p style="margin:0;color:#555;font-size:11px;letter-spacing:4px;">PREDICT • TRADE • WIN</p>
+        </td></tr>
+        <tr><td style="padding:0 40px 32px;">
+          <p style="margin:0 0 6px;color:#00e5a0;font-size:11px;">$ ./reset_password --user="${name}"</p>
+          <h2 style="margin:0 0 12px;color:#fff;font-size:22px;">Password Reset Request</h2>
+          <p style="margin:0 0 24px;color:#aaa;font-size:14px;line-height:1.7;">
+            Hey <strong style="color:#fff;">${name}</strong>, we received a request to reset your GUAP password.<br>
+            Click the button below — this link expires in <strong style="color:#00e5a0;">1 hour</strong>.
+          </p>
+          <div style="text-align:center;">
+            <a href="${resetUrl}" style="display:inline-block;padding:16px 48px;background:#00e5a0;color:#000;text-decoration:none;font-weight:900;font-size:15px;letter-spacing:1px;border-radius:6px;">
+              RESET MY PASSWORD
+            </a>
+          </div>
+          <p style="margin:24px 0 0;color:#555;font-size:12px;text-align:center;">
+            If you did not request this, safely ignore this email. Your password will not change.
+          </p>
+        </td></tr>
+        <tr><td style="padding:20px 40px;background:#111;border-top:1px solid #222;">
+          <p style="margin:0;color:#444;font-size:11px;word-break:break-all;">Or copy: <span style="color:#666;">${resetUrl}</span></p>
+        </td></tr>
+        <tr><td style="padding:16px;text-align:center;border-top:1px solid #1a1a1a;">
+          <p style="margin:0;color:#444;font-size:11px;">2026 GUAP. All rights reserved.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+
+  await getTransporter().sendMail({
+    from: process.env.SMTP_FROM || `GUAP <${process.env.SMTP_USER}>`,
+    to,
+    subject: `Reset your GUAP password, ${name}`,
+    html,
+  });
+}

@@ -18,7 +18,9 @@ model User {
   updatedAt       DateTime         @updatedAt
   avatarUrl       String?
   displayName     String?
-  passwordHash    String
+  passwordHash        String
+  passwordResetToken  String?
+  passwordResetExpiry DateTime?
   balanceTzs      Int              @default(0)
   referralCode    String?          @unique
   referredById    String?
