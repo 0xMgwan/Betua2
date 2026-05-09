@@ -198,6 +198,7 @@ export async function POST(req: NextRequest) {
       }
     } else if (PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
       // Tanzania user: Transfer nTZS via nTZS API
+      // If this fails, reset position to unredeemed so the user can retry
       try {
         const transfer = await ntzs.transfers.create({
           fromUserId: PLATFORM_NTZS_USER_ID,
@@ -207,12 +208,13 @@ export async function POST(req: NextRequest) {
         ntzsTransferId = transfer.id;
       } catch (err) {
         console.error("nTZS redeem transfer failed:", err);
-        // Continue with local balance update
+        // Reset position so user can retry — real balance not affected
+        await prisma.position.update({ where: { id: positionId }, data: { redeemed: false } });
+        return NextResponse.json({ error: "Transfer failed. Please try again in a moment." }, { status: 500 });
       }
     }
 
-    // Transfer settlement fee — delayed 1.5s so the main transfer's blockchain tx
-    // is confirmed before we send another from the same platform wallet (avoids nonce collision)
+    // Transfer settlement fee — delayed 1.5s to avoid nonce collision with main transfer
     if (preferredCurrency === 'TZS' && PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID && settlementFee > 0) {
       setTimeout(() => {
         ntzs.transfers.create({
