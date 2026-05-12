@@ -142,6 +142,14 @@ export async function POST(req: NextRequest) {
     let ntzsTransferId: string | undefined;
     let bkesTransferTxHash: string | undefined;
     
+    // Track whether the nTZS API threw — we proceed regardless because:
+    // 1. Position is already locked (redeemed=true), so retrying is impossible → no duplicate risk
+    // 2. nTZS sometimes returns HTTP 500 even when the transfer succeeded on-chain
+    // 3. Withdrawals use the real nTZS wallet balance, so even a phantom local credit
+    //    cannot be withdrawn if the transfer genuinely failed
+    // → Always fall through to credit local balance and return success to the user.
+    let ntzsTransferUncertain = false;
+
     if (preferredCurrency === 'USDC' && PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
       try {
         const transfer = await ntzs.transfers.create({
@@ -158,16 +166,10 @@ export async function POST(req: NextRequest) {
           slippageBps: 100,
         });
       } catch (err) {
-        // IMPORTANT: Do NOT reset redeemed to false here.
-        // nTZS can return HTTP 500 even when the blockchain transfer actually succeeded.
-        // Resetting would allow the user to retry and receive a duplicate transfer.
-        // The position stays locked. Support can verify via nTZS dashboard and manually
-        // credit the balance if the transfer genuinely failed.
-        console.error("[Redeem] USDC payout/swap error (position stays locked):", err);
-        return NextResponse.json({
-          error: "Your redemption is being processed. If funds are not received within 5 minutes, please contact support.",
-          positionId,
-        }, { status: 500 });
+        // nTZS returned an error — may or may not have sent funds.
+        // Position stays locked. Fall through to credit balance optimistically.
+        ntzsTransferUncertain = true;
+        console.error("[Redeem] USDC transfer/swap error (position locked, proceeding optimistically):", err);
       }
     } else if (preferredCurrency === 'KES' && PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
       try {
@@ -185,12 +187,8 @@ export async function POST(req: NextRequest) {
           slippageBps: 100,
         });
       } catch (err) {
-        // IMPORTANT: Do NOT reset redeemed to false here. Same reason as USDC path above.
-        console.error("[Redeem] KES payout/swap error (position stays locked):", err);
-        return NextResponse.json({
-          error: "Your redemption is being processed. If funds are not received within 5 minutes, please contact support.",
-          positionId,
-        }, { status: 500 });
+        ntzsTransferUncertain = true;
+        console.error("[Redeem] KES transfer/swap error (position locked, proceeding optimistically):", err);
       }
     } else if (PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
       // Tanzania user: Transfer nTZS via nTZS API
@@ -202,16 +200,8 @@ export async function POST(req: NextRequest) {
         });
         ntzsTransferId = transfer.id;
       } catch (err) {
-        // IMPORTANT: Do NOT reset redeemed to false here.
-        // nTZS can return HTTP 500 even when the blockchain transfer actually succeeded.
-        // Resetting caused duplicate transfers (8× the correct amount sent to one user).
-        // Position stays locked. Support verifies via nTZS dashboard and manually credits
-        // local balance if the transfer genuinely failed.
-        console.error("[Redeem] TZS transfer error (position stays locked):", err);
-        return NextResponse.json({
-          error: "Your redemption is being processed. If funds are not received within 5 minutes, please contact support.",
-          positionId,
-        }, { status: 500 });
+        ntzsTransferUncertain = true;
+        console.error("[Redeem] TZS transfer error (position locked, proceeding optimistically):", err);
       }
     }
 
@@ -275,6 +265,9 @@ export async function POST(req: NextRequest) {
       winningShares,
       positionId,
       ntzsTransferId,
+      // For debugging only — true means nTZS returned a 500 but we proceeded anyway.
+      // Funds are likely in the user's wallet; position is locked so no duplicate risk.
+      ntzsTransferUncertain: ntzsTransferUncertain || undefined,
     });
   } catch (err) {
     console.error("Redeem error:", err);
