@@ -91,7 +91,7 @@ export default function LpRepairPage() {
 
   const d = diagnosis?.diagnosis;
   const isStuck = d?.stuck || (d?.hasPosition && d?.positionRedeemed && !d?.hasLpRedeemTx);
-  const canRepair = diagnosis && diagnosis.market.status === "RESOLVED" && isStuck && status !== "repairing";
+  const canRepair = diagnosis && diagnosis.market.status === "RESOLVED" && isStuck;
 
   return (
     <div className="min-h-screen bg-[var(--background)] px-4 py-10">
