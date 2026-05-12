@@ -3,20 +3,34 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { ntzs } from "@/lib/ntzs";
 
-const ADMIN_USER_IDS = [
-  "cmmie3hlr000004gqmcjdceb4",
+// Admin check uses nTZS user IDs (same as markets/route.ts) — NOT Prisma user IDs
+const ADMIN_NTZS_USER_IDS = [
+  "3017ff5f-24f0-4063-bb35-4ddbc3cd1987",
+  "994dcdcc-0bc4-4641-9e94-93e658ede56b",
+  "5e89781c-b8c0-4a49-a235-0bb0048ac18d",
   "2e7ea0a6-472c-44b9-8a61-b6e2865fe558",
-  ...(process.env.ADMIN_USER_IDS || "").split(",").filter(Boolean),
+  ...(process.env.ADMIN_NTZS_USER_IDS || "").split(",").filter(Boolean),
 ];
 
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
 const FEE_PERCENT = parseFloat(process.env.TRANSACTION_FEE_PERCENT || "5") / 100;
 
+async function requireAdmin() {
+  const session = await getSession();
+  if (!session) return null;
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { ntzsUserId: true },
+  });
+  if (!user?.ntzsUserId || !ADMIN_NTZS_USER_IDS.includes(user.ntzsUserId)) return null;
+  return session;
+}
+
 // GET: diagnose a market's LP state
 // POST: repair (pay out) a stuck LP position
 export async function GET(req: NextRequest) {
-  const session = await getSession();
-  if (!session || !ADMIN_USER_IDS.includes(session.userId)) {
+  const session = await requireAdmin();
+  if (!session) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -79,8 +93,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getSession();
-  if (!session || !ADMIN_USER_IDS.includes(session.userId)) {
+  const session = await requireAdmin();
+  if (!session) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
