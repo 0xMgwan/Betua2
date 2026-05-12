@@ -299,9 +299,12 @@ export async function POST(
                 amountTzs: payoutTzs,
               });
             } catch (transferErr) {
-              // Transfer failed — release lock so next resolve/repair attempt can retry
-              await prisma.position.update({ where: { id: creatorPosition.id }, data: { redeemed: false } });
-              console.error('[LP auto-redeem] nTZS transfer failed — position reset for retry:', transferErr);
+              // IMPORTANT: Do NOT reset redeemed to false here.
+              // nTZS can return HTTP 500 even when the blockchain transfer actually succeeded.
+              // Resetting the lock would allow duplicate transfers if this auto-redeem fires again.
+              // Position stays locked. Use /api/admin/lp-repair to diagnose and manually
+              // credit the balance if the transfer genuinely failed on-chain.
+              console.error('[LP auto-redeem] nTZS transfer error — position stays locked, use admin lp-repair if needed:', transferErr);
               return;
             }
 

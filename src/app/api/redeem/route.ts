@@ -158,9 +158,16 @@ export async function POST(req: NextRequest) {
           slippageBps: 100,
         });
       } catch (err) {
-        console.error("[Redeem] USDC payout/swap failed:", err);
-        await prisma.position.update({ where: { id: positionId }, data: { redeemed: false } });
-        return NextResponse.json({ error: "Transfer failed. Please try again in a moment." }, { status: 500 });
+        // IMPORTANT: Do NOT reset redeemed to false here.
+        // nTZS can return HTTP 500 even when the blockchain transfer actually succeeded.
+        // Resetting would allow the user to retry and receive a duplicate transfer.
+        // The position stays locked. Support can verify via nTZS dashboard and manually
+        // credit the balance if the transfer genuinely failed.
+        console.error("[Redeem] USDC payout/swap error (position stays locked):", err);
+        return NextResponse.json({
+          error: "Your redemption is being processed. If funds are not received within 5 minutes, please contact support.",
+          positionId,
+        }, { status: 500 });
       }
     } else if (preferredCurrency === 'KES' && PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
       try {
@@ -178,13 +185,15 @@ export async function POST(req: NextRequest) {
           slippageBps: 100,
         });
       } catch (err) {
-        console.error("[Redeem] KES payout/swap failed:", err);
-        await prisma.position.update({ where: { id: positionId }, data: { redeemed: false } });
-        return NextResponse.json({ error: "Transfer failed. Please try again in a moment." }, { status: 500 });
+        // IMPORTANT: Do NOT reset redeemed to false here. Same reason as USDC path above.
+        console.error("[Redeem] KES payout/swap error (position stays locked):", err);
+        return NextResponse.json({
+          error: "Your redemption is being processed. If funds are not received within 5 minutes, please contact support.",
+          positionId,
+        }, { status: 500 });
       }
     } else if (PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
       // Tanzania user: Transfer nTZS via nTZS API
-      // If this fails, reset position to unredeemed so the user can retry
       try {
         const transfer = await ntzs.transfers.create({
           fromUserId: PLATFORM_NTZS_USER_ID,
@@ -193,10 +202,16 @@ export async function POST(req: NextRequest) {
         });
         ntzsTransferId = transfer.id;
       } catch (err) {
-        console.error("nTZS redeem transfer failed:", err);
-        // Reset position so user can retry — real balance not affected
-        await prisma.position.update({ where: { id: positionId }, data: { redeemed: false } });
-        return NextResponse.json({ error: "Transfer failed. Please try again in a moment." }, { status: 500 });
+        // IMPORTANT: Do NOT reset redeemed to false here.
+        // nTZS can return HTTP 500 even when the blockchain transfer actually succeeded.
+        // Resetting caused duplicate transfers (8× the correct amount sent to one user).
+        // Position stays locked. Support verifies via nTZS dashboard and manually credits
+        // local balance if the transfer genuinely failed.
+        console.error("[Redeem] TZS transfer error (position stays locked):", err);
+        return NextResponse.json({
+          error: "Your redemption is being processed. If funds are not received within 5 minutes, please contact support.",
+          positionId,
+        }, { status: 500 });
       }
     }
 
