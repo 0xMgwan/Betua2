@@ -83,6 +83,7 @@ export default function PortfolioPage() {
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [redeemSuccess, setRedeemSuccess] = useState<string | null>(null);
   const [redeemPopup, setRedeemPopup] = useState<{ payout: number; marketTitle: string } | null>(null);
+  const [redeemError, setRedeemError] = useState<string | null>(null);
   const [createdMarketFilter, setCreatedMarketFilter] = useState<"all" | "OPEN" | "EXPIRED" | "RESOLVED">("all");
 
   // Sell state
@@ -136,7 +137,7 @@ export default function PortfolioPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.error || (locale === "sw" ? "Imeshindwa" : "Failed"));
+        setRedeemError(data.error || (locale === "sw" ? "Imeshindwa" : "Redemption failed"));
         return;
       }
 
@@ -164,7 +165,7 @@ export default function PortfolioPage() {
         }
       });
     } catch (err) {
-      alert(locale === "sw" ? "Kosa la mtandao" : "Network error");
+      setRedeemError(locale === "sw" ? "Kosa la mtandao" : "Network error. Please check your connection.");
     } finally {
       setRedeeming(null);
     }
@@ -1245,6 +1246,69 @@ export default function PortfolioPage() {
                 <span className="text-[9px] font-mono text-[var(--accent)] flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
                   CONFIRMED
+                </span>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══ Redeem Error Modal ═══ */}
+      <AnimatePresence>
+        {redeemError && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={() => setRedeemError(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[var(--card)] border-2 border-red-500/60 rounded-xl overflow-hidden max-w-sm w-full shadow-[0_0_40px_rgba(239,68,68,0.2)]"
+            >
+              {/* Terminal header */}
+              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-red-500/20 bg-red-500/5">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-red-500" />
+                  <div className="w-3 h-3 rounded-full bg-red-500/50" />
+                  <div className="w-3 h-3 rounded-full bg-red-500/30" />
+                </div>
+                <span className="text-[10px] font-mono text-red-400 uppercase tracking-wider ml-2">
+                  REDEEM.ERROR
+                </span>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 text-center">
+                <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-red-500/10 border-2 border-red-500/40 flex items-center justify-center">
+                  <WarningCircle size={28} weight="fill" className="text-red-400" />
+                </div>
+
+                <p className="text-red-400 font-mono font-bold text-sm mb-2 uppercase tracking-wide">
+                  {locale === "sw" ? "IMESHINDWA" : "TRANSFER ERROR"}
+                </p>
+                <p className="text-[var(--muted)] font-mono text-xs leading-relaxed mb-5">
+                  {redeemError}
+                </p>
+
+                <button
+                  onClick={() => setRedeemError(null)}
+                  className="w-full py-3 border border-red-500/40 text-red-400 font-mono font-bold text-sm uppercase tracking-wider hover:bg-red-500/10 transition-all"
+                >
+                  {locale === "sw" ? "FUNGA" : "CLOSE"}
+                </button>
+              </div>
+
+              {/* Terminal footer */}
+              <div className="bg-[var(--background)] border-t border-red-500/20 px-4 py-2 flex items-center justify-between">
+                <span className="text-[9px] font-mono text-[var(--muted)]">[TXN_STATUS]</span>
+                <span className="text-[9px] font-mono text-red-400 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                  CONTACT SUPPORT
                 </span>
               </div>
             </motion.div>
