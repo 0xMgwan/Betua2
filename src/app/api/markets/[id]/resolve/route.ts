@@ -10,7 +10,7 @@ const CREATOR_FEE_PERCENT = 0.01; // 1% of total volume goes to non-admin creato
 const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
 const ADMIN_USER_IDS = [
-  "cmmie3hlr000004gqmcjdceb4",
+  "cmmjemfo900046e3pyoegxsni",
   "2e7ea0a6-472c-44b9-8a61-b6e2865fe558",
   ...(process.env.ADMIN_USER_IDS || "").split(",").filter(Boolean),
 ];

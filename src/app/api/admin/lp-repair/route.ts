@@ -5,7 +5,7 @@ import { ntzs } from "@/lib/ntzs";
 
 // Prisma user IDs of admins (same list used in resolve/route.ts)
 const ADMIN_USER_IDS = [
-  "cmmie3hlr000004gqmcjdceb4",
+  "cmmjemfo900046e3pyoegxsni",
   "2e7ea0a6-472c-44b9-8a61-b6e2865fe558",
   ...(process.env.ADMIN_USER_IDS || "").split(",").filter(Boolean),
 ];
