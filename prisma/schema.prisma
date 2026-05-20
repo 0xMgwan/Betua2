@@ -114,6 +114,12 @@ model Position {
   yesShares    Int      @default(0)
   redeemed     Boolean  @default(false)
   optionShares Json?
+  // Fixed-odds payout: net TZS owed to user if they win (accumulated across multiple trades)
+  // Stored at trade time: tradeAmount / oddsPrice * (1 - settlementFeePercent)
+  // Zero means old position — falls back to parimutuel formula at redemption
+  yesImpliedPayout Float   @default(0)
+  noImpliedPayout  Float   @default(0)
+  optionImpliedPayouts Json? // { "0": 5000.0, "1": 2000.0 } for multi-option markets
   market       Market   @relation(fields: [marketId], references: [id])
   user         User     @relation(fields: [userId], references: [id])
 

@@ -163,6 +163,14 @@ export async function POST(req: NextRequest) {
       newPoolOut = Math.round(result.newPoolOut);
     }
 
+    // Fixed-odds implied payout: what user should receive if they win.
+    // Calculated now (before any transfers) so it can be stored in the position.
+    // tradeAmount = net after entry fee; oddsPrice = pre-trade probability (0–1)
+    // The (1 - FEE_PERCENT) factor accounts for the redemption settlement fee.
+    const payoutIfWin = oddsPrice > 0
+      ? Math.round((tradeAmount / oddsPrice) * (1 - FEE_PERCENT))
+      : 0;
+
     let ntzsTransferId: string | undefined;
     let bkesTransferTxHash: string | undefined;
 
@@ -305,13 +313,21 @@ export async function POST(req: NextRequest) {
       const updatedShares = { ...existingShares };
       updatedShares[String(optionIndex)] = (updatedShares[String(optionIndex)] || 0) + Math.round(shares);
 
+      // Accumulate implied payout per option index
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const existingImplied = (existingPosition as any)?.optionImpliedPayouts as Record<string, number> || {};
+      const updatedImplied = { ...existingImplied };
+      updatedImplied[String(optionIndex)] = (updatedImplied[String(optionIndex)] || 0) + payoutIfWin;
+
       positionCreate = {
         userId: session.userId,
         marketId,
         optionShares: updatedShares,
+        optionImpliedPayouts: updatedImplied,
       };
       positionUpdate = {
         optionShares: updatedShares,
+        optionImpliedPayouts: updatedImplied,
       };
     } else {
       positionCreate = {
@@ -319,10 +335,15 @@ export async function POST(req: NextRequest) {
         marketId,
         yesShares: side === "YES" ? Math.round(shares) : 0,
         noShares: side === "NO" ? Math.round(shares) : 0,
+        yesImpliedPayout: side === "YES" ? payoutIfWin : 0,
+        noImpliedPayout: side === "NO" ? payoutIfWin : 0,
       };
       positionUpdate = {
         yesShares: side === "YES" ? { increment: Math.round(shares) } : undefined,
         noShares: side === "NO" ? { increment: Math.round(shares) } : undefined,
+        // Accumulate implied payout: each new trade adds its expected payout
+        yesImpliedPayout: side === "YES" ? { increment: payoutIfWin } : undefined,
+        noImpliedPayout: side === "NO" ? { increment: payoutIfWin } : undefined,
       };
     }
 
@@ -412,12 +433,6 @@ export async function POST(req: NextRequest) {
 
     // Push notification (off-app)
     notifyTradePlaced(session.userId, market.title, tradeSide, amountTzs, marketId, userLocale).catch(console.error);
-
-    // payoutIfWin: Polymarket-standard price-based estimate
-    // tradeAmount = net after entry fee; oddsPrice = implied probability (0–1)
-    const payoutIfWin = oddsPrice > 0
-      ? Math.round((tradeAmount / oddsPrice) * (1 - FEE_PERCENT))
-      : 0;
 
     return NextResponse.json({
       trade,
