@@ -106,6 +106,10 @@ export async function POST(req: NextRequest) {
       // ── Fixed-odds path: pay the stored guaranteed amount ────────────────
       // payoutIfWin was already net of both fees when stored, so pay it directly.
       payoutTzs = Math.round(storedImpliedPayout);
+      // Derive the settlement fee that was baked in at trade time so it can be
+      // forwarded to the fee wallet below (same as the parimutuel path does).
+      // gross = payoutTzs / (1 - FEE_PERCENT), fee = gross × FEE_PERCENT
+      settlementFee = Math.round(payoutTzs * FEE_PERCENT / (1 - FEE_PERCENT));
     } else {
       // ── Parimutuel fallback for positions created before this fix ────────
       // Fetch all positions to calculate total winning shares.
