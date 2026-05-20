@@ -58,8 +58,13 @@ export async function GET(req: NextRequest) {
     if (pos.userId === market.creatorId) creatorWinShares = ws;
   }
 
+  // LP payout uses seed-proportional formula (not shares-based)
+  // to match the fix in redeem/route.ts and resolve/route.ts
   const pot = Math.round(market.totalVolume * (1 - FEE_PERCENT));
-  const grossPayout = totalWinShares > 0 ? Math.round((creatorWinShares / totalWinShares) * pot) : 0;
+  const seedAmount = market.seedAmount ?? 0;
+  const grossPayout = seedAmount > 0 && market.totalVolume > 0
+    ? Math.round((seedAmount / market.totalVolume) * pot)
+    : 0;
   const settlementFee = Math.round(grossPayout * FEE_PERCENT);
   const netPayout = grossPayout - settlementFee;
 
@@ -120,14 +125,18 @@ export async function POST(req: NextRequest) {
     if (pos.userId === market.creatorId) creatorWinShares = ws;
   }
 
-  if (creatorWinShares === 0) {
-    // Creator picked the losing side — mark redeemed with no payout
+  // LP payout = seed-proportional share of pot (not shares-based)
+  const pot = Math.round(market.totalVolume * (1 - FEE_PERCENT));
+  const seedAmount = market.seedAmount ?? 0;
+
+  if (seedAmount === 0) {
     await prisma.position.update({ where: { id: creatorPos.id }, data: { redeemed: true } });
-    return NextResponse.json({ success: true, payout: 0, note: "Creator had no winning shares — position marked redeemed" });
+    return NextResponse.json({ success: true, payout: 0, note: "No seed amount — position marked redeemed" });
   }
 
-  const pot = Math.round(market.totalVolume * (1 - FEE_PERCENT));
-  const grossPayout = Math.round((creatorWinShares / totalWinShares) * pot);
+  const grossPayout = market.totalVolume > 0
+    ? Math.round((seedAmount / market.totalVolume) * pot)
+    : 0;
   const settlementFee = Math.round(grossPayout * FEE_PERCENT);
   const payoutTzs = grossPayout - settlementFee;
 

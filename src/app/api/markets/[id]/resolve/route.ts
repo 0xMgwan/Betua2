@@ -246,19 +246,18 @@ export async function POST(
       prisma.position.update({ where: { id: creatorPosition.id }, data: { redeemed: true } })
         .catch(e => console.error('[LP] failed to mark losing position redeemed:', e));
     }
-    if (creatorPosition && !creatorPosition.redeemed && !hasNoWinners && totalWinningShares > 0) {
-      // Check creator has winning shares
+    if (creatorPosition && !creatorPosition.redeemed && !hasNoWinners) {
+      // LP auto-redeem: pay creator based on their seed proportion of the pot,
+      // NOT based on winning-side shares. This prevents seed shares from diluting
+      // regular bettors' payouts (which caused winners to get far less than AMM-implied odds).
+      //
+      // LP payout = (seedAmount / totalVolume) * pot × (1 - settlementFee)
+      // This is the creator's fair proportional return on their seed capital.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const cp = creatorPosition as any;
-      let creatorWinShares = 0;
-      if (isMultiOption) {
-        const optShares = (cp.optionShares as Record<string, number>) || {};
-        creatorWinShares = optShares[String(winningOutcome)] || 0;
-      } else {
-        creatorWinShares = winningOutcome === 1 ? creatorPosition.yesShares : creatorPosition.noShares;
-      }
+      const mktAny2 = market as any;
+      const seedAmt = mktAny2.seedAmount as number ?? 0;
 
-      if (creatorWinShares > 0) {
+      if (seedAmt > 0) {
         // Fire-and-forget: auto-redeem creator's LP position
         (async () => {
           try {
@@ -269,7 +268,10 @@ export async function POST(
             });
             if (lock.count === 0) return; // already redeemed
 
-            const grossPayout = Math.round((creatorWinShares / totalWinningShares) * pot);
+            // Seed-proportional payout: creator gets (seed / totalVolume) of the pot
+            const grossPayout = market.totalVolume > 0
+              ? Math.round((seedAmt / market.totalVolume) * pot)
+              : 0;
             const settlementFee = Math.round(grossPayout * FEE_PERCENT);
             const payoutTzs = grossPayout - settlementFee;
 
@@ -350,17 +352,15 @@ export async function POST(
               }),
             ]);
 
-            const seededTotal = mktAny.seedAmount as number;
-            const winSideSeeded = Math.round(seededTotal / 2);
-            const lpPnl = payoutTzs - winSideSeeded;
+            const lpPnl = payoutTzs - seedAmt;
             const pnlStr = lpPnl >= 0
               ? `+${lpPnl.toLocaleString()} TZS profit`
-              : `${lpPnl.toLocaleString()} TZS (${Math.abs(Math.round((lpPnl / seededTotal) * 100))}% LP cost)`;
+              : `${lpPnl.toLocaleString()} TZS (${Math.abs(Math.round((lpPnl / seedAmt) * 100))}% LP cost)`;
             createNotification({
               userId: market.creatorId,
               type: 'REDEEM',
               title: '💧 LP Seed Returned!',
-              message: `"${market.title}" resolved ${winningLabel}. Seeded: ${seededTotal.toLocaleString()} TZS → Got back: ${payoutTzs.toLocaleString()} TZS (${pnlStr})`,
+              message: `"${market.title}" resolved ${winningLabel}. Seeded: ${seedAmt.toLocaleString()} TZS → Got back: ${payoutTzs.toLocaleString()} TZS (${pnlStr})`,
               link: '/profile',
             });
             console.log(`[LP auto-redeem] Creator ${market.creatorId} paid ${payoutTzs} TZS for market ${id}`);
