@@ -83,59 +83,69 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No winning shares to redeem" }, { status: 400 });
     }
 
-    // Fetch all positions to calculate total winning shares.
-    // IMPORTANT: exclude the market creator's seeded LP position.
-    // The creator seeds both YES and NO, so their winning-side shares are not
-    // "profit from predicting correctly" — they are LP liquidity. Including them
-    // in totalWinningShares dilutes regular bettors' payouts and causes winners
-    // to receive far less than the AMM-displayed odds imply.
-    // The creator's LP payout is handled separately via LP auto-redeem at resolution
-    // (proportional to seed/totalVolume, not shares-based).
-    const allPositions = await prisma.position.findMany({
-      where: { marketId: position.marketId },
-      include: { market: { select: { creatorId: true, seedAmount: true } } },
-    });
-
-    let totalWinningShares = 0;
-    let creatorWinningShares = 0;
-    for (const pos of allPositions) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const p = pos as any;
-      let posShares = 0;
-      if (isMultiOption) {
-        const optShares = (p.optionShares as Record<string, number>) || {};
-        posShares = optShares[String(outcome)] || 0;
-      } else {
-        posShares = outcome === 1 ? pos.yesShares : pos.noShares;
-      }
-      if (p.market?.seedAmount > 0 && pos.userId === p.market.creatorId) {
-        // Track creator's shares separately — exclude from totalWinningShares
-        creatorWinningShares = posShares;
-      } else {
-        totalWinningShares += posShares;
-      }
+    // ── Fixed-odds payout (primary) ───────────────────────────────────────────
+    // If impliedPayout was stored at trade time, use it directly.
+    // This guarantees the user gets what the odds showed when they traded —
+    // regardless of how many other bettors are on the winning side.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pos = position as any;
+    let storedImpliedPayout = 0;
+    if (isMultiOption) {
+      const implied = (pos.optionImpliedPayouts as Record<string, number>) || {};
+      storedImpliedPayout = implied[String(outcome)] || 0;
+    } else {
+      storedImpliedPayout = outcome === 1 ? (pos.yesImpliedPayout || 0) : (pos.noImpliedPayout || 0);
     }
 
-    // LP's proportional claim on the pot (based on seed/totalVolume ratio, not shares)
-    // This is deducted before splitting the remainder among regular bettors,
-    // ensuring solvency: regular_payouts + lp_payout ≤ pot.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const seedAmount = (position.market as any).seedAmount ?? 0;
-    const lpPotClaim = seedAmount > 0 && position.market.totalVolume > 0
-      ? Math.round((seedAmount / position.market.totalVolume) * (position.market.totalVolume * (1 - FEE_PERCENT)))
-      : 0;
+    let payoutTzs: number;
+    // settlementFee is only used in parimutuel fallback; in fixed-odds it was
+    // already baked into payoutIfWin at trade time, so no separate fee transfer needed.
+    let settlementFee = 0;
 
-    // Pot available to regular bettors = total pot minus LP's seed claim
-    const pot = Math.round(position.market.totalVolume * (1 - FEE_PERCENT));
-    const regularPot = Math.max(0, pot - lpPotClaim);
+    if (storedImpliedPayout > 0) {
+      // ── Fixed-odds path: pay the stored guaranteed amount ────────────────
+      // payoutIfWin was already net of both fees when stored, so pay it directly.
+      payoutTzs = Math.round(storedImpliedPayout);
+    } else {
+      // ── Parimutuel fallback for positions created before this fix ────────
+      // Fetch all positions to calculate total winning shares.
+      // Exclude the market creator's seeded LP position to avoid dilution.
+      const allPositions = await prisma.position.findMany({
+        where: { marketId: position.marketId },
+        include: { market: { select: { creatorId: true, seedAmount: true } } },
+      });
 
-    // This user's proportional payout from the regular-bettor pot
-    const grossPayout = totalWinningShares > 0
-      ? Math.round((winningShares / totalWinningShares) * regularPot)
-      : 0;
-    // Settlement fee
-    const settlementFee = Math.round(grossPayout * FEE_PERCENT);
-    const payoutTzs = grossPayout - settlementFee;
+      let totalWinningShares = 0;
+      for (const p2 of allPositions) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const p2a = p2 as any;
+        let posShares = 0;
+        if (isMultiOption) {
+          const optShares = (p2a.optionShares as Record<string, number>) || {};
+          posShares = optShares[String(outcome)] || 0;
+        } else {
+          posShares = outcome === 1 ? p2.yesShares : p2.noShares;
+        }
+        // Exclude creator LP seed position from bettor pool
+        if (!(p2a.market?.seedAmount > 0 && p2.userId === p2a.market.creatorId)) {
+          totalWinningShares += posShares;
+        }
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const seedAmount = (position.market as any).seedAmount ?? 0;
+      const pot = Math.round(position.market.totalVolume * (1 - FEE_PERCENT));
+      const lpPotClaim = seedAmount > 0 && position.market.totalVolume > 0
+        ? Math.round((seedAmount / position.market.totalVolume) * pot)
+        : 0;
+      const regularPot = Math.max(0, pot - lpPotClaim);
+
+      const grossPayout = totalWinningShares > 0
+        ? Math.round((winningShares / totalWinningShares) * regularPot)
+        : 0;
+      settlementFee = Math.round(grossPayout * FEE_PERCENT);
+      payoutTzs = grossPayout - settlementFee;
+    }
 
     // Get user
     const user = await prisma.user.findUnique({
