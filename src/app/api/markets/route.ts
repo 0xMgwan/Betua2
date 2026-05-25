@@ -364,9 +364,10 @@ export async function POST(req: NextRequest) {
             result.newPools.forEach((p, idx) => { currentPools[idx] = p; });
           }
 
+          // lpOptionShares mirrors optionShares so portfolio can distinguish seed vs trade shares
           await prisma.$transaction([
             prisma.position.create({
-              data: { userId: session.userId, marketId: market.id, yesShares: 0, noShares: 0, optionShares: optionSharesMap },
+              data: { userId: session.userId, marketId: market.id, yesShares: 0, noShares: 0, optionShares: optionSharesMap, lpOptionShares: optionSharesMap },
             }),
             prisma.transaction.create({
               data: { userId: session.userId, type: "SEED_LIQUIDITY", amountTzs: effectiveSeed, currency: marketCurrency, status: "COMPLETED", recipientUsername: effectiveTitle },
@@ -382,9 +383,11 @@ export async function POST(req: NextRequest) {
           const yesShares = Math.round(yesResult.shares);
           const noShares  = Math.round(noResult.shares);
 
+          // lpYesShares/lpNoShares mirror yesShares/noShares so portfolio can distinguish
+          // seed shares from any additional trades the creator makes on their own market
           await prisma.$transaction([
             prisma.position.create({
-              data: { userId: session.userId, marketId: market.id, yesShares, noShares },
+              data: { userId: session.userId, marketId: market.id, yesShares, noShares, lpYesShares: yesShares, lpNoShares: noShares },
             }),
             prisma.trade.create({
               data: { userId: session.userId, marketId: market.id, side: "YES", amountTzs: yesSeed, shares: yesShares, price: yesResult.avgPrice },

@@ -120,6 +120,12 @@ model Position {
   yesImpliedPayout Float   @default(0)
   noImpliedPayout  Float   @default(0)
   optionImpliedPayouts Json? // { "0": 5000.0, "1": 2000.0 } for multi-option markets
+  // LP seed shares: portion of yes/noShares that came from the creator's liquidity seed.
+  // Trade shares = yesShares - lpYesShares (and same for no/options).
+  // Portfolio hides positions with zero trade shares so the seed doesn't look like a bet.
+  lpYesShares    Int  @default(0)
+  lpNoShares     Int  @default(0)
+  lpOptionShares Json? // { "0": 500, "1": 300 } mirror of optionShares for the seed portion
   market       Market   @relation(fields: [marketId], references: [id])
   user         User     @relation(fields: [userId], references: [id])
 
