@@ -693,8 +693,8 @@ export default function CreateMarketPage() {
                       </button>
                     </div>
 
-                    {/* Column headers */}
-                    <div className="flex items-center gap-2 px-1 mb-1">
+                    {/* Column headers — desktop only, mobile uses stacked layout */}
+                    <div className="hidden sm:flex items-center gap-2 px-1 mb-1">
                       <span className="w-7 shrink-0" />
                       <span className="flex-1 text-[9px] font-mono text-[var(--muted)] uppercase">
                         {locale === "sw" ? "Chaguo" : "Option"}
@@ -714,41 +714,51 @@ export default function CreateMarketPage() {
                         initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.04 }}
-                        className="flex items-center gap-2"
+                        className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2"
                       >
-                        <span className={cn("w-7 h-7 shrink-0 flex items-center justify-center text-[10px] font-mono font-black border", optColors[i % optColors.length])}>
-                          {String.fromCharCode(65 + i)}
-                        </span>
-                        <input
-                          type="text"
-                          value={opt}
-                          onChange={(e) => updateOption(i, e.target.value)}
-                          placeholder={`${locale === "sw" ? "Chaguo" : "Option"} ${String.fromCharCode(65 + i)}...`}
-                          className="flex-1 px-3 py-2 bg-[var(--background)] border border-[var(--card-border)] text-sm font-mono focus:outline-none focus:border-purple-500/50 transition-colors"
-                          maxLength={100}
-                        />
-                        {/* Probability input */}
-                        <div className="w-20 flex items-center gap-1">
+                        {/* Row 1 (mobile) / full row (desktop): letter badge + option text */}
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <span className={cn("w-7 h-7 shrink-0 flex items-center justify-center text-[10px] font-mono font-black border", optColors[i % optColors.length])}>
+                            {String.fromCharCode(65 + i)}
+                          </span>
                           <input
-                            type="number"
-                            min={1}
-                            max={98}
-                            value={optionProbs[i] ?? 0}
-                            onChange={(e) => updateOptionProb(i, Number(e.target.value))}
-                            className="w-full px-2 py-2 bg-[var(--background)] border border-purple-500/30 text-sm font-mono text-purple-300 focus:outline-none focus:border-purple-500/60 transition-colors text-center"
+                            type="text"
+                            value={opt}
+                            onChange={(e) => updateOption(i, e.target.value)}
+                            placeholder={`${locale === "sw" ? "Chaguo" : "Option"} ${String.fromCharCode(65 + i)}...`}
+                            className="flex-1 min-w-0 px-3 py-2 bg-[var(--background)] border border-[var(--card-border)] text-sm font-mono focus:outline-none focus:border-purple-500/50 transition-colors"
+                            maxLength={100}
                           />
-                          <span className="text-[10px] font-mono text-[var(--muted)]">%</span>
                         </div>
-                        {/* Implied multiplier */}
-                        <span className="w-14 text-[10px] font-mono text-center text-purple-400">
-                          ×{optionProbs[i] > 0 ? (100 / optionProbs[i]).toFixed(1) : "∞"}x
-                        </span>
-                        {customOptions.length > 2 && (
-                          <button type="button" onClick={() => removeOption(i)} className="w-7 p-1.5 text-red-400 hover:bg-red-500/10 transition-colors">
-                            <Trash size={14} />
-                          </button>
-                        )}
-                        {customOptions.length <= 2 && <span className="w-7" />}
+                        {/* Row 2 (mobile) / inline (desktop): probability + multiplier + delete */}
+                        <div className="flex items-center gap-2 pl-9 sm:pl-0">
+                          {/* % Chance label — mobile only */}
+                          <span className="text-[9px] font-mono text-[var(--muted)] uppercase sm:hidden">
+                            {locale === "sw" ? "Nafasi" : "Chance"}:
+                          </span>
+                          {/* Probability input */}
+                          <div className="flex items-center gap-1 shrink-0">
+                            <input
+                              type="number"
+                              min={1}
+                              max={98}
+                              value={optionProbs[i] ?? 0}
+                              onChange={(e) => updateOptionProb(i, Number(e.target.value))}
+                              className="w-14 px-2 py-2 bg-[var(--background)] border border-purple-500/30 text-sm font-mono text-[var(--foreground)] focus:outline-none focus:border-purple-500/60 transition-colors text-center"
+                            />
+                            <span className="text-[10px] font-mono text-[var(--muted)]">%</span>
+                          </div>
+                          {/* Implied multiplier */}
+                          <span className="w-14 text-[10px] font-mono text-center text-[var(--accent)]">
+                            ×{optionProbs[i] > 0 ? (100 / optionProbs[i]).toFixed(1) : "∞"}x
+                          </span>
+                          {customOptions.length > 2 && (
+                            <button type="button" onClick={() => removeOption(i)} className="w-7 p-1.5 text-red-400 hover:bg-red-500/10 transition-colors ml-auto sm:ml-0">
+                              <Trash size={14} />
+                            </button>
+                          )}
+                          {customOptions.length <= 2 && <span className="w-7 sm:inline hidden" />}
+                        </div>
                       </motion.div>
                     ))}
 
