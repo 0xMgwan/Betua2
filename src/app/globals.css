@@ -256,21 +256,17 @@ a {
   }
 }
 
-/* ── Date picker: keep the calendar within the viewport on narrow screens.
-   Overrides any left offset that would push the prev-month button off screen. ── */
-@media (max-width: 600px) {
-  .terminal-popper {
-    left: 8px !important;
-    right: 8px !important;
-    width: auto !important;
-    max-width: calc(100vw - 16px) !important;
-  }
-  .terminal-popper .react-datepicker {
-    width: 100% !important;
-  }
-  .terminal-datepicker .react-datepicker__month-container {
-    width: calc(100vw - 116px) !important; /* full width minus time panel (100px) and borders */
-    float: left;
+/* ── Date picker: scale down day cells on very narrow screens so the calendar
+   fits without overflowing. The prev/next buttons stay visible because
+   popperPlacement="bottom" centers the popper under the trigger.         ── */
+@media (max-width: 400px) {
+  .terminal-datepicker .react-datepicker__day,
+  .terminal-datepicker .react-datepicker__day-name {
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    margin: 1px;
+    font-size: 11px;
   }
 }
 
