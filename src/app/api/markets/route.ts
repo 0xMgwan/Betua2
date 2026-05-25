@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
       include: {
         creator: { select: { username: true, avatarUrl: true } },
         event: { select: { id: true, title: true, imageUrl: true, category: true, subCategory: true } },
-        _count: { select: { trades: true, comments: true } },
+        _count: { select: { trades: { where: { isLpSeed: false } }, comments: true } },
       },
       orderBy: sort === "volume" ? { totalVolume: "desc" } : { createdAt: "desc" },
       take: 50,
@@ -390,10 +390,10 @@ export async function POST(req: NextRequest) {
               data: { userId: session.userId, marketId: market.id, yesShares, noShares, lpYesShares: yesShares, lpNoShares: noShares },
             }),
             prisma.trade.create({
-              data: { userId: session.userId, marketId: market.id, side: "YES", amountTzs: yesSeed, shares: yesShares, price: yesResult.avgPrice },
+              data: { userId: session.userId, marketId: market.id, side: "YES", amountTzs: yesSeed, shares: yesShares, price: yesResult.avgPrice, isLpSeed: true },
             }),
             prisma.trade.create({
-              data: { userId: session.userId, marketId: market.id, side: "NO", amountTzs: noSeed, shares: noShares, price: noResult.avgPrice },
+              data: { userId: session.userId, marketId: market.id, side: "NO", amountTzs: noSeed, shares: noShares, price: noResult.avgPrice, isLpSeed: true },
             }),
             prisma.transaction.create({
               data: { userId: session.userId, type: "SEED_LIQUIDITY", amountTzs: effectiveSeed, currency: marketCurrency, status: "COMPLETED", recipientUsername: effectiveTitle },

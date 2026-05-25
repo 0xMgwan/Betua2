@@ -143,6 +143,7 @@ model Trade {
   price          Float
   txHash         String?
   side           String
+  isLpSeed       Boolean  @default(false)
   market         Market   @relation(fields: [marketId], references: [id])
   user           User     @relation(fields: [userId], references: [id])
 }

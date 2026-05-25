@@ -12,8 +12,9 @@ export async function GET(
     where: { id },
     include: {
       creator: { select: { username: true, avatarUrl: true, displayName: true } },
-      _count: { select: { trades: true, comments: true } },
+      _count: { select: { trades: { where: { isLpSeed: false } }, comments: true } },
       trades: {
+        where: { isLpSeed: false },
         orderBy: { createdAt: "desc" },
         take: 20,
         include: { user: { select: { username: true, avatarUrl: true } } },

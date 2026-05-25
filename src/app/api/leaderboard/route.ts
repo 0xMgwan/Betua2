@@ -5,8 +5,9 @@ export async function GET() {
   const users = await prisma.user.findMany({
     select: {
       id: true, username: true, displayName: true, avatarUrl: true,
-      _count: { select: { trades: true, marketsCreated: true } },
+      _count: { select: { trades: { where: { isLpSeed: false } }, marketsCreated: true } },
       trades: {
+        where: { isLpSeed: false },
         select: { amountTzs: true },
       },
     },
