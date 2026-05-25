@@ -16,6 +16,11 @@ export async function GET() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const positions = allPositions.filter((p: any) => {
+    // Hide LP seed positions: creator's position on their own seeded market.
+    // The seed is LP liquidity, not a real bet — the creator's return is paid
+    // automatically at resolution via LP auto-redeem. No need to show it here.
+    if (p.market.creatorId === session.userId && p.market.seedAmount > 0) return false;
+
     if (p.yesShares > 0 || p.noShares > 0) return true;
     if (p.optionShares && typeof p.optionShares === "object") {
       return Object.values(p.optionShares as Record<string, number>).some((v) => v > 0);
