@@ -232,6 +232,48 @@ a {
   z-index: 9999;
 }
 
+/* ── Multi-option market creation: stack prob/multiplier below option text on
+   narrow portrait screens. Using a plain media query (not Tailwind sm:) so
+   this is guaranteed to apply regardless of JIT purging.              ── */
+.create-option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.create-option-prob-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+@media (max-width: 600px) {
+  .create-option-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .create-option-prob-group {
+    padding-left: 36px; /* indent to align with text input (badge 28px + gap 8px) */
+  }
+}
+
+/* ── Date picker: keep the calendar within the viewport on narrow screens.
+   Overrides any left offset that would push the prev-month button off screen. ── */
+@media (max-width: 600px) {
+  .terminal-popper {
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-width: calc(100vw - 16px) !important;
+  }
+  .terminal-popper .react-datepicker {
+    width: 100% !important;
+  }
+  .terminal-datepicker .react-datepicker__month-container {
+    width: calc(100vw - 116px) !important; /* full width minus time panel (100px) and borders */
+    float: left;
+  }
+}
+
 .yes-pill {
   background: rgba(0, 0, 0, 0.06);
   color: var(--foreground);

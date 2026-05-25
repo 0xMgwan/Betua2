@@ -48,12 +48,7 @@ export function TerminalDatePicker({ selected, onChange, minDate, locale = "en" 
         customInput={<TerminalInput />}
         calendarClassName="terminal-calendar"
         popperClassName="terminal-popper"
-        popperPlacement="bottom-start"
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        popperModifiers={[
-          { name: "preventOverflow", options: { padding: 8, boundary: "viewport" } },
-          { name: "flip", options: { fallbackPlacements: ["top-start", "bottom-end"] } },
-        ] as any}
+        popperPlacement="bottom"
         renderCustomHeader={({
           date,
           decreaseMonth,

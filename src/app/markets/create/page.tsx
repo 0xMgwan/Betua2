@@ -714,9 +714,9 @@ export default function CreateMarketPage() {
                         initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.04 }}
-                        className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2"
+                        className="create-option-row"
                       >
-                        {/* Row 1 (mobile) / full row (desktop): letter badge + option text */}
+                        {/* Letter badge + option text — always in a flex row */}
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <span className={cn("w-7 h-7 shrink-0 flex items-center justify-center text-[10px] font-mono font-black border", optColors[i % optColors.length])}>
                             {String.fromCharCode(65 + i)}
@@ -730,12 +730,9 @@ export default function CreateMarketPage() {
                             maxLength={100}
                           />
                         </div>
-                        {/* Row 2 (mobile) / inline (desktop): probability + multiplier + delete */}
-                        <div className="flex items-center gap-2 pl-9 sm:pl-0">
-                          {/* % Chance label — mobile only */}
-                          <span className="text-[9px] font-mono text-[var(--muted)] uppercase sm:hidden">
-                            {locale === "sw" ? "Nafasi" : "Chance"}:
-                          </span>
+                        {/* Probability + multiplier + delete
+                            On mobile (≤600px) this group drops to its own line via CSS */}
+                        <div className="create-option-prob-group">
                           {/* Probability input */}
                           <div className="flex items-center gap-1 shrink-0">
                             <input
@@ -752,12 +749,13 @@ export default function CreateMarketPage() {
                           <span className="w-14 text-[10px] font-mono text-center text-[var(--accent)]">
                             ×{optionProbs[i] > 0 ? (100 / optionProbs[i]).toFixed(1) : "∞"}x
                           </span>
-                          {customOptions.length > 2 && (
-                            <button type="button" onClick={() => removeOption(i)} className="w-7 p-1.5 text-red-400 hover:bg-red-500/10 transition-colors ml-auto sm:ml-0">
+                          {customOptions.length > 2 ? (
+                            <button type="button" onClick={() => removeOption(i)} className="w-7 p-1.5 text-red-400 hover:bg-red-500/10 transition-colors">
                               <Trash size={14} />
                             </button>
+                          ) : (
+                            <span className="w-7" />
                           )}
-                          {customOptions.length <= 2 && <span className="w-7 sm:inline hidden" />}
                         </div>
                       </motion.div>
                     ))}
