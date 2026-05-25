@@ -85,8 +85,10 @@ a {
     linear-gradient(135deg, var(--background) 0%, var(--card) 100%);
 }
 
-/* Terminal DatePicker Styles */
-.terminal-datepicker .react-datepicker {
+/* Terminal DatePicker Styles
+   Scoped to .terminal-calendar (calendarClassName) so rules apply whether
+   the calendar renders inline OR inside a portalId outside the wrapper div. */
+.terminal-calendar {
   font-family: var(--font-geist-mono), monospace;
   background-color: var(--card);
   border: 2px solid var(--card-border);
@@ -94,17 +96,17 @@ a {
   box-shadow: 0 0 20px rgba(0, 229, 160, 0.1);
 }
 
-.terminal-datepicker .react-datepicker__header {
+.terminal-calendar .react-datepicker__header {
   background-color: var(--card);
   border-bottom: none;
   padding: 0;
 }
 
-.terminal-datepicker .react-datepicker__current-month {
+.terminal-calendar .react-datepicker__current-month {
   display: none;
 }
 
-.terminal-datepicker .react-datepicker__day-names {
+.terminal-calendar .react-datepicker__day-names {
   display: flex;
   justify-content: space-around;
   padding: 8px 12px;
@@ -112,7 +114,7 @@ a {
   background-color: var(--background);
 }
 
-.terminal-datepicker .react-datepicker__day-name {
+.terminal-calendar .react-datepicker__day-name {
   color: var(--muted);
   font-size: 10px;
   font-weight: bold;
@@ -123,18 +125,18 @@ a {
   margin: 0;
 }
 
-.terminal-datepicker .react-datepicker__month {
+.terminal-calendar .react-datepicker__month {
   margin: 0;
   padding: 12px;
   background-color: var(--card);
 }
 
-.terminal-datepicker .react-datepicker__week {
+.terminal-calendar .react-datepicker__week {
   display: flex;
   justify-content: space-around;
 }
 
-.terminal-datepicker .react-datepicker__day {
+.terminal-calendar .react-datepicker__day {
   color: var(--foreground);
   font-size: 13px;
   font-weight: bold;
@@ -146,51 +148,51 @@ a {
   transition: all 0.15s;
 }
 
-.terminal-datepicker .react-datepicker__day:hover {
+.terminal-calendar .react-datepicker__day:hover {
   background-color: var(--background);
   border: 1px solid var(--accent);
   color: var(--accent);
 }
 
-.terminal-datepicker .react-datepicker__day--selected,
-.terminal-datepicker .react-datepicker__day--keyboard-selected {
+.terminal-calendar .react-datepicker__day--selected,
+.terminal-calendar .react-datepicker__day--keyboard-selected {
   background-color: var(--accent);
   color: var(--background);
   font-weight: bold;
 }
 
-.terminal-datepicker .react-datepicker__day--disabled {
+.terminal-calendar .react-datepicker__day--disabled {
   color: var(--muted);
   opacity: 0.3;
   cursor: not-allowed;
 }
 
-.terminal-datepicker .react-datepicker__day--outside-month {
+.terminal-calendar .react-datepicker__day--outside-month {
   color: var(--muted);
   opacity: 0.4;
 }
 
-.terminal-datepicker .react-datepicker__day--today {
+.terminal-calendar .react-datepicker__day--today {
   border: 1px solid var(--accent);
   background-color: transparent;
 }
 
-.terminal-datepicker .react-datepicker__time-container {
+.terminal-calendar .react-datepicker__time-container {
   border-left: 2px solid var(--card-border);
   width: 100px;
 }
 
-.terminal-datepicker .react-datepicker__time {
+.terminal-calendar .react-datepicker__time {
   background-color: var(--card);
 }
 
-.terminal-datepicker .react-datepicker__header--time {
+.terminal-calendar .react-datepicker__header--time {
   background-color: var(--card);
   border-bottom: 1px solid var(--card-border);
   padding: 8px 0;
 }
 
-.terminal-datepicker .react-datepicker-time__header {
+.terminal-calendar .react-datepicker-time__header {
   color: var(--accent);
   font-size: 10px;
   font-weight: bold;
@@ -198,13 +200,13 @@ a {
   letter-spacing: 0.1em;
 }
 
-.terminal-datepicker .react-datepicker__time-list {
+.terminal-calendar .react-datepicker__time-list {
   padding: 0;
   height: 200px !important;
   background-color: var(--card);
 }
 
-.terminal-datepicker .react-datepicker__time-list-item {
+.terminal-calendar .react-datepicker__time-list-item {
   font-size: 12px;
   font-weight: bold;
   padding: 6px 12px;
@@ -213,18 +215,18 @@ a {
   transition: all 0.15s;
 }
 
-.terminal-datepicker .react-datepicker__time-list-item:hover {
+.terminal-calendar .react-datepicker__time-list-item:hover {
   background-color: var(--background) !important;
   color: var(--accent) !important;
 }
 
-.terminal-datepicker .react-datepicker__time-list-item--selected {
+.terminal-calendar .react-datepicker__time-list-item--selected {
   background-color: var(--accent) !important;
   color: var(--background) !important;
   font-weight: bold;
 }
 
-.terminal-datepicker .react-datepicker__triangle {
+.terminal-calendar .react-datepicker__triangle {
   display: none;
 }
 
