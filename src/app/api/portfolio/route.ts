@@ -16,9 +16,19 @@ export async function GET() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const positions = allPositions.filter((p: any) => {
-    if (p.yesShares > 0 || p.noShares > 0) return true;
+    // Only show positions where the user has trade shares beyond their LP seed.
+    // lpYesShares/lpNoShares/lpOptionShares track the seed portion so creators who
+    // also trade on their own market still see their trade position here.
+    const tradeYes = (p.yesShares || 0) - (p.lpYesShares || 0);
+    const tradeNo  = (p.noShares  || 0) - (p.lpNoShares  || 0);
+    if (tradeYes > 0 || tradeNo > 0) return true;
+
+    // Multi-option: check if any option has trade shares beyond the LP seed
     if (p.optionShares && typeof p.optionShares === "object") {
-      return Object.values(p.optionShares as Record<string, number>).some((v) => v > 0);
+      const lpOpt = (p.lpOptionShares as Record<string, number>) || {};
+      return Object.entries(p.optionShares as Record<string, number>).some(
+        ([idx, shares]) => (shares - (lpOpt[idx] || 0)) > 0
+      );
     }
     return false;
   });
