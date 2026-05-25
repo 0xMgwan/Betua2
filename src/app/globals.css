@@ -256,9 +256,7 @@ a {
   }
 }
 
-/* ── Date picker: scale down day cells on very narrow screens so the calendar
-   fits without overflowing. The prev/next buttons stay visible because
-   popperPlacement="bottom" centers the popper under the trigger.         ── */
+/* ── Date picker: slightly smaller day cells on very narrow screens ── */
 @media (max-width: 400px) {
   .terminal-datepicker .react-datepicker__day,
   .terminal-datepicker .react-datepicker__day-name {

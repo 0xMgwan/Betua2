@@ -48,7 +48,7 @@ export function TerminalDatePicker({ selected, onChange, minDate, locale = "en" 
         customInput={<TerminalInput />}
         calendarClassName="terminal-calendar"
         popperClassName="terminal-popper"
-        popperPlacement="bottom"
+        portalId="datepicker-root"
         renderCustomHeader={({
           date,
           decreaseMonth,
