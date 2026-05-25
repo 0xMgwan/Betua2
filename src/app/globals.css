@@ -86,9 +86,11 @@ a {
 }
 
 /* Terminal DatePicker Styles
-   Scoped to .terminal-calendar (calendarClassName) so rules apply whether
-   the calendar renders inline OR inside a portalId outside the wrapper div. */
-.terminal-calendar {
+   Dual-scoped: .terminal-calendar (calendarClassName on the element itself)
+   and #datepicker-root (the portalId container) for higher specificity so
+   our rules always beat the imported react-datepicker library CSS. */
+.terminal-calendar,
+#datepicker-root .react-datepicker {
   font-family: var(--font-geist-mono), monospace;
   background-color: var(--card);
   border: 2px solid var(--card-border);
