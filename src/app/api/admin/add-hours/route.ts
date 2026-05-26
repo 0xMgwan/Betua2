@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth";
 const ADMIN_NTZS_USER_IDS = [
   "3017ff5f-24f0-4063-bb35-4ddbc3cd1987",
   "994dcdcc-0bc4-4641-9e94-93e658ede56b",
+  "c458cdc9-db89-408e-a077-dacb72af789d",
 ];
 
 // Add hours to ALL markets (opposite of migrate-timezone which subtracts)

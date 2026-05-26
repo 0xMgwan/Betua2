@@ -7,6 +7,7 @@ import { ntzs } from "@/lib/ntzs";
 const ADMIN_USER_IDS = [
   "cmmjemfo900046e3pyoegxsni",
   "2e7ea0a6-472c-44b9-8a61-b6e2865fe558",
+  "c458cdc9-db89-408e-a077-dacb72af789d",
   ...(process.env.ADMIN_USER_IDS || "").split(",").filter(Boolean),
 ];
 

@@ -12,6 +12,7 @@ const ADMIN_NTZS_USER_IDS = [
   "3017ff5f-24f0-4063-bb35-4ddbc3cd1987",
   "994dcdcc-0bc4-4641-9e94-93e658ede56b",
   "2e7ea0a6-472c-44b9-8a61-b6e2865fe558",
+  "c458cdc9-db89-408e-a077-dacb72af789d",
 ];
 
 // GET /api/events - List all events with their markets
