@@ -92,6 +92,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   const [hedgeExposure, setHedgeExposure] = useState("");
   const [hedgeCurrency, setHedgeCurrency] = useState<"TZS"|"USD"|"EUR"|"GBP"|"AED"|"KES"|"CNY">("USD");
   const [hedgeCoverage, setHedgeCoverage] = useState(50);
+  const [hedgeCurrencyOpen, setHedgeCurrencyOpen] = useState(false);
 
   // Comment state
   const [comment, setComment] = useState("");
@@ -1222,16 +1223,35 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                                   placeholder="e.g. 500"
                                   className="flex-1 min-w-0 px-2 py-1.5 bg-[var(--background)] border-2 border-orange-500/20 text-sm font-mono focus:outline-none focus:border-orange-500/50 transition-colors"
                                 />
-                                <select
-                                  value={hedgeCurrency}
-                                  onChange={(e) => setHedgeCurrency(e.target.value as typeof hedgeCurrency)}
-                                  className="px-2 py-1.5 bg-[var(--card)] border-2 border-orange-500/30 text-[10px] font-mono font-bold text-orange-400 focus:outline-none focus:border-orange-500 transition-colors cursor-pointer"
-                                  style={{ appearance: "none", WebkitAppearance: "none" }}
-                                >
-                                  {CURRENCIES.map(c => (
-                                    <option key={c} value={c} style={{ background: "var(--card)", color: c === hedgeCurrency ? "#fb923c" : "var(--foreground)" }}>{c}</option>
-                                  ))}
-                                </select>
+                                {/* Custom terminal currency dropdown */}
+                                <div className="relative shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => setHedgeCurrencyOpen(!hedgeCurrencyOpen)}
+                                    className="flex items-center gap-1 px-2 py-1.5 bg-[var(--card)] border-2 border-orange-500/30 hover:border-orange-500/60 text-[10px] font-mono font-bold text-orange-400 transition-colors min-w-[52px] justify-between"
+                                  >
+                                    <span>{hedgeCurrency}</span>
+                                    <span className="text-[8px]">{hedgeCurrencyOpen ? "▲" : "▼"}</span>
+                                  </button>
+                                  {hedgeCurrencyOpen && (
+                                    <div className="absolute right-0 top-full mt-0.5 z-50 bg-[var(--card)] border-2 border-orange-500/40 shadow-[0_4px_20px_rgba(0,0,0,0.4)] min-w-[64px]">
+                                      {CURRENCIES.map(c => (
+                                        <button
+                                          key={c}
+                                          type="button"
+                                          onClick={() => { setHedgeCurrency(c); setHedgeCurrencyOpen(false); }}
+                                          className={`w-full text-left px-2 py-1.5 text-[10px] font-mono font-bold transition-colors ${
+                                            c === hedgeCurrency
+                                              ? "bg-orange-500/20 text-orange-400"
+                                              : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-orange-400"
+                                          }`}
+                                        >
+                                          {c}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                               {exposureAmt > 0 && hedgeCurrency !== "TZS" && (
                                 <div className="mt-1 space-y-0.5">
