@@ -58,7 +58,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
   // Hedge calculator state
   const [showHedge, setShowHedge] = useState(false);
   const [hedgeExposure, setHedgeExposure] = useState("");
-  const [hedgeCurrency, setHedgeCurrency] = useState<"USD"|"EUR"|"GBP"|"AED"|"KES"|"CNY">("USD");
+  const [hedgeCurrency, setHedgeCurrency] = useState<"TZS"|"USD"|"EUR"|"GBP"|"AED"|"KES"|"CNY">("USD");
   const [hedgeCoverage, setHedgeCoverage] = useState(50);
 
   const isExpired = market.resolvesAt ? new Date(market.resolvesAt) < new Date() : false;
@@ -368,7 +368,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
               {/* ── Hedge Calculator (FX & Commodities only) ── */}
               {market.category === "FX & Commodities" && !isMultiOption && !success && (() => {
                 // TZS conversion rates (approximate mid-market)
-                const RATES: Record<string, number> = { USD: 2630, EUR: 2850, GBP: 3320, AED: 716, KES: 20, CNY: 362 };
+                const RATES: Record<string, number> = { TZS: 1, USD: 2630, EUR: 2850, GBP: 3320, AED: 716, KES: 20, CNY: 362 };
                 const rate = RATES[hedgeCurrency] ?? 2630;
                 const yesPriceNow = pools.price.yes;
                 const noPriceNow  = pools.price.no;
@@ -391,7 +391,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                 const noPayoutFinal  = coverageTzs;
 
                 const sw = locale === "sw";
-                const CURRENCIES = ["USD","EUR","GBP","AED","KES","CNY"] as const;
+                const CURRENCIES = ["TZS","USD","EUR","GBP","AED","KES","CNY"] as const;
                 const coverageHint = hedgeCoverage === 100
                   ? (sw ? "Ulinzi kamili wa hasara yako" : "Full coverage of your exposure")
                   : hedgeCoverage <= 10
@@ -431,12 +431,15 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                             <select
                               value={hedgeCurrency}
                               onChange={(e) => setHedgeCurrency(e.target.value as typeof hedgeCurrency)}
-                              className="px-2 py-1.5 bg-[var(--background)] border-2 border-orange-500/20 text-[10px] font-mono font-bold text-orange-400 focus:outline-none focus:border-orange-500/50 transition-colors appearance-none cursor-pointer"
+                              className="px-2 py-1.5 bg-[var(--card)] border-2 border-orange-500/30 text-[10px] font-mono font-bold text-orange-400 focus:outline-none focus:border-orange-500 transition-colors cursor-pointer"
+                              style={{ appearance: "none", WebkitAppearance: "none" }}
                             >
-                              {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                              {CURRENCIES.map(c => (
+                                <option key={c} value={c} style={{ background: "var(--card)", color: c === hedgeCurrency ? "#fb923c" : "var(--foreground)" }}>{c}</option>
+                              ))}
                             </select>
                           </div>
-                          {exposureAmt > 0 && (
+                          {exposureAmt > 0 && hedgeCurrency !== "TZS" && (
                             <p className="text-[9px] font-mono text-[var(--muted)] mt-1">
                               ≈ TSh {exposureTzs.toLocaleString()} {sw ? "kwa kiwango cha sasa" : "at current rate"}
                             </p>
