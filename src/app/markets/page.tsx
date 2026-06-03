@@ -358,6 +358,7 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
             market={{
               id: selectedMarket.id,
               title: selectedMarket.title,
+              category: selectedMarket.category,
               price: modalPrices,
               optionPrices: selectedMarket.optionPrices,
               yesPool: selectedMarket.yesPool || 10000,

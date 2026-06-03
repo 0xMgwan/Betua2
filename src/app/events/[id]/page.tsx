@@ -796,6 +796,7 @@ function MarketRow({
         market={{
           id: market.id,
           title: market.title,
+          category: market.category,
           price: market.price,
           optionPrices: market.optionPrices || undefined,
           yesPool: market.yesPool,

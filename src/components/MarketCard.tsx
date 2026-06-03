@@ -445,6 +445,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
           market={{
             id: market.id,
             title: displayTitle,
+            category: market.category,
             price: market.price,
             optionPrices: market.optionPrices || undefined,
             yesPool: market.yesPool,
