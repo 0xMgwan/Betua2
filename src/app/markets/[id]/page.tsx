@@ -1234,7 +1234,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                                     <span className="text-[8px]">{hedgeCurrencyOpen ? "▲" : "▼"}</span>
                                   </button>
                                   {hedgeCurrencyOpen && (
-                                    <div className="absolute right-0 top-full mt-0.5 z-50 bg-[var(--card)] border-2 border-orange-500/40 shadow-[0_4px_20px_rgba(0,0,0,0.4)] min-w-[64px]">
+                                    <div className="absolute right-0 bottom-full mb-0.5 z-50 bg-[var(--card)] border-2 border-orange-500/40 shadow-[0_-4px_20px_rgba(0,0,0,0.4)] min-w-[64px]">
                                       {CURRENCIES.map(c => (
                                         <button
                                           key={c}
