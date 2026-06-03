@@ -32,6 +32,7 @@ interface Comment {
 interface Market {
   id: string;
   title: string;
+  category?: string;
   status: string;
   totalVolume: number;
   yesPool: number;
