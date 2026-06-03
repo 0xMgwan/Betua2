@@ -111,6 +111,7 @@ export default function CreateMarketPage() {
 
   // Pyth-specific state (only for FX & Commodities markets)
   const [fxMode, setFxMode] = useState<"pyth" | "custom">("pyth");
+  const [fxRate, setFxRate] = useState(""); // Optional current rate for custom FX markets
   const [pythConfig, setPythConfig] = useState({
     symbol: "EUR/USD",
     targetPrice: "",
@@ -306,6 +307,12 @@ export default function CreateMarketPage() {
         }
         body.options = validOptions;
         body.optionProbs = probsForValid;
+      }
+
+      // Add optional fxRate for custom FX markets
+      if (form.category === "FX & Commodities" && fxMode === "custom" && fxRate) {
+        const parsedRate = parseFloat(fxRate);
+        if (!isNaN(parsedRate) && parsedRate > 0) body.fxRate = parsedRate;
       }
 
       // Add Pyth data for FX & Commodities markets (only in pyth mode)
@@ -1009,6 +1016,27 @@ export default function CreateMarketPage() {
                         <div className="text-[10px] font-mono text-orange-400/70 border border-orange-500/20 px-2 py-1.5 bg-[var(--background)]">
                           <span className="text-orange-400">[MANUAL] </span>
                           E.g. &quot;Will USD/TZS exceed 2,600 by end of day?&quot;
+                        </div>
+                        {/* Current rate field */}
+                        <div>
+                          <label className="block text-[10px] font-mono text-[var(--muted)] mb-1 uppercase tracking-wider">
+                            Current rate <span className="normal-case text-[var(--muted)]/60">(optional — shown in hedge calculator)</span>
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              value={fxRate}
+                              onChange={(e) => setFxRate(e.target.value)}
+                              placeholder="e.g. 2650"
+                              className="flex-1 px-2 py-2 bg-[var(--background)] border border-orange-500/20 text-sm font-mono focus:outline-none focus:border-orange-500/50 transition-colors"
+                            />
+                            <span className="text-[10px] font-mono text-orange-400 shrink-0">TZS / unit</span>
+                          </div>
+                          <p className="text-[9px] font-mono text-[var(--muted)]/70 mt-1">
+                            E.g. 2650 for USD/TZS at 2,650. Helps traders size their hedge correctly.
+                          </p>
                         </div>
                       </>
                     )}

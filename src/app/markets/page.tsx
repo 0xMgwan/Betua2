@@ -24,6 +24,7 @@ interface EventMarket {
   id: string;
   title: string;
   category?: string;
+  fxRate?: number | null;
   price?: { yes: number; no: number } | number; // Can be object or number
   yesPool?: number;
   noPool?: number;
@@ -360,6 +361,7 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
               id: selectedMarket.id,
               title: selectedMarket.title,
               category: selectedMarket.category,
+              fxRate: selectedMarket.fxRate,
               price: modalPrices,
               optionPrices: selectedMarket.optionPrices,
               yesPool: selectedMarket.yesPool || 10000,

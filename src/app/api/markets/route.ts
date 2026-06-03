@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { title, description, category, subCategory, resolvesAt, imageUrl, pythSymbol, pythTargetPrice, pythOperator, options, initialProb, optionProbs, seedAmount: rawSeedAmount, seedCurrency, seedDistribution } = body;
+    const { title, description, category, subCategory, resolvesAt, imageUrl, pythSymbol, pythTargetPrice, pythOperator, options, initialProb, optionProbs, seedAmount: rawSeedAmount, seedCurrency, seedDistribution, fxRate } = body;
     const seedAmount = Math.max(0, Math.round(Number(rawSeedAmount) || 0));
     const isSeedUsdc = seedCurrency === 'USDC';
     const useProportionalSeed = seedDistribution === 'proportional';
@@ -309,6 +309,7 @@ export async function POST(req: NextRequest) {
       optionPools: optionPools || undefined,
       seedAmount: effectiveSeed,
       totalVolume: effectiveSeed, // seed immediately backs the pot
+      fxRate: fxRate ? parseFloat(fxRate) : undefined,
     };
 
     const market = isAdmin

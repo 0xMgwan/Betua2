@@ -27,6 +27,7 @@ interface Market {
   noPool: number;
   resolvesAt: string;
   status: string;
+  fxRate?: number | null;
   price: { yes: number; no: number };
   options?: string[] | null;
   optionPrices?: number[] | null;
@@ -446,6 +447,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
             id: market.id,
             title: displayTitle,
             category: market.category,
+            fxRate: market.fxRate,
             price: market.price,
             optionPrices: market.optionPrices || undefined,
             yesPool: market.yesPool,

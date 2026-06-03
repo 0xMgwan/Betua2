@@ -33,6 +33,7 @@ interface MarketData {
   imageUrl?: string | null;
   totalVolume: number;
   seedAmount?: number;
+  fxRate?: number | null;
   yesPool: number;
   noPool: number;
   resolvesAt: string;
@@ -1167,13 +1168,15 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
                   {/* ── Hedge Calculator (FX & Commodities only) ── */}
                   {market.category === "FX & Commodities" && !isMultiOption && (() => {
-                    const RATES: Record<string, number> = { TZS: 1, USD: 2630, EUR: 2850, GBP: 3320, AED: 716, KES: 20, CNY: 362 };
+                    const BASE_RATES: Record<string, number> = { TZS: 1, USD: 2630, EUR: 2850, GBP: 3320, AED: 716, KES: 20, CNY: 362 };
+                    const RATES = { ...BASE_RATES, USD: market.fxRate ?? BASE_RATES.USD };
                     const CURRENCIES = ["TZS","USD","EUR","GBP","AED","KES","CNY"] as const;
                     const FEE_PCT = 0.05;
                     const feeSq = (1 - FEE_PCT) ** 2;
                     const yesPriceNow = market.price.yes;
                     const noPriceNow  = market.price.no;
                     const rate = RATES[hedgeCurrency] ?? 2630;
+                    const rateSource = (hedgeCurrency === "USD" && market.fxRate) ? (sw ? "kiwango cha muundaji" : "creator rate") : (sw ? "wastani wa soko" : "est. mid-market");
                     const exposureAmt = parseFloat(hedgeExposure) || 0;
                     const exposureTzs = Math.round(exposureAmt * rate);
                     const coverageTzs = Math.round(exposureTzs * hedgeCoverage / 100);
@@ -1199,9 +1202,16 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                           <div className="px-3 pb-3 space-y-3 border-t border-orange-500/20">
                             {/* Exposure + currency */}
                             <div className="pt-2">
-                              <label className="block text-[9px] font-mono text-[var(--muted)] mb-1 uppercase tracking-wider">
-                                {sw ? "Mwanga wangu" : "My exposure"}
-                              </label>
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <label className="text-[9px] font-mono text-[var(--muted)] uppercase tracking-wider">
+                                  {sw ? "Mwanga wangu" : "My exposure"} ({hedgeCurrency})
+                                </label>
+                                <span className="text-[9px] font-mono text-orange-400/60 border border-orange-500/20 px-1 leading-tight cursor-default" title={sw ? "Ingiza kiasi unachohitaji kubadilisha au kupokea." : "Enter the amount you need to convert or receive. Not sure? Enter 0 to trade without hedging."}>?</span>
+                              </div>
+                              <div className="flex items-start gap-1.5 mb-2 text-[9px] font-mono text-[var(--muted)]/70 border border-orange-500/10 bg-[var(--background)] px-2 py-1.5">
+                                <span className="text-orange-400/60 shrink-0">ⓘ</span>
+                                <span>{sw ? "Ingiza kiasi unachohitaji kubadilisha au kupokea. Haujui? Ingiza 0 kuuza bila hedging." : "Enter the amount you need to convert or receive. Not sure? Enter 0 to trade without hedging."}</span>
+                              </div>
                               <div className="flex gap-1">
                                 <input
                                   type="number"
@@ -1224,7 +1234,10 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                                 </select>
                               </div>
                               {exposureAmt > 0 && hedgeCurrency !== "TZS" && (
-                                <p className="text-[9px] font-mono text-[var(--muted)] mt-1">≈ TSh {exposureTzs.toLocaleString()} {sw ? "kwa kiwango cha sasa" : "at current rate"}</p>
+                                <div className="mt-1 space-y-0.5">
+                                  <p className="text-[9px] font-mono text-[var(--muted)]">≈ TSh {exposureTzs.toLocaleString()} {sw ? "kwa kiwango cha sasa" : "at current rate"}</p>
+                                  <p className="text-[9px] font-mono text-orange-400/60">{sw ? "Kiwango" : "Rate"}: {rate.toLocaleString()} TZS/{hedgeCurrency} ({rateSource})</p>
+                                </div>
                               )}
                             </div>
                             {/* Coverage slider */}

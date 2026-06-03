@@ -20,6 +20,7 @@ interface QuickBuyModalProps {
     id: string;
     title: string;
     category?: string;
+    fxRate?: number | null;
     price: { yes: number; no: number };
     optionPrices?: number[];
     yesPool: number;
@@ -367,9 +368,11 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
 
               {/* ── Hedge Calculator (FX & Commodities only) ── */}
               {market.category === "FX & Commodities" && !isMultiOption && !success && (() => {
-                // TZS conversion rates (approximate mid-market)
-                const RATES: Record<string, number> = { TZS: 1, USD: 2630, EUR: 2850, GBP: 3320, AED: 716, KES: 20, CNY: 362 };
+                // TZS conversion rates — use market's fxRate for USD if set by creator
+                const BASE_RATES: Record<string, number> = { TZS: 1, USD: 2630, EUR: 2850, GBP: 3320, AED: 716, KES: 20, CNY: 362 };
+                const RATES = { ...BASE_RATES, USD: market.fxRate ?? BASE_RATES.USD };
                 const rate = RATES[hedgeCurrency] ?? 2630;
+                const rateSource = (hedgeCurrency === "USD" && market.fxRate) ? "creator rate" : "est. mid-market";
                 const yesPriceNow = pools.price.yes;
                 const noPriceNow  = pools.price.no;
 
@@ -415,9 +418,21 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
 
                         {/* Exposure input + currency selector */}
                         <div className="pt-2">
-                          <label className="block text-[9px] font-mono text-[var(--muted)] mb-1 uppercase tracking-wider">
-                            {sw ? "Mwanga wangu" : "My exposure"}
-                          </label>
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <label className="text-[9px] font-mono text-[var(--muted)] uppercase tracking-wider">
+                              {sw ? "Mwanga wangu" : "My exposure"} ({hedgeCurrency})
+                            </label>
+                            <span className="text-[9px] font-mono text-orange-400/60 border border-orange-500/20 px-1 leading-tight cursor-default" title={sw ? "Ingiza kiasi unachohitaji kubadilisha au kupokea. Haujui? Ingiza 0 kuuza bila hedging." : "Enter the amount you need to convert or receive. Not sure? Enter 0 to trade without hedging."}>?</span>
+                          </div>
+                          {/* Pro tip info strip */}
+                          <div className="flex items-start gap-1.5 mb-2 text-[9px] font-mono text-[var(--muted)]/70 border border-orange-500/10 bg-[var(--background)] px-2 py-1.5">
+                            <span className="text-orange-400/60 shrink-0">ⓘ</span>
+                            <span>
+                              {sw
+                                ? "Ingiza kiasi unachohitaji kubadilisha au kupokea. Haujui? Ingiza 0 kuuza bila hedging."
+                                : "Enter the amount you need to convert or receive. Not sure? Enter 0 to trade without hedging."}
+                            </span>
+                          </div>
                           <div className="flex gap-1">
                             <input
                               type="number"
@@ -440,9 +455,14 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                             </select>
                           </div>
                           {exposureAmt > 0 && hedgeCurrency !== "TZS" && (
-                            <p className="text-[9px] font-mono text-[var(--muted)] mt-1">
-                              ≈ TSh {exposureTzs.toLocaleString()} {sw ? "kwa kiwango cha sasa" : "at current rate"}
-                            </p>
+                            <div className="mt-1 space-y-0.5">
+                              <p className="text-[9px] font-mono text-[var(--muted)]">
+                                ≈ TSh {exposureTzs.toLocaleString()} {sw ? "kwa kiwango cha sasa" : "at current rate"}
+                              </p>
+                              <p className="text-[9px] font-mono text-orange-400/60">
+                                {sw ? "Kiwango" : "Rate"}: {rate.toLocaleString()} TZS/{hedgeCurrency} ({rateSource})
+                              </p>
+                            </div>
                           )}
                         </div>
 
