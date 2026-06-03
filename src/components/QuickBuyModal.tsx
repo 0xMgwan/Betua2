@@ -371,7 +371,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
               {market.category === "FX & Commodities" && !isMultiOption && !success && (() => {
                 // TZS conversion rates — use market's fxRate for USD if set by creator
                 const BASE_RATES: Record<string, number> = { TZS: 1, USD: 2630, EUR: 2850, GBP: 3320, AED: 716, KES: 20, CNY: 362 };
-                const RATES = { ...BASE_RATES, USD: market.fxRate ?? BASE_RATES.USD };
+                const RATES: Record<string, number> = { ...BASE_RATES, USD: market.fxRate ?? BASE_RATES.USD };
                 const rate = RATES[hedgeCurrency] ?? 2630;
                 const rateSource = (hedgeCurrency === "USD" && market.fxRate) ? "creator rate" : "est. mid-market";
                 const yesPriceNow = pools.price.yes;
