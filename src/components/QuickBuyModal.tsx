@@ -58,6 +58,8 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
   // Hedge calculator state
   const [showHedge, setShowHedge] = useState(false);
   const [hedgeExposure, setHedgeExposure] = useState("");
+  const [hedgeCurrency, setHedgeCurrency] = useState<"USD"|"EUR"|"GBP"|"AED"|"KES"|"CNY">("USD");
+  const [hedgeCoverage, setHedgeCoverage] = useState(50);
 
   const isExpired = market.resolvesAt ? new Date(market.resolvesAt) < new Date() : false;
   const isResolved = market.status === "RESOLVED";
@@ -365,32 +367,58 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
 
               {/* ── Hedge Calculator (FX & Commodities only) ── */}
               {market.category === "FX & Commodities" && !isMultiOption && !success && (() => {
-                const USDC_RATE = 2630;
+                // TZS conversion rates (approximate mid-market)
+                const RATES: Record<string, number> = { USD: 2630, EUR: 2850, GBP: 3320, AED: 716, KES: 20, CNY: 362 };
+                const rate = RATES[hedgeCurrency] ?? 2630;
                 const yesPriceNow = pools.price.yes;
-                const noPriceNow = pools.price.no;
-                const exposureUsd = parseFloat(hedgeExposure) || 0;
-                const exposureTzs = Math.round(exposureUsd * USDC_RATE);
-                const yesCostNet = yesPriceNow > 0 ? Math.round(exposureTzs * yesPriceNow) : 0;
-                const yesCostGross = Math.round(yesCostNet / (1 - FEE_PERCENT));
-                const yesPayoutFinal = yesPriceNow > 0 ? Math.round(yesCostNet / yesPriceNow * (1 - FEE_PERCENT)) : 0;
-                const noCostNet = noPriceNow > 0 ? Math.round(exposureTzs * noPriceNow) : 0;
-                const noCostGross = Math.round(noCostNet / (1 - FEE_PERCENT));
-                const noPayoutFinal = noPriceNow > 0 ? Math.round(noCostNet / noPriceNow * (1 - FEE_PERCENT)) : 0;
+                const noPriceNow  = pools.price.no;
+
+                const exposureAmt = parseFloat(hedgeExposure) || 0;
+                // Full TZS equivalent of the exposure
+                const exposureTzs = Math.round(exposureAmt * rate);
+                // Coverage: what % of the exposure the user wants to insure
+                const coverageTzs = Math.round(exposureTzs * hedgeCoverage / 100);
+
+                // Correct formula:
+                // target payout = coverageTzs
+                // payoutIfWin  = grossCost × (1−fee)² / oddsPrice
+                // → grossCost   = coverageTzs × oddsPrice / (1−fee)²
+                const feeSq = (1 - FEE_PERCENT) ** 2;
+                const yesCostGross = yesPriceNow > 0 ? Math.round(coverageTzs * yesPriceNow / feeSq) : 0;
+                const noCostGross  = noPriceNow  > 0 ? Math.round(coverageTzs * noPriceNow  / feeSq) : 0;
+                // Payout = coverage target (what they receive if the market resolves in their favour)
+                const yesPayoutFinal = coverageTzs;
+                const noPayoutFinal  = coverageTzs;
+
+                const sw = locale === "sw";
+                const CURRENCIES = ["USD","EUR","GBP","AED","KES","CNY"] as const;
+                const coverageHint = hedgeCoverage === 100
+                  ? (sw ? "Ulinzi kamili wa hasara yako" : "Full coverage of your exposure")
+                  : hedgeCoverage <= 10
+                  ? (sw ? "Bafa ndogo tu" : "Just a small buffer")
+                  : `${hedgeCoverage}% ${sw ? "ya mwanga wako" : "of your exposure"}`;
+
                 return (
                   <div className="mb-4 border-2 border-orange-500/30 bg-orange-500/5">
+                    {/* Header toggle */}
                     <button
                       type="button"
                       onClick={() => setShowHedge(!showHedge)}
                       className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-mono font-bold text-orange-400 uppercase tracking-wider hover:bg-orange-500/10 transition-colors"
                     >
-                      <span className="flex items-center gap-1.5">⚖ HEDGE CALCULATOR</span>
+                      <span>⚖ {sw ? "KIKOKOTOO CHA HEDGING" : "HEDGE CALCULATOR"}</span>
                       <span>{showHedge ? "▲" : "▼"}</span>
                     </button>
+
                     {showHedge && (
                       <div className="px-3 pb-3 space-y-3 border-t border-orange-500/20">
+
+                        {/* Exposure input + currency selector */}
                         <div className="pt-2">
-                          <label className="block text-[9px] font-mono text-[var(--muted)] mb-1 uppercase tracking-wider">My exposure (USD)</label>
-                          <div className="flex items-center gap-2">
+                          <label className="block text-[9px] font-mono text-[var(--muted)] mb-1 uppercase tracking-wider">
+                            {sw ? "Mwanga wangu" : "My exposure"}
+                          </label>
+                          <div className="flex gap-1">
                             <input
                               type="number"
                               min="0"
@@ -398,50 +426,93 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                               value={hedgeExposure}
                               onChange={(e) => setHedgeExposure(e.target.value)}
                               placeholder="e.g. 500"
-                              className="flex-1 px-2 py-1.5 bg-[var(--background)] border-2 border-orange-500/20 text-sm font-mono focus:outline-none focus:border-orange-500/50 transition-colors"
+                              className="flex-1 min-w-0 px-2 py-1.5 bg-[var(--background)] border-2 border-orange-500/20 text-sm font-mono focus:outline-none focus:border-orange-500/50 transition-colors"
                             />
-                            <span className="text-[10px] font-mono text-orange-400 shrink-0">USD</span>
+                            <select
+                              value={hedgeCurrency}
+                              onChange={(e) => setHedgeCurrency(e.target.value as typeof hedgeCurrency)}
+                              className="px-2 py-1.5 bg-[var(--background)] border-2 border-orange-500/20 text-[10px] font-mono font-bold text-orange-400 focus:outline-none focus:border-orange-500/50 transition-colors appearance-none cursor-pointer"
+                            >
+                              {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
                           </div>
-                          {exposureUsd > 0 && (
-                            <p className="text-[9px] font-mono text-[var(--muted)] mt-1">≈ TSh {exposureTzs.toLocaleString()}</p>
+                          {exposureAmt > 0 && (
+                            <p className="text-[9px] font-mono text-[var(--muted)] mt-1">
+                              ≈ TSh {exposureTzs.toLocaleString()} {sw ? "kwa kiwango cha sasa" : "at current rate"}
+                            </p>
                           )}
                         </div>
-                        {exposureUsd > 0 && (
+
+                        {/* Coverage slider */}
+                        {exposureAmt > 0 && (
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="text-[9px] font-mono text-[var(--muted)] uppercase tracking-wider">
+                                {sw ? "Kiwango cha ulinzi" : "Coverage level"}
+                              </label>
+                              <span className="text-[10px] font-mono font-bold text-orange-400">{hedgeCoverage}%</span>
+                            </div>
+                            <input
+                              type="range"
+                              min={5}
+                              max={100}
+                              step={5}
+                              value={hedgeCoverage}
+                              onChange={(e) => setHedgeCoverage(Number(e.target.value))}
+                              className="w-full accent-orange-400 h-1.5 cursor-pointer"
+                            />
+                            <p className="text-[9px] font-mono text-[var(--muted)] mt-1">{coverageHint}</p>
+                            <p className="text-[9px] font-mono text-orange-400/80 mt-0.5">
+                              {sw ? "Kulinda kila kitu? Sogeza hadi 100%." : "Hedge everything? Move to 100%."}{" "}
+                              {sw ? "Bafa ndogo tu? Sogeza hadi 10%." : "Just a small buffer? Move to 10%."}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* YES / NO hedge blocks */}
+                        {exposureAmt > 0 && coverageTzs > 0 && (
                           <div className="space-y-2">
+                            {/* BUY YES */}
                             <div className="p-2 bg-[var(--background)] border border-[#00e5a0]/20 space-y-1">
-                              <div className="text-[9px] font-mono font-bold text-[#00e5a0] uppercase mb-1">BUY YES hedge</div>
+                              <div className="text-[9px] font-mono font-bold text-[#00e5a0] uppercase mb-1">
+                                {sw ? "NUNUA NDIYO (Hedge)" : "BUY YES hedge"}
+                              </div>
                               <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] font-mono">
-                                <span className="text-[var(--muted)]">Total cost</span>
+                                <span className="text-[var(--muted)]">{sw ? "Gharama" : "Total cost"}</span>
                                 <span className="text-right font-bold">TSh {yesCostGross.toLocaleString()}</span>
-                                <span className="text-[var(--muted)]">Payout if YES wins</span>
+                                <span className="text-[var(--muted)]">{sw ? "Malipo kama NDIYO" : "Payout if YES wins"}</span>
                                 <span className="text-right font-bold text-[#00e5a0]">TSh {yesPayoutFinal.toLocaleString()}</span>
-                                <span className="text-[var(--muted)]">Max loss</span>
-                                <span className="text-right text-red-400">TSh {yesCostGross.toLocaleString()}</span>
+                                <span className="text-[var(--muted)]">{sw ? "Ada ya bima" : "Insurance premium"}</span>
+                                <span className="text-right text-orange-400">TSh {yesCostGross.toLocaleString()}</span>
                               </div>
                               <button
                                 type="button"
-                                onClick={() => { setAmount(String(Math.round(yesCostGross))); setShowHedge(false); }}
+                                onClick={() => { setAmount(String(yesCostGross)); setShowHedge(false); }}
                                 className="w-full mt-1.5 py-1.5 bg-[#00e5a0] text-black text-[10px] font-mono font-bold uppercase tracking-wider hover:opacity-90 transition-opacity"
                               >
-                                Apply → Buy YES
+                                {sw ? "Tumia → Nunua NDIYO" : "Apply → Buy YES"}
                               </button>
                             </div>
+
+                            {/* BUY NO */}
                             <div className="p-2 bg-[var(--background)] border border-red-500/20 space-y-1">
-                              <div className="text-[9px] font-mono font-bold text-red-400 uppercase mb-1">BUY NO hedge</div>
+                              <div className="text-[9px] font-mono font-bold text-red-400 uppercase mb-1">
+                                {sw ? "NUNUA HAPANA (Hedge)" : "BUY NO hedge"}
+                              </div>
                               <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] font-mono">
-                                <span className="text-[var(--muted)]">Total cost</span>
+                                <span className="text-[var(--muted)]">{sw ? "Gharama" : "Total cost"}</span>
                                 <span className="text-right font-bold">TSh {noCostGross.toLocaleString()}</span>
-                                <span className="text-[var(--muted)]">Payout if NO wins</span>
+                                <span className="text-[var(--muted)]">{sw ? "Malipo kama HAPANA" : "Payout if NO wins"}</span>
                                 <span className="text-right font-bold text-red-400">TSh {noPayoutFinal.toLocaleString()}</span>
-                                <span className="text-[var(--muted)]">Max loss</span>
-                                <span className="text-right text-red-400">TSh {noCostGross.toLocaleString()}</span>
+                                <span className="text-[var(--muted)]">{sw ? "Ada ya bima" : "Insurance premium"}</span>
+                                <span className="text-right text-orange-400">TSh {noCostGross.toLocaleString()}</span>
                               </div>
                               <button
                                 type="button"
-                                onClick={() => { setAmount(String(Math.round(noCostGross))); setShowHedge(false); }}
+                                onClick={() => { setAmount(String(noCostGross)); setShowHedge(false); }}
                                 className="w-full mt-1.5 py-1.5 bg-red-500 text-white text-[10px] font-mono font-bold uppercase tracking-wider hover:opacity-90 transition-opacity"
                               >
-                                Apply → Buy NO
+                                {sw ? "Tumia → Nunua HAPANA" : "Apply → Buy NO"}
                               </button>
                             </div>
                           </div>
