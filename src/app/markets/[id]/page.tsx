@@ -1176,13 +1176,13 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     const yesPriceNow = market.price.yes;
                     const noPriceNow  = market.price.no;
                     const rate = RATES[hedgeCurrency] ?? 2630;
-                    const rateSource = (hedgeCurrency === "USD" && market.fxRate) ? (sw ? "kiwango cha muundaji" : "creator rate") : (sw ? "wastani wa soko" : "est. mid-market");
                     const exposureAmt = parseFloat(hedgeExposure) || 0;
                     const exposureTzs = Math.round(exposureAmt * rate);
                     const coverageTzs = Math.round(exposureTzs * hedgeCoverage / 100);
                     const yesCostGross = yesPriceNow > 0 ? Math.round(coverageTzs * yesPriceNow / feeSq) : 0;
                     const noCostGross  = noPriceNow  > 0 ? Math.round(coverageTzs * noPriceNow  / feeSq) : 0;
                     const sw = locale === "sw";
+                    const rateSource = (hedgeCurrency === "USD" && market.fxRate) ? (sw ? "kiwango cha muundaji" : "creator rate") : (sw ? "wastani wa soko" : "est. mid-market");
                     const coverageHint = hedgeCoverage === 100
                       ? (sw ? "Ulinzi kamili wa hasara yako" : "Full coverage of your exposure")
                       : hedgeCoverage <= 10
