@@ -23,6 +23,7 @@ import { EmailSubscribe } from "@/components/EmailSubscribe";
 interface EventMarket {
   id: string;
   title: string;
+  category?: string;
   price?: { yes: number; no: number } | number; // Can be object or number
   yesPool?: number;
   noPool?: number;
