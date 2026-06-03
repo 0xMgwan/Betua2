@@ -110,6 +110,7 @@ export default function CreateMarketPage() {
   }
 
   // Pyth-specific state (only for FX & Commodities markets)
+  const [fxMode, setFxMode] = useState<"pyth" | "custom">("pyth");
   const [pythConfig, setPythConfig] = useState({
     symbol: "EUR/USD",
     targetPrice: "",
@@ -219,7 +220,7 @@ export default function CreateMarketPage() {
     const resolveDate = new Date(form.resolvesAt);
     if (resolveDate <= new Date()) return setError("Resolution date must be in the future");
 
-    if (form.category === "FX & Commodities" && !pythConfig.targetPrice) {
+    if (form.category === "FX & Commodities" && fxMode === "pyth" && !pythConfig.targetPrice) {
       return setError("Set a target price for FX & Commodities market auto-resolution");
     }
 
@@ -307,8 +308,8 @@ export default function CreateMarketPage() {
         body.optionProbs = probsForValid;
       }
 
-      // Add Pyth data for FX & Commodities markets
-      if (form.category === "FX & Commodities" && pythConfig.targetPrice) {
+      // Add Pyth data for FX & Commodities markets (only in pyth mode)
+      if (form.category === "FX & Commodities" && fxMode === "pyth" && pythConfig.targetPrice) {
         body.pythSymbol = pythConfig.symbol;
         body.pythTargetPrice = parseFloat(pythConfig.targetPrice);
         body.pythOperator = pythConfig.operator;
@@ -910,74 +911,106 @@ export default function CreateMarketPage() {
                   </motion.div>
                 )}
 
-                {/* Pyth integration */}
+                {/* FX & Commodities: Pyth auto-resolve OR custom question */}
                 {isFxCommodities && (
                   <motion.div
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="border border-orange-500/20 bg-orange-500/5 p-4 space-y-3"
                   >
-                    <div className="flex items-center gap-2">
-                      <ChartLine size={14} weight="fill" className="text-orange-400" />
-                      <span className="text-xs font-mono font-bold text-orange-400 uppercase tracking-wider">Pyth Price Feed</span>
-                    </div>
-                    <p className="text-[10px] font-mono text-[var(--muted)]">
-                      Auto-resolve based on live Pyth price feeds. Title auto-generated if blank.
-                    </p>
-
-                    <div className="grid grid-cols-3 gap-2">
-                      <div>
-                        <label className="block text-[10px] font-mono text-[var(--muted)] mb-1 uppercase">Asset</label>
-                        <select
-                          value={pythConfig.symbol}
-                          onChange={(e) => setPythConfig({ ...pythConfig, symbol: e.target.value })}
-                          className="w-full px-2 py-2 bg-[#0a0a0a] border border-orange-500/20 text-sm font-mono text-orange-400 focus:outline-none focus:border-orange-500/50 transition-colors cursor-pointer appearance-none"
-                          style={{ 
-                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23f97316' d='M2 4l4 4 4-4'/%3E%3C/svg%3E")`,
-                            backgroundRepeat: 'no-repeat',
-                            backgroundPosition: 'right 8px center'
-                          }}
-                        >
-                          {ALL_PYTH_SYMBOLS.map((s) => (
-                            <option key={s.symbol} value={s.symbol} className="bg-[#0a0a0a] text-orange-400 py-2">{s.emoji} {s.label}</option>
-                          ))}
-                        </select>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <ChartLine size={14} weight="fill" className="text-orange-400" />
+                        <span className="text-xs font-mono font-bold text-orange-400 uppercase tracking-wider">FX & Commodities</span>
                       </div>
-                      <div>
-                        <label className="block text-[10px] font-mono text-[var(--muted)] mb-1 uppercase">Target $</label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="any"
-                          value={pythConfig.targetPrice}
-                          onChange={(e) => setPythConfig({ ...pythConfig, targetPrice: e.target.value })}
-                          className="w-full px-2 py-2 bg-[var(--background)] border border-orange-500/20 text-sm font-mono focus:outline-none focus:border-orange-500/50 transition-colors"
-                          placeholder="100000"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-mono text-[var(--muted)] mb-1 uppercase">Condition</label>
-                        <select
-                          value={pythConfig.operator}
-                          onChange={(e) => setPythConfig({ ...pythConfig, operator: e.target.value as "above" | "below" })}
-                          className="w-full px-2 py-2 bg-[#0a0a0a] border border-orange-500/20 text-sm font-mono text-orange-400 focus:outline-none focus:border-orange-500/50 transition-colors cursor-pointer appearance-none"
-                          style={{ 
-                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23f97316' d='M2 4l4 4 4-4'/%3E%3C/svg%3E")`,
-                            backgroundRepeat: 'no-repeat',
-                            backgroundPosition: 'right 8px center'
-                          }}
+                      {/* Mode toggle */}
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setFxMode("pyth")}
+                          className={`px-2 py-1 text-[10px] font-mono font-bold uppercase transition-colors ${fxMode === "pyth" ? "bg-orange-500 text-black" : "border border-orange-500/30 text-orange-400 hover:border-orange-500/60"}`}
                         >
-                          <option value="above" className="bg-[#0a0a0a] text-orange-400">Above / ≥</option>
-                          <option value="below" className="bg-[#0a0a0a] text-orange-400">Below / ≤</option>
-                        </select>
+                          Pyth Auto
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFxMode("custom")}
+                          className={`px-2 py-1 text-[10px] font-mono font-bold uppercase transition-colors ${fxMode === "custom" ? "bg-orange-500 text-black" : "border border-orange-500/30 text-orange-400 hover:border-orange-500/60"}`}
+                        >
+                          Custom
+                        </button>
                       </div>
                     </div>
 
-                    {pythConfig.targetPrice && (
-                      <div className="text-[10px] font-mono text-[var(--muted)] border border-orange-500/20 px-2 py-1.5 bg-[var(--background)]">
-                        <span className="text-orange-400">[AUTO] </span>
-                        Will {pythConfig.symbol} be {pythConfig.operator === "above" ? "≥" : "≤"} ${parseFloat(pythConfig.targetPrice || "0").toLocaleString()} USD?
-                      </div>
+                    {fxMode === "pyth" ? (
+                      <>
+                        <p className="text-[10px] font-mono text-[var(--muted)]">
+                          Auto-resolve based on live Pyth price feeds. Title auto-generated if blank.
+                        </p>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <label className="block text-[10px] font-mono text-[var(--muted)] mb-1 uppercase">Asset</label>
+                            <select
+                              value={pythConfig.symbol}
+                              onChange={(e) => setPythConfig({ ...pythConfig, symbol: e.target.value })}
+                              className="w-full px-2 py-2 bg-[#0a0a0a] border border-orange-500/20 text-sm font-mono text-orange-400 focus:outline-none focus:border-orange-500/50 transition-colors cursor-pointer appearance-none"
+                              style={{
+                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23f97316' d='M2 4l4 4 4-4'/%3E%3C/svg%3E")`,
+                                backgroundRepeat: 'no-repeat',
+                                backgroundPosition: 'right 8px center'
+                              }}
+                            >
+                              {ALL_PYTH_SYMBOLS.map((s) => (
+                                <option key={s.symbol} value={s.symbol} className="bg-[#0a0a0a] text-orange-400 py-2">{s.emoji} {s.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-mono text-[var(--muted)] mb-1 uppercase">Target $</label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              value={pythConfig.targetPrice}
+                              onChange={(e) => setPythConfig({ ...pythConfig, targetPrice: e.target.value })}
+                              className="w-full px-2 py-2 bg-[var(--background)] border border-orange-500/20 text-sm font-mono focus:outline-none focus:border-orange-500/50 transition-colors"
+                              placeholder="100000"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-mono text-[var(--muted)] mb-1 uppercase">Condition</label>
+                            <select
+                              value={pythConfig.operator}
+                              onChange={(e) => setPythConfig({ ...pythConfig, operator: e.target.value as "above" | "below" })}
+                              className="w-full px-2 py-2 bg-[#0a0a0a] border border-orange-500/20 text-sm font-mono text-orange-400 focus:outline-none focus:border-orange-500/50 transition-colors cursor-pointer appearance-none"
+                              style={{
+                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23f97316' d='M2 4l4 4 4-4'/%3E%3C/svg%3E")`,
+                                backgroundRepeat: 'no-repeat',
+                                backgroundPosition: 'right 8px center'
+                              }}
+                            >
+                              <option value="above" className="bg-[#0a0a0a] text-orange-400">Above / ≥</option>
+                              <option value="below" className="bg-[#0a0a0a] text-orange-400">Below / ≤</option>
+                            </select>
+                          </div>
+                        </div>
+                        {pythConfig.targetPrice && (
+                          <div className="text-[10px] font-mono text-[var(--muted)] border border-orange-500/20 px-2 py-1.5 bg-[var(--background)]">
+                            <span className="text-orange-400">[AUTO] </span>
+                            Will {pythConfig.symbol} be {pythConfig.operator === "above" ? "≥" : "≤"} ${parseFloat(pythConfig.targetPrice || "0").toLocaleString()} USD?
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-[10px] font-mono text-[var(--muted)]">
+                          Write your own FX or commodity question. You will resolve it manually.
+                        </p>
+                        <div className="text-[10px] font-mono text-orange-400/70 border border-orange-500/20 px-2 py-1.5 bg-[var(--background)]">
+                          <span className="text-orange-400">[MANUAL] </span>
+                          E.g. &quot;Will USD/TZS exceed 2,600 by end of day?&quot;
+                        </div>
+                      </>
                     )}
                   </motion.div>
                 )}
@@ -996,7 +1029,7 @@ export default function CreateMarketPage() {
                     {marketType === "event" 
                       ? (locale === "sw" ? "Jina la Tukio" : "Event Name")
                       : t.markets.createMarket.question}
-                    {isFxCommodities && <span className="text-[var(--muted)] normal-case">(auto-generated)</span>}
+                    {isFxCommodities && fxMode === "pyth" && <span className="text-[var(--muted)] normal-case">(auto-generated)</span>}
                   </label>
                   <textarea
                     value={form.title}
@@ -1006,12 +1039,14 @@ export default function CreateMarketPage() {
                       marketType === "event"
                         ? (locale === "sw" ? "Liverpool vs Fulham - EPL" : "Liverpool vs Fulham - EPL")
                         : isFxCommodities
-                          ? "Will EUR/USD reach 1.15 by end of 2025?"
+                          ? fxMode === "custom"
+                            ? "Will USD/TZS exceed 2,600 by end of the day?"
+                            : "Will EUR/USD reach 1.15 by end of 2025?"
                           : "Will CCM win the 2025 Tanzanian general election?"
                     }
                     rows={2}
                     maxLength={200}
-                    required={!isFxCommodities}
+                    required={!(isFxCommodities && fxMode === "pyth")}
                   />
                   <p className={cn("text-[10px] font-mono mt-1 text-right", form.title.length > 180 ? "text-red-400" : "text-[var(--muted)]")}>
                     {form.title.length}/200
@@ -1190,13 +1225,16 @@ export default function CreateMarketPage() {
                             {eventMarkets.length} {locale === "sw" ? "masoko" : "markets"}
                           </span>
                         )}
-                        {isFxCommodities && (
+                        {isFxCommodities && fxMode === "pyth" && (
                           <span className="text-[10px] font-mono text-orange-400 border border-orange-500/30 px-1.5 py-0.5">PYTH</span>
+                        )}
+                        {isFxCommodities && fxMode === "custom" && (
+                          <span className="text-[10px] font-mono text-orange-400 border border-orange-500/30 px-1.5 py-0.5">FX</span>
                         )}
                       </div>
                       <p className="font-bold text-sm mb-3">
                         {form.title ||
-                          (isFxCommodities && pythConfig.targetPrice
+                          (isFxCommodities && fxMode === "pyth" && pythConfig.targetPrice
                             ? `Will ${pythConfig.symbol} be ${pythConfig.operator === "above" ? "≥" : "≤"} $${parseFloat(pythConfig.targetPrice).toLocaleString()} USD by resolution?`
                             : "")}
                       </p>

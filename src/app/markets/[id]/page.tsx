@@ -86,6 +86,10 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   const [sellError, setSellError] = useState("");
   const [sellSuccess, setSellSuccess] = useState("");
 
+  // Hedge Calculator state (FX & Commodities markets only)
+  const [showHedge, setShowHedge] = useState(false);
+  const [hedgeExposure, setHedgeExposure] = useState("");
+
   // Comment state
   const [comment, setComment] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
@@ -1158,6 +1162,124 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     </div>
                     );
                   })()}
+
+                  {/* ── Hedge Calculator (FX & Commodities only) ── */}
+                  {market.category === "FX & Commodities" && !isMultiOption && (
+                    <div className="border border-orange-500/20 bg-orange-500/5">
+                      <button
+                        type="button"
+                        onClick={() => setShowHedge(!showHedge)}
+                        className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-mono font-bold text-orange-400 uppercase tracking-wider hover:bg-orange-500/10 transition-colors"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <span>⚖</span> HEDGE CALCULATOR
+                        </span>
+                        <span className="text-[10px]">{showHedge ? "▲" : "▼"}</span>
+                      </button>
+                      {showHedge && (() => {
+                        const FEE_PCT = 0.05;
+                        const yesPriceNow = market.price.yes;
+                        const noPriceNow = market.price.no;
+                        const USDC_RATE = 2630;
+                        const exposureUsd = parseFloat(hedgeExposure) || 0;
+                        const exposureTzs = Math.round(exposureUsd * USDC_RATE);
+                        // YES hedge: user wants YES to win → they hold an asset that gains if YES resolves
+                        // They buy YES shares whose payout = exposureTzs
+                        // cost = payout × yesPrice / (1 - FEE_PCT)^2
+                        const yesPayoutTarget = exposureTzs;
+                        const yesCostNet = yesPriceNow > 0 ? Math.round(yesPayoutTarget * yesPriceNow) : 0;
+                        const yesCostGross = Math.round(yesCostNet / (1 - FEE_PCT));
+                        const yesShares = yesPriceNow > 0 ? Math.round(yesCostNet / yesPriceNow) : 0;
+                        const yesPayoutFinal = Math.round(yesCostNet / yesPriceNow * (1 - FEE_PCT));
+
+                        // NO hedge: user holds USD and fears depreciation, buys NO
+                        const noPayoutTarget = exposureTzs;
+                        const noCostNet = noPriceNow > 0 ? Math.round(noPayoutTarget * noPriceNow) : 0;
+                        const noCostGross = Math.round(noCostNet / (1 - FEE_PCT));
+                        const noShares = noPriceNow > 0 ? Math.round(noCostNet / noPriceNow) : 0;
+                        const noPayoutFinal = Math.round(noCostNet / noPriceNow * (1 - FEE_PCT));
+
+                        return (
+                          <div className="px-3 pb-3 space-y-3 border-t border-orange-500/20">
+                            <div className="pt-2">
+                              <label className="block text-[9px] font-mono text-[var(--muted)] mb-1 uppercase tracking-wider">My exposure (USD)</label>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="any"
+                                  value={hedgeExposure}
+                                  onChange={(e) => setHedgeExposure(e.target.value)}
+                                  placeholder="e.g. 500"
+                                  className="flex-1 px-2 py-1.5 bg-[var(--background)] border border-orange-500/20 text-sm font-mono focus:outline-none focus:border-orange-500/50 transition-colors"
+                                />
+                                <span className="text-[10px] font-mono text-orange-400 shrink-0">USD</span>
+                              </div>
+                              {exposureUsd > 0 && (
+                                <p className="text-[9px] font-mono text-[var(--muted)] mt-1">≈ TSh {exposureTzs.toLocaleString()}</p>
+                              )}
+                            </div>
+
+                            {exposureUsd > 0 && (
+                              <div className="space-y-2">
+                                {/* YES hedge row */}
+                                <div className="p-2 bg-[var(--background)] border border-[#00e5a0]/20 space-y-1">
+                                  <div className="text-[9px] font-mono font-bold text-[#00e5a0] uppercase mb-1">BUY YES hedge</div>
+                                  <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] font-mono">
+                                    <span className="text-[var(--muted)]">Shares to buy</span>
+                                    <span className="text-right font-bold">{yesShares.toLocaleString()}</span>
+                                    <span className="text-[var(--muted)]">Total cost</span>
+                                    <span className="text-right font-bold">TSh {yesCostGross.toLocaleString()}</span>
+                                    <span className="text-[var(--muted)]">Payout if YES wins</span>
+                                    <span className="text-right font-bold text-[#00e5a0]">TSh {yesPayoutFinal.toLocaleString()}</span>
+                                    <span className="text-[var(--muted)]">Max loss</span>
+                                    <span className="text-right text-red-400">TSh {yesCostGross.toLocaleString()}</span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSide("YES");
+                                      setAmount(String(Math.round(yesCostGross)));
+                                      setShowHedge(false);
+                                    }}
+                                    className="w-full mt-1.5 py-1.5 bg-[#00e5a0] text-black text-[10px] font-mono font-bold uppercase tracking-wider hover:opacity-90 transition-opacity"
+                                  >
+                                    Apply → Buy YES
+                                  </button>
+                                </div>
+
+                                {/* NO hedge row */}
+                                <div className="p-2 bg-[var(--background)] border border-red-500/20 space-y-1">
+                                  <div className="text-[9px] font-mono font-bold text-red-400 uppercase mb-1">BUY NO hedge</div>
+                                  <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] font-mono">
+                                    <span className="text-[var(--muted)]">Shares to buy</span>
+                                    <span className="text-right font-bold">{noShares.toLocaleString()}</span>
+                                    <span className="text-[var(--muted)]">Total cost</span>
+                                    <span className="text-right font-bold">TSh {noCostGross.toLocaleString()}</span>
+                                    <span className="text-[var(--muted)]">Payout if NO wins</span>
+                                    <span className="text-right font-bold text-red-400">TSh {noPayoutFinal.toLocaleString()}</span>
+                                    <span className="text-[var(--muted)]">Max loss</span>
+                                    <span className="text-right text-red-400">TSh {noCostGross.toLocaleString()}</span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSide("NO");
+                                      setAmount(String(Math.round(noCostGross)));
+                                      setShowHedge(false);
+                                    }}
+                                    className="w-full mt-1.5 py-1.5 bg-red-500 text-white text-[10px] font-mono font-bold uppercase tracking-wider hover:opacity-90 transition-opacity"
+                                  >
+                                    Apply → Buy NO
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
 
                   {tradeError && (
                     <p className="text-red-400 text-sm text-center bg-red-500/10 border border-red-500/20 rounded-xl py-2">
