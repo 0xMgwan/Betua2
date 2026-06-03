@@ -1169,7 +1169,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   {/* ── Hedge Calculator (FX & Commodities only) ── */}
                   {market.category === "FX & Commodities" && !isMultiOption && (() => {
                     const BASE_RATES: Record<string, number> = { TZS: 1, USD: 2630, EUR: 2850, GBP: 3320, AED: 716, KES: 20, CNY: 362 };
-                    const RATES = { ...BASE_RATES, USD: market.fxRate ?? BASE_RATES.USD };
+                    const RATES: Record<string, number> = { ...BASE_RATES, USD: market.fxRate ?? BASE_RATES.USD };
                     const CURRENCIES = ["TZS","USD","EUR","GBP","AED","KES","CNY"] as const;
                     const FEE_PCT = 0.05;
                     const feeSq = (1 - FEE_PCT) ** 2;
