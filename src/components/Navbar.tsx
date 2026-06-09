@@ -59,13 +59,11 @@ export function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   
-  // Get actual balance based on selected currency
+  // Get actual balance based on selected currency — clamp to 0
   const getUserBalance = () => {
     if (!user) return 0;
-    if (displayCurrency === 'USDC') {
-      return user.balanceUsdc || 0; // Already a float from nTZS API
-    }
-    return user.balanceTzs || 0;
+    if (displayCurrency === 'USDC') return Math.max(0, user.balanceUsdc || 0);
+    return Math.max(0, user.balanceTzs || 0);
   };
   const userBalance = getUserBalance();
 
