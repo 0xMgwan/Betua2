@@ -80,6 +80,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   const [sharePayload, setSharePayload] = useState<{
     label: string; shares: number; amountTzs: number; payoutIfWin: number; oddsPrice: number;
   } | null>(null);
+  const [awaitingPayment, setAwaitingPayment] = useState<{ depositId: string; phone: string; amountTzs: number; tradeBody: Record<string, unknown> } | null>(null);
 
   // Sell state
   const [sellShares, setSellShares] = useState("");
@@ -266,6 +267,44 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
     return side;
   };
 
+  // Poll every 3s while awaiting STK payment confirmation, then auto-retry trade
+  useEffect(() => {
+    if (!awaitingPayment) return;
+    const interval = setInterval(async () => {
+      try {
+        const syncRes = await fetch("/api/wallet/sync");
+        const syncData = await syncRes.json();
+        const confirmed = (syncData.transactions || []).find(
+          (tx: { ntzsDepositId?: string; status: string }) =>
+            tx.ntzsDepositId === awaitingPayment.depositId && tx.status === "COMPLETED"
+        );
+        if (!confirmed) return;
+        clearInterval(interval);
+        setAwaitingPayment(null);
+        // Retry trade now balance is credited
+        const res = await fetch("/api/trades", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(awaitingPayment.tradeBody),
+        });
+        const data = await res.json();
+        if (!res.ok) { setTradeError(data.error || "Trade failed"); return; }
+        const label = isMultiOption ? market!.options![selectedOption] : side;
+        const oddsPrice = data.oddsPrice ?? (isMultiOption
+          ? (getMultiOptionPrices(market!.optionPools as number[])[selectedOption] ?? 0.5)
+          : (side === "YES" ? market!.price.yes : market!.price.no));
+        setSharePayload({ label, shares: Math.round(data.shares), amountTzs: awaitingPayment.amountTzs, payoutIfWin: data.payoutIfWin ?? 0, oddsPrice });
+        setShowShareModal(true);
+        setTradeSuccess(`Got ${Math.round(data.shares)} ${label} shares!`);
+        setAmount("");
+        await loadMarket();
+        fetchUser();
+      } catch { /* keep polling */ }
+    }, 3000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [awaitingPayment]);
+
   async function handleTrade(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
@@ -273,11 +312,10 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
     setTradeError("");
     setTradeSuccess("");
     try {
-      // Send amountUsdc as float when USDC selected, otherwise amountTzs
       const amountNum = Number(amount);
       const amountInTzs = fromDisplay(amountNum);
       const amountPayload = displayCurrency === 'USDC'
-        ? { amountUsdc: amountNum } // Send as float (e.g., 1.50)
+        ? { amountUsdc: amountNum }
         : displayCurrency === 'KES'
         ? { amountKes: amountNum }
         : { amountTzs: amountInTzs };
@@ -291,6 +329,13 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
         body: JSON.stringify(tradeBody),
       });
       const data = await res.json();
+
+      if (res.status === 402 && data.paymentRequired) {
+        // STK push sent — wait for confirmation before executing trade
+        setAwaitingPayment({ depositId: data.depositId, phone: data.phone, amountTzs: amountInTzs, tradeBody });
+        return;
+      }
+
       if (!res.ok) {
         setTradeError(data.error || "Trade failed");
       } else {
@@ -299,13 +344,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
         const oddsPrice = data.oddsPrice ?? (isMultiOption
           ? (getMultiOptionPrices(market!.optionPools as number[])[selectedOption] ?? 0.5)
           : (side === "YES" ? market!.price.yes : market!.price.no));
-        setSharePayload({
-          label,
-          shares: Math.round(data.shares),
-          amountTzs: amtTzs,
-          payoutIfWin: data.payoutIfWin ?? 0,
-          oddsPrice,
-        });
+        setSharePayload({ label, shares: Math.round(data.shares), amountTzs: amtTzs, payoutIfWin: data.payoutIfWin ?? 0, oddsPrice });
         setShowShareModal(true);
         setTradeSuccess(`Got ${Math.round(data.shares)} ${label} shares!`);
         setAmount("");
@@ -1313,6 +1352,29 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       </div>
                     );
                   })()}
+
+                  {/* Awaiting STK payment confirmation */}
+                  {awaitingPayment && (
+                    <div className="p-3 border border-orange-500/40 bg-orange-500/5 rounded-xl space-y-2">
+                      <div className="flex items-center gap-2 text-orange-400 text-xs font-bold">
+                        <span className="animate-pulse">●</span>
+                        <span>{locale === "sw" ? "Subiri Uthibitisho" : "Awaiting Payment"}</span>
+                      </div>
+                      <p className="text-[11px] text-[var(--muted)]">
+                        {locale === "sw"
+                          ? `STK push imetumwa kwa ${awaitingPayment.phone}. Thibitisha kwenye simu yako.`
+                          : `STK push sent to ${awaitingPayment.phone}. Approve on your phone to complete trade.`}
+                      </p>
+                      <div className="flex items-center gap-1.5 text-[10px] text-[var(--muted)]">
+                        <span className="animate-spin inline-block">↻</span>
+                        <span>{locale === "sw" ? "Inangoja..." : "Checking confirmation..."}</span>
+                      </div>
+                      <button type="button" onClick={() => setAwaitingPayment(null)}
+                        className="text-[10px] text-[var(--muted)] hover:text-red-400 underline transition-colors">
+                        {locale === "sw" ? "Ghairi" : "Cancel"}
+                      </button>
+                    </div>
+                  )}
 
                   {tradeError && (
                     <p className="text-red-400 text-sm text-center bg-red-500/10 border border-red-500/20 rounded-xl py-2">
