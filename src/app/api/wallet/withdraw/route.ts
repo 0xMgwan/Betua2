@@ -55,6 +55,8 @@ export async function POST(req: NextRequest) {
     ]);
 
     // Settlement pool sends nTZS → user's phone
+    // Mark COMPLETED immediately on successful API call — if nTZS accepted it, it will be sent.
+    // webhook withdrawal.failed will reverse if something goes wrong on nTZS side.
     let withdrawalId: string | undefined;
     try {
       const withdrawal = await ntzs.withdrawals.create({
@@ -63,12 +65,13 @@ export async function POST(req: NextRequest) {
         phone,
       });
       withdrawalId = withdrawal.id;
+      // Mark COMPLETED right away — no GET /withdrawals/:id polling needed
       await prisma.transaction.update({
         where: { id: tx.id },
-        data: { ntzsWithdrawId: withdrawal.id },
+        data: { ntzsWithdrawId: withdrawal.id, status: "COMPLETED" },
       });
     } catch (wErr) {
-      // Withdrawal API failed — reverse the deduction
+      // Withdrawal API failed — reverse the deduction and mark FAILED
       await prisma.$transaction([
         prisma.user.update({
           where: { id: session.userId },

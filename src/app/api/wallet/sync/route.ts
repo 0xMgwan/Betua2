@@ -45,7 +45,7 @@ export async function GET() {
       if (tx.type === "WITHDRAWAL" && tx.ntzsWithdrawId) {
         const withdrawal = await ntzs.withdrawals.get(tx.ntzsWithdrawId);
         // nTZS withdrawal statuses: "completed" | "failed" | "pending"
-        const isConfirmed = withdrawal.status === "completed" || withdrawal.status === "minted";
+        const isConfirmed = withdrawal.status === "completed";
         const isFailed    = withdrawal.status === "failed";
 
         if (isConfirmed) {
