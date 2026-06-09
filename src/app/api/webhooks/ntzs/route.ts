@@ -8,28 +8,43 @@ export async function POST(req: NextRequest) {
   try {
     switch (event.type) {
       case "deposit.completed": {
+        // Balance was already credited optimistically at deposit initiation.
+        // Just mark the transaction as COMPLETED and process referral reward.
         const tx = await prisma.transaction.findFirst({
           where: { ntzsDepositId: event.data.id },
         });
         if (!tx) break;
 
-        await prisma.$transaction([
-          // Mark transaction as completed
-          prisma.transaction.updateMany({
-            where: { ntzsDepositId: event.data.id },
-            data: { status: "COMPLETED" },
-          }),
-          // Credit user's TZS DB balance
-          prisma.user.update({
-            where: { id: tx.userId },
-            data: { balanceTzs: { increment: tx.amountTzs } },
-          }),
-        ]);
+        await prisma.transaction.updateMany({
+          where: { ntzsDepositId: event.data.id, status: "PENDING" },
+          data: { status: "COMPLETED" },
+        });
 
-        // Process referral reward on first completed deposit
         processReferralReward(tx.userId, tx.id, tx.amountTzs).catch(() => {});
         break;
       }
+
+      case "deposit.failed": {
+        // Reverse the optimistic credit that was applied at initiation
+        const tx = await prisma.transaction.findFirst({
+          where: { ntzsDepositId: event.data.id },
+        });
+        if (!tx || tx.status === "FAILED") break; // already reversed
+
+        await prisma.$transaction([
+          prisma.transaction.updateMany({
+            where: { ntzsDepositId: event.data.id },
+            data: { status: "FAILED" },
+          }),
+          // Reverse the optimistic credit — clamp to 0 to avoid negative
+          prisma.user.update({
+            where: { id: tx.userId },
+            data: { balanceTzs: { decrement: tx.amountTzs } },
+          }),
+        ]);
+        break;
+      }
+
       case "withdrawal.completed": {
         await prisma.transaction.updateMany({
           where: { ntzsWithdrawId: event.data.id },
@@ -37,29 +52,23 @@ export async function POST(req: NextRequest) {
         });
         break;
       }
-      case "withdrawal.failed":
-      case "deposit.failed": {
-        const field = event.type.startsWith("deposit")
-          ? { ntzsDepositId: event.data.id }
-          : { ntzsWithdrawId: event.data.id };
 
-        // On deposit failure, reverse the balance credit if it was already applied
-        if (event.type === "deposit.failed") {
-          const tx = await prisma.transaction.findFirst({ where: field });
-          if (tx && tx.status !== "FAILED") {
-            await prisma.$transaction([
-              prisma.transaction.updateMany({ where: field, data: { status: "FAILED" } }),
-              // Only reverse if it was marked COMPLETED (shouldn't happen but safety net)
-              ...(tx.status === "COMPLETED" ? [
-                prisma.user.update({
-                  where: { id: tx.userId },
-                  data: { balanceTzs: { decrement: tx.amountTzs } },
-                })
-              ] : []),
-            ]);
-          }
-        } else {
-          await prisma.transaction.updateMany({ where: field, data: { status: "FAILED" } });
+      case "withdrawal.failed": {
+        // Reverse the balance deduction if withdrawal failed
+        const wtx = await prisma.transaction.findFirst({
+          where: { ntzsWithdrawId: event.data.id },
+        });
+        if (wtx && wtx.status !== "FAILED") {
+          await prisma.$transaction([
+            prisma.transaction.updateMany({
+              where: { ntzsWithdrawId: event.data.id },
+              data: { status: "FAILED" },
+            }),
+            prisma.user.update({
+              where: { id: wtx.userId },
+              data: { balanceTzs: { increment: wtx.amountTzs } },
+            }),
+          ]);
         }
         break;
       }

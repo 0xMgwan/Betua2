@@ -34,17 +34,18 @@ export async function GET() {
 
         if (newStatus) {
           if (newStatus === "COMPLETED" && tx.status === "PENDING") {
-            // Only credit if still PENDING — prevents double-credit if webhook already fired
+            // Balance already credited at deposit initiation — just mark COMPLETED
+            await prisma.transaction.update({ where: { id: tx.id }, data: { status: "COMPLETED" } });
+            processReferralReward(session.userId, tx.id, tx.amountTzs).catch(() => {});
+          } else if (newStatus === "FAILED" && tx.status === "PENDING") {
+            // Reverse the optimistic credit
             await prisma.$transaction([
-              prisma.transaction.update({ where: { id: tx.id }, data: { status: "COMPLETED" } }),
+              prisma.transaction.update({ where: { id: tx.id }, data: { status: "FAILED" } }),
               prisma.user.update({
                 where: { id: session.userId },
-                data: { balanceTzs: { increment: tx.amountTzs } },
+                data: { balanceTzs: { decrement: tx.amountTzs } },
               }),
             ]);
-            processReferralReward(session.userId, tx.id, tx.amountTzs).catch(() => {});
-          } else if (newStatus !== "COMPLETED") {
-            await prisma.transaction.update({ where: { id: tx.id }, data: { status: newStatus } });
           }
           updated++;
         }
