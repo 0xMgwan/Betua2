@@ -287,39 +287,30 @@ export async function POST(
               ? ((creator.preferredCurrency as string) || getUserCurrency(creator.country, creator.phone))
               : 'TZS';
 
-            // nTZS transfer MUST succeed — if it fails, unmark position so creator can retry
-            if (!creator?.ntzsUserId || !PLATFORM_NTZS_USER_ID) {
-              // No nTZS config — release lock and bail
-              await prisma.position.update({ where: { id: creatorPosition.id }, data: { redeemed: false } });
-              console.error('[LP auto-redeem] Missing ntzsUserId or PLATFORM_NTZS_USER_ID — position reset for retry');
-              return;
-            }
-
-            try {
-              await ntzs.transfers.create({
-                fromUserId: PLATFORM_NTZS_USER_ID,
-                toUserId: creator.ntzsUserId,
-                amountTzs: payoutTzs,
-              });
-            } catch (transferErr) {
-              // IMPORTANT: Do NOT reset redeemed to false here.
-              // nTZS can return HTTP 500 even when the blockchain transfer actually succeeded.
-              // Resetting the lock would allow duplicate transfers if this auto-redeem fires again.
-              // Position stays locked. Use /api/admin/lp-repair to diagnose and manually
-              // credit the balance if the transfer genuinely failed on-chain.
-              console.error('[LP auto-redeem] nTZS transfer error — position stays locked, use admin lp-repair if needed:', transferErr);
-              return;
-            }
-
-            // Transfer succeeded — now credit local balance + record transaction
-            if (creatorCurrency === 'USDC') {
-              await ntzs.swap.executeAndWait({
-                userId: creator.ntzsUserId,
-                fromToken: 'NTZS',
-                toToken: 'USDC',
-                amount: payoutTzs,
-                slippageBps: 100,
-              }).catch(e => console.error('[LP auto-redeem] USDC swap failed:', e));
+            // On-chain payout: settlement pool → creator's wallet or phone
+            // Falls through to DB credit even if on-chain transfer fails/skipped
+            if (PLATFORM_NTZS_USER_ID && creator) {
+              try {
+                if (creator.ntzsUserId) {
+                  // Legacy: creator has personal nTZS wallet
+                  await ntzs.transfers.create({
+                    fromUserId: PLATFORM_NTZS_USER_ID,
+                    toUserId: creator.ntzsUserId,
+                    amountTzs: payoutTzs,
+                  });
+                } else if (creator.phone) {
+                  // New model: withdraw from settlement pool to creator's phone
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  await (ntzs as any).withdrawals.create({
+                    userId: PLATFORM_NTZS_USER_ID,
+                    amountTzs: payoutTzs,
+                    phone: creator.phone,
+                  });
+                }
+                // If no wallet and no phone, just credit DB below — funds stay in pool
+              } catch (transferErr) {
+                console.error('[LP auto-redeem] on-chain transfer error (continuing to credit DB):', transferErr);
+              }
             }
 
             // Settlement fee (delayed 1.5s to avoid nonce collision)
