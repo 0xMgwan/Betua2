@@ -104,12 +104,12 @@ export default function WalletPage() {
   // Detect if user is from Kenya
   const isKenya = user?.country === 'KE' || user?.phone?.startsWith('254') || user?.phone?.startsWith('+254');
   
-  // Get balance based on selected currency preference
+  // Get balance based on selected currency preference — clamp to 0 (never show negative)
   const getBalance = () => {
-    if (displayCurrency === 'USDC') return user?.balanceUsdc || 0;
-    if (displayCurrency === 'KES') return user?.balanceKes || 0;
+    if (displayCurrency === 'USDC') return Math.max(0, user?.balanceUsdc || 0);
+    if (displayCurrency === 'KES') return Math.max(0, user?.balanceKes || 0);
     // Both TZS (DB) and NTZS show the same DB balance (1:1 on-chain representation)
-    return user?.balanceTzs || 0;
+    return Math.max(0, user?.balanceTzs || 0);
   };
   const balance = getBalance();
   const quickAmounts = displayCurrency === 'USDC' 

@@ -33,8 +33,8 @@ export async function GET() {
           : null;
 
         if (newStatus) {
-          if (newStatus === "COMPLETED") {
-            // Credit DB balance and mark completed atomically
+          if (newStatus === "COMPLETED" && tx.status === "PENDING") {
+            // Only credit if still PENDING — prevents double-credit if webhook already fired
             await prisma.$transaction([
               prisma.transaction.update({ where: { id: tx.id }, data: { status: "COMPLETED" } }),
               prisma.user.update({
@@ -43,7 +43,7 @@ export async function GET() {
               }),
             ]);
             processReferralReward(session.userId, tx.id, tx.amountTzs).catch(() => {});
-          } else {
+          } else if (newStatus !== "COMPLETED") {
             await prisma.transaction.update({ where: { id: tx.id }, data: { status: newStatus } });
           }
           updated++;
