@@ -94,9 +94,44 @@ export async function POST(req: NextRequest) {
         }, { status: 400 });
       }
     } else {
-      // TZS (default)
+      // TZS (default) — if insufficient balance, trigger STK push for the exact trade amount
       if ((user.balanceTzs || 0) < amountTzs) {
-        return NextResponse.json({ error: "Insufficient balance. Deposit funds first." }, { status: 400 });
+        if (!user.phone) {
+          return NextResponse.json({ error: "Insufficient balance. Add a phone number to enable mobile payments." }, { status: 400 });
+        }
+        if (!PLATFORM_NTZS_USER_ID) {
+          return NextResponse.json({ error: "Insufficient balance. Please deposit funds first." }, { status: 400 });
+        }
+        try {
+          // Trigger STK push — nTZS minted directly to settlement pool
+          const deposit = await ntzs.deposits.create({
+            userId: PLATFORM_NTZS_USER_ID,
+            amountTzs,
+            phone: user.phone,
+          });
+          // Record as pending deposit tied to this trade
+          await prisma.transaction.create({
+            data: {
+              userId: session.userId,
+              type: "DEPOSIT",
+              amountTzs,
+              status: "PENDING",
+              ntzsDepositId: deposit.id,
+              phone: user.phone,
+            },
+          });
+          // Credit DB balance immediately so the trade can proceed below
+          await prisma.user.update({
+            where: { id: session.userId },
+            data: { balanceTzs: { increment: amountTzs } },
+          });
+          // Refresh local user balance
+          user.balanceTzs = (user.balanceTzs || 0) + amountTzs;
+          console.log(`[Trade] STK push initiated for ${amountTzs} TZS — user ${session.userId}, phone ${user.phone}`);
+        } catch (stkErr) {
+          console.error("[Trade] STK push failed:", stkErr);
+          return NextResponse.json({ error: "Payment failed. Please deposit funds first or try again." }, { status: 400 });
+        }
       }
     }
 
@@ -272,19 +307,10 @@ export async function POST(req: NextRequest) {
         }),
       ]);
     } catch (dbErr) {
-      console.error("Database transaction failed, refunding user:", dbErr);
-      if (PLATFORM_NTZS_USER_ID && ntzsTransferId && user.ntzsUserId) {
-        try {
-          await ntzs.transfers.create({
-            fromUserId: PLATFORM_NTZS_USER_ID,
-            toUserId: user.ntzsUserId,
-            amountTzs,
-          });
-          console.log(`Refunded ${amountTzs} TZS to user ${user.ntzsUserId}`);
-        } catch (refundErr) {
-          console.error("CRITICAL: Refund failed after DB error:", refundErr);
-        }
-      }
+      console.error("Database transaction failed:", dbErr);
+      // No on-chain transfer to reverse — funds stay in settlement pool.
+      // Balance was decremented as part of the same atomic DB transaction,
+      // so if it failed the decrement also rolled back automatically.
       throw dbErr;
     }
 

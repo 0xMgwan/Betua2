@@ -45,7 +45,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
   console.log('[QuickBuyModal] Received - side:', side, 'displaySide:', displaySide, 'optionIndex:', optionIndex);
   
   const { t, locale } = useLanguage();
-  const { user } = useUser();
+  const { user, fetchUser } = useUser();
   const { addItem, openCart } = useCart();
   const router = useRouter();
   const [amount, setAmount] = useState("");
@@ -239,6 +239,8 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
 
       setSuccess(true);
       notifications.notifyTrade(market.title, side, Number(amount), market.id, locale);
+      // Refresh user balance so navbar/wallet shows updated amount immediately
+      fetchUser().catch(() => {});
       onSuccess?.();
     } catch (err) {
       setError(locale === "sw" ? "Kosa la mtandao" : "Network error");
