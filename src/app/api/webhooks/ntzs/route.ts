@@ -8,40 +8,32 @@ export async function POST(req: NextRequest) {
   try {
     switch (event.type) {
       case "deposit.completed": {
-        // Balance was already credited optimistically at deposit initiation.
-        // Just mark the transaction as COMPLETED and process referral reward.
         const tx = await prisma.transaction.findFirst({
-          where: { ntzsDepositId: event.data.id },
-        });
-        if (!tx) break;
-
-        await prisma.transaction.updateMany({
           where: { ntzsDepositId: event.data.id, status: "PENDING" },
-          data: { status: "COMPLETED" },
         });
+        if (!tx) break; // already processed or not found
+
+        // Credit balance + mark COMPLETED atomically
+        await prisma.$transaction([
+          prisma.transaction.update({ where: { id: tx.id }, data: { status: "COMPLETED" } }),
+          prisma.user.update({
+            where: { id: tx.userId },
+            data: { balanceTzs: { increment: tx.amountTzs } },
+          }),
+        ]);
 
         processReferralReward(tx.userId, tx.id, tx.amountTzs).catch(() => {});
         break;
       }
 
       case "deposit.failed": {
-        // Reverse the optimistic credit that was applied at initiation
         const tx = await prisma.transaction.findFirst({
-          where: { ntzsDepositId: event.data.id },
+          where: { ntzsDepositId: event.data.id, status: "PENDING" },
         });
-        if (!tx || tx.status === "FAILED") break; // already reversed
+        if (!tx) break;
 
-        await prisma.$transaction([
-          prisma.transaction.updateMany({
-            where: { ntzsDepositId: event.data.id },
-            data: { status: "FAILED" },
-          }),
-          // Reverse the optimistic credit — clamp to 0 to avoid negative
-          prisma.user.update({
-            where: { id: tx.userId },
-            data: { balanceTzs: { decrement: tx.amountTzs } },
-          }),
-        ]);
+        // Mark FAILED — no balance credit was made so nothing to reverse
+        await prisma.transaction.update({ where: { id: tx.id }, data: { status: "FAILED" } });
         break;
       }
 
@@ -54,22 +46,19 @@ export async function POST(req: NextRequest) {
       }
 
       case "withdrawal.failed": {
-        // Reverse the balance deduction if withdrawal failed
+        // Reverse the balance deduction made at withdrawal initiation
         const wtx = await prisma.transaction.findFirst({
-          where: { ntzsWithdrawId: event.data.id },
+          where: { ntzsWithdrawId: event.data.id, status: "PENDING" },
         });
-        if (wtx && wtx.status !== "FAILED") {
-          await prisma.$transaction([
-            prisma.transaction.updateMany({
-              where: { ntzsWithdrawId: event.data.id },
-              data: { status: "FAILED" },
-            }),
-            prisma.user.update({
-              where: { id: wtx.userId },
-              data: { balanceTzs: { increment: wtx.amountTzs } },
-            }),
-          ]);
-        }
+        if (!wtx) break;
+
+        await prisma.$transaction([
+          prisma.transaction.update({ where: { id: wtx.id }, data: { status: "FAILED" } }),
+          prisma.user.update({
+            where: { id: wtx.userId },
+            data: { balanceTzs: { increment: wtx.amountTzs } },
+          }),
+        ]);
         break;
       }
     }

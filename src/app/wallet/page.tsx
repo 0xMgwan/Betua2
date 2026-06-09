@@ -65,7 +65,7 @@ export default function WalletPage() {
       const res = await fetch("/api/wallet/sync");
       const data = await res.json();
       setTransactions(data.transactions || []);
-      // If any got updated, refresh balance
+      // If any deposit confirmed, refresh balance immediately
       if (data.updated > 0) {
         await fetchUser();
       }
@@ -74,6 +74,16 @@ export default function WalletPage() {
       if (!quiet) setSyncing(false);
     }
   }, [fetchUser]);
+
+  // Poll aggressively (every 3s) while any deposit is PENDING
+  useEffect(() => {
+    const hasPendingDeposit = transactions.some(
+      (tx) => tx.status === "PENDING" && tx.type === "DEPOSIT"
+    );
+    if (!hasPendingDeposit) return;
+    const interval = setInterval(() => syncStatus(true), 3000);
+    return () => clearInterval(interval);
+  }, [transactions, syncStatus]);
 
   // Initial load - fetch user balance and transactions
   useEffect(() => {

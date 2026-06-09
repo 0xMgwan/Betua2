@@ -1,7 +1,6 @@
 /**
- * Syncs PENDING deposit/withdrawal statuses by polling the NTZS API.
- * Call this after initiating a transaction to get live updates without
- * relying solely on webhooks (which may not fire in dev/staging).
+ * Syncs PENDING deposit/withdrawal statuses by polling the nTZS API.
+ * Called automatically by the wallet page while any transaction is PENDING.
  */
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
@@ -13,7 +12,6 @@ export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Fetch all PENDING transactions for this user
   const pending = await prisma.transaction.findMany({
     where: { userId: session.userId, status: "PENDING" },
     orderBy: { createdAt: "desc" },
@@ -25,43 +23,44 @@ export async function GET() {
     try {
       if (tx.type === "DEPOSIT" && tx.ntzsDepositId) {
         const deposit = await ntzs.deposits.get(tx.ntzsDepositId);
-        // NTZS uses "minted" to mean successfully completed
-        const newStatus = deposit.status === "minted"
-          ? "COMPLETED"
-          : deposit.status === "failed"
-          ? "FAILED"
-          : null;
+        const isConfirmed = deposit.status === "minted";
+        const isFailed = deposit.status === "failed";
 
-        if (newStatus) {
-          if (newStatus === "COMPLETED" && tx.status === "PENDING") {
-            // Balance already credited at deposit initiation — just mark COMPLETED
-            await prisma.transaction.update({ where: { id: tx.id }, data: { status: "COMPLETED" } });
-            processReferralReward(session.userId, tx.id, tx.amountTzs).catch(() => {});
-          } else if (newStatus === "FAILED" && tx.status === "PENDING") {
-            // Reverse the optimistic credit
-            await prisma.$transaction([
-              prisma.transaction.update({ where: { id: tx.id }, data: { status: "FAILED" } }),
-              prisma.user.update({
-                where: { id: session.userId },
-                data: { balanceTzs: { decrement: tx.amountTzs } },
-              }),
-            ]);
-          }
+        if (isConfirmed) {
+          // Credit DB balance and mark COMPLETED atomically
+          await prisma.$transaction([
+            prisma.transaction.update({ where: { id: tx.id }, data: { status: "COMPLETED" } }),
+            prisma.user.update({
+              where: { id: session.userId },
+              data: { balanceTzs: { increment: tx.amountTzs } },
+            }),
+          ]);
+          processReferralReward(session.userId, tx.id, tx.amountTzs).catch(() => {});
+          updated++;
+        } else if (isFailed) {
+          await prisma.transaction.update({ where: { id: tx.id }, data: { status: "FAILED" } });
           updated++;
         }
       }
-      // Could add withdrawal polling here too if NTZS exposes GET /withdrawals/:id
     } catch {
       // Don't fail whole sync if one check errors
     }
   }
 
-  // Return all transactions fresh
+  // Return refreshed transactions + updated balance
   const transactions = await prisma.transaction.findMany({
     where: { userId: session.userId },
     orderBy: { createdAt: "desc" },
     take: 50,
   });
 
-  return NextResponse.json({ transactions, updated });
+  // Return updated user balance so client can update immediately
+  const user = updated > 0
+    ? await prisma.user.findUnique({
+        where: { id: session.userId },
+        select: { balanceTzs: true, balanceUsdc: true, balanceKes: true },
+      })
+    : null;
+
+  return NextResponse.json({ transactions, updated, balance: user });
 }

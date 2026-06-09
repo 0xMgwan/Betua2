@@ -4,6 +4,10 @@ import { getSession } from "@/lib/auth";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
 import { createNotification } from "@/lib/notify";
 
+// Withdrawals come from the settlement pool wallet. DB balance debited
+// immediately; reversed by webhook if withdrawal.failed fires.
+const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
+
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -16,55 +20,78 @@ export async function POST(req: NextRequest) {
   if (!phone) {
     return NextResponse.json({ error: "Phone number required" }, { status: 400 });
   }
+  if (!PLATFORM_NTZS_USER_ID) {
+    return NextResponse.json({ error: "Settlement wallet not configured." }, { status: 500 });
+  }
 
-  const user = await prisma.user.findUnique({ 
+  const user = await prisma.user.findUnique({
     where: { id: session.userId },
-    select: { id: true, ntzsUserId: true, balanceTzs: true }
+    select: { id: true, balanceTzs: true },
   });
-  if (!user?.ntzsUserId) {
-    return NextResponse.json({ error: "Wallet not yet provisioned. Please contact support." }, { status: 400 });
-  }
+  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-  // Check on-chain balance before attempting withdrawal
-  try {
-    const { balanceTzs } = await ntzs.users.getBalance(user.ntzsUserId);
-    if (balanceTzs < amountTzs) {
-      return NextResponse.json({
-        error: `Insufficient balance. Available: ${balanceTzs.toLocaleString()} TZS`,
-      }, { status: 400 });
-    }
-  } catch {
-    // If balance check fails, let NTZS handle it
+  if ((user.balanceTzs || 0) < amountTzs) {
+    return NextResponse.json({
+      error: `Insufficient balance. Available: ${(user.balanceTzs || 0).toLocaleString()} TZS`,
+    }, { status: 400 });
   }
 
   try {
-    const withdrawal = await ntzs.withdrawals.create({
-      userId: user.ntzsUserId,
-      amountTzs,
-      phone,
-    });
+    // Debit DB balance immediately + create PENDING record atomically
+    const [, tx] = await prisma.$transaction([
+      prisma.user.update({
+        where: { id: session.userId },
+        data: { balanceTzs: { decrement: amountTzs } },
+      }),
+      prisma.transaction.create({
+        data: {
+          userId: session.userId,
+          type: "WITHDRAWAL",
+          amountTzs,
+          status: "PENDING",
+          phone,
+        },
+      }),
+    ]);
 
-    await prisma.transaction.create({
-      data: {
-        userId: session.userId,
-        type: "WITHDRAWAL",
+    // Settlement pool sends nTZS → user's phone
+    let withdrawalId: string | undefined;
+    try {
+      const withdrawal = await ntzs.withdrawals.create({
+        userId: PLATFORM_NTZS_USER_ID,
         amountTzs,
-        status: "PENDING",
-        ntzsWithdrawId: withdrawal.id,
         phone,
-      },
-    });
+      });
+      withdrawalId = withdrawal.id;
+      await prisma.transaction.update({
+        where: { id: tx.id },
+        data: { ntzsWithdrawId: withdrawal.id },
+      });
+    } catch (wErr) {
+      // Withdrawal API failed — reverse the deduction
+      await prisma.$transaction([
+        prisma.user.update({
+          where: { id: session.userId },
+          data: { balanceTzs: { increment: amountTzs } },
+        }),
+        prisma.transaction.update({
+          where: { id: tx.id },
+          data: { status: "FAILED" },
+        }),
+      ]);
+      console.error("Withdrawal API failed, reversed deduction:", wErr);
+      throw wErr;
+    }
 
-    // Notification: withdrawal initiated
     createNotification({
       userId: session.userId,
       type: "WITHDRAW",
-      title: "Withdrawal Initiated",
-      message: `Withdrawal of ${amountTzs.toLocaleString()} TZS initiated. You will receive it on your phone shortly.`,
+      title: "Withdrawal Sent",
+      message: `TSh ${amountTzs.toLocaleString()} is being sent to ${phone}. You will receive it shortly.`,
       link: `/wallet`,
     });
 
-    return NextResponse.json({ withdrawal });
+    return NextResponse.json({ success: true, withdrawalId });
   } catch (err) {
     console.error("Withdrawal error:", err);
     if (err instanceof NtzsApiError) {
