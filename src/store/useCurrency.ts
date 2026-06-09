@@ -2,7 +2,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type DisplayCurrency = 'TZS' | 'USDC' | 'KES';
+export type DisplayCurrency = 'TZS' | 'NTZS' | 'USDC' | 'KES';
 
 // Exchange rates
 const TZS_TO_USDC_RATE = 1 / 2630;
@@ -25,14 +25,14 @@ export const useCurrency = create<CurrencyStore>()(
     (set, get) => ({
       currency: 'TZS',
       setCurrency: (currency) => set({ currency }),
-      toggleCurrency: () => set((state) => ({ 
-        currency: state.currency === 'TZS' ? 'USDC' : state.currency === 'USDC' ? 'KES' : 'TZS'
+      toggleCurrency: () => set((state) => ({
+        currency: state.currency === 'TZS' ? 'NTZS' : state.currency === 'NTZS' ? 'USDC' : state.currency === 'USDC' ? 'KES' : 'TZS'
       })),
       toDisplay: (tzs: number) => {
         const { currency } = get();
         if (currency === 'USDC') return tzs * TZS_TO_USDC_RATE;
         if (currency === 'KES') return tzs * TZS_TO_KES_RATE;
-        return tzs;
+        return tzs; // TZS and NTZS are 1:1
       },
       fromDisplay: (amount: number) => {
         const { currency } = get();
@@ -44,12 +44,14 @@ export const useCurrency = create<CurrencyStore>()(
         const { currency } = get();
         if (currency === 'USDC') return `$${(tzs * TZS_TO_USDC_RATE).toFixed(2)}`;
         if (currency === 'KES') return `KES ${Math.round(tzs * TZS_TO_KES_RATE).toLocaleString()}`;
+        if (currency === 'NTZS') return `nTZS ${tzs.toLocaleString()}`;
         return `TSh ${tzs.toLocaleString()}`;
       },
       formatRaw: (amount: number) => {
         const { currency } = get();
         if (currency === 'USDC') return `$${amount.toFixed(2)}`;
         if (currency === 'KES') return `KES ${Math.round(amount).toLocaleString()}`;
+        if (currency === 'NTZS') return `nTZS ${Math.round(amount).toLocaleString()}`;
         return `TSh ${Math.round(amount).toLocaleString()}`;
       },
     }),

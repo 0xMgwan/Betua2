@@ -33,16 +33,20 @@ export async function GET() {
           : null;
 
         if (newStatus) {
-          await prisma.transaction.update({
-            where: { id: tx.id },
-            data: { status: newStatus },
-          });
-          updated++;
-
-          // Process referral reward on first completed deposit
           if (newStatus === "COMPLETED") {
+            // Credit DB balance and mark completed atomically
+            await prisma.$transaction([
+              prisma.transaction.update({ where: { id: tx.id }, data: { status: "COMPLETED" } }),
+              prisma.user.update({
+                where: { id: session.userId },
+                data: { balanceTzs: { increment: tx.amountTzs } },
+              }),
+            ]);
             processReferralReward(session.userId, tx.id, tx.amountTzs).catch(() => {});
+          } else {
+            await prisma.transaction.update({ where: { id: tx.id }, data: { status: newStatus } });
           }
+          updated++;
         }
       }
       // Could add withdrawal polling here too if NTZS exposes GET /withdrawals/:id

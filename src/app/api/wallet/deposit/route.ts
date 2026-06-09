@@ -4,6 +4,10 @@ import { getSession } from "@/lib/auth";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
 import { createNotification } from "@/lib/notify";
 
+// All deposits go to the settlement pool wallet. The user's DB balance is
+// credited when the deposit is confirmed via webhook or sync polling.
+const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
+
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -16,24 +20,20 @@ export async function POST(req: NextRequest) {
   if (!phone) {
     return NextResponse.json({ error: "Phone number required" }, { status: 400 });
   }
-
-  const user = await prisma.user.findUnique({ 
-    where: { id: session.userId },
-    select: { id: true, ntzsUserId: true, balanceTzs: true }
-  });
-  if (!user?.ntzsUserId) {
-    return NextResponse.json({ error: "Wallet not yet provisioned. Please contact support." }, { status: 400 });
+  if (!PLATFORM_NTZS_USER_ID) {
+    return NextResponse.json({ error: "Settlement wallet not configured." }, { status: 500 });
   }
 
   try {
-    console.log("[Deposit] Creating nTZS deposit:", {
-      userId: user.ntzsUserId,
+    console.log("[Deposit] Creating deposit to settlement pool:", {
+      settlementPool: PLATFORM_NTZS_USER_ID,
       amountTzs,
       phone,
     });
-    
+
+    // STK push — nTZS minted directly into the settlement pool wallet
     const deposit = await ntzs.deposits.create({
-      userId: user.ntzsUserId,
+      userId: PLATFORM_NTZS_USER_ID,
       amountTzs,
       phone,
     });
@@ -49,7 +49,6 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Notification: deposit initiated
     createNotification({
       userId: session.userId,
       type: "DEPOSIT",

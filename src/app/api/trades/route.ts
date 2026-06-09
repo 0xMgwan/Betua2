@@ -76,25 +76,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid side" }, { status: 400 });
     }
 
-    // Enforce wallet balance based on user's currency
+    // ── Balance check against DB balance (all currencies) ────────────────
+    // All user funds are held in the settlement pool; DB tracks individual balances.
+    // No per-trade on-chain transfer from user — that happens only at deposit/redeem.
     if (userCurrency === 'USDC') {
-      // USDC payment - fetch live USDC balance from nTZS API (not stored in DB)
-      let userBalanceUsdc = 0;
-      if (user.ntzsUserId) {
-        try {
-          const bal = await ntzs.users.getBalance(user.ntzsUserId);
-          userBalanceUsdc = bal.balanceUsdc || 0;
-        } catch (err) {
-          console.error("[Trade] Failed to fetch USDC balance:", err);
-        }
-      }
-      if (userBalanceUsdc < amountUsdc) {
+      if ((user.balanceUsdc || 0) < amountUsdc) {
         return NextResponse.json({
-          error: `Insufficient USDC balance. You have $${userBalanceUsdc.toFixed(2)} — deposit more to trade.`,
+          error: `Insufficient USDC balance. You have $${(user.balanceUsdc || 0).toFixed(2)} — deposit more to trade.`,
         }, { status: 400 });
       }
     } else if (userCurrency === 'KES') {
-      // Kenya user - check KES balance
       const userBalanceKes = user.balanceKes || 0;
       const requiredKes = amountKes || convertCurrency(amountTzs, 'TZS', 'KES');
       if (userBalanceKes < requiredKes) {
@@ -102,23 +93,8 @@ export async function POST(req: NextRequest) {
           error: `Insufficient balance. You have ${(userBalanceKes / 100).toLocaleString()} KES — deposit more to trade.`,
         }, { status: 400 });
       }
-    } else if (user.ntzsUserId) {
-      // Tanzania user with nTZS wallet
-      try {
-        const { balanceTzs } = await ntzs.users.getBalance(user.ntzsUserId);
-        if (balanceTzs < amountTzs) {
-          return NextResponse.json({
-            error: `Insufficient balance. You have ${balanceTzs.toLocaleString()} TZS — deposit more to trade.`,
-          }, { status: 400 });
-        }
-      } catch (balErr) {
-        console.error("nTZS balance check failed, using local balance:", balErr);
-        if ((user.balanceTzs || 0) < amountTzs) {
-          return NextResponse.json({ error: `Insufficient balance.` }, { status: 400 });
-        }
-      }
     } else {
-      // No nTZS wallet — check local TZS balance
+      // TZS (default)
       if ((user.balanceTzs || 0) < amountTzs) {
         return NextResponse.json({ error: "Insufficient balance. Deposit funds first." }, { status: 400 });
       }
@@ -171,111 +147,13 @@ export async function POST(req: NextRequest) {
       ? Math.round((tradeAmount / oddsPrice) * (1 - FEE_PERCENT))
       : 0;
 
-    let ntzsTransferId: string | undefined;
-    let bkesTransferTxHash: string | undefined;
+    // ── No per-trade on-chain transfer ────────────────────────────────────
+    // All user funds are held in the settlement pool wallet. Trades are
+    // pure DB operations. On-chain movement only happens at deposit (user→pool)
+    // and redeem (pool→user). The 5% entry fee is forwarded pool→fee wallet.
+    const ntzsTransferId: string | undefined = undefined;
 
-    // Transfer tokens from user → platform escrow
-    if (userCurrency === 'USDC' && user.ntzsUserId) {
-      // USDC payment flow:
-      // 1. Swap USDC → nTZS via nTZS swap API
-      // 2. Transfer nTZS to platform escrow
-      try {
-        console.log(`[Trade] USDC payment: swapping $${amountUsdc} USDC → ${amountTzs} TZS for user ${user.ntzsUserId}`);
-        
-        // Step 1: Swap USDC to nTZS
-        const swapResult = await ntzs.swap.executeAndWait({
-          userId: user.ntzsUserId,
-          fromToken: 'USDC',
-          toToken: 'NTZS',
-          amount: amountUsdc,
-          slippageBps: 100, // 1% slippage
-        });
-        console.log(`[Trade] Swap completed: ${swapResult.txHash}`);
-
-        // Step 2: Get actual nTZS balance after swap (may differ due to slippage)
-        const { balanceTzs: actualBalance } = await ntzs.users.getBalance(user.ntzsUserId);
-        const transferAmount = Math.min(actualBalance, amountTzs); // Transfer what we have, up to expected
-        console.log(`[Trade] Post-swap balance: ${actualBalance} TZS, transferring: ${transferAmount} TZS`);
-
-        // Step 3: Transfer nTZS to platform escrow
-        if (PLATFORM_NTZS_USER_ID && transferAmount > 0) {
-          const transfer = await ntzs.transfers.create({
-            fromUserId: user.ntzsUserId,
-            toUserId: PLATFORM_NTZS_USER_ID,
-            amountTzs: transferAmount,
-          });
-          ntzsTransferId = transfer.id;
-          console.log(`[Trade] nTZS transfer to escrow: ${ntzsTransferId}`);
-          // Update amountTzs to actual transferred amount for share calculation
-          amountTzs = transferAmount;
-        }
-      } catch (err) {
-        const detail = err instanceof Error ? err.message : String(err);
-        console.error("[Trade] USDC swap/transfer failed:", detail);
-        const isLiquidity = detail.toLowerCase().includes("liquidity");
-        return NextResponse.json({
-          error: isLiquidity
-            ? "USDC swap temporarily unavailable due to low liquidity. Please try a smaller amount or use TZS."
-            : `USDC payment failed: ${detail}`,
-        }, { status: 500 });
-      }
-    } else if (userCurrency === 'KES' && user.ntzsUserId) {
-      // Kenya user: bKES payment flow (same as USDC)
-      // 1. Swap bKES → nTZS via nTZS swap API
-      // 2. Transfer nTZS to platform escrow
-      const kesAmount = amountKes || convertCurrency(amountTzs, 'TZS', 'KES');
-      try {
-        console.log(`[Trade] bKES payment: swapping ${kesAmount} bKES → ${amountTzs} TZS for user ${user.ntzsUserId}`);
-        
-        // Step 1: Swap bKES to nTZS
-        const swapResult = await ntzs.swap.executeAndWait({
-          userId: user.ntzsUserId,
-          fromToken: 'BKES',
-          toToken: 'NTZS',
-          amount: kesAmount,
-          slippageBps: 100, // 1% slippage
-        });
-        console.log(`[Trade] bKES→nTZS swap completed: ${swapResult.txHash}`);
-
-        // Step 2: Get actual nTZS balance after swap (may differ due to slippage)
-        const { balanceTzs: actualBalanceKes } = await ntzs.users.getBalance(user.ntzsUserId);
-        const transferAmountKes = Math.min(actualBalanceKes, amountTzs);
-        console.log(`[Trade] Post-swap balance: ${actualBalanceKes} TZS, transferring: ${transferAmountKes} TZS`);
-
-        // Step 3: Transfer nTZS to platform escrow
-        if (PLATFORM_NTZS_USER_ID && transferAmountKes > 0) {
-          const transfer = await ntzs.transfers.create({
-            fromUserId: user.ntzsUserId,
-            toUserId: PLATFORM_NTZS_USER_ID,
-            amountTzs: transferAmountKes,
-          });
-          ntzsTransferId = transfer.id;
-          console.log(`[Trade] nTZS transfer to escrow: ${ntzsTransferId}`);
-          // Update amountTzs to actual transferred amount for share calculation
-          amountTzs = transferAmountKes;
-        }
-      } catch (err) {
-        console.error("[Trade] bKES swap/transfer failed:", err);
-        return NextResponse.json({
-          error: "bKES payment failed. Please try again.",
-        }, { status: 500 });
-      }
-    } else if (userCurrency === 'TZS' && PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
-      // Tanzania user: Transfer nTZS tokens via nTZS API
-      try {
-        const transfer = await ntzs.transfers.create({
-          fromUserId: user.ntzsUserId,
-          toUserId: PLATFORM_NTZS_USER_ID,
-          amountTzs,
-        });
-        ntzsTransferId = transfer.id;
-      } catch (err) {
-        console.error("nTZS transfer failed:", err);
-        // Continue without nTZS transfer - use local balance instead
-      }
-    }
-
-    // Transfer 5% fee from platform escrow → settlement fee wallet (non-blocking)
+    // Forward 5% entry fee from settlement pool → fee wallet (non-blocking)
     // Fees are always in nTZS (USDC is swapped to nTZS before escrow)
     if (PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID && feeAmount > 0) {
       ntzs.transfers.create({

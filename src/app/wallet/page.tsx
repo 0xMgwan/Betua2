@@ -105,14 +105,10 @@ export default function WalletPage() {
   const isKenya = user?.country === 'KE' || user?.phone?.startsWith('254') || user?.phone?.startsWith('+254');
   
   // Get balance based on selected currency preference
-  // USDC is now a float from nTZS API (e.g., 6.50 = $6.50)
   const getBalance = () => {
-    if (displayCurrency === 'USDC') {
-      return user?.balanceUsdc || 0; // Already a float from nTZS API
-    }
-    if (displayCurrency === 'KES') {
-      return user?.balanceKes || 0;
-    }
+    if (displayCurrency === 'USDC') return user?.balanceUsdc || 0;
+    if (displayCurrency === 'KES') return user?.balanceKes || 0;
+    // Both TZS (DB) and NTZS show the same DB balance (1:1 on-chain representation)
     return user?.balanceTzs || 0;
   };
   const balance = getBalance();
@@ -226,12 +222,14 @@ export default function WalletPage() {
               <div className="relative">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <img 
-                      src={displayCurrency === 'USDC' ? '/usdc.png' : displayCurrency === 'KES' ? '/bkes.png' : '/ntzs.png'} 
-                      alt={displayCurrency} 
+                    <img
+                      src={displayCurrency === 'USDC' ? '/usdc.png' : displayCurrency === 'KES' ? '/bkes.png' : '/ntzs.png'}
+                      alt={displayCurrency}
                       className="w-5 h-5"
                     />
-                    <span className="text-sm font-semibold">{displayCurrency === 'USDC' ? 'USDC' : displayCurrency === 'KES' ? 'bKES' : 'nTZS'}</span>
+                    <span className="text-sm font-semibold">
+                      {displayCurrency === 'USDC' ? 'USDC' : displayCurrency === 'KES' ? 'bKES' : displayCurrency === 'NTZS' ? 'nTZS' : 'TZS'}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     {pendingCount > 0 && (
@@ -246,7 +244,7 @@ export default function WalletPage() {
                       className="flex items-center gap-1 px-2 py-1 text-xs bg-[var(--background)]/60 rounded-lg border border-[var(--card-border)] hover:border-[var(--accent)]/30 transition-colors"
                     >
                       <img 
-                        src={displayCurrency === 'TZS' ? '/usdc.png' : displayCurrency === 'USDC' ? '/bkes.png' : '/ntzs.png'} 
+                        src={displayCurrency === 'TZS' ? '/ntzs.png' : displayCurrency === 'NTZS' ? '/usdc.png' : displayCurrency === 'USDC' ? '/bkes.png' : '/ntzs.png'}
                         alt="switch" 
                         className="w-3.5 h-3.5"
                       />
@@ -257,15 +255,14 @@ export default function WalletPage() {
                 <div className="text-4xl font-black mb-0.5 tabular-nums">
                   {formatRaw(balance)}
                 </div>
-                {displayCurrency === 'TZS' && (
-                  <p className="text-xs text-[var(--muted)]">
-                    {t.wallet.tanzanianShillings}
-                  </p>
+                {(displayCurrency === 'TZS') && (
+                  <p className="text-xs text-[var(--muted)]">{t.wallet.tanzanianShillings} (DB)</p>
+                )}
+                {displayCurrency === 'NTZS' && (
+                  <p className="text-xs text-[var(--muted)]">nTZS on-chain balance</p>
                 )}
                 {displayCurrency === 'KES' && (
-                  <p className="text-xs text-[var(--muted)]">
-                    Kenya Shillings
-                  </p>
+                  <p className="text-xs text-[var(--muted)]">Kenya Shillings</p>
                 )}
 
                 {user.walletAddress && (

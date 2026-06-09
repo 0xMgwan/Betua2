@@ -44,20 +44,8 @@ export async function POST(req: NextRequest) {
       data: { email, username, displayName: username, phone, passwordHash, referredById, country },
     });
 
-    // Create NTZS wallet
-    try {
-      const ntzsUser = await ntzs.users.create({
-        externalId: user.id,
-        email,
-        phone: phone || undefined,
-      });
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { ntzsUserId: ntzsUser.id, walletAddress: ntzsUser.walletAddress },
-      });
-    } catch {
-      // Non-fatal — wallet can be provisioned later
-    }
+    // nTZS wallet creation disabled — all funds flow through the settlement pool.
+    // Wallets are only provisioned for specific platform accounts.
 
     // Auto-subscribe to email notifications and send welcome email
     try {

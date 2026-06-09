@@ -179,73 +179,44 @@ export async function POST(req: NextRequest) {
       payoutInUserCurrency = payoutTzs;
     }
 
-    // ── Transfer payout from platform escrow → user ──────────────────────────
-    // Position is already locked (redeemed=true). Retrying is impossible — no duplicate risk.
-    // nTZS sometimes returns HTTP 500 even when the transfer succeeded on-chain, so we
-    // never abort: always fall through to credit local balance and return success.
-    //
-    // For USDC/KES, payout is two steps:
-    //   Step 1: ntzs.transfers.create  — sends nTZS from platform wallet → user wallet
-    //   Step 2: ntzs.swap.executeAndWait — swaps nTZS → USDC/BKES inside user wallet
-    //
-    // We handle each step separately so that if step 1 succeeds but step 2 fails, we
-    // credit the correct currency (TZS, since nTZS is what arrived) rather than phantom USDC.
+    // ── Withdraw payout from settlement pool → user's phone (or wallet) ────
+    // Position is locked (redeemed=true). Settlement pool sends nTZS to the
+    // user's phone number via nTZS withdrawal API.
+    // If the user has a personal ntzsUserId (legacy), send there instead.
+    // On any on-chain error we still credit DB balance — position is already locked.
     let ntzsTransferId: string | undefined;
-    let ntzsTransferUncertain = false; // true = nTZS returned error on transfer (may have gone through)
-    let swapFailed = false;            // true = transfer OK but swap failed → user has TZS not USDC/KES
+    let ntzsTransferUncertain = false;
+    const swapFailed = false;
 
-    // Step 1: nTZS transfer (all currencies)
-    if (PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
+    if (PLATFORM_NTZS_USER_ID) {
       try {
-        const transfer = await ntzs.transfers.create({
-          fromUserId: PLATFORM_NTZS_USER_ID,
-          toUserId: user.ntzsUserId,
-          amountTzs: payoutTzs,
-        });
-        ntzsTransferId = transfer.id;
+        if (user.ntzsUserId) {
+          // Legacy: user has own wallet — transfer directly
+          const transfer = await ntzs.transfers.create({
+            fromUserId: PLATFORM_NTZS_USER_ID,
+            toUserId: user.ntzsUserId,
+            amountTzs: payoutTzs,
+          });
+          ntzsTransferId = transfer.id;
+        } else if (user.phone) {
+          // New model: withdraw from settlement pool → user's mobile number
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const withdrawal = await (ntzs as any).withdrawals.create({
+            userId: PLATFORM_NTZS_USER_ID,
+            amountTzs: payoutTzs,
+            phone: user.phone,
+          });
+          ntzsTransferId = withdrawal.id;
+        }
+        // If no phone and no wallet, just credit DB balance (fallthrough)
       } catch (err) {
         ntzsTransferUncertain = true;
-        console.error("[Redeem] nTZS transfer error (position locked, proceeding optimistically):", err);
+        console.error("[Redeem] payout transfer error (position locked, proceeding):", err);
       }
     }
 
-    // Step 2: swap nTZS → USDC or BKES (only if transfer succeeded or is uncertain — i.e. may have gone through)
-    if (preferredCurrency === 'USDC' && user.ntzsUserId) {
-      try {
-        await ntzs.swap.executeAndWait({
-          userId: user.ntzsUserId,
-          fromToken: 'NTZS',
-          toToken: 'USDC',
-          amount: payoutTzs,
-          slippageBps: 100,
-        });
-      } catch (err) {
-        // Swap failed — user received nTZS in their wallet, not USDC.
-        // Credit TZS balance locally so the display matches what they actually have.
-        swapFailed = true;
-        payoutUsdc = 0;
-        payoutInUserCurrency = payoutTzs;
-        console.error("[Redeem] USDC swap failed — user has nTZS, crediting TZS locally:", err);
-      }
-    } else if (preferredCurrency === 'KES' && user.ntzsUserId) {
-      try {
-        await ntzs.swap.executeAndWait({
-          userId: user.ntzsUserId,
-          fromToken: 'NTZS',
-          toToken: 'BKES',
-          amount: payoutTzs,
-          slippageBps: 100,
-        });
-      } catch (err) {
-        // Swap failed — user has nTZS not KES. Credit TZS.
-        swapFailed = true;
-        payoutInUserCurrency = payoutTzs;
-        console.error("[Redeem] KES swap failed — user has nTZS, crediting TZS locally:", err);
-      }
-    }
-
-    // Effective currency for local balance credit: if swap failed, user actually has TZS
-    const effectiveCurrency = swapFailed ? 'TZS' : preferredCurrency;
+    // Effective currency — no swaps in the new pool model, TZS only on-chain
+    const effectiveCurrency = preferredCurrency;
 
     // Transfer settlement fee — delayed 1.5s to avoid nonce collision with main transfer
     if (PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID && settlementFee > 0) {

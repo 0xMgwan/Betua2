@@ -86,165 +86,80 @@ export async function POST(req: NextRequest) {
     // Load user to check balance and get nTZS user ID
     const user = await prisma.user.findUnique({ 
       where: { id: session.userId },
-      select: { id: true, ntzsUserId: true, balanceTzs: true, balanceKes: true, walletAddress: true, country: true }
+      select: { id: true, ntzsUserId: true, balanceTzs: true, balanceKes: true, balanceUsdc: true, walletAddress: true, country: true }
     });
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     // Determine market currency based on creator's country
     const marketCurrency = getUserCurrency(user.country);
 
-    if (!user.ntzsUserId) {
-      return NextResponse.json(
-        { error: "Wallet not provisioned. Please deposit first to create markets." },
-        { status: 400 }
-      );
-    }
-
-    // ── Check balance & transfer 2,000 TZS creation fee (skip for admins) ────
-    const isAdmin = ADMIN_NTZS_USER_IDS.includes(user.ntzsUserId);
+    // ── Check balance & deduct 2,000 TZS creation fee from DB (skip for admins) ──
+    // All funds are in the settlement pool. Fee is deducted from DB balance here;
+    // the pool then forwards it to the creation fee wallet (non-blocking).
+    const isAdmin = ADMIN_NTZS_USER_IDS.includes(user.ntzsUserId || "") ||
+                    ADMIN_NTZS_USER_IDS.includes(session.userId);
     const USDC_TO_TZS_RATE = 2630;
     const CREATION_FEE_USDC = CREATION_FEE_TZS / USDC_TO_TZS_RATE;
 
     if (!isAdmin) {
-      // Check both nTZS and USDC balances
-      let balanceTzs = 0;
-      let balanceUsdc = 0;
-      let useUsdc = false;
+      const dbTzs  = user.balanceTzs  || 0;
+      const dbUsdc = user.balanceUsdc || 0;
 
-      try {
-        const balances = await ntzs.users.getBalance(user.ntzsUserId);
-        balanceTzs = balances.balanceTzs || 0;
-        balanceUsdc = balances.balanceUsdc || 0;
-
-        // Prefer nTZS if sufficient, otherwise try USDC
-        if (balanceTzs >= CREATION_FEE_TZS) {
-          useUsdc = false;
-        } else if (balanceUsdc >= CREATION_FEE_USDC) {
-          useUsdc = true;
-        } else {
-          // Neither balance is sufficient
-          return NextResponse.json(
-            {
-              error: `Insufficient balance. Creating a market costs ${CREATION_FEE_TZS.toLocaleString()} TZS (~$${CREATION_FEE_USDC.toFixed(2)}). Your balance: ${balanceTzs.toLocaleString()} TZS / $${balanceUsdc.toFixed(2)} USDC.`,
-            },
-            { status: 400 }
-          );
-        }
-      } catch (balErr) {
-        console.error("Balance check failed:", balErr);
-        if (balErr instanceof NtzsApiError) {
-          return NextResponse.json(
-            { error: `Could not verify balance: ${balErr.message}. Please try again.` },
-            { status: 503 }
-          );
-        }
+      if (dbTzs < CREATION_FEE_TZS && dbUsdc < CREATION_FEE_USDC) {
         return NextResponse.json(
-          { error: "Could not verify balance. Please try again." },
-          { status: 503 }
+          { error: `Insufficient balance. Creating a market costs ${CREATION_FEE_TZS.toLocaleString()} TZS (~$${CREATION_FEE_USDC.toFixed(2)}). Your balance: ${dbTzs.toLocaleString()} TZS / $${dbUsdc.toFixed(2)} USDC.` },
+          { status: 400 }
         );
       }
 
-      // ── Transfer creation fee: user → platform → fee wallet ────
-      // ENFORCED: Market creation will fail if fee transfer fails
-      if (PLATFORM_NTZS_USER_ID) {
-        try {
-          // If using USDC, swap to nTZS first
-          if (useUsdc) {
-            console.log(`Market creation: swapping $${CREATION_FEE_USDC.toFixed(2)} USDC → ${CREATION_FEE_TZS} TZS for user ${user.ntzsUserId}`);
-            const swapResult = await ntzs.swap.executeAndWait({
-              userId: user.ntzsUserId,
-              fromToken: 'USDC',
-              toToken: 'NTZS',
-              amount: CREATION_FEE_USDC,
-              slippageBps: 100,
-            });
-            console.log(`Market creation swap completed: ${swapResult.txHash}`);
-          }
+      // Deduct from DB balance (TZS preferred, else USDC)
+      const useUsdc = dbTzs < CREATION_FEE_TZS;
+      await prisma.user.update({
+        where: { id: session.userId },
+        data: useUsdc
+          ? { balanceUsdc: { decrement: CREATION_FEE_USDC } }
+          : { balanceTzs:  { decrement: CREATION_FEE_TZS  } },
+      });
 
-          // Transfer nTZS fee to platform
-          console.log(`Market creation fee transfer: ${user.ntzsUserId} (${user.walletAddress}) → ${PLATFORM_NTZS_USER_ID} (${CREATION_FEE_TZS} TZS)`);
-          await ntzs.transfers.create({
-            fromUserId: user.ntzsUserId,
-            toUserId: PLATFORM_NTZS_USER_ID,
-            amountTzs: CREATION_FEE_TZS,
-          });
-
-          // Step 2: platform escrow → creation fee wallet (non-blocking, non-fatal)
-          if (CREATION_FEE_NTZS_USER_ID) {
-            ntzs.transfers
-              .create({
-                fromUserId: PLATFORM_NTZS_USER_ID,
-                toUserId: CREATION_FEE_NTZS_USER_ID,
-                amountTzs: CREATION_FEE_TZS,
-              })
-              .catch((err) =>
-                console.error("Creation fee forward transfer failed (non-fatal):", err)
-              );
-          }
-        } catch (err) {
-          // FATAL: Block market creation if fee transfer fails
-          if (err instanceof NtzsApiError) {
-            console.error(
-              `Market creation fee transfer failed [${err.status}/${err.code}]: ${err.message}`,
-              `User: ${user.ntzsUserId} (${user.walletAddress})`
-            );
-            return NextResponse.json(
-              {
-                error: `Failed to process market creation fee. ${err.message || 'Please try again or contact support.'}`,
-              },
-              { status: 500 }
-            );
-          }
-          console.error("Market creation fee failed:", err);
-          return NextResponse.json(
-            { error: "Failed to process market creation fee. Please try again." },
-            { status: 500 }
-          );
-        }
+      // Forward fee: settlement pool → creation fee wallet (non-blocking, non-fatal)
+      if (PLATFORM_NTZS_USER_ID && CREATION_FEE_NTZS_USER_ID) {
+        ntzs.transfers.create({
+          fromUserId: PLATFORM_NTZS_USER_ID,
+          toUserId: CREATION_FEE_NTZS_USER_ID,
+          amountTzs: CREATION_FEE_TZS,
+        }).catch((err) => console.error("Creation fee forward failed (non-fatal):", err));
       }
     } else {
-      console.log(`Admin user ${user.ntzsUserId} creating market - fee waived`);
+      console.log(`Admin user ${session.userId} creating market — fee waived`);
     }
 
-    // ── Optional liquidity seed: creator deposits real TZS into the market ──
+    // ── Optional liquidity seed: deduct from creator's DB balance ──────────
+    // Seed funds are already in the settlement pool; we just track them in DB.
     const MIN_SEED = 1000;
-    const MAX_SEED = 10_000_000; // 10M TZS cap
+    const MAX_SEED = 10_000_000;
     let effectiveSeed = 0;
     if (seedAmount >= MIN_SEED) {
       if (seedAmount > MAX_SEED) {
         return NextResponse.json({ error: `Seed amount cannot exceed ${MAX_SEED.toLocaleString()} TZS` }, { status: 400 });
       }
-      try {
-        // If creator is paying in USDC, swap to nTZS first
-        if (isSeedUsdc && PLATFORM_NTZS_USER_ID) {
-          const seedUsdc = seedAmount / USDC_TO_TZS_RATE;
-          console.log(`Seed: swapping $${seedUsdc.toFixed(2)} USDC → ${seedAmount} TZS for ${user.ntzsUserId}`);
-          await ntzs.swap.executeAndWait({
-            userId: user.ntzsUserId,
-            fromToken: 'USDC',
-            toToken: 'NTZS',
-            amount: seedUsdc,
-            slippageBps: 100,
-          });
-        }
-        // Transfer seed (nTZS) from creator → platform escrow
-        await ntzs.transfers.create({
-          fromUserId: user.ntzsUserId,
-          toUserId: PLATFORM_NTZS_USER_ID,
-          amountTzs: seedAmount,
-        });
-        effectiveSeed = seedAmount;
-        console.log(`Market seed: ${user.ntzsUserId} → escrow, ${seedAmount} TZS (paid in ${isSeedUsdc ? 'USDC' : 'TZS'})`);
-      } catch (seedErr) {
-        console.error("Seed transfer failed:", seedErr);
-        if (seedErr instanceof NtzsApiError) {
-          return NextResponse.json(
-            { error: `Seed transfer failed: ${seedErr.message}` },
-            { status: 400 }
-          );
-        }
-        return NextResponse.json({ error: "Seed transfer failed. Check your balance." }, { status: 400 });
+      const seedUsdc = seedAmount / USDC_TO_TZS_RATE;
+      const dbTzsNow  = user.balanceTzs  || 0;
+      const dbUsdcNow = user.balanceUsdc || 0;
+      if (!isSeedUsdc && dbTzsNow < seedAmount) {
+        return NextResponse.json({ error: "Insufficient TZS balance to seed market." }, { status: 400 });
       }
+      if (isSeedUsdc && dbUsdcNow < seedUsdc) {
+        return NextResponse.json({ error: "Insufficient USDC balance to seed market." }, { status: 400 });
+      }
+      // Deduct seed from DB balance
+      await prisma.user.update({
+        where: { id: session.userId },
+        data: isSeedUsdc
+          ? { balanceUsdc: { decrement: seedUsdc } }
+          : { balanceTzs:  { decrement: seedAmount } },
+      });
+      effectiveSeed = seedAmount;
+      console.log(`Market seed: ${seedAmount} TZS deducted from DB balance for user ${session.userId}`);
     }
 
     // For Crypto markets with Pyth, store config as metadata in description
