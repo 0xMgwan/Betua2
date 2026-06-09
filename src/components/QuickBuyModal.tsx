@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, TrendUp, TrendDown, ShoppingCart, CheckCircle, XCircle, WhatsappLogo, TelegramLogo, XLogo } from "@phosphor-icons/react";
@@ -52,6 +52,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [awaitingPayment, setAwaitingPayment] = useState<{ depositId: string; phone: string; amountTzs: number } | null>(null);
   const [sharePayload, setSharePayload] = useState<{
     label: string; shares: number; amountTzs: number; payoutIfWin: number; oddsPrice: number;
   } | null>(null);
@@ -187,6 +188,55 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
     openCart();
   };
 
+  // Ref to store trade body so we can retry after payment confirmation
+  const pendingTradeBodyRef = useRef<Record<string, unknown> | null>(null);
+
+  const executeTrade = useCallback(async (tradeBody: Record<string, unknown>) => {
+    const res = await fetch("/api/trades", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(tradeBody),
+    });
+    const data = await res.json();
+    return { res, data };
+  }, []);
+
+  // Poll every 3s while awaiting payment confirmation, then auto-retry trade
+  useEffect(() => {
+    if (!awaitingPayment || !pendingTradeBodyRef.current) return;
+    const interval = setInterval(async () => {
+      try {
+        const syncRes = await fetch("/api/wallet/sync");
+        const syncData = await syncRes.json();
+        const confirmed = (syncData.transactions || []).find(
+          (tx: { ntzsDepositId?: string; status: string }) =>
+            tx.ntzsDepositId === awaitingPayment.depositId && tx.status === "COMPLETED"
+        );
+        if (confirmed) {
+          clearInterval(interval);
+          setAwaitingPayment(null);
+          // Retry the trade now that balance is credited
+          const tradeBody = pendingTradeBodyRef.current!;
+          pendingTradeBodyRef.current = null;
+          const { res, data } = await executeTrade(tradeBody);
+          if (!res.ok) {
+            setError(data.error || (locale === "sw" ? "Biashara imeshindwa" : "Trade failed"));
+            return;
+          }
+          const oddsPrice = data.oddsPrice ?? (isMultiOption
+            ? (getMultiOptionPrices(market.optionPools as number[])[optionIndex ?? 0] ?? 0.5)
+            : (side === "YES" ? market.price.yes : market.price.no));
+          setSharePayload({ label: displaySide || side, shares: Math.round(data.shares), amountTzs: awaitingPayment.amountTzs, payoutIfWin: data.payoutIfWin ?? 0, oddsPrice });
+          setSuccess(true);
+          notifications.notifyTrade(market.title, side, awaitingPayment.amountTzs / 1000, market.id, locale);
+          fetchUser().catch(() => {});
+          onSuccess?.();
+        }
+      } catch { /* keep polling */ }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [awaitingPayment, executeTrade, displaySide, fetchUser, isMultiOption, locale, market, onSuccess, optionIndex, side]);
+
   const handleBuy = async () => {
     if (!user) {
       router.push("/auth/login");
@@ -203,43 +253,34 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
     setError("");
 
     try {
-      // Send amountUsdc as float when USDC selected, otherwise amountTzs
       const tradeBody = {
         marketId: market.id,
         side: isMultiOption ? undefined : side,
         optionIndex: isMultiOption ? optionIndex : undefined,
-        ...(displayCurrency === 'USDC' 
-          ? { amountUsdc: amountNum } // Send as float (e.g., 1.50)
+        ...(displayCurrency === 'USDC'
+          ? { amountUsdc: amountNum }
           : { amountTzs: amountInTzs }),
       };
-      const res = await fetch("/api/trades", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(tradeBody),
-      });
+      const { res, data } = await executeTrade(tradeBody);
 
-      const data = await res.json();
+      if (res.status === 402 && data.paymentRequired) {
+        // STK push sent — wait for phone confirmation before trade executes
+        pendingTradeBodyRef.current = tradeBody;
+        setAwaitingPayment({ depositId: data.depositId, phone: data.phone, amountTzs: amountInTzs });
+        return;
+      }
 
       if (!res.ok) {
         setError(data.error || (locale === "sw" ? "Biashara imeshindwa" : "Trade failed"));
         return;
       }
 
-      // Build share payload
       const oddsPrice = data.oddsPrice ?? (isMultiOption
         ? (getMultiOptionPrices(market.optionPools as number[])[optionIndex ?? 0] ?? 0.5)
         : (side === "YES" ? market.price.yes : market.price.no));
-      setSharePayload({
-        label: displaySide || side,
-        shares: Math.round(data.shares),
-        amountTzs: amountInTzs,
-        payoutIfWin: data.payoutIfWin ?? 0,
-        oddsPrice,
-      });
-
+      setSharePayload({ label: displaySide || side, shares: Math.round(data.shares), amountTzs: amountInTzs, payoutIfWin: data.payoutIfWin ?? 0, oddsPrice });
       setSuccess(true);
       notifications.notifyTrade(market.title, side, Number(amount), market.id, locale);
-      // Refresh user balance so navbar/wallet shows updated amount immediately
       fetchUser().catch(() => {});
       onSuccess?.();
     } catch (err) {
@@ -299,7 +340,33 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                 <span className="inline-block w-2 h-3 sm:h-4 bg-[var(--accent)] ml-1 animate-pulse"></span>
               </div>
 
-              {!success && <>
+              {/* ── Awaiting payment confirmation ── */}
+              {awaitingPayment && !success && (
+                <div className="mb-4 p-4 border-2 border-orange-500/40 bg-orange-500/5 space-y-3">
+                  <div className="flex items-center gap-2 text-orange-400 font-mono font-bold text-xs uppercase tracking-wider">
+                    <span className="animate-pulse">●</span>
+                    <span>{locale === "sw" ? "Subiri Uthibitisho wa Malipo" : "Waiting for Payment"}</span>
+                  </div>
+                  <p className="text-[11px] font-mono text-[var(--muted)]">
+                    {locale === "sw"
+                      ? `STK push imetumwa kwa ${awaitingPayment.phone}. Thibitisha kwenye simu yako ili kukamilisha biashara.`
+                      : `STK push sent to ${awaitingPayment.phone}. Approve on your phone to complete the trade.`}
+                  </p>
+                  <div className="flex items-center gap-2 text-[10px] font-mono text-[var(--muted)]">
+                    <span className="animate-spin">↻</span>
+                    <span>{locale === "sw" ? "Inangoja uthibitisho..." : "Checking confirmation..."}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setAwaitingPayment(null); pendingTradeBodyRef.current = null; }}
+                    className="text-[10px] font-mono text-[var(--muted)] hover:text-red-400 transition-colors underline"
+                  >
+                    {locale === "sw" ? "Ghairi" : "Cancel"}
+                  </button>
+                </div>
+              )}
+
+              {!success && !awaitingPayment && <>
               {/* Price Info - Terminal Style */}
               <div className="mb-4 p-3 bg-[var(--background)] border-2 border-[var(--card-border)]">
                 <div className="flex items-center justify-between text-xs font-mono">

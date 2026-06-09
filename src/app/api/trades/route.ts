@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
         }, { status: 400 });
       }
     } else {
-      // TZS (default) — if insufficient balance, trigger STK push for the exact trade amount
+      // TZS (default) — if insufficient balance, trigger STK push and wait for confirmation
       if ((user.balanceTzs || 0) < amountTzs) {
         if (!user.phone) {
           return NextResponse.json({ error: "Insufficient balance. Add a phone number to enable mobile payments." }, { status: 400 });
@@ -103,13 +103,14 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: "Insufficient balance. Please deposit funds first." }, { status: 400 });
         }
         try {
-          // Trigger STK push — nTZS minted directly to settlement pool
+          // Trigger STK push — nTZS minted to settlement pool on confirmation
           const deposit = await ntzs.deposits.create({
             userId: PLATFORM_NTZS_USER_ID,
             amountTzs,
             phone: user.phone,
           });
-          // Record as pending deposit tied to this trade
+          // Record PENDING deposit — balance credited by webhook/sync on confirmation
+          // Do NOT credit balance here. Trade retries automatically once confirmed.
           await prisma.transaction.create({
             data: {
               userId: session.userId,
@@ -120,14 +121,14 @@ export async function POST(req: NextRequest) {
               phone: user.phone,
             },
           });
-          // Credit DB balance immediately so the trade can proceed below
-          await prisma.user.update({
-            where: { id: session.userId },
-            data: { balanceTzs: { increment: amountTzs } },
-          });
-          // Refresh local user balance
-          user.balanceTzs = (user.balanceTzs || 0) + amountTzs;
-          console.log(`[Trade] STK push initiated for ${amountTzs} TZS — user ${session.userId}, phone ${user.phone}`);
+          // Return 402 — frontend shows "approve on phone" and retries trade on confirmation
+          return NextResponse.json({
+            paymentRequired: true,
+            depositId: deposit.id,
+            amountTzs,
+            phone: user.phone,
+            message: `STK push sent to ${user.phone}. Approve on your phone to complete the trade.`,
+          }, { status: 402 });
         } catch (stkErr) {
           console.error("[Trade] STK push failed:", stkErr);
           return NextResponse.json({ error: "Payment failed. Please deposit funds first or try again." }, { status: 400 });
