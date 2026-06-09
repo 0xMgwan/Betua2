@@ -75,12 +75,12 @@ export default function WalletPage() {
     }
   }, [fetchUser]);
 
-  // Poll aggressively (every 3s) while any deposit is PENDING
+  // Poll every 3s while any deposit or withdrawal is PENDING
   useEffect(() => {
-    const hasPendingDeposit = transactions.some(
-      (tx) => tx.status === "PENDING" && tx.type === "DEPOSIT"
+    const hasPending = transactions.some(
+      (tx) => tx.status === "PENDING" && (tx.type === "DEPOSIT" || tx.type === "WITHDRAWAL")
     );
-    if (!hasPendingDeposit) return;
+    if (!hasPending) return;
     const interval = setInterval(() => syncStatus(true), 3000);
     return () => clearInterval(interval);
   }, [transactions, syncStatus]);

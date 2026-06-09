@@ -170,6 +170,8 @@ export const ntzs = {
         body: JSON.stringify(payload),
       });
     },
+    get: (withdrawalId: string) =>
+      ntzsRequest<NtzsWithdrawal>(`/withdrawals/${withdrawalId}`),
   },
 
   // Swap API - swap between nTZS and USDC on Base

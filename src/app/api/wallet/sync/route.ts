@@ -24,10 +24,9 @@ export async function GET() {
       if (tx.type === "DEPOSIT" && tx.ntzsDepositId) {
         const deposit = await ntzs.deposits.get(tx.ntzsDepositId);
         const isConfirmed = deposit.status === "minted";
-        const isFailed = deposit.status === "failed";
+        const isFailed    = deposit.status === "failed";
 
         if (isConfirmed) {
-          // Credit DB balance and mark COMPLETED atomically
           await prisma.$transaction([
             prisma.transaction.update({ where: { id: tx.id }, data: { status: "COMPLETED" } }),
             prisma.user.update({
@@ -39,6 +38,29 @@ export async function GET() {
           updated++;
         } else if (isFailed) {
           await prisma.transaction.update({ where: { id: tx.id }, data: { status: "FAILED" } });
+          updated++;
+        }
+      }
+
+      if (tx.type === "WITHDRAWAL" && tx.ntzsWithdrawId) {
+        const withdrawal = await ntzs.withdrawals.get(tx.ntzsWithdrawId);
+        // nTZS withdrawal statuses: "completed" | "failed" | "pending"
+        const isConfirmed = withdrawal.status === "completed" || withdrawal.status === "minted";
+        const isFailed    = withdrawal.status === "failed";
+
+        if (isConfirmed) {
+          // Balance was already debited at initiation — just mark COMPLETED
+          await prisma.transaction.update({ where: { id: tx.id }, data: { status: "COMPLETED" } });
+          updated++;
+        } else if (isFailed) {
+          // Reverse the deduction
+          await prisma.$transaction([
+            prisma.transaction.update({ where: { id: tx.id }, data: { status: "FAILED" } }),
+            prisma.user.update({
+              where: { id: session.userId },
+              data: { balanceTzs: { increment: tx.amountTzs } },
+            }),
+          ]);
           updated++;
         }
       }

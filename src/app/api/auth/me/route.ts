@@ -21,37 +21,29 @@ export async function GET() {
     });
     if (!user) return NextResponse.json({ user: null });
 
-    // DB is the source of truth for deposits under the custodial pool model.
-    // For legacy users with a personal nTZS wallet, also read their on-chain
-    // balance and show whichever is higher — this covers the transition period
-    // where some balance may still be in the personal wallet.
+    // DB is the source of truth — all deposits/withdrawals/trades update balanceTzs directly.
+    // For legacy users whose nTZS wallet still holds unmigrated funds (not yet reflected in DB),
+    // we add the difference so they don't lose visibility of those funds.
     let balanceTzs  = Math.max(0, user.balanceTzs  || 0);
     let balanceUsdc = Math.max(0, user.balanceUsdc  || 0);
     const balanceKes = Math.max(0, user.balanceKes  || 0);
 
-    if (user.ntzsUserId) {
+    if (user.ntzsUserId && balanceTzs === 0) {
+      // Only check nTZS wallet when DB shows 0 — avoids overriding correct DB balance
+      // (e.g. after a withdrawal the DB is lower but nTZS wallet may lag)
       try {
         const bal = await ntzs.users.getBalance(user.ntzsUserId);
         const ntzsTzs  = Math.max(0, bal.balanceTzs  || 0);
         const ntzsUsdc = Math.max(0, bal.balanceUsdc  || 0);
-
-        // Use whichever is higher — DB gets credited by deposits,
-        // nTZS wallet may still hold legacy funds. Never let nTZS overwrite
-        // a higher DB balance (which reflects recent deposits to the pool).
-        balanceTzs  = Math.max(balanceTzs,  ntzsTzs);
-        balanceUsdc = Math.max(balanceUsdc, ntzsUsdc);
+        if (ntzsTzs > 0)  balanceTzs  = ntzsTzs;
+        if (ntzsUsdc > 0) balanceUsdc = ntzsUsdc;
       } catch {
-        // nTZS API unavailable — DB balance is already set above
+        // nTZS API unavailable — DB value already used
       }
     }
 
     return NextResponse.json({
-      user: {
-        ...user,
-        balanceTzs,
-        balanceUsdc,
-        balanceKes,
-      }
+      user: { ...user, balanceTzs, balanceUsdc, balanceKes }
     });
   } catch (err) {
     console.error("[Auth/me] Error:", err);
