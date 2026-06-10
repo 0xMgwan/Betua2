@@ -76,6 +76,18 @@ export async function GET() {
     return { ...u, balanceTzs, balanceUsdc };
   }));
 
+  // Total outstanding fixed-odds payout obligations on open markets
+  const openPositions = await prisma.position.findMany({
+    where: { redeemed: false, market: { status: "OPEN" } },
+    select: { yesImpliedPayout: true, noImpliedPayout: true, optionImpliedPayouts: true },
+  });
+  const totalImpliedLiability = openPositions.reduce((s, p) => {
+    const yes = (p as any).yesImpliedPayout || 0;
+    const no  = (p as any).noImpliedPayout  || 0;
+    const opt = Object.values((p as any).optionImpliedPayouts || {}).reduce((a: number, v) => a + (v as number), 0);
+    return s + Math.max(yes, no, opt as number); // worst-case per position
+  }, 0);
+
   // Platform summary
   const totalBalanceTzs = users.reduce((s, u) => s + (u.balanceTzs || 0), 0);
   const totalVolume = markets.reduce((s, m) => s + m.totalVolume, 0);
@@ -92,7 +104,7 @@ export async function GET() {
     .reduce((s, t) => s + t._count, 0);
 
   return NextResponse.json({
-    summary: { totalUsers: users.length, totalBalanceTzs, totalVolume, openMarkets, resolvedMarkets, totalDeposits, totalWithdrawals, totalTrades },
+    summary: { totalUsers: users.length, totalBalanceTzs, totalVolume, openMarkets, resolvedMarkets, totalDeposits, totalWithdrawals, totalTrades, totalImpliedLiability },
     users,
     markets,
     transactions,
