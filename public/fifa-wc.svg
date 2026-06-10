@@ -1,23 +1,37 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <!-- Background -->
-  <rect width="64" height="64" rx="8" fill="#1a1a2e"/>
-  <!-- Trophy cup body -->
-  <path d="M22 14h20v2H22z" fill="#FFD700"/>
-  <path d="M24 16c0 8 4 14 8 16c4-2 8-8 8-16H24z" fill="#FFD700"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!-- Black background -->
+  <rect width="200" height="200" fill="#000"/>
+
+  <!-- "2" numeral left -->
+  <text x="12" y="155" font-family="Arial Black,sans-serif" font-size="155" font-weight="900" fill="#111" letter-spacing="-5">2</text>
+
+  <!-- "6" numeral right -->
+  <text x="105" y="155" font-family="Arial Black,sans-serif" font-size="155" font-weight="900" fill="#111" letter-spacing="-5">6</text>
+
+  <!-- Trophy cup body (gold) -->
+  <ellipse cx="100" cy="58" rx="18" ry="6" fill="#C8960C"/>
+  <path d="M82 58 Q78 80 82 95 Q88 110 100 115 Q112 110 118 95 Q122 80 118 58Z" fill="url(#gold)"/>
   <!-- Trophy handles -->
-  <path d="M24 18c-2 0-4 2-4 5s2 4 4 4" stroke="#FFD700" stroke-width="2" fill="none" stroke-linecap="round"/>
-  <path d="M40 18c2 0 4 2 4 5s-2 4-4 4" stroke="#FFD700" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M82 68 Q68 68 68 80 Q68 90 82 88" stroke="#C8960C" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M118 68 Q132 68 132 80 Q132 90 118 88" stroke="#C8960C" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <!-- Trophy top rim highlight -->
+  <ellipse cx="100" cy="58" rx="18" ry="6" stroke="#F0C040" stroke-width="1.5" fill="none"/>
   <!-- Trophy stem -->
-  <rect x="30" y="32" width="4" height="6" fill="#FFD700"/>
-  <rect x="26" y="38" width="12" height="2.5" fill="#FFD700"/>
-  <rect x="24" y="40.5" width="16" height="2" fill="#FFD700"/>
-  <!-- Soccer ball -->
-  <circle cx="32" cy="52" r="6" fill="white" stroke="#333" stroke-width="0.5"/>
-  <path d="M32 46l2 2-1.5 2.5H31.5L30 48z" fill="#222"/>
-  <path d="M38 50l-2 .5-1.5-2 1-2 2.5.5z" fill="#222"/>
-  <path d="M36.5 55l-1.5-2 .5-2 2.5.5 1 2z" fill="#222"/>
-  <path d="M27.5 55l1-2 2.5-.5.5 2-1.5 2z" fill="#222"/>
-  <path d="M26 50l2.5-.5 1 2-1.5 2L26 53z" fill="#222"/>
-  <!-- FIFA text -->
-  <text x="32" y="10" font-family="monospace" font-size="5" font-weight="bold" fill="#FFD700" text-anchor="middle">FIFA WC</text>
+  <rect x="96" y="115" width="8" height="14" fill="#B8860B"/>
+  <!-- Trophy base -->
+  <rect x="82" y="129" width="36" height="8" rx="2" fill="#2E7D32"/>
+  <text x="100" y="137" font-family="Arial,sans-serif" font-size="5" font-weight="bold" fill="#F0C040" text-anchor="middle">FIFA WORLD CUP</text>
+  <rect x="78" y="137" width="44" height="5" rx="1" fill="#1B5E20"/>
+
+  <!-- FIFA text bottom -->
+  <text x="100" y="188" font-family="Arial Black,sans-serif" font-size="22" font-weight="900" fill="white" text-anchor="middle" letter-spacing="4">FIFA</text>
+
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F0C040"/>
+      <stop offset="40%" stop-color="#C8960C"/>
+      <stop offset="70%" stop-color="#F0C040"/>
+      <stop offset="100%" stop-color="#8B6914"/>
+    </linearGradient>
+  </defs>
 </svg>
