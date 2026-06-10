@@ -1,24 +1,30 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+// Always compute fresh — never serve a cached snapshot
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   try {
-    const [marketVolumeResult, depositsResult, openMarkets, totalTraders, totalTrades, resolvedMarkets] = await Promise.all([
+    const [marketVolumeResult, depositsResult, openMarkets, totalTrades, resolvedMarkets, activeTraderGroups] = await Promise.all([
       prisma.market.aggregate({ _sum: { totalVolume: true } }),
       prisma.transaction.aggregate({
         _sum: { amountTzs: true },
         where: { type: "DEPOSIT", status: "COMPLETED" },
       }),
       prisma.market.count({ where: { status: "OPEN" } }),
-      prisma.user.count(),
-      prisma.trade.count(),
+      // Total real trades — exclude LP seed trades
+      prisma.trade.count({ where: { isLpSeed: false } }),
       prisma.market.count({ where: { status: "RESOLVED" } }),
+      // Active traders = distinct users who placed at least one real (non-seed) trade
+      prisma.trade.groupBy({ by: ["userId"], where: { isLpSeed: false } }),
     ]);
 
-    // Total volume = market volumes (active positions) + all deposits
     const marketVolume = marketVolumeResult._sum.totalVolume || 0;
     const totalDeposits = depositsResult._sum.amountTzs || 0;
     const totalVolume = marketVolume + totalDeposits;
+    const totalTraders = activeTraderGroups.length;
 
     return NextResponse.json({
       totalVolume,
