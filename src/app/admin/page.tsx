@@ -239,7 +239,7 @@ export default function AdminPage() {
               <table className="w-full text-[11px] border-collapse">
                 <thead>
                   <tr className="border-b border-[var(--card-border)]">
-                    {["Title","Category","Creator","Status","Volume","Seed","Trades","Bettors","Resolves","Created"].map(h => (
+                    {["Market ID","Title","Category","Creator","Status","Volume","Seed","Trades","Bettors","Resolves","Created",""].map(h => (
                       <th key={h} className="text-left px-3 py-2 text-[9px] text-[var(--muted)] uppercase tracking-wider font-bold whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -247,9 +247,21 @@ export default function AdminPage() {
                 <tbody>
                   {filteredMarkets.map(m => (
                     <tr key={m.id} className="border-b border-[var(--card-border)]/40 hover:bg-[var(--card)] transition-colors">
-                      <td className="px-3 py-2 max-w-[240px]">
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(m.id); }}
+                          title="Click to copy"
+                          className="flex items-center gap-1.5 group"
+                        >
+                          <span className="text-[10px] font-mono text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors">
+                            {m.id.slice(0, 8)}…
+                          </span>
+                          <span className="text-[9px] text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors opacity-0 group-hover:opacity-100">⎘</span>
+                        </button>
+                      </td>
+                      <td className="px-3 py-2 max-w-[200px]">
                         <a href={`/markets/${m.id}`} target="_blank" className="text-[var(--accent)] hover:underline truncate block" title={m.title}>
-                          {m.title.length > 48 ? m.title.slice(0, 48) + "…" : m.title}
+                          {m.title.length > 40 ? m.title.slice(0, 40) + "…" : m.title}
                         </a>
                       </td>
                       <td className="px-3 py-2 text-[var(--muted)]">{m.category}</td>
@@ -267,6 +279,16 @@ export default function AdminPage() {
                       <td className="px-3 py-2 text-center">{m._count.positions}</td>
                       <td className="px-3 py-2 text-[var(--muted)] whitespace-nowrap">{new Date(m.resolvesAt).toLocaleDateString()}</td>
                       <td className="px-3 py-2 text-[var(--muted)] whitespace-nowrap">{new Date(m.createdAt).toLocaleDateString()}</td>
+                      <td className="px-3 py-2">
+                        {m.status === "RESOLVED" && m.seedAmount > 0 && (
+                          <button
+                            onClick={() => { setLpMarketId(m.id); setTab("tools"); }}
+                            className="text-[9px] font-mono font-bold px-2 py-1 border border-orange-500/30 text-orange-400 hover:bg-orange-500/10 transition-colors whitespace-nowrap"
+                          >
+                            LP Repair →
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
