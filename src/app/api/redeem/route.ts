@@ -179,43 +179,31 @@ export async function POST(req: NextRequest) {
       payoutInUserCurrency = payoutTzs;
     }
 
-    // ── Withdraw payout from settlement pool → user's phone (or wallet) ────
-    // Position is locked (redeemed=true). Settlement pool sends nTZS to the
-    // user's phone number via nTZS withdrawal API.
-    // If the user has a personal ntzsUserId (legacy), send there instead.
-    // On any on-chain error we still credit DB balance — position is already locked.
-    let ntzsTransferId: string | undefined;
-    let ntzsTransferUncertain = false;
+    // ── Credit DB balance only — no auto-send to phone ───────────────────
+    // Winnings stay on platform (DB balance) so users can keep trading.
+    // To cash out, they go to the Wallet page → Withdraw → enter phone number.
+    // The settlement pool holds the funds until they withdraw.
+    //
+    // Exception: legacy users with a personal nTZS wallet get a direct
+    // pool→wallet transfer (same as before migration).
+    const ntzsTransferId: string | undefined = undefined;
+    const ntzsTransferUncertain = false;
     const swapFailed = false;
 
-    if (PLATFORM_NTZS_USER_ID) {
-      try {
-        if (user.ntzsUserId) {
-          // Legacy: user has own wallet — transfer directly
-          const transfer = await ntzs.transfers.create({
-            fromUserId: PLATFORM_NTZS_USER_ID,
-            toUserId: user.ntzsUserId,
-            amountTzs: payoutTzs,
-          });
-          ntzsTransferId = transfer.id;
-        } else if (user.phone) {
-          // New model: withdraw from settlement pool → user's mobile number
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const withdrawal = await (ntzs as any).withdrawals.create({
-            userId: PLATFORM_NTZS_USER_ID,
-            amountTzs: payoutTzs,
-            phone: user.phone,
-          });
-          ntzsTransferId = withdrawal.id;
-        }
-        // If no phone and no wallet, just credit DB balance (fallthrough)
-      } catch (err) {
-        ntzsTransferUncertain = true;
-        console.error("[Redeem] payout transfer error (position locked, proceeding):", err);
-      }
+    if (PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
+      // Legacy: transfer to personal nTZS wallet (these users manage their own funds)
+      ntzs.transfers.create({
+        fromUserId: PLATFORM_NTZS_USER_ID,
+        toUserId: user.ntzsUserId,
+        amountTzs: payoutTzs,
+      }).catch((err) => {
+        console.error("[Redeem] legacy wallet transfer error (DB already credited):", err);
+      });
     }
+    // New model: payout stays in settlement pool, DB balance reflects it.
+    // User withdraws when ready via /api/wallet/withdraw.
 
-    // Effective currency — no swaps in the new pool model, TZS only on-chain
+    // Effective currency
     const effectiveCurrency = preferredCurrency;
 
     // Transfer settlement fee — delayed 1.5s to avoid nonce collision with main transfer
@@ -265,7 +253,7 @@ export async function POST(req: NextRequest) {
       userId: session.userId,
       type: "REDEEM",
       title: "Winnings Redeemed!",
-      message: `Redeemed ${payoutDisplay} from "${position.market.title}"`,
+      message: `${payoutDisplay} added to your wallet from "${position.market.title}". Withdraw anytime from the Wallet page.`,
       link: `/wallet`,
     });
 
