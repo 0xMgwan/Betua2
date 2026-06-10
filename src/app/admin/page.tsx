@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useUser } from "@/store/useUser";
 import { useRouter } from "next/navigation";
 import { formatTZS } from "@/lib/utils";
@@ -42,6 +42,8 @@ export default function AdminPage() {
   const [search, setSearch] = useState("");
   const [reconciling, setReconciling] = useState(false);
   const [reconcileMsg, setReconcileMsg] = useState("");
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   // LP Repair state
   const [lpMarketId, setLpMarketId] = useState("");
@@ -55,14 +57,24 @@ export default function AdminPage() {
 
   const isAdmin = user && (ADMIN_NTZS.includes(user.ntzsUserId || ""));
 
+  const loadDashboard = useCallback(async (isPoll = false) => {
+    if (isPoll) setRefreshing(true);
+    try {
+      const d = await fetch("/api/admin/dashboard").then(r => r.json());
+      setData(d);
+      setLastUpdated(new Date());
+    } catch { /* keep stale data on error */ }
+    finally { setLoading(false); if (isPoll) setRefreshing(false); }
+  }, []);
+
   useEffect(() => {
     if (user && !isAdmin) { router.push("/"); return; }
     if (!user) return;
-    fetch("/api/admin/dashboard")
-      .then(r => r.json())
-      .then(d => { setData(d); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, [user, isAdmin, router]);
+    loadDashboard();
+    // Auto-refresh every 20s so deposits/trades/redeems/seeds reflect live
+    const interval = setInterval(() => loadDashboard(true), 20000);
+    return () => clearInterval(interval);
+  }, [user, isAdmin, router, loadDashboard]);
 
   const handleReconcile = async () => {
     setReconciling(true);
@@ -71,9 +83,7 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/reconcile-balances", { method: "POST" });
       const d = await res.json();
       setReconcileMsg(`✅ Reconciled ${d.usersReconciled} users`);
-      // Refresh data
-      const fresh = await fetch("/api/admin/dashboard").then(r => r.json());
-      setData(fresh);
+      await loadDashboard(true);
     } catch { setReconcileMsg("❌ Failed"); }
     finally { setReconciling(false); }
   };
@@ -112,9 +122,22 @@ export default function AdminPage() {
       <div className="border-b border-[var(--card-border)] px-6 py-4 flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold uppercase tracking-widest">⚙ Admin Dashboard</h1>
-          <p className="text-[10px] text-[var(--muted)] mt-0.5">Guap Platform · {new Date().toLocaleDateString()}</p>
+          <p className="text-[10px] text-[var(--muted)] mt-0.5 flex items-center gap-2">
+            Guap Platform · {new Date().toLocaleDateString()}
+            <span className="flex items-center gap-1">
+              <span className={`w-1.5 h-1.5 rounded-full ${refreshing ? "bg-[#00e5a0] animate-pulse" : "bg-[#00e5a0]/50"}`} />
+              {refreshing ? "Updating…" : lastUpdated ? `Live · updated ${lastUpdated.toLocaleTimeString()}` : "Live"}
+            </span>
+          </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => loadDashboard(true)}
+            disabled={refreshing}
+            className="px-3 py-1.5 text-[10px] font-bold border border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--accent)] hover:border-[var(--accent)]/40 transition-colors disabled:opacity-50"
+          >
+            ⟳ Refresh
+          </button>
           <button
             onClick={handleReconcile}
             disabled={reconciling}
