@@ -23,7 +23,7 @@ interface Summary {
 interface User {
   id: string; username: string; displayName: string; email: string; phone: string;
   country: string; balanceTzs: number; balanceUsdc: number; balanceKes: number;
-  ntzsUserId: string | null; createdAt: string;
+  ntzsUserId: string | null; createdAt: string; systemWallet?: string | null;
   _count: { trades: number; marketsCreated: number; positions: number };
 }
 interface Market {
@@ -262,8 +262,11 @@ export default function AdminPage() {
                 </thead>
                 <tbody>
                   {filteredUsers.map(u => (
-                    <tr key={u.id} className="border-b border-[var(--card-border)]/40 hover:bg-[var(--card)] transition-colors">
-                      <td className="px-3 py-2 font-bold text-[var(--accent)]">@{u.username}</td>
+                    <tr key={u.id} className={`border-b border-[var(--card-border)]/40 transition-colors ${u.systemWallet ? "bg-orange-500/5 hover:bg-orange-500/10" : "hover:bg-[var(--card)]"}`}>
+                      <td className="px-3 py-2 font-bold text-[var(--accent)]">
+                        @{u.username}
+                        {u.systemWallet && <span className="ml-1.5 text-[8px] font-mono px-1 py-0.5 bg-orange-500/20 text-orange-400 align-middle">{u.systemWallet.toUpperCase()}</span>}
+                      </td>
                       <td className="px-3 py-2 text-[var(--muted)]">{u.email}</td>
                       <td className="px-3 py-2 text-[var(--muted)]">{u.phone || "—"}</td>
                       <td className="px-3 py-2">{u.country || "—"}</td>
@@ -277,7 +280,7 @@ export default function AdminPage() {
                       <td className="px-3 py-2 text-center">{u._count.marketsCreated}</td>
                       <td className="px-3 py-2 text-center">{u._count.positions}</td>
                       <td className="px-3 py-2 text-[var(--muted)] text-[9px]">
-                        {u.ntzsUserId ? <span className="text-[#00e5a0]">✓ wallet</span> : <span className="text-[var(--muted)]">DB only</span>}
+                        {u.systemWallet ? <span className="text-orange-400">⚙ house</span> : u.ntzsUserId ? <span className="text-[#00e5a0]">✓ wallet</span> : <span className="text-[var(--muted)]">DB only</span>}
                       </td>
                       <td className="px-3 py-2 text-[var(--muted)]">{new Date(u.createdAt).toLocaleDateString()}</td>
                     </tr>

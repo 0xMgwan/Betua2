@@ -16,6 +16,16 @@ const ADMIN_NTZS = [
   "c458cdc9-db89-408e-a077-dacb72af789d",
 ];
 
+// House/system wallets — these are NOT customers. Their DB balances must be
+// excluded from user-liability totals (they back the platform, not owe users).
+const SYSTEM_WALLETS: Record<string, string> = {
+  "f09f1742-4919-4e11-8591-583a1af280e6": "Settlement Pool",
+  "36de8559-9097-4f46-905c-86877fd0beb7": "Treasury",
+  "548f3ec4-28d4-4a55-8700-5f7236e471a4": "Creation Fee",
+  "f1b1d98b-7141-49a5-b737-14cb8b3e6fb4": "Settlement Fee",
+  "994dcdcc-0bc4-4641-9e94-93e658ede56b": "Admin",
+};
+
 export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -58,22 +68,27 @@ export async function GET() {
   // Sync any higher nTZS wallet balance back to DB so DB becomes accurate going forward
   const { ntzs } = await import('@/lib/ntzs');
   const users = await Promise.all(rawUsers.map(async (u) => {
+    const systemWallet = u.ntzsUserId ? (SYSTEM_WALLETS[u.ntzsUserId] || null) : null;
     let balanceTzs  = Math.max(0, u.balanceTzs  || 0);
     let balanceUsdc = Math.max(0, u.balanceUsdc  || 0);
-    if (u.ntzsUserId && balanceTzs === 0) {
+    // For system wallets, show the live on-chain balance (the truth), don't sync DB
+    if (u.ntzsUserId && (systemWallet || balanceTzs === 0)) {
       try {
         const bal = await ntzs.users.getBalance(u.ntzsUserId);
         const liveTzs  = Math.max(0, bal.balanceTzs  || 0);
         const liveUsdc = Math.max(0, bal.balanceUsdc  || 0);
-        if (liveTzs > balanceTzs) {
+        if (systemWallet) {
+          // House account — always show live on-chain balance
           balanceTzs = liveTzs;
-          // Sync to DB silently
+          balanceUsdc = liveUsdc;
+        } else if (liveTzs > balanceTzs) {
+          balanceTzs = liveTzs;
           prisma.user.update({ where: { id: u.id }, data: { balanceTzs: liveTzs, balanceUsdc: liveUsdc } }).catch(() => {});
+          if (liveUsdc > balanceUsdc) balanceUsdc = liveUsdc;
         }
-        if (liveUsdc > balanceUsdc) balanceUsdc = liveUsdc;
       } catch { /* skip if API down */ }
     }
-    return { ...u, balanceTzs, balanceUsdc };
+    return { ...u, balanceTzs, balanceUsdc, systemWallet };
   }));
 
   // Total outstanding fixed-odds payout obligations on open markets
@@ -106,8 +121,10 @@ export async function GET() {
     } catch { /* nTZS API unavailable */ }
   }
 
-  // Platform summary
-  const totalBalanceTzs = users.reduce((s, u) => s + (u.balanceTzs || 0), 0);
+  // Platform summary — customer liability EXCLUDES house/system wallets
+  const totalBalanceTzs = users
+    .filter(u => !u.systemWallet)
+    .reduce((s, u) => s + (u.balanceTzs || 0), 0);
   const totalVolume = markets.reduce((s, m) => s + m.totalVolume, 0);
   const openMarkets = markets.filter(m => m.status === "OPEN").length;
   const resolvedMarkets = markets.filter(m => m.status === "RESOLVED").length;
