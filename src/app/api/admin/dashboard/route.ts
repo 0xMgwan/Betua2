@@ -28,7 +28,7 @@ export async function GET() {
     ADMIN_NTZS.includes(user?.ntzsUserId || "");
   if (!isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const [users, markets, transactions] = await Promise.all([
+  const [rawUsers, markets, transactions] = await Promise.all([
     prisma.user.findMany({
       select: {
         id: true, username: true, displayName: true, email: true, phone: true,
@@ -53,6 +53,28 @@ export async function GET() {
       _count: true,
     }),
   ]);
+
+  // For legacy users with nTZS wallets: use max(DB, nTZS wallet) — same logic as me/
+  // Sync any higher nTZS wallet balance back to DB so DB becomes accurate going forward
+  const { ntzs } = await import('@/lib/ntzs');
+  const users = await Promise.all(rawUsers.map(async (u) => {
+    let balanceTzs  = Math.max(0, u.balanceTzs  || 0);
+    let balanceUsdc = Math.max(0, u.balanceUsdc  || 0);
+    if (u.ntzsUserId && balanceTzs === 0) {
+      try {
+        const bal = await ntzs.users.getBalance(u.ntzsUserId);
+        const liveTzs  = Math.max(0, bal.balanceTzs  || 0);
+        const liveUsdc = Math.max(0, bal.balanceUsdc  || 0);
+        if (liveTzs > balanceTzs) {
+          balanceTzs = liveTzs;
+          // Sync to DB silently
+          prisma.user.update({ where: { id: u.id }, data: { balanceTzs: liveTzs, balanceUsdc: liveUsdc } }).catch(() => {});
+        }
+        if (liveUsdc > balanceUsdc) balanceUsdc = liveUsdc;
+      } catch { /* skip if API down */ }
+    }
+    return { ...u, balanceTzs, balanceUsdc };
+  }));
 
   // Platform summary
   const totalBalanceTzs = users.reduce((s, u) => s + (u.balanceTzs || 0), 0);

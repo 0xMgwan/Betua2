@@ -42,6 +42,26 @@ export async function POST(req: NextRequest) {
     if (market.status !== "OPEN") return NextResponse.json({ error: "Market is not open" }, { status: 400 });
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
+    // ── Sync nTZS wallet balance → DB for legacy users ────────────────────
+    // me/ endpoint shows nTZS wallet balance, but DB may be lower (historical).
+    // If DB balance < what they're trying to spend, check nTZS wallet and sync.
+    if (user.ntzsUserId && (user.balanceTzs || 0) < 1000) {
+      try {
+        const { balanceTzs: walletTzs, balanceUsdc: walletUsdc } = await ntzs.users.getBalance(user.ntzsUserId);
+        const liveTzs  = Math.max(0, walletTzs  || 0);
+        const liveUsdc = Math.max(0, walletUsdc || 0);
+        if (liveTzs > (user.balanceTzs || 0) || liveUsdc > (user.balanceUsdc || 0)) {
+          // Sync higher balance to DB so trade can proceed
+          await prisma.user.update({
+            where: { id: session.userId },
+            data: { balanceTzs: liveTzs, balanceUsdc: liveUsdc },
+          });
+          user.balanceTzs  = liveTzs;
+          user.balanceUsdc = liveUsdc;
+        }
+      } catch { /* nTZS API unavailable — use DB balance */ }
+    }
+
     // Determine payment currency and convert to TZS for AMM calculations
     // USDC rate: 1 USDC = 2630 TZS
     // Note: amountUsdc from frontend is in USDC (float, e.g., 1.50)
