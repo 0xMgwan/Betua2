@@ -88,6 +88,24 @@ export async function GET() {
     return s + Math.max(yes, no, opt as number); // worst-case per position
   }, 0);
 
+  // Seed capital still locked in open markets (LP seed positions use parimutuel,
+  // so they don't appear in impliedLiability — count seedAmount separately)
+  const openSeedLiability = markets
+    .filter(m => m.status === "OPEN")
+    .reduce((s, m) => s + (m.seedAmount || 0), 0);
+
+  // ── REAL on-chain settlement pool balance (source of truth) ──────────────
+  const POOL_ID = process.env.PLATFORM_NTZS_USER_ID || "";
+  let poolBalanceTzs = 0;
+  let poolBalanceUsdc = 0;
+  if (POOL_ID) {
+    try {
+      const bal = await ntzs.users.getBalance(POOL_ID);
+      poolBalanceTzs = Math.max(0, bal.balanceTzs || 0);
+      poolBalanceUsdc = Math.max(0, bal.balanceUsdc || 0);
+    } catch { /* nTZS API unavailable */ }
+  }
+
   // Platform summary
   const totalBalanceTzs = users.reduce((s, u) => s + (u.balanceTzs || 0), 0);
   const totalVolume = markets.reduce((s, m) => s + m.totalVolume, 0);
@@ -104,7 +122,11 @@ export async function GET() {
     .reduce((s, t) => s + t._count, 0);
 
   return NextResponse.json({
-    summary: { totalUsers: users.length, totalBalanceTzs, totalVolume, openMarkets, resolvedMarkets, totalDeposits, totalWithdrawals, totalTrades, totalImpliedLiability },
+    summary: {
+      totalUsers: users.length, totalBalanceTzs, totalVolume, openMarkets, resolvedMarkets,
+      totalDeposits, totalWithdrawals, totalTrades, totalImpliedLiability, openSeedLiability,
+      poolBalanceTzs, poolBalanceUsdc,
+    },
     users,
     markets,
     transactions,

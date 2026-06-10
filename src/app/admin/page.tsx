@@ -18,6 +18,7 @@ interface Summary {
   totalUsers: number; totalBalanceTzs: number; totalVolume: number;
   openMarkets: number; resolvedMarkets: number; totalDeposits: number;
   totalWithdrawals: number; totalTrades: number; totalImpliedLiability: number;
+  openSeedLiability: number; poolBalanceTzs: number; poolBalanceUsdc: number;
 }
 interface User {
   id: string; username: string; displayName: string; email: string; phone: string;
@@ -167,19 +168,24 @@ export default function AdminPage() {
 
             {/* Settlement pool info */}
             <div className="p-4 bg-orange-500/5 border border-orange-500/20">
-              <p className="text-[10px] text-orange-400 uppercase font-bold mb-2">Settlement Pool</p>
+              <p className="text-[10px] text-orange-400 uppercase font-bold mb-2">Settlement Pool (on-chain)</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px]">
                 <div><span className="text-[var(--muted)]">Pool wallet: </span><span className="text-[var(--foreground)] text-[10px]">f09f1742-4919-4e11-8591-583a1af280e6</span></div>
-                <div><span className="text-[var(--muted)]">Net flow: </span><span className={s.totalDeposits >= s.totalWithdrawals ? "text-[#00e5a0]" : "text-red-400"}>{formatTZS(s.totalDeposits - s.totalWithdrawals)}</span></div>
-                <div><span className="text-[var(--muted)]">DB liability: </span><span className="text-orange-400">{formatTZS(s.totalBalanceTzs)}</span></div>
+                <div><span className="text-[var(--muted)]">Live nTZS balance: </span><span className="font-bold text-[#00e5a0]">{formatTZS(s.poolBalanceTzs)}</span></div>
+                <div><span className="text-[var(--muted)]">Live USDC: </span><span className="font-bold">{s.poolBalanceUsdc > 0 ? `$${s.poolBalanceUsdc.toFixed(2)}` : "—"}</span></div>
               </div>
             </div>
 
-            {/* Pool health */}
+            {/* Pool health — based on REAL on-chain balance */}
             {(() => {
-              const liability = s.totalBalanceTzs + s.totalImpliedLiability;
-              const netFlow   = s.totalDeposits - s.totalWithdrawals;
-              const coverage  = netFlow > 0 ? Math.round((netFlow / Math.max(1, liability)) * 100) : 0;
+              // Total liability the pool must be able to cover:
+              //  - what users can withdraw right now (DB balances)
+              //  - worst-case fixed-odds payouts on open positions
+              //  - seed capital locked in open markets (LP positions, parimutuel)
+              const liability = s.totalBalanceTzs + s.totalImpliedLiability + s.openSeedLiability;
+              const poolReal  = s.poolBalanceTzs; // actual on-chain wallet balance
+              const coverage  = liability > 0 ? Math.round((poolReal / liability) * 100) : (poolReal > 0 ? 999 : 0);
+              const surplus   = poolReal - liability;
               const healthy   = coverage >= 100;
               const warning   = coverage >= 70 && coverage < 100;
               return (
@@ -188,18 +194,23 @@ export default function AdminPage() {
                     <p className={`text-[10px] uppercase font-bold ${healthy ? "text-[#00e5a0]" : warning ? "text-yellow-400" : "text-red-400"}`}>
                       {healthy ? "✓ Pool Health: Solvent" : warning ? "⚠ Pool Health: Watch" : "✗ Pool Health: At Risk"}
                     </p>
-                    <span className={`text-lg font-black tabular-nums ${healthy ? "text-[#00e5a0]" : warning ? "text-yellow-400" : "text-red-400"}`}>{coverage}%</span>
+                    <span className={`text-lg font-black tabular-nums ${healthy ? "text-[#00e5a0]" : warning ? "text-yellow-400" : "text-red-400"}`}>{coverage >= 999 ? "∞" : `${coverage}%`}</span>
                   </div>
                   <div className="w-full bg-[var(--card-border)] h-1.5 mb-3">
                     <div className={`h-full transition-all ${healthy ? "bg-[#00e5a0]" : warning ? "bg-yellow-400" : "bg-red-400"}`} style={{ width: `${Math.min(100, coverage)}%` }} />
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px]">
-                    <div><span className="text-[var(--muted)]">Net deposits (pool): </span><span className="font-bold">{formatTZS(netFlow)}</span></div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[11px]">
+                    <div><span className="text-[var(--muted)]">Pool balance (real): </span><span className="font-bold text-[#00e5a0]">{formatTZS(poolReal)}</span></div>
                     <div><span className="text-[var(--muted)]">User balances (DB): </span><span className="font-bold">{formatTZS(s.totalBalanceTzs)}</span></div>
-                    <div><span className="text-[var(--muted)]">Max payout obligation: </span><span className="font-bold text-orange-400">{formatTZS(s.totalImpliedLiability)}</span></div>
+                    <div><span className="text-[var(--muted)]">Open payouts: </span><span className="font-bold text-orange-400">{formatTZS(s.totalImpliedLiability)}</span></div>
+                    <div><span className="text-[var(--muted)]">Locked seed: </span><span className="font-bold text-orange-400">{formatTZS(s.openSeedLiability)}</span></div>
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-[var(--card-border)] flex items-center justify-between text-[11px]">
+                    <span className="text-[var(--muted)]">Total liability: <span className="font-bold text-[var(--foreground)]">{formatTZS(liability)}</span></span>
+                    <span className="text-[var(--muted)]">Surplus / (deficit): <span className={`font-bold ${surplus >= 0 ? "text-[#00e5a0]" : "text-red-400"}`}>{formatTZS(surplus)}</span></span>
                   </div>
                   <p className="text-[9px] text-[var(--muted)] mt-2">
-                    Coverage = net deposits ÷ (user balances + worst-case payout obligations). Pool needs ≥ 100% to guarantee all payouts.
+                    Coverage = real on-chain pool balance ÷ (user balances + open payout obligations + locked seed). Pool needs ≥ 100% to guarantee all payouts. Reads live from nTZS wallet f09f1742.
                   </p>
                 </div>
               );
