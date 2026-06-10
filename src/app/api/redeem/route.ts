@@ -179,29 +179,14 @@ export async function POST(req: NextRequest) {
       payoutInUserCurrency = payoutTzs;
     }
 
-    // ── Credit DB balance only — no auto-send to phone ───────────────────
-    // Winnings stay on platform (DB balance) so users can keep trading.
-    // To cash out, they go to the Wallet page → Withdraw → enter phone number.
-    // The settlement pool holds the funds until they withdraw.
-    //
-    // Exception: legacy users with a personal nTZS wallet get a direct
-    // pool→wallet transfer (same as before migration).
+    // ── Credit DB balance only — unified custodial model ─────────────────
+    // Winnings stay in the settlement pool; the DB balance is the claim on it.
+    // Users cash out via Wallet → Withdraw (pool → phone). This applies to
+    // EVERYONE including legacy users — no direct pool→personal-wallet transfer,
+    // which previously double-credited (DB + wallet) and let funds be withdrawn twice.
     const ntzsTransferId: string | undefined = undefined;
     const ntzsTransferUncertain = false;
     const swapFailed = false;
-
-    if (PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
-      // Legacy: transfer to personal nTZS wallet (these users manage their own funds)
-      ntzs.transfers.create({
-        fromUserId: PLATFORM_NTZS_USER_ID,
-        toUserId: user.ntzsUserId,
-        amountTzs: payoutTzs,
-      }).catch((err) => {
-        console.error("[Redeem] legacy wallet transfer error (DB already credited):", err);
-      });
-    }
-    // New model: payout stays in settlement pool, DB balance reflects it.
-    // User withdraws when ready via /api/wallet/withdraw.
 
     // Effective currency
     const effectiveCurrency = preferredCurrency;
