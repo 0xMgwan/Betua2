@@ -100,6 +100,7 @@ export const CATEGORIES = [
 ];
 
 export const SPORTS_SUBCATEGORIES = [
+  { value: "FIFA World Cup", label: "World Cup", icon: "/fifa-wc.svg" },
   { value: "EPL", label: "Premier League", icon: "/epl.jpg" },
   { value: "La Liga", label: "La Liga", icon: "/la liga.jpg" },
   { value: "Serie A", label: "Serie A", icon: "/serie a.png" },
