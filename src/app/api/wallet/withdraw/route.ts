@@ -26,13 +26,36 @@ export async function POST(req: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
-    select: { id: true, balanceTzs: true },
+    select: { id: true, balanceTzs: true, ntzsUserId: true },
   });
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-  if ((user.balanceTzs || 0) < amountTzs) {
+  // Determine the funding source for this withdrawal:
+  //  - "pool":   custodial users — DB balance backed by settlement pool
+  //  - "wallet": legacy users whose funds still sit in their personal nTZS wallet
+  //              (DB balance shows lower than what the wallet holds)
+  let dbBalance = user.balanceTzs || 0;
+  let source: "pool" | "wallet" = "pool";
+
+  if (dbBalance < amountTzs && user.ntzsUserId) {
+    // Check their personal nTZS wallet — they may have legacy funds there
+    try {
+      const { balanceTzs: walletTzs } = await ntzs.users.getBalance(user.ntzsUserId);
+      if ((walletTzs || 0) >= amountTzs) {
+        source = "wallet";
+        // Sync DB to reflect the personal wallet balance so accounting is consistent
+        dbBalance = Math.max(dbBalance, walletTzs || 0);
+        await prisma.user.update({
+          where: { id: session.userId },
+          data: { balanceTzs: dbBalance },
+        });
+      }
+    } catch { /* nTZS API down — fall through to insufficient check below */ }
+  }
+
+  if (dbBalance < amountTzs) {
     return NextResponse.json({
-      error: `Insufficient balance. Available: ${(user.balanceTzs || 0).toLocaleString()} TZS`,
+      error: `Insufficient balance. Available: ${dbBalance.toLocaleString()} TZS`,
     }, { status: 400 });
   }
 
@@ -54,13 +77,16 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
-    // Settlement pool sends nTZS → user's phone
+    // Send nTZS → user's phone from the correct source:
+    //  - legacy "wallet": from the user's own personal nTZS wallet
+    //  - custodial "pool": from the settlement pool
     // Mark COMPLETED immediately on successful API call — if nTZS accepted it, it will be sent.
     // webhook withdrawal.failed will reverse if something goes wrong on nTZS side.
+    const fromUserId = source === "wallet" && user.ntzsUserId ? user.ntzsUserId : PLATFORM_NTZS_USER_ID;
     let withdrawalId: string | undefined;
     try {
       const withdrawal = await ntzs.withdrawals.create({
-        userId: PLATFORM_NTZS_USER_ID,
+        userId: fromUserId,
         amountTzs,
         phone,
       });
