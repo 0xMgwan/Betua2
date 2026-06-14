@@ -26,7 +26,7 @@ function formatTZS(amount: number): string {
   return amount.toLocaleString();
 }
 
-export function ActivityTicker({ className, marketIds }: { className?: string; marketIds?: string[] }) {
+export function ActivityTicker({ className, marketIds, compact }: { className?: string; marketIds?: string[]; compact?: boolean }) {
   const { locale } = useLanguage();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -78,6 +78,44 @@ export function ActivityTicker({ className, marketIds }: { className?: string; m
   const isTrade = activity.type === "TRADE";
   const isBuy = isTrade && !activity.details.side?.startsWith("SELL");
   const side = activity.details.side || "";
+
+  // ── Compact single-line ticker (Limitless style) ──────────────────────
+  if (compact) {
+    return (
+      <div className={cn("bg-[var(--background)] border-b border-[var(--card-border)] overflow-hidden", className)}>
+        <Link href={`/markets/${activity.market.id}`}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activity.id}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.25 }}
+              className="flex items-center gap-1.5 px-3 py-1.5 font-mono text-[11px] whitespace-nowrap overflow-hidden"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse shrink-0" />
+              <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--accent)] shrink-0">LIVE</span>
+              <span className="text-[var(--muted)] shrink-0">·</span>
+              <span className="text-[var(--foreground)] font-bold shrink-0">@{activity.user.username}</span>
+              {isTrade ? (
+                <span className={cn("font-bold shrink-0", isBuy ? "text-[var(--accent)]" : "text-red-400")}>
+                  {isBuy ? (locale === "sw" ? "alinunua" : "bought") : (locale === "sw" ? "aliuza" : "sold")} {side}
+                </span>
+              ) : (
+                <span className="text-purple-400 font-bold shrink-0">{locale === "sw" ? "alitatua" : "resolved"} → {activity.details.outcome}</span>
+              )}
+              {isTrade && activity.details.amountTzs && (
+                <span className={cn("font-bold shrink-0", isBuy ? "text-[var(--accent)]" : "text-red-400")}>
+                  {isBuy ? "+" : "-"}{formatTZS(activity.details.amountTzs)}
+                </span>
+              )}
+              <span className="text-[var(--muted)] truncate min-w-0">— {activity.market.title}</span>
+            </motion.div>
+          </AnimatePresence>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("bg-[var(--card)] border border-[var(--card-border)] overflow-hidden", className)}>

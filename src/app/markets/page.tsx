@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
@@ -412,16 +412,13 @@ function MarketsContent() {
 
   return (
     <div className="min-h-screen">
+      {/* Live activity ticker — single line, pinned at the very top above the navbar */}
+      <ActivityTicker compact />
       <Navbar />
       <OnboardingPopup />
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* First-deposit prompt for funded-less users */}
         <FirstDepositPrompt />
-
-        {/* Activity Ticker - Shows on all screen sizes */}
-        <div className="mb-6">
-          <ActivityTicker />
-        </div>
 
         {/* Header — title on left, Deposit + Create inline on the right */}
         <div className="flex items-start justify-between gap-2 mb-8">
@@ -482,14 +479,14 @@ function MarketsContent() {
             </div>
           </div>
 
-          {/* Categories — wrap so all are visible at once (no sideways scroll) */}
-          <div className="flex flex-wrap gap-1.5">
+          {/* Categories — smooth horizontal swipe with scroll-snap (betPawa/Limitless style) */}
+          <div className="flex gap-2 overflow-x-auto scrollbar-none snap-x snap-mandatory pb-1 -mx-1 px-1 scroll-smooth">
             {["all", ...CATEGORIES].map((c) => (
               <button
                 key={c}
                 onClick={() => { setCategory(c); setSubCategory("all"); }}
                 className={cn(
-                  "px-3 py-1.5 rounded-full text-[13px] transition-all font-mono whitespace-nowrap",
+                  "shrink-0 snap-start px-3.5 py-1.5 rounded-full text-[13px] transition-all font-mono whitespace-nowrap",
                   category === c
                     ? "border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold"
                     : "border border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--foreground)] hover:text-[var(--foreground)]"
@@ -605,40 +602,62 @@ function MarketsContent() {
               allItems.push({ type: 'market', market: m });
             });
 
+            const renderItem = (item: typeof allItems[number], i: number): ReactNode => {
+              if (item.type === 'event') {
+                const firstMarket = item.markets[0];
+                const eventData = item.event as { id: string; title: string; imageUrl?: string; category?: string; subCategory?: string };
+                const eventImage = eventData.imageUrl || firstMarket.imageUrl;
+                const eventCategory = eventData.category || firstMarket.category;
+                const eventSubCategory = eventData.subCategory || firstMarket.subCategory;
+                return (
+                  <EventCard
+                    eventId={item.eventId}
+                    eventTitle={eventData.title}
+                    markets={item.markets as EventMarket[]}
+                    category={eventCategory}
+                    subCategory={eventSubCategory}
+                    imageUrl={eventImage}
+                    index={i}
+                  />
+                );
+              }
+              return (
+                <MarketCard
+                  market={item.market as unknown as Parameters<typeof MarketCard>[0]["market"]}
+                  index={i}
+                />
+              );
+            };
+
+            // Featured = first few items, shown as a swipeable one-card-at-a-time carousel
+            const featured = allItems.slice(0, Math.min(5, allItems.length));
+            const rest = allItems;
+
             return (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {allItems.map((item, i) => {
-                  if (item.type === 'event') {
-                    const firstMarket = item.markets[0];
-                    const eventData = item.event as { id: string; title: string; imageUrl?: string; category?: string; subCategory?: string };
-                    // Use event's image/category if available, fall back to first market
-                    const eventImage = eventData.imageUrl || firstMarket.imageUrl;
-                    const eventCategory = eventData.category || firstMarket.category;
-                    const eventSubCategory = eventData.subCategory || firstMarket.subCategory;
-                    
-                    return (
-                      <EventCard
-                        key={item.eventId}
-                        eventId={item.eventId}
-                        eventTitle={eventData.title}
-                        markets={item.markets as EventMarket[]}
-                        category={eventCategory}
-                        subCategory={eventSubCategory}
-                        imageUrl={eventImage}
-                        index={i}
-                      />
-                    );
-                  } else {
-                    return (
-                      <MarketCard
-                        key={item.market.id}
-                        market={item.market as unknown as Parameters<typeof MarketCard>[0]["market"]}
-                        index={i}
-                      />
-                    );
-                  }
-                })}
-              </div>
+              <>
+                {/* Featured carousel — one card per view, swipe to the next (mobile) */}
+                {featured.length > 1 && (
+                  <div className="mb-6 sm:hidden">
+                    <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-[var(--muted)] mb-2">★ Featured</p>
+                    <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-none -mx-4 px-4 pb-1">
+                      {featured.map((item, i) => (
+                        <div key={`feat-${item.type === 'event' ? item.eventId : item.market.id}`} className="snap-center shrink-0 w-[88%]">
+                          {renderItem(item, i)}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Normal market grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {rest.map((item, i) => (
+                    <div key={item.type === 'event' ? item.eventId : item.market.id}>
+                      {renderItem(item, i)}
+                    </div>
+                  ))}
+                </div>
+              </>
             );
           })()
         )}

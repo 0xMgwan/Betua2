@@ -7,7 +7,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS } from "@/lib/utils";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { FloppyDisk, ChartBar, TrendUp, Medal, Upload, X, Copy, Check, Users, Gift, ArrowsLeftRight, Storefront, Star, Lightning } from "@phosphor-icons/react";
+import { FloppyDisk, ChartBar, TrendUp, Medal, Upload, X, Copy, Check, Users, Gift, ArrowsLeftRight, Storefront, Star, Lightning, SignOut } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/store/useCurrency";
 
@@ -47,7 +47,7 @@ interface CreatorRewardsData {
 }
 
 export default function ProfilePage() {
-  const { user, setUser, fetchUser } = useUser();
+  const { user, setUser, fetchUser, logout } = useUser();
   const { t, locale } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
@@ -716,6 +716,15 @@ export default function ProfilePage() {
                   {uploadingAvatar ? t.profile.uploading : loading ? t.profile.saving : saved ? t.profile.saved : t.profile.saveChanges}
                 </button>
               </form>
+
+              {/* Sign Out — at the bottom, below Save Changes */}
+              <button
+                onClick={() => logout()}
+                className="w-full mt-4 flex items-center justify-center gap-2 py-3 border-2 border-red-500/40 text-red-500 font-mono font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-red-500/10 transition-all active:scale-95"
+              >
+                <SignOut size={15} weight="bold" />
+                {locale === "sw" ? "Toka" : "Sign Out"}
+              </button>
             </div>
           </div>
         </div>

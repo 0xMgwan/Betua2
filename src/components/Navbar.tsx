@@ -302,17 +302,6 @@ export function Navbar() {
 
           {user ? (
             <>
-              {/* Avatar — links directly to profile (no dropdown) */}
-              <Link
-                href="/profile"
-                className="shrink-0 hover:opacity-80 transition-opacity"
-                title={user.username}
-              >
-                <div className="w-8 h-8 border-2 border-[var(--foreground)] flex items-center justify-center text-[var(--foreground)] font-bold text-sm">
-                  {user.username?.[0]?.toUpperCase()}
-                </div>
-              </Link>
-
               {/* Wallet balance — far right, all screens (links to wallet) */}
               <Link
                 href="/wallet"
