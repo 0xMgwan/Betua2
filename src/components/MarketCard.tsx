@@ -352,34 +352,38 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-2 mb-3">
-                  <div className="flex gap-1">
+                  {/* YES — big bold odds button (betPawa style) */}
+                  <div className="relative">
                     <button
                       onClick={(e) => handleQuickBuy(e, "YES")}
-                      className="flex-1 py-2 px-2 bg-[#00e5a0]/8 border border-[#00e5a0]/50 text-[#00e5a0] font-mono font-bold text-[10px] uppercase tracking-wider transition-all hover:bg-[#00e5a0]/15 hover:border-[#00e5a0] active:scale-[0.97]"
+                      className="w-full py-3.5 px-3 bg-[#00e5a0]/10 border-2 border-[#00e5a0]/50 text-[#00e5a0] font-mono transition-all hover:bg-[#00e5a0]/20 hover:border-[#00e5a0] active:scale-[0.97] flex flex-col items-center gap-0.5"
                     >
-                      Yes @ {formatPrice(market.price.yes)} <span className="opacity-70">({(1 / market.price.yes).toFixed(2)}x)</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">YES</span>
+                      <span className="text-xl font-black leading-none">{(1 / market.price.yes).toFixed(2)}<span className="text-xs">x</span></span>
                     </button>
                     <button
                       onClick={(e) => handleAddToCart(e, "YES")}
-                      className={`px-2 border transition-all active:scale-95 ${cartAdded === 'YES' ? 'bg-[#00e5a0] border-[#00e5a0] text-black scale-110' : 'bg-[#00e5a0]/8 border-[#00e5a0]/50 text-[#00e5a0] hover:bg-[#00e5a0]/15'}`}
+                      className={`absolute top-1 right-1 p-1 border transition-all active:scale-95 ${cartAdded === 'YES' ? 'bg-[#00e5a0] border-[#00e5a0] text-black' : 'bg-[var(--background)]/60 border-[#00e5a0]/40 text-[#00e5a0] hover:bg-[#00e5a0]/15'}`}
                       title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
                     >
-                      {cartAdded === 'YES' ? <Check size={14} weight="bold" /> : <ShoppingCart size={14} weight="bold" />}
+                      {cartAdded === 'YES' ? <Check size={12} weight="bold" /> : <ShoppingCart size={12} weight="bold" />}
                     </button>
                   </div>
-                  <div className="flex gap-1">
+                  {/* NO — big bold odds button */}
+                  <div className="relative">
                     <button
                       onClick={(e) => handleQuickBuy(e, "NO")}
-                      className="flex-1 py-2 px-2 bg-red-500/8 border border-red-500/50 text-red-400 font-mono font-bold text-[10px] uppercase tracking-wider transition-all hover:bg-red-500/15 hover:border-red-500 active:scale-[0.97]"
+                      className="w-full py-3.5 px-3 bg-red-500/10 border-2 border-red-500/50 text-red-400 font-mono transition-all hover:bg-red-500/20 hover:border-red-500 active:scale-[0.97] flex flex-col items-center gap-0.5"
                     >
-                      No @ {formatPrice(market.price.no)} <span className="opacity-70">({(1 / market.price.no).toFixed(2)}x)</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">NO</span>
+                      <span className="text-xl font-black leading-none">{(1 / market.price.no).toFixed(2)}<span className="text-xs">x</span></span>
                     </button>
                     <button
                       onClick={(e) => handleAddToCart(e, "NO")}
-                      className={`px-2 border transition-all active:scale-95 ${cartAdded === 'NO' ? 'bg-[#00e5a0] border-[#00e5a0] text-black scale-110' : 'bg-red-500/8 border-red-500/50 text-red-400 hover:bg-red-500/15'}`}
+                      className={`absolute top-1 right-1 p-1 border transition-all active:scale-95 ${cartAdded === 'NO' ? 'bg-[#00e5a0] border-[#00e5a0] text-black' : 'bg-[var(--background)]/60 border-red-500/40 text-red-400 hover:bg-red-500/15'}`}
                       title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
                     >
-                      {cartAdded === 'NO' ? <Check size={14} weight="bold" /> : <ShoppingCart size={14} weight="bold" />}
+                      {cartAdded === 'NO' ? <Check size={12} weight="bold" /> : <ShoppingCart size={12} weight="bold" />}
                     </button>
                   </div>
                 </div>

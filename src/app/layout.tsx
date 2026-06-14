@@ -5,6 +5,7 @@ import { NotificationProvider } from "@/components/NotificationProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { UserProvider } from "@/components/UserProvider";
 import { CartButton, CartModal } from "@/components/Cart";
+import { BottomNav } from "@/components/BottomNav";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -53,9 +54,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <LanguageProvider>
             <UserProvider>
               <NotificationProvider>
-                {children}
+                {/* Bottom padding on mobile so content clears the fixed bottom nav */}
+                <div className="pb-16 md:pb-0">{children}</div>
                 <CartButton />
                 <CartModal />
+                <BottomNav />
               </NotificationProvider>
             </UserProvider>
           </LanguageProvider>
