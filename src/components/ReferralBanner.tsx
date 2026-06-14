@@ -13,30 +13,30 @@ export function ReferralBanner() {
 
   return (
     <Link href={href} className="block group">
-      <div className="relative overflow-hidden rounded-xl border-2 border-[var(--accent)]/30 bg-[var(--card)]">
-        {/* Background gradient + scanlines */}
+      <div className="relative overflow-hidden rounded-xl border-2 border-[#00e5a0]/30 bg-[#001a12]">
+        {/* Background gradient + scanlines (always dark, theme-independent) */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#00251a] via-[#003d2b] to-[#001a12]" />
         <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_3px,rgba(0,229,160,0.04)_3px,rgba(0,229,160,0.04)_5px)]" />
         {/* Glow blob */}
-        <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-[var(--accent)]/20 blur-3xl pointer-events-none" />
+        <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-[#00e5a0]/20 blur-3xl pointer-events-none" />
 
         <div className="relative flex items-center gap-3 p-4">
-          <div className="shrink-0 w-12 h-12 flex items-center justify-center bg-[var(--accent)]/15 border-2 border-[var(--accent)]/40 rounded-lg">
-            <Gift size={26} weight="fill" className="text-[var(--accent)]" />
+          <div className="shrink-0 w-12 h-12 flex items-center justify-center bg-[#00e5a0]/15 border-2 border-[#00e5a0]/40 rounded-lg">
+            <Gift size={26} weight="fill" className="text-[#00e5a0]" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--accent)]/80 mb-0.5">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[#00e5a0]/80 mb-0.5">
               {locale === "sw" ? "Mpango wa Marafiki" : "Referral Program"}
             </p>
             <p className="font-mono font-black text-white text-sm sm:text-base leading-tight">
               {locale === "sw" ? (
-                <>Alika marafiki, pata hadi <span className="text-[var(--accent)]">30%</span> ya ada</>
+                <>Alika marafiki, pata hadi <span className="text-[#00e5a0]">30%</span> ya ada</>
               ) : (
-                <>Refer & earn up to <span className="text-[var(--accent)]">30%</span> in fees</>
+                <>Refer & earn up to <span className="text-[#00e5a0]">30%</span> in fees</>
               )}
             </p>
           </div>
-          <div className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 bg-[var(--accent)] text-black font-mono font-black text-xs uppercase tracking-wider group-hover:opacity-90 transition-opacity">
+          <div className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 bg-[#00e5a0] text-black font-mono font-black text-xs uppercase tracking-wider group-hover:opacity-90 transition-opacity rounded-md">
             {locale === "sw" ? "Anza" : "Invite"}
             <ArrowRight size={14} weight="bold" className="group-hover:translate-x-0.5 transition-transform" />
           </div>

@@ -344,9 +344,21 @@ export function MarketCard({ market, index = 0, hero = false }: { market: Market
           <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, ${catColor}, transparent)` }} />
 
           <div className="p-3">
-            {/* Top row: Subcategory + Status + Timer (category lives in the section header) */}
+            {/* Top row: Category + Subcategory + Status + Timer */}
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
+                <a
+                  href={`/markets?category=${market.category}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    router.push(`/markets?category=${market.category}`);
+                  }}
+                  className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 border hover:opacity-80 transition-opacity cursor-pointer"
+                  style={{ borderColor: `${catColor}50`, color: catColor, backgroundColor: `${catColor}10` }}
+                >
+                  {market.category}
+                </a>
                 {market.status === "RESOLVED" && (
                   <span className="text-[9px] font-mono font-bold text-blue-400 uppercase tracking-wider px-1.5 py-0.5 border border-blue-400/30 bg-blue-400/10">
                     Resolved

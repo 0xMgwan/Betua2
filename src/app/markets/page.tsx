@@ -444,6 +444,42 @@ function MarketsContent() {
             </button>
           ))}
         </div>
+
+        {/* Sub-category chips — shown under the Sports tab (Limitless style) */}
+        {category === "Sports" && (
+          <div className="max-w-7xl mx-auto flex gap-2 overflow-x-auto scrollbar-none snap-x px-3 pb-2 pt-1 border-t border-[var(--card-border)]/50">
+            <button
+              onClick={() => setSubCategory("all")}
+              className={cn(
+                "shrink-0 snap-start px-3 py-1.5 rounded-full text-[12px] font-mono font-bold whitespace-nowrap border transition-colors flex items-center gap-1.5",
+                subCategory === "all"
+                  ? "border-[var(--accent)] text-[var(--accent)] bg-[var(--accent)]/10"
+                  : "border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)]"
+              )}
+            >
+              🏟️ {locale === "sw" ? "Zote" : "All"}
+            </button>
+            {SPORTS_SUBCATEGORIES.map((sub) => (
+              <button
+                key={sub.value}
+                onClick={() => setSubCategory(sub.value)}
+                className={cn(
+                  "shrink-0 snap-start px-3 py-1.5 rounded-full text-[12px] font-mono font-bold whitespace-nowrap border transition-colors flex items-center gap-1.5",
+                  subCategory === sub.value
+                    ? "border-[var(--accent)] text-[var(--accent)] bg-[var(--accent)]/10"
+                    : "border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)]"
+                )}
+              >
+                {sub.icon.startsWith('/') ? (
+                  <Image src={sub.icon} alt={sub.label} width={14} height={14} className="object-contain" />
+                ) : (
+                  <span>{sub.icon}</span>
+                )}
+                {sub.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <OnboardingPopup />
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -488,45 +524,6 @@ function MarketsContent() {
             />
           </div>
 
-          {/* Sports Sub-categories */}
-          {category === "Sports" && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex flex-wrap gap-2"
-            >
-              <button
-                onClick={() => setSubCategory("all")}
-                className={cn(
-                  "px-3 py-1.5 text-xs font-mono font-bold transition-all flex items-center gap-1.5 border",
-                  subCategory === "all"
-                    ? "border-[var(--accent)] text-[var(--accent)] bg-[var(--accent)]/10"
-                    : "border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--accent)]/40 hover:text-[var(--foreground)]"
-                )}
-              >
-                🏟️ {locale === "sw" ? "Zote" : "All"}
-              </button>
-              {SPORTS_SUBCATEGORIES.map((sub) => (
-                <button
-                  key={sub.value}
-                  onClick={() => setSubCategory(sub.value)}
-                  className={cn(
-                    "px-3 py-1.5 text-xs font-mono font-bold transition-all flex items-center gap-1.5 border",
-                    subCategory === sub.value
-                      ? "border-[var(--accent)] text-[var(--accent)] bg-[var(--accent)]/10"
-                      : "border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--accent)]/40 hover:text-[var(--foreground)]"
-                  )}
-                >
-                  {sub.icon.startsWith('/') ? (
-                    <Image src={sub.icon} alt={sub.label} width={16} height={16} className="object-contain" />
-                  ) : (
-                    <span>{sub.icon}</span>
-                  )}
-                  {sub.label}
-                </button>
-              ))}
-            </motion.div>
-          )}
         </div>
 
         {/* Markets Grid */}
@@ -640,11 +637,6 @@ function MarketsContent() {
                   </div>
                 )}
 
-                {/* Referral promo banner */}
-                <div className="mb-6">
-                  <ReferralBanner />
-                </div>
-
                 {/* Grouped sections (Limitless style): category headers outside the cards.
                     In "All" view group by category; within a category group by subcategory. */}
                 {(() => {
@@ -661,26 +653,34 @@ function MarketsContent() {
                   });
 
                   let runningIndex = 0;
-                  return [...groups.entries()].map(([groupName, items]) => (
-                    <section key={groupName} className="mb-8">
-                      {/* Section header — category/subcategory + count, outside the cards */}
-                      <div className="flex items-baseline gap-2 mb-3 border-b border-[var(--card-border)] pb-2">
-                        <h2 className="text-lg font-mono font-black">
-                          {category === "all"
-                            ? (locale === "sw" ? (t.markets.categories as Record<string, string>)[groupName.toLowerCase()] || groupName : groupName)
-                            : groupName}
-                        </h2>
-                        <span className="text-sm font-mono text-[var(--muted)]">({items.length})</span>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {items.map((item) => {
-                          const node = renderItem(item, runningIndex++);
-                          return (
-                            <div key={item.type === 'event' ? item.eventId : item.market.id}>{node}</div>
-                          );
-                        })}
-                      </div>
-                    </section>
+                  return [...groups.entries()].map(([groupName, items], gi) => (
+                    <div key={groupName}>
+                      <section className="mb-8">
+                        {/* Section header — category/subcategory + count, outside the cards */}
+                        <div className="flex items-baseline gap-2 mb-3 border-b border-[var(--card-border)] pb-2">
+                          <h2 className="text-lg font-mono font-black">
+                            {category === "all"
+                              ? (locale === "sw" ? (t.markets.categories as Record<string, string>)[groupName.toLowerCase()] || groupName : groupName)
+                              : groupName}
+                          </h2>
+                          <span className="text-sm font-mono text-[var(--muted)]">({items.length})</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {items.map((item) => {
+                            const node = renderItem(item, runningIndex++);
+                            return (
+                              <div key={item.type === 'event' ? item.eventId : item.market.id}>{node}</div>
+                            );
+                          })}
+                        </div>
+                      </section>
+                      {/* Referral banner injected after the first group (mid-feed, Limitless style) */}
+                      {gi === 0 && (
+                        <div className="mb-8">
+                          <ReferralBanner />
+                        </div>
+                      )}
+                    </div>
                   ));
                 })()}
               </>
