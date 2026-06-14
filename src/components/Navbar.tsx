@@ -10,7 +10,7 @@ import {
   Sun, Moon, TrendUp, ChartBar, Trophy, Wallet,
   User,  Plus, SignOut, List, X, Globe, Bell,
   ShoppingCart, Storefront, Target, PaperPlaneTilt,
-  ArrowDownLeft, CurrencyDollar, Gift, CheckCircle, ArrowUpRight,
+  ArrowDownLeft, CurrencyDollar, Gift, CheckCircle,
 } from "@phosphor-icons/react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
@@ -56,7 +56,6 @@ export function Navbar() {
   const { locale, setLocale, t } = useLanguage();
   const { format: formatBalance, currency: displayCurrency } = useCurrency();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   
   // Get actual balance based on selected currency — clamp to 0
@@ -165,17 +164,6 @@ export function Navbar() {
 
         {/* Right */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Wallet balance pill — visible on navbar (links to wallet) */}
-          {user && (
-            <Link
-              href="/wallet"
-              className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 bg-[var(--card)] border border-[var(--card-border)] hover:border-[var(--accent)] transition-all font-mono text-[10px] sm:text-xs font-bold text-[var(--accent)] tabular-nums whitespace-nowrap"
-              title="Wallet balance"
-            >
-              {displayCurrency === 'USDC' ? `$${userBalance.toFixed(2)}` : formatBalance(userBalance)}
-            </Link>
-          )}
-
           {/* Language toggle — visible on all screen sizes */}
           <button
             onClick={() => setLocale(locale === "en" ? "sw" : "en")}
@@ -192,7 +180,6 @@ export function Navbar() {
               <button
                 onClick={() => {
                   setNotifOpen(!notifOpen);
-                  setProfileOpen(false);
                   if (!notifOpen) fetchNotifications();
                 }}
                 className="relative p-2 border border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[var(--accent)] transition-all"
@@ -315,98 +302,25 @@ export function Navbar() {
 
           {user ? (
             <>
-              {/* Deposit — desktop only (hidden on mobile to reduce clutter) */}
+              {/* Avatar — links directly to profile (no dropdown) */}
               <Link
-                href="/wallet#deposit"
-                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 border-2 border-[var(--foreground)] text-[var(--foreground)] text-xs font-mono font-bold tracking-wider hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all uppercase"
+                href="/profile"
+                className="shrink-0 hover:opacity-80 transition-opacity"
+                title={user.username}
               >
-                <ArrowUpRight size={15} />
-                {locale === "sw" ? "Weka" : "Deposit"}
+                <div className="w-8 h-8 border-2 border-[var(--foreground)] flex items-center justify-center text-[var(--foreground)] font-bold text-sm">
+                  {user.username?.[0]?.toUpperCase()}
+                </div>
               </Link>
 
-              {/* Balance — desktop only */}
-              <div className="hidden md:block px-3 py-1.5 bg-[var(--card)] border border-[var(--card-border)] text-[var(--foreground)] text-sm font-medium font-mono">
+              {/* Wallet balance — far right, all screens (links to wallet) */}
+              <Link
+                href="/wallet"
+                className="flex items-center px-2 sm:px-3 py-1.5 bg-[var(--card)] border border-[var(--card-border)] hover:border-[var(--accent)] transition-all font-mono text-[10px] sm:text-sm font-bold text-[var(--accent)] tabular-nums whitespace-nowrap"
+                title="Wallet balance"
+              >
                 {displayCurrency === 'USDC' ? `$${userBalance.toFixed(2)}` : formatBalance(userBalance)}
-              </div>
-
-              {/* Profile dropdown — visible on all screen sizes */}
-              <div className="relative">
-                <button
-                  onClick={() => setProfileOpen(!profileOpen)}
-                  className="flex items-center gap-2 p-1 hover:bg-[var(--card)] transition-all"
-                >
-                  <div className="w-8 h-8 border-2 border-[var(--foreground)] flex items-center justify-center text-[var(--foreground)] font-bold text-sm">
-                    {user.username?.[0]?.toUpperCase()}
-                  </div>
-                </button>
-
-                <AnimatePresence>
-                  {profileOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      className="absolute right-0 top-full mt-2 w-52 bg-[var(--background)] border border-[var(--card-border)] shadow-xl z-50"
-                      onMouseLeave={() => setProfileOpen(false)}
-                    >
-                      <div className="px-4 py-3 border-b border-[var(--card-border)]">
-                        <p className="font-bold text-sm font-mono">{user.displayName || user.username}</p>
-                        <p className="text-xs text-[var(--muted)] font-mono">@{user.username}</p>
-                      </div>
-
-                      {/* Nav links — desktop only (mobile uses bottom nav) */}
-                      <div className="hidden md:block">
-                        {NAV_LINKS.map(({ href, label, icon: Icon }) => (
-                          <Link
-                            key={href}
-                            href={href}
-                            onClick={() => setProfileOpen(false)}
-                            className={cn(
-                              "flex items-center justify-between px-4 py-2.5 text-xs font-mono font-bold tracking-wider uppercase border-b border-[var(--card-border)] transition-colors",
-                              pathname.startsWith(href)
-                                ? "text-[var(--foreground)] bg-[var(--card)]"
-                                : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card)]"
-                            )}
-                          >
-                            <div className="flex items-center gap-2">
-                              <Icon size={13} />
-                              {label}
-                            </div>
-                            {href === "/wallet" && (
-                              <span className="text-[10px] text-[var(--accent)] font-bold tabular-nums">
-                                {displayCurrency === 'USDC' ? `$${userBalance.toFixed(2)}` : formatBalance(userBalance)}
-                              </span>
-                            )}
-                          </Link>
-                        ))}
-                      </div>
-                      <Link
-                        href="/markets/create"
-                        onClick={() => setProfileOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2.5 text-xs font-mono font-bold tracking-wider uppercase border-b border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card)] transition-colors"
-                      >
-                        <Plus size={13} />
-                        {locale === "sw" ? "Unda Soko" : "Create Market"}
-                      </Link>
-                      <Link
-                        href="/profile"
-                        onClick={() => setProfileOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2.5 text-xs font-mono font-bold tracking-wider uppercase border-b border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card)] transition-colors"
-                      >
-                        <User size={13} />
-                        {t.nav.profile}
-                      </Link>
-                      <button
-                        onClick={() => { logout(); setProfileOpen(false); }}
-                        className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-mono font-bold tracking-wider uppercase text-red-500 hover:bg-[var(--card)] transition-colors"
-                      >
-                        <SignOut size={13} />
-                        {t.nav.signOut}
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              </Link>
             </>
           ) : (
             <div className="hidden md:flex items-center gap-2">

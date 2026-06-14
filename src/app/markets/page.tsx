@@ -423,27 +423,27 @@ function MarketsContent() {
           <ActivityTicker />
         </div>
 
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">{t.markets.title}</h1>
-            <p className="text-[var(--muted)] text-sm mt-1">{markets.length} {locale === "sw" ? "masoko yamepatikana" : "markets found"}</p>
+        {/* Header — title on left, Deposit + Create inline on the right */}
+        <div className="flex items-start justify-between gap-2 mb-8">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold">{t.markets.title}</h1>
+            <p className="text-[var(--muted)] text-xs sm:text-sm mt-1">{markets.length} {locale === "sw" ? "masoko" : "markets found"}</p>
           </div>
-          {/* Deposit on top, Create Market below (stacked on mobile, inline on desktop) */}
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-1.5 shrink-0">
             <Link
               href="/wallet"
-              className="flex items-center justify-center gap-2 px-4 py-3 sm:py-2 bg-[#00e5a0] text-black font-black text-sm hover:opacity-90 transition-all font-mono tracking-wider uppercase active:scale-95 shadow-[0_0_15px_rgba(0,229,160,0.25)]"
+              className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 bg-[#00e5a0] text-black font-black text-xs sm:text-sm hover:opacity-90 transition-all font-mono tracking-wider uppercase active:scale-95 shadow-[0_0_15px_rgba(0,229,160,0.25)]"
             >
-              <ArrowDownLeft size={16} weight="bold" />
-              {locale === "sw" ? "Weka Pesa" : "Deposit"}
+              <ArrowDownLeft size={15} weight="bold" />
+              {locale === "sw" ? "Weka" : "Deposit"}
             </Link>
             <Link
               href="/markets/create"
-              className="flex items-center justify-center gap-2 px-4 py-3 sm:py-2 border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold text-sm hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all font-mono tracking-wider uppercase"
+              className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold text-xs sm:text-sm hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all font-mono tracking-wider uppercase"
             >
               <Plus size={15} />
-              {t.markets.create}
+              <span className="hidden sm:inline">{t.markets.create}</span>
+              <span className="sm:hidden">{locale === "sw" ? "Unda" : "Create"}</span>
             </Link>
           </div>
         </div>
