@@ -415,6 +415,38 @@ function MarketsContent() {
       {/* Live activity ticker — single line, pinned at the very top above the navbar */}
       <ActivityTicker compact />
       <Navbar />
+
+      {/* Category tabs — directly below the navbar, single-line swipe (Limitless style) */}
+      <div className="sticky top-0 z-30 bg-[var(--background)]/95 backdrop-blur-xl border-b border-[var(--card-border)]">
+        <div className="max-w-7xl mx-auto flex gap-1 overflow-x-auto scrollbar-none snap-x px-3">
+          {/* Trending tab */}
+          <button
+            onClick={() => { setSort("volume"); setCategory("all"); setSubCategory("all"); }}
+            className={cn(
+              "shrink-0 snap-start px-3 py-2.5 text-[13px] font-mono font-bold whitespace-nowrap border-b-2 transition-colors",
+              category === "all" && sort === "volume"
+                ? "border-[var(--accent)] text-[var(--accent)]"
+                : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"
+            )}
+          >
+            🔥 {locale === "sw" ? "Maarufu" : "Trending"}
+          </button>
+          {["all", ...CATEGORIES].map((c) => (
+            <button
+              key={c}
+              onClick={() => { setCategory(c); setSubCategory("all"); if (c !== "all") setSort("new"); }}
+              className={cn(
+                "shrink-0 snap-start px-3 py-2.5 text-[13px] font-mono font-bold whitespace-nowrap border-b-2 transition-colors",
+                category === c && !(c === "all" && sort === "volume")
+                  ? "border-[var(--foreground)] text-[var(--foreground)]"
+                  : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"
+              )}
+            >
+              {c === "all" ? (locale === "sw" ? "Zote" : "All") : (locale === "sw" ? (t.markets.categories as Record<string, string>)[c.toLowerCase()] || c : c)}
+            </button>
+          ))}
+        </div>
+      </div>
       <OnboardingPopup />
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* First-deposit prompt for funded-less users */}
@@ -477,24 +509,6 @@ function MarketsContent() {
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Categories — smooth horizontal swipe with scroll-snap (betPawa/Limitless style) */}
-          <div className="flex gap-2 overflow-x-auto scrollbar-none snap-x snap-mandatory pb-1 -mx-1 px-1 scroll-smooth">
-            {["all", ...CATEGORIES].map((c) => (
-              <button
-                key={c}
-                onClick={() => { setCategory(c); setSubCategory("all"); }}
-                className={cn(
-                  "shrink-0 snap-start px-3.5 py-1.5 rounded-full text-[13px] transition-all font-mono whitespace-nowrap",
-                  category === c
-                    ? "border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold"
-                    : "border border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--foreground)] hover:text-[var(--foreground)]"
-                )}
-              >
-                {c === "all" ? (locale === "sw" ? "Zote" : "All") : (locale === "sw" ? (t.markets.categories as Record<string, string>)[c.toLowerCase()] || c : c)}
-              </button>
-            ))}
           </div>
 
           {/* Sports Sub-categories */}
@@ -602,7 +616,7 @@ function MarketsContent() {
               allItems.push({ type: 'market', market: m });
             });
 
-            const renderItem = (item: typeof allItems[number], i: number): ReactNode => {
+            const renderItem = (item: typeof allItems[number], i: number, asHero = false): ReactNode => {
               if (item.type === 'event') {
                 const firstMarket = item.markets[0];
                 const eventData = item.event as { id: string; title: string; imageUrl?: string; category?: string; subCategory?: string };
@@ -625,24 +639,25 @@ function MarketsContent() {
                 <MarketCard
                   market={item.market as unknown as Parameters<typeof MarketCard>[0]["market"]}
                   index={i}
+                  hero={asHero}
                 />
               );
             };
 
-            // Featured = first few items, shown as a swipeable one-card-at-a-time carousel
-            const featured = allItems.slice(0, Math.min(5, allItems.length));
+            // Featured = first standalone-market items (hero cards work best for single markets)
+            const featured = allItems.filter(it => it.type === 'market').slice(0, 5);
             const rest = allItems;
 
             return (
               <>
-                {/* Featured carousel — one card per view, swipe to the next (mobile) */}
+                {/* Featured hero carousel — one big card per view, swipe to the next */}
                 {featured.length > 1 && (
-                  <div className="mb-6 sm:hidden">
-                    <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-[var(--muted)] mb-2">★ Featured</p>
+                  <div className="mb-6">
+                    <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-[var(--muted)] mb-2">★ {locale === "sw" ? "Maarufu" : "Featured"}</p>
                     <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-none -mx-4 px-4 pb-1">
                       {featured.map((item, i) => (
-                        <div key={`feat-${item.type === 'event' ? item.eventId : item.market.id}`} className="snap-center shrink-0 w-[88%]">
-                          {renderItem(item, i)}
+                        <div key={`feat-${item.type === 'market' ? item.market.id : i}`} className="snap-center shrink-0 w-[88%] sm:w-[420px]">
+                          {renderItem(item, i, true)}
                         </div>
                       ))}
                     </div>

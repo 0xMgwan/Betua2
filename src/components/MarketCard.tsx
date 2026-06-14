@@ -48,7 +48,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   Other: "#94a3b8",
 };
 
-export function MarketCard({ market, index = 0 }: { market: Market; index?: number }) {
+export function MarketCard({ market, index = 0, hero = false }: { market: Market; index?: number; hero?: boolean }) {
   const { t, locale } = useLanguage();
   const router = useRouter();
   const { addItem, openCart } = useCart();
@@ -171,13 +171,154 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
     setTimeout(() => setCartAdded(null), 1500);
   };
 
+  // Shared big-bold odds buttons (used by both normal and hero layouts)
+  const buyButtons = isTradeable && (
+    isMultiOption ? (
+      <div className="grid grid-cols-2 gap-2 mb-2">
+        {displayOptions!.slice(0, 4).map((option, idx) => {
+          const colors = ["#00e5a0", "#00b4d8", "#f59e0b", "#ef4444"];
+          const c = colors[idx % colors.length];
+          const optPrice = market.optionPrices?.[idx] || 0;
+          const originalOption = market.options?.[idx] || option;
+          const isAdded = cartAdded === `${originalOption}-${idx}`;
+          return (
+            <div key={idx} className="relative">
+              <button
+                onClick={(e) => handleQuickBuy(e, originalOption, idx)}
+                className="w-full py-3.5 px-3 border-2 font-mono transition-all active:scale-[0.97] flex flex-col items-center gap-0.5"
+                style={{ borderColor: `${c}55`, color: c, backgroundColor: `${c}12` }}
+              >
+                <span className="text-[10px] font-bold uppercase tracking-wider opacity-80 truncate max-w-full">
+                  {option.length > 10 ? option.slice(0, 10) + ".." : option}
+                </span>
+                <span className="text-xl font-black leading-none">{optPrice > 0 ? (1 / optPrice).toFixed(1) : '∞'}<span className="text-xs">x</span></span>
+              </button>
+              <button
+                onClick={(e) => handleAddToCart(e, originalOption, idx)}
+                className="absolute top-1 right-1 p-1 border transition-all active:scale-95"
+                style={{ borderColor: isAdded ? '#00e5a0' : `${c}55`, color: isAdded ? '#000' : c, backgroundColor: isAdded ? '#00e5a0' : 'var(--background)' }}
+                title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
+              >
+                {isAdded ? <Check size={12} weight="bold" /> : <ShoppingCart size={12} weight="bold" />}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    ) : (
+      <div className="grid grid-cols-2 gap-2 mb-2">
+        <div className="relative">
+          <button
+            onClick={(e) => handleQuickBuy(e, "YES")}
+            className="w-full py-3.5 px-3 bg-[#00e5a0]/10 border-2 border-[#00e5a0]/50 text-[#00e5a0] font-mono transition-all hover:bg-[#00e5a0]/20 hover:border-[#00e5a0] active:scale-[0.97] flex flex-col items-center gap-0.5"
+          >
+            <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">YES</span>
+            <span className="text-xl font-black leading-none">{(1 / market.price.yes).toFixed(2)}<span className="text-xs">x</span></span>
+          </button>
+          <button
+            onClick={(e) => handleAddToCart(e, "YES")}
+            className={`absolute top-1 right-1 p-1 border transition-all active:scale-95 ${cartAdded === 'YES' ? 'bg-[#00e5a0] border-[#00e5a0] text-black' : 'bg-[var(--background)]/60 border-[#00e5a0]/40 text-[#00e5a0] hover:bg-[#00e5a0]/15'}`}
+            title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
+          >
+            {cartAdded === 'YES' ? <Check size={12} weight="bold" /> : <ShoppingCart size={12} weight="bold" />}
+          </button>
+        </div>
+        <div className="relative">
+          <button
+            onClick={(e) => handleQuickBuy(e, "NO")}
+            className="w-full py-3.5 px-3 bg-red-500/10 border-2 border-red-500/50 text-red-400 font-mono transition-all hover:bg-red-500/20 hover:border-red-500 active:scale-[0.97] flex flex-col items-center gap-0.5"
+          >
+            <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">NO</span>
+            <span className="text-xl font-black leading-none">{(1 / market.price.no).toFixed(2)}<span className="text-xs">x</span></span>
+          </button>
+          <button
+            onClick={(e) => handleAddToCart(e, "NO")}
+            className={`absolute top-1 right-1 p-1 border transition-all active:scale-95 ${cartAdded === 'NO' ? 'bg-[#00e5a0] border-[#00e5a0] text-black' : 'bg-[var(--background)]/60 border-red-500/40 text-red-400 hover:bg-red-500/15'}`}
+            title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
+          >
+            {cartAdded === 'NO' ? <Check size={12} weight="bold" /> : <ShoppingCart size={12} weight="bold" />}
+          </button>
+        </div>
+      </div>
+    )
+  );
+
+  // ── Hero card — image-forward featured layout (Limitless style) ──────────
+  if (hero) {
+    return (
+      <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3 }}>
+        <div
+          onClick={() => router.push(`/markets/${market.id}`)}
+          className="group relative bg-[var(--card)] border-2 border-[var(--card-border)] overflow-hidden hover:border-[var(--accent)]/60 transition-all cursor-pointer rounded-xl"
+        >
+          {/* Hero image header */}
+          <div className="relative h-36 w-full overflow-hidden bg-[var(--background)]">
+            {hasImage ? (
+              <img src={market.imageUrl!} alt="" className="w-full h-full object-cover" onError={() => setImageError(true)} />
+            ) : (
+              <div className="w-full h-full" style={{ background: `linear-gradient(135deg, ${catColor}40, var(--background))` }} />
+            )}
+            {/* Dark gradient for text legibility */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/40" />
+            {/* Top badges */}
+            <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 backdrop-blur-sm" style={{ color: catColor, backgroundColor: `${catColor}25`, border: `1px solid ${catColor}60` }}>
+                  {market.category}
+                </span>
+                {market.subCategory && (
+                  <span className="text-[9px] font-mono font-bold text-white uppercase tracking-wider px-1.5 py-0.5 bg-white/15 border border-white/30 backdrop-blur-sm flex items-center gap-1">
+                    {SPORTS_SUBCATEGORIES.find(s => s.value === market.subCategory)?.icon.startsWith('/') ? (
+                      <Image src={SPORTS_SUBCATEGORIES.find(s => s.value === market.subCategory)!.icon} alt="" width={10} height={10} className="object-contain" />
+                    ) : (<span>{SPORTS_SUBCATEGORIES.find(s => s.value === market.subCategory)?.icon}</span>)}
+                    {market.subCategory}
+                  </span>
+                )}
+              </div>
+              <span className="flex items-center gap-1 text-[9px] font-mono text-white/90 px-1.5 py-0.5 bg-black/40 backdrop-blur-sm">
+                <Timer size={10} weight="bold" />
+                {market.status === "OPEN" ? timeUntil(market.resolvesAt) : "Ended"}
+              </span>
+            </div>
+            {/* Title overlaid at bottom */}
+            <h3 className="absolute bottom-2 left-3 right-3 font-mono text-base font-black text-white leading-tight line-clamp-2 drop-shadow-lg">
+              {displayTitle}
+            </h3>
+          </div>
+
+          {/* Odds buttons */}
+          <div className="p-3">
+            {buyButtons}
+          </div>
+        </div>
+
+        {/* Quick Buy Modal (shared) */}
+        {showBuyModal && selectedSide && (
+          <QuickBuyModal
+            isOpen={showBuyModal}
+            onClose={() => { setShowBuyModal(false); setSelectedSide(null); setSelectedOptionIndex(null); setSelectedDisplaySide(null); }}
+            market={{
+              id: market.id, title: displayTitle, category: market.category, fxRate: market.fxRate,
+              price: market.price, optionPrices: market.optionPrices || undefined,
+              yesPool: market.yesPool, noPool: market.noPool, resolvesAt: market.resolvesAt,
+              status: market.status, totalVolume: market.totalVolume,
+            }}
+            side={selectedSide}
+            optionIndex={selectedOptionIndex ?? undefined}
+            displaySide={selectedDisplaySide ?? undefined}
+          />
+        )}
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
     >
-      <div 
+      <div
         onClick={() => router.push(`/markets/${market.id}`)}
         className="group relative bg-[var(--card)] border border-[var(--card-border)] overflow-hidden hover:border-[var(--accent)]/60 transition-all duration-200 hover:shadow-[0_0_20px_rgba(0,229,160,0.1)] cursor-pointer"
       >
@@ -313,82 +454,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
             )}
 
             {/* Quick Buy Buttons */}
-            {isTradeable && (
-              isMultiOption ? (
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                  {displayOptions!.slice(0, 4).map((option, idx) => {
-                    const colors = ["#00e5a0", "#00b4d8", "#f59e0b", "#ef4444"];
-                    const c = colors[idx % colors.length];
-                    const optPrice = market.optionPrices?.[idx] || 0;
-                    const originalOption = market.options?.[idx] || option;
-                    const isAdded = cartAdded === `${originalOption}-${idx}`;
-                    return (
-                      <div key={idx} className="relative">
-                        <button
-                          onClick={(e) => handleQuickBuy(e, originalOption, idx)}
-                          className="w-full py-3.5 px-3 border-2 font-mono transition-all active:scale-[0.97] flex flex-col items-center gap-0.5"
-                          style={{ borderColor: `${c}55`, color: c, backgroundColor: `${c}12` }}
-                        >
-                          <span className="text-[10px] font-bold uppercase tracking-wider opacity-80 truncate max-w-full">
-                            {option.length > 10 ? option.slice(0, 10) + ".." : option}
-                          </span>
-                          <span className="text-xl font-black leading-none">{optPrice > 0 ? (1 / optPrice).toFixed(1) : '∞'}<span className="text-xs">x</span></span>
-                        </button>
-                        <button
-                          onClick={(e) => handleAddToCart(e, originalOption, idx)}
-                          className="absolute top-1 right-1 p-1 border transition-all active:scale-95"
-                          style={{
-                            borderColor: isAdded ? '#00e5a0' : `${c}55`,
-                            color: isAdded ? '#000' : c,
-                            backgroundColor: isAdded ? '#00e5a0' : 'var(--background)',
-                          }}
-                          title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
-                        >
-                          {isAdded ? <Check size={12} weight="bold" /> : <ShoppingCart size={12} weight="bold" />}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                  {/* YES — big bold odds button (betPawa style) */}
-                  <div className="relative">
-                    <button
-                      onClick={(e) => handleQuickBuy(e, "YES")}
-                      className="w-full py-3.5 px-3 bg-[#00e5a0]/10 border-2 border-[#00e5a0]/50 text-[#00e5a0] font-mono transition-all hover:bg-[#00e5a0]/20 hover:border-[#00e5a0] active:scale-[0.97] flex flex-col items-center gap-0.5"
-                    >
-                      <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">YES</span>
-                      <span className="text-xl font-black leading-none">{(1 / market.price.yes).toFixed(2)}<span className="text-xs">x</span></span>
-                    </button>
-                    <button
-                      onClick={(e) => handleAddToCart(e, "YES")}
-                      className={`absolute top-1 right-1 p-1 border transition-all active:scale-95 ${cartAdded === 'YES' ? 'bg-[#00e5a0] border-[#00e5a0] text-black' : 'bg-[var(--background)]/60 border-[#00e5a0]/40 text-[#00e5a0] hover:bg-[#00e5a0]/15'}`}
-                      title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
-                    >
-                      {cartAdded === 'YES' ? <Check size={12} weight="bold" /> : <ShoppingCart size={12} weight="bold" />}
-                    </button>
-                  </div>
-                  {/* NO — big bold odds button */}
-                  <div className="relative">
-                    <button
-                      onClick={(e) => handleQuickBuy(e, "NO")}
-                      className="w-full py-3.5 px-3 bg-red-500/10 border-2 border-red-500/50 text-red-400 font-mono transition-all hover:bg-red-500/20 hover:border-red-500 active:scale-[0.97] flex flex-col items-center gap-0.5"
-                    >
-                      <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">NO</span>
-                      <span className="text-xl font-black leading-none">{(1 / market.price.no).toFixed(2)}<span className="text-xs">x</span></span>
-                    </button>
-                    <button
-                      onClick={(e) => handleAddToCart(e, "NO")}
-                      className={`absolute top-1 right-1 p-1 border transition-all active:scale-95 ${cartAdded === 'NO' ? 'bg-[#00e5a0] border-[#00e5a0] text-black' : 'bg-[var(--background)]/60 border-red-500/40 text-red-400 hover:bg-red-500/15'}`}
-                      title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
-                    >
-                      {cartAdded === 'NO' ? <Check size={12} weight="bold" /> : <ShoppingCart size={12} weight="bold" />}
-                    </button>
-                  </div>
-                </div>
-              )
-            )}
+            {buyButtons}
 
             {/* Footer stats */}
             <div className="flex items-center justify-between text-[9px] font-mono text-[var(--muted)] pt-2 border-t border-[var(--card-border)]/50">
