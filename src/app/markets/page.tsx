@@ -19,6 +19,7 @@ import { Footer } from "@/components/Footer";
 import { ActivityTicker } from "@/components/ActivityTicker";
 import { FirstDepositPrompt } from "@/components/FirstDepositPrompt";
 import { FeaturedDeck } from "@/components/FeaturedDeck";
+import { ReferralBanner } from "@/components/ReferralBanner";
 import { EmailSubscribe } from "@/components/EmailSubscribe";
 
 // Event Card Component with Quick Buy
@@ -638,6 +639,24 @@ function MarketsContent() {
                     />
                   </div>
                 )}
+
+                {/* Referral promo banner */}
+                <div className="mb-6">
+                  <ReferralBanner />
+                </div>
+
+                {/* Section header — category + total count, outside the cards (Limitless style) */}
+                <div className="flex items-baseline gap-2 mb-3">
+                  <h2 className="text-lg font-mono font-black">
+                    {category === "all"
+                      ? (locale === "sw" ? "Masoko Yote" : "All Markets")
+                      : (locale === "sw" ? (t.markets.categories as Record<string, string>)[category.toLowerCase()] || category : category)}
+                  </h2>
+                  <span className="text-sm font-mono text-[var(--muted)]">({rest.length} {locale === "sw" ? "jumla" : "total"})</span>
+                  {category === "Sports" && subCategory !== "all" && (
+                    <span className="text-sm font-mono text-[var(--accent)]">· {subCategory}</span>
+                  )}
+                </div>
 
                 {/* Normal market grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
