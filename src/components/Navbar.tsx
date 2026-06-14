@@ -338,34 +338,55 @@ export function Navbar() {
                       className="absolute right-0 top-full mt-2 w-52 bg-[var(--background)] border border-[var(--card-border)] shadow-xl z-50"
                       onMouseLeave={() => setProfileOpen(false)}
                     >
-                      <div className="px-4 py-3 border-b border-[var(--card-border)]">
-                        <p className="font-bold text-sm font-mono">{user.displayName || user.username}</p>
-                        <p className="text-xs text-[var(--muted)] font-mono">@{user.username}</p>
+                      <div className="px-4 py-3 border-b border-[var(--card-border)] flex items-center justify-between">
+                        <div>
+                          <p className="font-bold text-sm font-mono">{user.displayName || user.username}</p>
+                          <p className="text-xs text-[var(--muted)] font-mono">@{user.username}</p>
+                        </div>
+                        {/* Wallet balance — visible in dropdown on mobile */}
+                        <span className="md:hidden text-[10px] text-[var(--accent)] font-bold tabular-nums font-mono">
+                          {displayCurrency === 'USDC' ? `$${userBalance.toFixed(2)}` : formatBalance(userBalance)}
+                        </span>
                       </div>
-                      {/* Nav links — shown on all sizes */}
-                      {NAV_LINKS.map(({ href, label, icon: Icon }) => (
-                        <Link
-                          key={href}
-                          href={href}
-                          onClick={() => setProfileOpen(false)}
-                          className={cn(
-                            "flex items-center justify-between px-4 py-2.5 text-xs font-mono font-bold tracking-wider uppercase border-b border-[var(--card-border)] transition-colors",
-                            pathname.startsWith(href)
-                              ? "text-[var(--foreground)] bg-[var(--card)]"
-                              : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card)]"
-                          )}
-                        >
-                          <div className="flex items-center gap-2">
-                            <Icon size={13} />
-                            {label}
-                          </div>
-                          {href === "/wallet" && (
-                            <span className="text-[10px] text-[var(--accent)] font-bold tabular-nums">
-                              {displayCurrency === 'USDC' ? `$${userBalance.toFixed(2)}` : formatBalance(userBalance)}
-                            </span>
-                          )}
-                        </Link>
-                      ))}
+
+                      {/* Language toggle — only in dropdown on mobile (hidden from top bar) */}
+                      <button
+                        onClick={() => { setLocale(locale === "en" ? "sw" : "en"); }}
+                        className="md:hidden w-full flex items-center justify-between px-4 py-2.5 text-xs font-mono font-bold tracking-wider uppercase border-b border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card)] transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Globe size={13} weight="duotone" />
+                          {locale === "en" ? "Language" : "Lugha"}
+                        </div>
+                        <span className="text-[10px] text-[var(--accent)]">{locale === "en" ? "EN → SW" : "SW → EN"}</span>
+                      </button>
+
+                      {/* Nav links — desktop only (mobile uses bottom nav) */}
+                      <div className="hidden md:block">
+                        {NAV_LINKS.map(({ href, label, icon: Icon }) => (
+                          <Link
+                            key={href}
+                            href={href}
+                            onClick={() => setProfileOpen(false)}
+                            className={cn(
+                              "flex items-center justify-between px-4 py-2.5 text-xs font-mono font-bold tracking-wider uppercase border-b border-[var(--card-border)] transition-colors",
+                              pathname.startsWith(href)
+                                ? "text-[var(--foreground)] bg-[var(--card)]"
+                                : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card)]"
+                            )}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Icon size={13} />
+                              {label}
+                            </div>
+                            {href === "/wallet" && (
+                              <span className="text-[10px] text-[var(--accent)] font-bold tabular-nums">
+                                {displayCurrency === 'USDC' ? `$${userBalance.toFixed(2)}` : formatBalance(userBalance)}
+                              </span>
+                            )}
+                          </Link>
+                        ))}
+                      </div>
                       <Link
                         href="/markets/create"
                         onClick={() => setProfileOpen(false)}

@@ -8,7 +8,7 @@ import { OnboardingPopup } from "@/components/OnboardingPopup";
 import { QuickBuyModal } from "@/components/QuickBuyModal";
 import { QRCodeModal } from "@/components/QRCodeModal";
 import { motion, AnimatePresence } from "framer-motion";
-import { MagnifyingGlass, Plus, Funnel, Stack, CaretRight, ShoppingCart, CaretDown, Lightning, Check, QrCode } from "@phosphor-icons/react";
+import { MagnifyingGlass, Plus, Funnel, Stack, CaretRight, ShoppingCart, CaretDown, Lightning, Check, QrCode, ArrowDownLeft } from "@phosphor-icons/react";
 import Link from "next/link";
 import { CATEGORIES, SPORTS_SUBCATEGORIES } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -429,13 +429,22 @@ function MarketsContent() {
             <h1 className="text-3xl font-bold">{t.markets.title}</h1>
             <p className="text-[var(--muted)] text-sm mt-1">{markets.length} {locale === "sw" ? "masoko yamepatikana" : "markets found"}</p>
           </div>
-          <Link
-            href="/markets/create"
-            className="flex items-center gap-2 px-4 py-2 border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold text-sm hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all font-mono tracking-wider uppercase"
-          >
-            <Plus size={15} />
-            {t.markets.create}
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/wallet"
+              className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-black font-black text-sm hover:opacity-90 transition-all font-mono tracking-wider uppercase active:scale-95"
+            >
+              <ArrowDownLeft size={15} weight="bold" />
+              {locale === "sw" ? "Weka" : "Deposit"}
+            </Link>
+            <Link
+              href="/markets/create"
+              className="flex items-center gap-2 px-4 py-2 border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold text-sm hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all font-mono tracking-wider uppercase"
+            >
+              <Plus size={15} />
+              <span className="hidden sm:inline">{t.markets.create}</span>
+            </Link>
+          </div>
         </div>
 
         {/* Filters */}
@@ -472,14 +481,14 @@ function MarketsContent() {
             </div>
           </div>
 
-          {/* Categories — horizontal scroll on mobile (betPawa style), wrap on desktop */}
-          <div className="flex gap-2 overflow-x-auto sm:flex-wrap pb-1 -mx-1 px-1 scrollbar-none">
+          {/* Categories — wrap so all are visible at once (no sideways scroll) */}
+          <div className="flex flex-wrap gap-1.5">
             {["all", ...CATEGORIES].map((c) => (
               <button
                 key={c}
                 onClick={() => { setCategory(c); setSubCategory("all"); }}
                 className={cn(
-                  "shrink-0 px-3.5 py-1.5 rounded-full text-sm transition-all font-mono whitespace-nowrap",
+                  "px-3 py-1.5 rounded-full text-[13px] transition-all font-mono whitespace-nowrap",
                   category === c
                     ? "border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold"
                     : "border border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--foreground)] hover:text-[var(--foreground)]"
