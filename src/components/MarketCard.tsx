@@ -289,6 +289,24 @@ export function MarketCard({ market, index = 0, hero = false }: { market: Market
           {/* Odds buttons */}
           <div className="p-3">
             {buyButtons}
+            {/* Volume + trades footer */}
+            <div className="flex items-center justify-between text-[9px] font-mono text-[var(--muted)] pt-2 border-t border-[var(--card-border)]/50">
+              <span className="flex items-center gap-1">
+                <ChartLineUp size={10} weight="bold" className="text-[var(--accent)]" />
+                <img src={displayCurrency === 'USDC' ? '/usdc.png' : '/ntzs.png'} alt={displayCurrency} className="w-2.5 h-2.5 inline-block opacity-60" />
+                {displayCurrency === 'USDC'
+                  ? `$${(market.totalVolume / 2630).toFixed(0)}`
+                  : market.totalVolume >= 1000000 ? `${(market.totalVolume / 1000000).toFixed(1)}M`
+                  : market.totalVolume >= 1000 ? `${(market.totalVolume / 1000).toFixed(1)}K`
+                  : market.totalVolume}
+              </span>
+              {market._count && (
+                <span className="flex items-center gap-1">
+                  <Lightning size={10} weight="fill" className="text-[var(--accent)]" />
+                  {market._count.trades} {locale === "sw" ? "biashara" : "trades"}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

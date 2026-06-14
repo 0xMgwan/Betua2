@@ -18,6 +18,7 @@ import { useCart } from "@/store/useCart";
 import { Footer } from "@/components/Footer";
 import { ActivityTicker } from "@/components/ActivityTicker";
 import { FirstDepositPrompt } from "@/components/FirstDepositPrompt";
+import { FeaturedDeck } from "@/components/FeaturedDeck";
 import { EmailSubscribe } from "@/components/EmailSubscribe";
 
 // Event Card Component with Quick Buy
@@ -386,10 +387,6 @@ function MarketsContent() {
   const { t, locale } = useLanguage();
   const searchParams = useSearchParams();
 
-  const SORTS = [
-    { value: "volume", label: locale === "sw" ? "Za Moto" : "Trending" },
-    { value: "new", label: locale === "sw" ? "Mpya" : "Newest" },
-  ];
   const [markets, setMarkets] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -488,27 +485,6 @@ function MarketsContent() {
               placeholder={locale === "sw" ? "Tafuta masoko…" : "Search markets…"}
               className="w-full pl-11 pr-4 py-3 bg-[var(--card)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
             />
-          </div>
-
-          {/* Filter row */}
-          <div className="flex flex-wrap gap-3">
-            {/* Sort */}
-            <div className="flex items-center bg-[var(--card)] border border-[var(--card-border)] rounded-xl p-1 gap-1">
-              {SORTS.map((s) => (
-                <button
-                  key={s.value}
-                  onClick={() => setSort(s.value)}
-                  className={cn(
-                    "px-3 py-1.5 text-sm font-medium transition-all font-mono",
-                    sort === s.value
-                      ? "bg-[var(--foreground)] text-[var(--background)]"
-                      : "text-[var(--muted)] hover:text-[var(--foreground)]"
-                  )}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Sports Sub-categories */}
@@ -650,17 +626,16 @@ function MarketsContent() {
 
             return (
               <>
-                {/* Featured hero carousel — one big card per view, swipe to the next */}
+                {/* Featured hero deck — stacked, swipe top card to send it back */}
                 {featured.length > 1 && (
-                  <div className="mb-6">
-                    <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-[var(--muted)] mb-2">★ {locale === "sw" ? "Maarufu" : "Featured"}</p>
-                    <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-none -mx-4 px-4 pb-1">
-                      {featured.map((item, i) => (
-                        <div key={`feat-${item.type === 'market' ? item.market.id : i}`} className="snap-center shrink-0 w-[88%] sm:w-[420px]">
-                          {renderItem(item, i, true)}
-                        </div>
-                      ))}
-                    </div>
+                  <div className="sm:max-w-md">
+                    <FeaturedDeck
+                      label={locale === "sw" ? "Maarufu" : "Featured"}
+                      items={featured.map((item, i) => ({
+                        id: item.type === 'market' ? item.market.id : `e-${i}`,
+                        render: () => renderItem(item, i, true),
+                      }))}
+                    />
                   </div>
                 )}
 
