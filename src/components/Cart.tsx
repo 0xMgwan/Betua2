@@ -10,25 +10,44 @@ import { useUser } from "@/store/useUser";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
 
 export function CartButton() {
-  const { items, toggleCart } = useCart();
+  const { items, toggleCart, getTotalAmount } = useCart();
+  const { locale } = useLanguage();
   const itemCount = items.length;
 
   if (itemCount === 0) return null;
 
   return (
-    <motion.button
-      initial={{ scale: 0 }}
-      animate={{ scale: 1 }}
-      onClick={toggleCart}
-      className="fixed bottom-6 right-6 z-50 bg-[var(--accent)] text-[var(--background)] p-4 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 active:scale-95"
-    >
-      <ShoppingCart size={24} weight="fill" />
-      {itemCount > 0 && (
+    <>
+      {/* Mobile: full-width betslip bar above the bottom nav (betPawa style) */}
+      <motion.button
+        initial={{ y: 60 }}
+        animate={{ y: 0 }}
+        onClick={toggleCart}
+        className="md:hidden fixed bottom-16 left-0 right-0 z-40 bg-[var(--accent)] text-black flex items-center justify-between px-4 py-3 border-t-2 border-black/10 active:opacity-90"
+      >
+        <span className="flex items-center gap-2 font-mono font-black text-sm uppercase tracking-wider">
+          <ShoppingCart size={18} weight="fill" />
+          {locale === "sw" ? "Mkoba" : "Betslip"}
+          <span className="bg-black/20 px-1.5 py-0.5 text-xs">{itemCount}</span>
+        </span>
+        <span className="font-mono font-black text-sm tabular-nums">
+          {formatTZS(getTotalAmount())} →
+        </span>
+      </motion.button>
+
+      {/* Desktop: floating circle */}
+      <motion.button
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        onClick={toggleCart}
+        className="hidden md:flex fixed bottom-6 right-6 z-50 bg-[var(--accent)] text-[var(--background)] p-4 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 active:scale-95"
+      >
+        <ShoppingCart size={24} weight="fill" />
         <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
           {itemCount}
         </span>
-      )}
-    </motion.button>
+      </motion.button>
+    </>
   );
 }
 

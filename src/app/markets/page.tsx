@@ -472,20 +472,20 @@ function MarketsContent() {
             </div>
           </div>
 
-          {/* Categories */}
-          <div className="flex flex-wrap gap-2">
+          {/* Categories — horizontal scroll on mobile (betPawa style), wrap on desktop */}
+          <div className="flex gap-2 overflow-x-auto sm:flex-wrap pb-1 -mx-1 px-1 scrollbar-none">
             {["all", ...CATEGORIES].map((c) => (
               <button
                 key={c}
                 onClick={() => { setCategory(c); setSubCategory("all"); }}
                 className={cn(
-                  "px-3 py-1 rounded-full text-sm transition-all font-mono",
+                  "shrink-0 px-3.5 py-1.5 rounded-full text-sm transition-all font-mono whitespace-nowrap",
                   category === c
                     ? "border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold"
                     : "border border-[var(--card-border)] text-[var(--muted)] hover:border-[var(--foreground)] hover:text-[var(--foreground)]"
                 )}
               >
-                {c === "all" ? (locale === "sw" ? "Jamii Zote" : "All Categories") : (locale === "sw" ? (t.markets.categories as Record<string, string>)[c.toLowerCase()] || c : c)}
+                {c === "all" ? (locale === "sw" ? "Zote" : "All") : (locale === "sw" ? (t.markets.categories as Record<string, string>)[c.toLowerCase()] || c : c)}
               </button>
             ))}
           </div>

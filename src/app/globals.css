@@ -65,6 +65,10 @@ a {
 ::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
+/* Hide scrollbar for horizontal filter chip rows */
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
 .glass {
   background: rgba(0, 0, 0, 0.03);
   backdrop-filter: blur(12px);
