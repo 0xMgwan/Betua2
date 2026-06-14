@@ -150,9 +150,9 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
   }
   const cost = amountNum;
 
-  // Price-based payout: standard prediction market display
-  // Shows what you'd win at current market odds (netAmount / probability × (1 - settlement fee))
-  const netAmountIn = Math.round(amountInTzs * (1 - FEE_PERCENT));
+  // Share-based payout: each winning share redeems for 1 TZS, minus 5% settlement.
+  // This is slippage-aware (uses actual shares received) and matches exactly what
+  // the trade API stores and the redeem pays out — display == stored == redeemed.
   let currentOddsPrice: number;
   if (isMultiOption && pools.optionPools && pools.optionPools.length > 0) {
     const prices = getMultiOptionPrices(pools.optionPools);
@@ -161,9 +161,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
     const prices = getPrice(pools.yesPool, pools.noPool);
     currentOddsPrice = side === "YES" ? prices.yes : prices.no;
   }
-  const payoutIfWin = currentOddsPrice > 0
-    ? Math.round(netAmountIn / currentOddsPrice * (1 - FEE_PERCENT))
-    : 0;
+  const payoutIfWin = Math.round(shares * (1 - FEE_PERCENT));
   const netGain = payoutIfWin - amountNum;
 
   const handleAddToCart = () => {
