@@ -164,11 +164,22 @@ export function Navbar() {
         </div>
 
         {/* Right */}
-        <div className="flex items-center gap-2">
-          {/* Language toggle — hidden on mobile to declutter (lives in bottom-nav account) */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Wallet balance pill — visible on navbar (links to wallet) */}
+          {user && (
+            <Link
+              href="/wallet"
+              className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 bg-[var(--card)] border border-[var(--card-border)] hover:border-[var(--accent)] transition-all font-mono text-[10px] sm:text-xs font-bold text-[var(--accent)] tabular-nums whitespace-nowrap"
+              title="Wallet balance"
+            >
+              {displayCurrency === 'USDC' ? `$${userBalance.toFixed(2)}` : formatBalance(userBalance)}
+            </Link>
+          )}
+
+          {/* Language toggle — visible on all screen sizes */}
           <button
             onClick={() => setLocale(locale === "en" ? "sw" : "en")}
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 border border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[var(--foreground)] transition-all font-mono text-[10px] font-bold tracking-wider"
+            className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 border border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[var(--foreground)] transition-all font-mono text-[10px] font-bold tracking-wider"
             title={locale === "en" ? "Switch to Kiswahili" : "Switch to English"}
           >
             <Globe size={14} weight="duotone" />
@@ -338,28 +349,10 @@ export function Navbar() {
                       className="absolute right-0 top-full mt-2 w-52 bg-[var(--background)] border border-[var(--card-border)] shadow-xl z-50"
                       onMouseLeave={() => setProfileOpen(false)}
                     >
-                      <div className="px-4 py-3 border-b border-[var(--card-border)] flex items-center justify-between">
-                        <div>
-                          <p className="font-bold text-sm font-mono">{user.displayName || user.username}</p>
-                          <p className="text-xs text-[var(--muted)] font-mono">@{user.username}</p>
-                        </div>
-                        {/* Wallet balance — visible in dropdown on mobile */}
-                        <span className="md:hidden text-[10px] text-[var(--accent)] font-bold tabular-nums font-mono">
-                          {displayCurrency === 'USDC' ? `$${userBalance.toFixed(2)}` : formatBalance(userBalance)}
-                        </span>
+                      <div className="px-4 py-3 border-b border-[var(--card-border)]">
+                        <p className="font-bold text-sm font-mono">{user.displayName || user.username}</p>
+                        <p className="text-xs text-[var(--muted)] font-mono">@{user.username}</p>
                       </div>
-
-                      {/* Language toggle — only in dropdown on mobile (hidden from top bar) */}
-                      <button
-                        onClick={() => { setLocale(locale === "en" ? "sw" : "en"); }}
-                        className="md:hidden w-full flex items-center justify-between px-4 py-2.5 text-xs font-mono font-bold tracking-wider uppercase border-b border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card)] transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Globe size={13} weight="duotone" />
-                          {locale === "en" ? "Language" : "Lugha"}
-                        </div>
-                        <span className="text-[10px] text-[var(--accent)]">{locale === "en" ? "EN → SW" : "SW → EN"}</span>
-                      </button>
 
                       {/* Nav links — desktop only (mobile uses bottom nav) */}
                       <div className="hidden md:block">
