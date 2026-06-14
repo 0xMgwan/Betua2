@@ -665,6 +665,31 @@ function MarketsContent() {
                           </h2>
                           <span className="text-sm font-mono text-[var(--muted)]">({items.length})</span>
                         </div>
+
+                        {/* Subcategory chips under the Sports heading (Limitless style) */}
+                        {category === "all" && groupName === "Sports" && (
+                          <div className="flex gap-2 overflow-x-auto scrollbar-none snap-x pb-1 mb-4">
+                            <button
+                              onClick={() => { setCategory("Sports"); setSubCategory("all"); setSort("new"); }}
+                              className="shrink-0 snap-start px-3 py-1.5 rounded-full text-[12px] font-mono font-bold whitespace-nowrap border border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[var(--foreground)] transition-colors flex items-center gap-1.5"
+                            >
+                              🏟️ {locale === "sw" ? "Zote" : "All"}
+                            </button>
+                            {SPORTS_SUBCATEGORIES.map((sub) => (
+                              <button
+                                key={sub.value}
+                                onClick={() => { setCategory("Sports"); setSubCategory(sub.value); setSort("new"); }}
+                                className="shrink-0 snap-start px-3 py-1.5 rounded-full text-[12px] font-mono font-bold whitespace-nowrap border border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[var(--accent)]/50 transition-colors flex items-center gap-1.5"
+                              >
+                                {sub.icon.startsWith('/') ? (
+                                  <Image src={sub.icon} alt={sub.label} width={14} height={14} className="object-contain" />
+                                ) : (<span>{sub.icon}</span>)}
+                                {sub.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {items.map((item) => {
                             const node = renderItem(item, runningIndex++);
