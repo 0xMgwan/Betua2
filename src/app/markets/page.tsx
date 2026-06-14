@@ -395,6 +395,10 @@ function MarketsContent() {
   const [subCategory, setSubCategory] = useState(searchParams.get("subCategory") || "all");
   const [sort, setSort] = useState("new");
 
+  // Category tab order: All, Sports, Business, Entertainment, FX & Commodities, then the rest
+  const PRIORITY_CATS = ["Sports", "Business", "Entertainment", "FX & Commodities"];
+  const orderedCategories = ["all", ...PRIORITY_CATS, ...CATEGORIES.filter((c) => !PRIORITY_CATS.includes(c))];
+
   // Sync filters from the URL so in-card category/subcategory links filter
   // in place (no full page redirect) when the query string changes.
   const spString = searchParams.toString();
@@ -443,7 +447,7 @@ function MarketsContent() {
           >
             🔥 {locale === "sw" ? "Maarufu" : "Trending"}
           </button>
-          {["all", ...CATEGORIES].map((c) => (
+          {orderedCategories.map((c) => (
             <button
               key={c}
               onClick={() => { setCategory(c); setSubCategory("all"); if (c !== "all") setSort("new"); }}
@@ -538,6 +542,39 @@ function MarketsContent() {
             />
           </div>
 
+          {/* Persistent subcategory chips while viewing Sports — always available to switch */}
+          {category === "Sports" && (
+            <div className="flex gap-2 overflow-x-auto scrollbar-none snap-x pb-1">
+              <button
+                onClick={() => setSubCategory("all")}
+                className={cn(
+                  "shrink-0 snap-start px-3 py-1.5 rounded-full text-[12px] font-mono font-bold whitespace-nowrap border transition-colors flex items-center gap-1.5",
+                  subCategory === "all"
+                    ? "border-[var(--accent)] text-[var(--accent)] bg-[var(--accent)]/10"
+                    : "border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)]"
+                )}
+              >
+                🏟️ {locale === "sw" ? "Zote" : "All"}
+              </button>
+              {SPORTS_SUBCATEGORIES.map((sub) => (
+                <button
+                  key={sub.value}
+                  onClick={() => setSubCategory(sub.value)}
+                  className={cn(
+                    "shrink-0 snap-start px-3 py-1.5 rounded-full text-[12px] font-mono font-bold whitespace-nowrap border transition-colors flex items-center gap-1.5",
+                    subCategory === sub.value
+                      ? "border-[var(--accent)] text-[var(--accent)] bg-[var(--accent)]/10"
+                      : "border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)]"
+                  )}
+                >
+                  {sub.icon.startsWith('/') ? (
+                    <Image src={sub.icon} alt={sub.label} width={14} height={14} className="object-contain" />
+                  ) : (<span>{sub.icon}</span>)}
+                  {sub.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Markets Grid */}
@@ -632,8 +669,11 @@ function MarketsContent() {
               );
             };
 
-            // Featured = first standalone-market items (hero cards work best for single markets)
-            const featured = allItems.filter(it => it.type === 'market').slice(0, 5);
+            // Featured = TRENDING standalone markets (highest volume), top 5
+            const featured = allItems
+              .filter((it): it is Extract<typeof allItems[number], { type: 'market' }> => it.type === 'market')
+              .sort((a, b) => (b.market.totalVolume || 0) - (a.market.totalVolume || 0))
+              .slice(0, 5);
             const rest = allItems;
 
             return (

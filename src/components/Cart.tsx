@@ -27,7 +27,7 @@ export function CartButton() {
       >
         <span className="flex items-center gap-2 font-mono font-black text-sm uppercase tracking-wider">
           <ShoppingCart size={18} weight="fill" />
-          {locale === "sw" ? "Mkoba" : "Betslip"}
+          {locale === "sw" ? "Kikapu" : "Trade Cart"}
           <span className="bg-black/20 px-1.5 py-0.5 text-xs">{itemCount}</span>
         </span>
         <span className="font-mono font-black text-sm tabular-nums">
@@ -155,7 +155,7 @@ export function CartModal() {
               <div className="flex items-center gap-2">
                 <ShoppingCart size={20} weight="fill" className="text-[var(--accent)]" />
                 <h2 className="font-mono font-bold text-lg">
-                  {locale === "sw" ? "Mkoba" : "Prediction Slip"}
+                  {locale === "sw" ? "Kikapu" : "Trade Cart"}
                 </h2>
                 <span className="text-xs font-mono text-[var(--muted)]">
                   ({items.length})
