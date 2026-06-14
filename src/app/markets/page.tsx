@@ -645,27 +645,44 @@ function MarketsContent() {
                   <ReferralBanner />
                 </div>
 
-                {/* Section header — category + total count, outside the cards (Limitless style) */}
-                <div className="flex items-baseline gap-2 mb-3">
-                  <h2 className="text-lg font-mono font-black">
-                    {category === "all"
-                      ? (locale === "sw" ? "Masoko Yote" : "All Markets")
-                      : (locale === "sw" ? (t.markets.categories as Record<string, string>)[category.toLowerCase()] || category : category)}
-                  </h2>
-                  <span className="text-sm font-mono text-[var(--muted)]">({rest.length} {locale === "sw" ? "jumla" : "total"})</span>
-                  {category === "Sports" && subCategory !== "all" && (
-                    <span className="text-sm font-mono text-[var(--accent)]">· {subCategory}</span>
-                  )}
-                </div>
+                {/* Grouped sections (Limitless style): category headers outside the cards.
+                    In "All" view group by category; within a category group by subcategory. */}
+                {(() => {
+                  const getCat = (item: typeof rest[number]) =>
+                    item.type === 'market' ? (item.market.category || 'Other') : (item.event.category || item.markets[0]?.category || 'Other');
+                  const getSub = (item: typeof rest[number]) =>
+                    item.type === 'market' ? (item.market.subCategory || '') : (item.event.subCategory || item.markets[0]?.subCategory || '');
 
-                {/* Normal market grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {rest.map((item, i) => (
-                    <div key={item.type === 'event' ? item.eventId : item.market.id}>
-                      {renderItem(item, i)}
-                    </div>
-                  ))}
-                </div>
+                  const groups = new Map<string, typeof rest>();
+                  rest.forEach((item) => {
+                    const key = category === "all" ? getCat(item) : (getSub(item) || (locale === "sw" ? "Nyingine" : "Other"));
+                    if (!groups.has(key)) groups.set(key, []);
+                    groups.get(key)!.push(item);
+                  });
+
+                  let runningIndex = 0;
+                  return [...groups.entries()].map(([groupName, items]) => (
+                    <section key={groupName} className="mb-8">
+                      {/* Section header — category/subcategory + count, outside the cards */}
+                      <div className="flex items-baseline gap-2 mb-3 border-b border-[var(--card-border)] pb-2">
+                        <h2 className="text-lg font-mono font-black">
+                          {category === "all"
+                            ? (locale === "sw" ? (t.markets.categories as Record<string, string>)[groupName.toLowerCase()] || groupName : groupName)
+                            : groupName}
+                        </h2>
+                        <span className="text-sm font-mono text-[var(--muted)]">({items.length})</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {items.map((item) => {
+                          const node = renderItem(item, runningIndex++);
+                          return (
+                            <div key={item.type === 'event' ? item.eventId : item.market.id}>{node}</div>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  ));
+                })()}
               </>
             );
           })()
