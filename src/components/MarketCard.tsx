@@ -315,36 +315,36 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
             {/* Quick Buy Buttons */}
             {isTradeable && (
               isMultiOption ? (
-                <div className="grid grid-cols-2 gap-1.5 mb-3">
+                <div className="grid grid-cols-2 gap-2 mb-3">
                   {displayOptions!.slice(0, 4).map((option, idx) => {
                     const colors = ["#00e5a0", "#00b4d8", "#f59e0b", "#ef4444"];
                     const c = colors[idx % colors.length];
                     const optPrice = market.optionPrices?.[idx] || 0;
-                    const pricePerShare = Math.round(optPrice * 1000);
                     const originalOption = market.options?.[idx] || option;
+                    const isAdded = cartAdded === `${originalOption}-${idx}`;
                     return (
-                      <div key={idx} className="flex gap-1">
+                      <div key={idx} className="relative">
                         <button
                           onClick={(e) => handleQuickBuy(e, originalOption, idx)}
-                          className="flex-1 py-2 px-2 border font-mono font-bold text-[10px] uppercase tracking-wider transition-all active:scale-95"
-                          style={{
-                            borderColor: `${c}60`,
-                            color: c,
-                            backgroundColor: `${c}08`,
-                          }}
+                          className="w-full py-3.5 px-3 border-2 font-mono transition-all active:scale-[0.97] flex flex-col items-center gap-0.5"
+                          style={{ borderColor: `${c}55`, color: c, backgroundColor: `${c}12` }}
                         >
-                          {option.length > 8 ? option.slice(0, 8) + ".." : option} @ {formatPrice(optPrice)} <span className="opacity-70">({optPrice > 0 ? (1 / optPrice).toFixed(1) : '∞'}x)</span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider opacity-80 truncate max-w-full">
+                            {option.length > 10 ? option.slice(0, 10) + ".." : option}
+                          </span>
+                          <span className="text-xl font-black leading-none">{optPrice > 0 ? (1 / optPrice).toFixed(1) : '∞'}<span className="text-xs">x</span></span>
                         </button>
                         <button
                           onClick={(e) => handleAddToCart(e, originalOption, idx)}
-                          className={`px-2 border transition-all active:scale-95 ${cartAdded === `${originalOption}-${idx}` ? 'bg-[#00e5a0] scale-110' : 'hover:bg-[var(--accent)]/10'}`}
+                          className="absolute top-1 right-1 p-1 border transition-all active:scale-95"
                           style={{
-                            borderColor: cartAdded === `${originalOption}-${idx}` ? '#00e5a0' : `${c}60`,
-                            color: cartAdded === `${originalOption}-${idx}` ? '#000' : c,
+                            borderColor: isAdded ? '#00e5a0' : `${c}55`,
+                            color: isAdded ? '#000' : c,
+                            backgroundColor: isAdded ? '#00e5a0' : 'var(--background)',
                           }}
                           title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
                         >
-                          {cartAdded === `${originalOption}-${idx}` ? <Check size={14} weight="bold" /> : <ShoppingCart size={14} weight="bold" />}
+                          {isAdded ? <Check size={12} weight="bold" /> : <ShoppingCart size={12} weight="bold" />}
                         </button>
                       </div>
                     );

@@ -17,6 +17,7 @@ import { useCurrency } from "@/store/useCurrency";
 import { useCart } from "@/store/useCart";
 import { Footer } from "@/components/Footer";
 import { ActivityTicker } from "@/components/ActivityTicker";
+import { FirstDepositPrompt } from "@/components/FirstDepositPrompt";
 import { EmailSubscribe } from "@/components/EmailSubscribe";
 
 // Event Card Component with Quick Buy
@@ -414,6 +415,9 @@ function MarketsContent() {
       <Navbar />
       <OnboardingPopup />
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* First-deposit prompt for funded-less users */}
+        <FirstDepositPrompt />
+
         {/* Activity Ticker - Shows on all screen sizes */}
         <div className="mb-6">
           <ActivityTicker />

@@ -15,7 +15,7 @@ export function BottomNav() {
 
   const ITEMS = [
     { href: "/markets", label: t.nav?.markets || "Markets", icon: ChartBar },
-    { href: "/portfolio", label: "Bets", icon: TrendUp },
+    { href: "/portfolio", label: "Trades", icon: TrendUp },
     { href: "/leaderboard", label: t.nav?.leaderboard || "Ranks", icon: Trophy },
     { href: "/wallet", label: t.nav?.wallet || "Wallet", icon: Wallet },
     { href: user ? "/profile" : "/auth/login", label: user ? "Account" : "Login", icon: User },

@@ -385,7 +385,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                   type="number"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="w-full px-4 py-3 bg-[var(--background)] border-2 border-[var(--card-border)] rounded-none text-sm focus:outline-none focus:border-[var(--accent)] focus:shadow-[0_0_10px_rgba(0,229,160,0.2)] transition-all font-mono font-bold tabular-nums"
+                  className="w-full px-4 py-4 bg-[var(--background)] border-2 border-[var(--card-border)] rounded-none text-lg focus:outline-none focus:border-[var(--accent)] focus:shadow-[0_0_10px_rgba(0,229,160,0.2)] transition-all font-mono font-black tabular-nums"
                   placeholder={displayCurrency === 'USDC' ? "e.g. 5" : "e.g. 500"}
                   min={minAmount}
                   step={displayCurrency === 'USDC' ? "0.01" : "1"}
@@ -399,7 +399,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                     key={a}
                     type="button"
                     onClick={() => setAmount(String(a))}
-                    className={`py-2 text-xs font-mono font-bold rounded-none border-2 transition-all uppercase ${
+                    className={`py-3 text-sm font-mono font-black rounded-none border-2 transition-all uppercase active:scale-95 ${
                       amount === String(a)
                         ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)] shadow-[0_0_10px_rgba(0,229,160,0.2)]"
                         : "border-[var(--card-border)] hover:border-[var(--accent)]/40 text-[var(--muted)] hover:shadow-[0_0_5px_rgba(0,229,160,0.1)]"
@@ -722,20 +722,20 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                     <button
                       onClick={handleAddToCart}
                       disabled={!amount || Number(amount) < minAmount || !isTradeable}
-                      className="flex-1 py-3 px-3 border-2 border-[var(--accent)]/50 text-[var(--accent)] rounded-none font-mono font-bold text-[10px] sm:text-xs uppercase tracking-wider hover:bg-[var(--accent)]/10 transition-all disabled:opacity-40 active:scale-95 flex items-center justify-center gap-2"
+                      className="shrink-0 py-4 px-4 border-2 border-[var(--accent)]/50 text-[var(--accent)] rounded-none font-mono font-bold text-xs uppercase tracking-wider hover:bg-[var(--accent)]/10 transition-all disabled:opacity-40 active:scale-95 flex items-center justify-center"
+                      title={locale === "sw" ? "Ongeza" : "Add to Cart"}
                     >
-                      <ShoppingCart size={14} weight="fill" />
-                      {locale === "sw" ? "Ongeza" : "Add to Cart"}
+                      <ShoppingCart size={18} weight="fill" />
                     </button>
                     <button
                       onClick={handleBuy}
                       disabled={loading || !amount || Number(amount) < minAmount || !isTradeable}
-                      className={`flex-1 py-3 px-3 rounded-none font-mono font-bold text-[10px] sm:text-xs uppercase tracking-wider transition-all disabled:opacity-40 border-2 active:scale-95 ${
+                      className={`flex-1 py-4 px-3 rounded-none font-mono font-black text-sm uppercase tracking-wider transition-all disabled:opacity-40 border-2 active:scale-95 ${
                         isMultiOption
-                          ? "bg-[var(--accent)]/10 border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)]/20 hover:shadow-[0_0_15px_rgba(0,229,160,0.3)]"
+                          ? "bg-[var(--accent)] border-[var(--accent)] text-black hover:opacity-90 hover:shadow-[0_0_20px_rgba(0,229,160,0.4)]"
                         : side === "YES"
-                        ? "bg-[#00e5a0]/10 border-[#00e5a0] text-[#00e5a0] hover:bg-[#00e5a0]/20 hover:shadow-[0_0_15px_rgba(0,229,160,0.3)]"
-                        : "bg-red-500/10 border-red-500 text-red-400 hover:bg-red-500/20 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]"
+                        ? "bg-[#00e5a0] border-[#00e5a0] text-black hover:opacity-90 hover:shadow-[0_0_20px_rgba(0,229,160,0.4)]"
+                        : "bg-red-500 border-red-500 text-white hover:opacity-90 hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]"
                     }`}
                   >
                     {!isTradeable

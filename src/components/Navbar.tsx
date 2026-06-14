@@ -165,10 +165,10 @@ export function Navbar() {
 
         {/* Right */}
         <div className="flex items-center gap-2">
-          {/* Language toggle */}
+          {/* Language toggle — hidden on mobile to declutter (lives in bottom-nav account) */}
           <button
             onClick={() => setLocale(locale === "en" ? "sw" : "en")}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 border border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[var(--foreground)] transition-all font-mono text-[10px] font-bold tracking-wider"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 border border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[var(--foreground)] transition-all font-mono text-[10px] font-bold tracking-wider"
             title={locale === "en" ? "Switch to Kiswahili" : "Switch to English"}
           >
             <Globe size={14} weight="duotone" />
