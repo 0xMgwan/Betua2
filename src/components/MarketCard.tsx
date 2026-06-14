@@ -184,9 +184,9 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
           {/* Accent top line */}
           <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, ${catColor}, transparent)` }} />
 
-          <div className="p-3 sm:p-4">
+          <div className="p-3">
             {/* Top row: Category + Status + Timer */}
-            <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <a
                   href={`/markets?category=${market.category}`}
@@ -240,9 +240,9 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
             </div>
 
             {/* Title row with optional thumbnail */}
-            <div className="flex gap-3 mb-3">
+            <div className="flex gap-2.5 mb-2.5 items-center">
               {hasImage && (
-                <div className="shrink-0 w-12 h-12 sm:w-14 sm:h-14 border border-[var(--card-border)] overflow-hidden relative">
+                <div className="shrink-0 w-10 h-10 border border-[var(--card-border)] overflow-hidden relative">
                   <img
                     src={market.imageUrl!}
                     alt=""
@@ -285,13 +285,13 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                 })}
               </div>
             ) : (
-              <div className="mb-3">
+              <div className="mb-2">
                 {/* Combined YES/NO bar */}
-                <div className="flex items-center justify-between mb-1.5 font-mono text-[11px]">
+                <div className="flex items-center justify-between mb-1 font-mono text-[10px]">
                   <span className="text-[#00e5a0] font-bold">YES {yesPct}%</span>
                   <span className="text-red-400 font-bold">NO {noPct}%</span>
                 </div>
-                <div className="h-2 bg-[var(--background)] border border-[var(--card-border)]/50 overflow-hidden flex">
+                <div className="h-1.5 bg-[var(--background)] border border-[var(--card-border)]/50 overflow-hidden flex">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${yesPct}%` }}
@@ -315,7 +315,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
             {/* Quick Buy Buttons */}
             {isTradeable && (
               isMultiOption ? (
-                <div className="grid grid-cols-2 gap-2 mb-3">
+                <div className="grid grid-cols-2 gap-2 mb-2">
                   {displayOptions!.slice(0, 4).map((option, idx) => {
                     const colors = ["#00e5a0", "#00b4d8", "#f59e0b", "#ef4444"];
                     const c = colors[idx % colors.length];
@@ -351,7 +351,7 @@ export function MarketCard({ market, index = 0 }: { market: Market; index?: numb
                   })}
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2 mb-3">
+                <div className="grid grid-cols-2 gap-2 mb-2">
                   {/* YES — big bold odds button (betPawa style) */}
                   <div className="relative">
                     <button
