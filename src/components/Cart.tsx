@@ -23,7 +23,7 @@ export function CartButton() {
         initial={{ y: 60 }}
         animate={{ y: 0 }}
         onClick={toggleCart}
-        className="md:hidden fixed bottom-16 left-0 right-0 z-40 bg-[var(--accent)] text-black flex items-center justify-between px-4 py-3 border-t-2 border-black/10 active:opacity-90"
+        className="md:hidden fixed bottom-16 left-0 right-0 z-40 bg-[#00e5a0] text-black flex items-center justify-between px-4 py-3 border-t-2 border-black/10 active:opacity-90"
       >
         <span className="flex items-center gap-2 font-mono font-black text-sm uppercase tracking-wider">
           <ShoppingCart size={18} weight="fill" />

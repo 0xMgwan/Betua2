@@ -42,7 +42,9 @@ export async function GET(req: NextRequest) {
         event: { select: { id: true, title: true, imageUrl: true, category: true, subCategory: true } },
         _count: { select: { trades: { where: { isLpSeed: false } }, comments: true } },
       },
-      orderBy: sort === "volume" ? { totalVolume: "desc" } : { createdAt: "desc" },
+      orderBy: sort === "volume" ? { totalVolume: "desc" }
+        : sort === "ending" ? { resolvesAt: "asc" }
+        : { createdAt: "desc" },
       take: 50,
     });
 

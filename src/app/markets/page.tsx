@@ -395,9 +395,19 @@ function MarketsContent() {
   const [subCategory, setSubCategory] = useState(searchParams.get("subCategory") || "all");
   const [sort, setSort] = useState("new");
 
+  const [catDropdownOpen, setCatDropdownOpen] = useState(false);
+  const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
+
   // Category tab order: All, Sports, Business, Entertainment, FX & Commodities, then the rest
   const PRIORITY_CATS = ["Sports", "Business", "Entertainment", "FX & Commodities"];
   const orderedCategories = ["all", ...PRIORITY_CATS, ...CATEGORIES.filter((c) => !PRIORITY_CATS.includes(c))];
+
+  const SORT_OPTIONS = [
+    { value: "volume", label: locale === "sw" ? "Maarufu" : "Trending" },
+    { value: "ending", label: locale === "sw" ? "Inamalizika" : "Ending Soon" },
+    { value: "new", label: locale === "sw" ? "Mpya" : "Newest" },
+  ];
+  const sortLabel = SORT_OPTIONS.find((s) => s.value === sort)?.label || SORT_OPTIONS[0].label;
 
   // Sync filters from the URL so in-card category/subcategory links filter
   // in place (no full page redirect) when the query string changes.
@@ -541,6 +551,103 @@ function MarketsContent() {
               className="w-full pl-11 pr-4 py-3 bg-[var(--card)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
             />
           </div>
+
+          {/* Category-view toolbar: Categories dropdown + Sort dropdown (Limitless style) */}
+          {category !== "all" && (
+            <div className="flex items-center justify-between gap-2">
+              {/* Categories dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => { setCatDropdownOpen(!catDropdownOpen); setSortDropdownOpen(false); }}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-[var(--foreground)] text-[var(--background)] font-mono font-bold text-sm rounded-lg active:scale-95 transition-transform"
+                >
+                  <Stack size={15} weight="bold" />
+                  {locale === "sw" ? "Aina" : "Categories"}
+                  <CaretDown size={13} weight="bold" className={cn("transition-transform", catDropdownOpen && "rotate-180")} />
+                </button>
+                {catDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setCatDropdownOpen(false)} />
+                    <div className="absolute left-0 top-full mt-1 z-50 w-64 max-h-[60vh] overflow-y-auto bg-[var(--background)] border-2 border-[var(--card-border)] rounded-xl shadow-2xl py-1">
+                      {/* Categories list */}
+                      {orderedCategories.filter(c => c !== "all").map((c) => (
+                        <button
+                          key={c}
+                          onClick={() => { setCategory(c); setSubCategory("all"); setCatDropdownOpen(false); }}
+                          className={cn(
+                            "w-full flex items-center justify-between px-4 py-2.5 text-sm font-mono text-left transition-colors",
+                            category === c ? "bg-[var(--accent)]/10 text-[var(--accent)] font-bold" : "text-[var(--foreground)] hover:bg-[var(--card)]"
+                          )}
+                        >
+                          {locale === "sw" ? (t.markets.categories as Record<string, string>)[c.toLowerCase()] || c : c}
+                          {category === c && <Check size={14} weight="bold" />}
+                        </button>
+                      ))}
+                      {/* Subcategories for Sports */}
+                      {category === "Sports" && (
+                        <>
+                          <div className="border-t border-[var(--card-border)] my-1" />
+                          <p className="px-4 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-[var(--muted)]">{locale === "sw" ? "Ligi" : "Leagues"}</p>
+                          <button
+                            onClick={() => { setSubCategory("all"); setCatDropdownOpen(false); }}
+                            className={cn("w-full flex items-center justify-between px-4 py-2.5 text-sm font-mono transition-colors", subCategory === "all" ? "bg-[var(--accent)]/10 text-[var(--accent)] font-bold" : "text-[var(--foreground)] hover:bg-[var(--card)]")}
+                          >
+                            🏟️ {locale === "sw" ? "Zote" : "All"}
+                            <span className="text-xs text-[var(--muted)]">{markets.length}</span>
+                          </button>
+                          {SPORTS_SUBCATEGORIES.map((sub) => {
+                            const count = (markets as { subCategory?: string }[]).filter(m => m.subCategory === sub.value).length;
+                            if (count === 0 && subCategory !== sub.value) return null;
+                            return (
+                              <button
+                                key={sub.value}
+                                onClick={() => { setSubCategory(sub.value); setCatDropdownOpen(false); }}
+                                className={cn("w-full flex items-center justify-between px-4 py-2.5 text-sm font-mono transition-colors", subCategory === sub.value ? "bg-[var(--accent)]/10 text-[var(--accent)] font-bold" : "text-[var(--foreground)] hover:bg-[var(--card)]")}
+                              >
+                                <span className="flex items-center gap-2">
+                                  {sub.icon.startsWith('/') ? <Image src={sub.icon} alt="" width={16} height={16} className="object-contain" /> : <span>{sub.icon}</span>}
+                                  {sub.label}
+                                </span>
+                                <span className="text-xs text-[var(--muted)]">{count}</span>
+                              </button>
+                            );
+                          })}
+                        </>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Sort dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => { setSortDropdownOpen(!sortDropdownOpen); setCatDropdownOpen(false); }}
+                  className="flex items-center gap-1.5 text-sm font-mono text-[var(--muted)]"
+                >
+                  {locale === "sw" ? "Panga:" : "Sort by:"} <span className="font-bold text-[var(--foreground)]">{sortLabel}</span>
+                  <CaretDown size={13} weight="bold" className={cn("transition-transform", sortDropdownOpen && "rotate-180")} />
+                </button>
+                {sortDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setSortDropdownOpen(false)} />
+                    <div className="absolute right-0 top-full mt-1 z-50 w-40 bg-[var(--background)] border-2 border-[var(--card-border)] rounded-xl shadow-2xl py-1">
+                      {SORT_OPTIONS.map((s) => (
+                        <button
+                          key={s.value}
+                          onClick={() => { setSort(s.value); setSortDropdownOpen(false); }}
+                          className={cn("w-full flex items-center justify-between px-4 py-2.5 text-sm font-mono transition-colors", sort === s.value ? "bg-[var(--accent)]/10 text-[var(--accent)] font-bold" : "text-[var(--foreground)] hover:bg-[var(--card)]")}
+                        >
+                          {s.label}
+                          {sort === s.value && <Check size={14} weight="bold" />}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Persistent subcategory chips while viewing Sports — always available to switch */}
           {category === "Sports" && (
