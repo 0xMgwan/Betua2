@@ -395,6 +395,17 @@ function MarketsContent() {
   const [subCategory, setSubCategory] = useState(searchParams.get("subCategory") || "all");
   const [sort, setSort] = useState("new");
 
+  // Sync filters from the URL so in-card category/subcategory links filter
+  // in place (no full page redirect) when the query string changes.
+  const spString = searchParams.toString();
+  useEffect(() => {
+    const c = searchParams.get("category") || "all";
+    const s = searchParams.get("subCategory") || "all";
+    setCategory(c);
+    setSubCategory(s);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spString]);
+
   useEffect(() => {
     setLoading(true);
     const params = new URLSearchParams({ status: "OPEN", sort });
