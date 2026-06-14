@@ -352,7 +352,7 @@ export function MarketCard({ market, index = 0, hero = false }: { market: Market
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    router.push(`/markets?category=${market.category}`);
+                    router.push(`/markets?category=${market.category}`, { scroll: false });
                   }}
                   className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 border hover:opacity-80 transition-opacity cursor-pointer"
                   style={{ borderColor: `${catColor}50`, color: catColor, backgroundColor: `${catColor}10` }}
@@ -370,7 +370,7 @@ export function MarketCard({ market, index = 0, hero = false }: { market: Market
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      router.push(`/markets?category=${market.category}&subCategory=${market.subCategory}`);
+                      router.push(`/markets?category=${market.category}&subCategory=${market.subCategory}`, { scroll: false });
                     }}
                     className="text-[9px] font-mono font-bold text-[var(--accent)] uppercase tracking-wider px-1.5 py-0.5 border border-[var(--accent)]/30 bg-[var(--accent)]/10 flex items-center gap-1 hover:opacity-80 transition-opacity cursor-pointer"
                   >

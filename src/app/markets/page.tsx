@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, Suspense, type ReactNode } from "react";
+import { useEffect, useState, useRef, Suspense, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
@@ -406,8 +406,11 @@ function MarketsContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spString]);
 
+  // Only show the skeleton on the very first load; on filter changes keep the
+  // current cards visible and swap them in when the fetch resolves (smooth, no flash/jump)
+  const didInitialLoad = useRef(false);
   useEffect(() => {
-    setLoading(true);
+    if (!didInitialLoad.current) setLoading(true);
     const params = new URLSearchParams({ status: "OPEN", sort });
     if (category !== "all") params.set("category", category);
     if (category === "Sports" && subCategory !== "all") params.set("subCategory", subCategory);
@@ -416,7 +419,7 @@ function MarketsContent() {
     fetch(`/api/markets?${params}`)
       .then((r) => r.json())
       .then((d) => setMarkets(d.markets || []))
-      .finally(() => setLoading(false));
+      .finally(() => { setLoading(false); didInitialLoad.current = true; });
   }, [category, subCategory, sort, search]);
 
   return (
@@ -701,11 +704,12 @@ function MarketsContent() {
                           </div>
                         )}
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {/* Mobile: horizontal swipe row (Limitless). Desktop: responsive grid. */}
+                        <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 overflow-x-auto sm:overflow-visible snap-x scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0 pb-2 sm:pb-0">
                           {items.map((item) => {
                             const node = renderItem(item, runningIndex++);
                             return (
-                              <div key={item.type === 'event' ? item.eventId : item.market.id}>{node}</div>
+                              <div key={item.type === 'event' ? item.eventId : item.market.id} className="snap-start shrink-0 w-[85%] sm:w-auto">{node}</div>
                             );
                           })}
                         </div>
