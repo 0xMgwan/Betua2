@@ -195,13 +195,13 @@ export async function POST(req: NextRequest) {
       newPoolOut = Math.round(result.newPoolOut);
     }
 
-    // Fixed-odds implied payout: what the user receives if they win.
-    // Each winning share redeems for exactly 1 TZS (CPMM convention), so the
-    // payout is the actual shares received — NOT bet/pre-trade-odds (which ignores
-    // slippage and over-promises on market-moving trades). The (1 - FEE_PERCENT)
-    // factor accounts for the 5% settlement fee at redemption.
-    // This guarantees display == stored == redeemed, with no parimutuel surprise.
-    const payoutIfWin = Math.round(shares * (1 - FEE_PERCENT));
+    // Fixed-odds implied payout: what user should receive if they win.
+    // Calculated now (before any transfers) so it can be stored in the position.
+    // tradeAmount = net after entry fee; oddsPrice = pre-trade probability (0–1)
+    // The (1 - FEE_PERCENT) factor accounts for the redemption settlement fee.
+    const payoutIfWin = oddsPrice > 0
+      ? Math.round((tradeAmount / oddsPrice) * (1 - FEE_PERCENT))
+      : 0;
 
     // ── No per-trade on-chain transfer ────────────────────────────────────
     // All user funds are held in the settlement pool wallet. Trades are

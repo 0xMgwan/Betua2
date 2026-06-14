@@ -1160,10 +1160,21 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   {/* Estimate */}
                   {estimatedShares > 0 && market && (() => {
                     const FEE_PCT = 0.05;
-                    // Share-based payout: each winning share redeems for 1 TZS, minus 5%
-                    // settlement. Slippage-aware (uses actual estimated shares) so it matches
-                    // exactly what the trade stores and redeem pays — no parimutuel surprise.
-                    const payoutIfWin = Math.round(estimatedShares * (1 - FEE_PCT));
+                    const amountInTzs = fromDisplay(Number(amount));
+                    const netAmountIn = Math.round(amountInTzs * (1 - FEE_PCT));
+                    // Price-based payout: standard prediction market display
+                    // Shows what you'd win at current market odds (netAmount / probability × (1 - settlement fee))
+                    let currentOddsPrice: number;
+                    if (isMultiOption && market.optionPools) {
+                      const prices = getMultiOptionPrices(market.optionPools as number[]);
+                      currentOddsPrice = prices[selectedOption] ?? 0.5;
+                    } else {
+                      const prices = getPrice(market.yesPool, market.noPool);
+                      currentOddsPrice = side === "YES" ? prices.yes : prices.no;
+                    }
+                    const payoutIfWin = currentOddsPrice > 0
+                      ? Math.round(netAmountIn / currentOddsPrice * (1 - FEE_PCT))
+                      : 0;
                     const avgPriceDisplay = displayCurrency === 'USDC' 
                       ? `$${(estimatedPrice / 2630).toFixed(4)}`
                       : displayCurrency === 'KES'

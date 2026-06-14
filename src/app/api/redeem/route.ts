@@ -107,15 +107,46 @@ export async function POST(req: NextRequest) {
       // payoutIfWin was already net of both fees when stored, so pay it directly.
       payoutTzs = Math.round(storedImpliedPayout);
       // Derive the settlement fee that was baked in at trade time so it can be
-      // forwarded to the fee wallet below.
+      // forwarded to the fee wallet below (same as the parimutuel path does).
+      // gross = payoutTzs / (1 - FEE_PERCENT), fee = gross × FEE_PERCENT
       settlementFee = Math.round(payoutTzs * FEE_PERCENT / (1 - FEE_PERCENT));
     } else {
-      // ── Share-based fallback for positions with no stored payout ─────────
-      // Each winning share redeems for 1 TZS (CPMM convention). Pay shares × 1,
-      // net of the 5% settlement fee. This matches the fixed-odds value the user
-      // saw and avoids the parimutuel dilution that previously underpaid winners
-      // (e.g. 4,770 winning shares → 4,531 net, not a pot-split fraction).
-      const grossPayout = Math.round(winningShares); // 1 TZS per winning share
+      // ── Parimutuel fallback for positions created before this fix ────────
+      // Fetch all positions to calculate total winning shares.
+      // Exclude the market creator's seeded LP position to avoid dilution.
+      const allPositions = await prisma.position.findMany({
+        where: { marketId: position.marketId },
+        include: { market: { select: { creatorId: true, seedAmount: true } } },
+      });
+
+      let totalWinningShares = 0;
+      for (const p2 of allPositions) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const p2a = p2 as any;
+        let posShares = 0;
+        if (isMultiOption) {
+          const optShares = (p2a.optionShares as Record<string, number>) || {};
+          posShares = optShares[String(outcome)] || 0;
+        } else {
+          posShares = outcome === 1 ? p2.yesShares : p2.noShares;
+        }
+        // Exclude creator LP seed position from bettor pool
+        if (!(p2a.market?.seedAmount > 0 && p2.userId === p2a.market.creatorId)) {
+          totalWinningShares += posShares;
+        }
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const seedAmount = (position.market as any).seedAmount ?? 0;
+      const pot = Math.round(position.market.totalVolume * (1 - FEE_PERCENT));
+      const lpPotClaim = seedAmount > 0 && position.market.totalVolume > 0
+        ? Math.round((seedAmount / position.market.totalVolume) * pot)
+        : 0;
+      const regularPot = Math.max(0, pot - lpPotClaim);
+
+      const grossPayout = totalWinningShares > 0
+        ? Math.round((winningShares / totalWinningShares) * regularPot)
+        : 0;
       settlementFee = Math.round(grossPayout * FEE_PERCENT);
       payoutTzs = grossPayout - settlementFee;
     }
