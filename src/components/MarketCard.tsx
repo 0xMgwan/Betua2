@@ -411,9 +411,15 @@ export function MarketCard({ market, index = 0, hero = false }: { market: Market
                   <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,0,0,0.08)_2px,rgba(0,0,0,0.08)_4px)] pointer-events-none" />
                 </div>
               )}
-              <h3 className="font-mono text-[13px] sm:text-sm font-bold leading-snug group-hover:text-[var(--accent)] transition-colors line-clamp-2 flex-1">
-                {displayTitle}
-              </h3>
+              <div className="flex-1 min-w-0">
+                {/* Category breadcrumb subheading (Limitless style) */}
+                <p className="text-[9px] font-mono font-bold uppercase tracking-wider mb-0.5 truncate" style={{ color: catColor }}>
+                  {market.category}{market.subCategory ? ` · ${market.subCategory}` : ""}
+                </p>
+                <h3 className="font-mono text-[13px] sm:text-sm font-bold leading-snug group-hover:text-[var(--accent)] transition-colors line-clamp-2">
+                  {displayTitle}
+                </h3>
+              </div>
             </div>
 
             {/* Price bars */}
