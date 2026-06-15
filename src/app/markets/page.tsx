@@ -819,13 +819,27 @@ function MarketsContent() {
                   return [...groups.entries()].map(([groupName, items], gi) => (
                     <div key={groupName}>
                       <section className="mb-8">
-                        {/* Section header — category/subcategory + count, outside the cards */}
+                        {/* Section header — category/subcategory + count, outside the cards.
+                            In "All" view the category heading is clickable → its category page. */}
                         <div className="flex items-baseline gap-2 mb-3 border-b border-[var(--card-border)] pb-2">
-                          <h2 className="text-lg font-mono font-black">
-                            {category === "all"
-                              ? (locale === "sw" ? (t.markets.categories as Record<string, string>)[groupName.toLowerCase()] || groupName : groupName)
-                              : groupName}
-                          </h2>
+                          {category === "all" ? (
+                            <button
+                              onClick={() => {
+                                setCategory(groupName);
+                                setSubCategory("all");
+                                setSort("new");
+                                window.scrollTo({ top: 0, behavior: "smooth" });
+                              }}
+                              className="group/cat flex items-baseline gap-1.5 text-left hover:text-[var(--accent)] transition-colors"
+                            >
+                              <h2 className="text-lg font-mono font-black">
+                                {locale === "sw" ? (t.markets.categories as Record<string, string>)[groupName.toLowerCase()] || groupName : groupName}
+                              </h2>
+                              <CaretRight size={14} weight="bold" className="self-center text-[var(--muted)] group-hover/cat:text-[var(--accent)] group-hover/cat:translate-x-0.5 transition-all" />
+                            </button>
+                          ) : (
+                            <h2 className="text-lg font-mono font-black">{groupName}</h2>
+                          )}
                           <span className="text-sm font-mono text-[var(--muted)]">({items.length})</span>
                         </div>
 
