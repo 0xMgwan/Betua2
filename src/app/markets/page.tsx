@@ -863,10 +863,10 @@ function MarketsContent() {
                             })}
                           </div>
                         ) : (
-                          /* Dedicated category page: super-compact cards, 2-up on mobile */
-                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                          /* Dedicated category page: full clear cards, 1-up on mobile (stacked) */
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {items.map((item) => {
-                              const node = renderItem(item, runningIndex++, false, true);
+                              const node = renderItem(item, runningIndex++);
                               return (
                                 <div key={item.type === 'event' ? item.eventId : item.market.id}>{node}</div>
                               );

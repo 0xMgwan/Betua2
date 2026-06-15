@@ -174,32 +174,33 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
   // Shared big-bold odds buttons (used by both normal and hero layouts)
   const buyButtons = isTradeable && (
     isMultiOption ? (
-      <div className="grid grid-cols-2 gap-2 mb-2">
-        {displayOptions!.slice(0, 4).map((option, idx) => {
-          const colors = ["#00e5a0", "#00b4d8", "#f59e0b", "#ef4444"];
+      /* All options, one full-width row each: name + % + odds + cart */
+      <div className="flex flex-col gap-1.5 mb-2">
+        {displayOptions!.map((option, idx) => {
+          const colors = ["#00e5a0", "#00b4d8", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#84cc16"];
           const c = colors[idx % colors.length];
           const optPrice = market.optionPrices?.[idx] || 0;
+          const pct = Math.round(optPrice * 100);
           const originalOption = market.options?.[idx] || option;
           const isAdded = cartAdded === `${originalOption}-${idx}`;
           return (
-            <div key={idx} className="relative">
+            <div key={idx} className="flex items-stretch gap-1.5">
               <button
                 onClick={(e) => handleQuickBuy(e, originalOption, idx)}
-                className="w-full py-3.5 px-3 border-2 font-mono transition-all active:scale-[0.97] flex flex-col items-center gap-0.5"
-                style={{ borderColor: `${c}55`, color: c, backgroundColor: `${c}12` }}
+                className="flex-1 min-w-0 flex items-center gap-2 px-2.5 py-2 border-2 font-mono transition-all active:scale-[0.98] hover:opacity-90"
+                style={{ borderColor: `${c}55`, color: c, backgroundColor: `${c}10` }}
               >
-                <span className="text-[10px] font-bold uppercase tracking-wider opacity-80 truncate max-w-full">
-                  {option.length > 10 ? option.slice(0, 10) + ".." : option}
-                </span>
-                <span className="text-xl font-black leading-none">{optPrice > 0 ? (1 / optPrice).toFixed(1) : '∞'}<span className="text-xs">x</span></span>
+                <span className="flex-1 min-w-0 text-left text-xs font-bold truncate">{option}</span>
+                <span className="shrink-0 text-[10px] font-bold opacity-60 tabular-nums">{pct}%</span>
+                <span className="shrink-0 text-base font-black leading-none tabular-nums">{optPrice > 0 ? (1 / optPrice).toFixed(1) : '∞'}<span className="text-[10px]">x</span></span>
               </button>
               <button
                 onClick={(e) => handleAddToCart(e, originalOption, idx)}
-                className="absolute top-1 right-1 p-1 border transition-all active:scale-95"
+                className="shrink-0 px-2 border-2 transition-all active:scale-95 flex items-center justify-center"
                 style={{ borderColor: isAdded ? '#00e5a0' : `${c}55`, color: isAdded ? '#000' : c, backgroundColor: isAdded ? '#00e5a0' : 'var(--background)' }}
                 title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
               >
-                {isAdded ? <Check size={12} weight="bold" /> : <ShoppingCart size={12} weight="bold" />}
+                {isAdded ? <Check size={14} weight="bold" /> : <ShoppingCart size={14} weight="bold" />}
               </button>
             </div>
           );
@@ -515,34 +516,8 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
               </h3>
             </div>
 
-            {/* Price bars */}
-            {isMultiOption ? (
-              <div className="space-y-1.5 mb-3">
-                {displayOptions!.map((opt, i) => {
-                  const pctRaw = (market.optionPrices![i] || 0) * 100;
-                  const pct = pctRaw % 1 === 0 ? Math.round(pctRaw) : parseFloat(pctRaw.toFixed(1));
-                  const colors = ["#00e5a0", "#00b4d8", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#84cc16"];
-                  const c = colors[i % colors.length];
-                  return (
-                    <div key={i} className="flex items-center gap-2 font-mono text-[11px]">
-                      <span className="w-[70px] truncate font-bold" style={{ color: c }}>
-                        {opt}
-                      </span>
-                      <div className="flex-1 h-[6px] bg-[var(--background)] border border-[var(--card-border)]/50 overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${pct}%` }}
-                          transition={{ duration: 0.6, delay: index * 0.05 + i * 0.1 }}
-                          className="h-full"
-                          style={{ backgroundColor: c }}
-                        />
-                      </div>
-                      <span className="w-8 text-right font-bold tabular-nums" style={{ color: c }}>{pct}%</span>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
+            {/* Price bar — binary only (multi-option shows % inline on each option button) */}
+            {!isMultiOption && (
               <div className="mb-2">
                 {/* Combined YES/NO bar */}
                 <div className="flex items-center justify-between mb-1 font-mono text-[10px]">
