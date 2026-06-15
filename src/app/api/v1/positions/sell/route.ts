@@ -10,6 +10,7 @@ import { getPayoutForShares, getMultiOptionPayoutForShares } from "@/lib/amm";
 import { validateApiKey, checkRateLimit, logApiRequest, apiError, apiSuccess } from "@/lib/api-auth";
 
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
+const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
 const FEE_PERCENT = parseFloat(process.env.TRANSACTION_FEE_PERCENT || "5") / 100;
 
 export async function POST(req: NextRequest) {
@@ -113,6 +114,18 @@ export async function POST(req: NextRequest) {
       } catch (err) {
         if (err instanceof NtzsApiError) return apiError(err.message || "Payout failed", 400);
         throw err;
+      }
+
+      // Forward the withheld 5% to the settlement-fee wallet (non-blocking,
+      // delayed to avoid a nonce collision with the payout transfer above).
+      if (SETTLEMENT_FEE_NTZS_USER_ID && feeAmount > 0) {
+        setTimeout(() => {
+          ntzs.transfers.create({
+            fromUserId: PLATFORM_NTZS_USER_ID,
+            toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
+            amountTzs: feeAmount,
+          }).catch((e) => console.error("[sell] settlement fee forward failed (non-fatal):", e));
+        }, 1500);
       }
     }
 

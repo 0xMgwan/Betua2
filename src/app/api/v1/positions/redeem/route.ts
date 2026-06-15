@@ -9,6 +9,7 @@ import { ntzs } from "@/lib/ntzs";
 import { validateApiKey, checkRateLimit, logApiRequest, apiError, apiSuccess } from "@/lib/api-auth";
 
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
+const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
 const FEE_PERCENT = parseFloat(process.env.TRANSACTION_FEE_PERCENT || "5") / 100;
 
 export async function POST(req: NextRequest) {
@@ -111,6 +112,18 @@ export async function POST(req: NextRequest) {
         await prisma.position.update({ where: { id: positionId }, data: { redeemed: false } });
         console.error("Redeem transfer failed:", err);
         return apiError("Transfer failed", 500);
+      }
+
+      // Forward the withheld settlement fee to the fee wallet (non-blocking,
+      // delayed to avoid a nonce collision with the payout transfer above).
+      if (SETTLEMENT_FEE_NTZS_USER_ID && settlementFee > 0) {
+        setTimeout(() => {
+          ntzs.transfers.create({
+            fromUserId: PLATFORM_NTZS_USER_ID,
+            toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
+            amountTzs: settlementFee,
+          }).catch((e) => console.error("[redeem] settlement fee forward failed (non-fatal):", e));
+        }, 1500);
       }
     }
 
