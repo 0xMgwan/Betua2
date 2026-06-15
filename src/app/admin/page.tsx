@@ -90,16 +90,22 @@ export default function AdminPage() {
     finally { setReconciling(false); }
   };
 
-  const handleResolvePyth = async () => {
+  const handleResolvePyth = async (dryRun = false) => {
     setResolvingPyth(true);
     setResolvePythMsg("");
     try {
-      const res = await fetch("/api/cron/resolve-pyth", { method: "POST" });
+      const res = await fetch(`/api/cron/resolve-pyth${dryRun ? "?dry=1" : ""}`, { method: "POST" });
       const d = await res.json();
       if (!res.ok) {
         setResolvePythMsg(`❌ ${d.error || "Failed"}`);
       } else if (d.checked === 0) {
         setResolvePythMsg("✓ No due Pyth markets");
+      } else if (dryRun) {
+        const lines = (d.results || [])
+          .map((r: { symbol?: string; price?: number; target?: number; operator?: string; wouldResolve?: string }) =>
+            `${r.symbol} ${r.price} vs ${r.operator} ${r.target} → ${r.wouldResolve}`)
+          .join(" · ");
+        setResolvePythMsg(`🔍 ${d.checked} due: ${lines}`);
       } else {
         setResolvePythMsg(`✅ Resolved ${d.resolved}/${d.checked} due market(s)`);
         await loadDashboard(true);
@@ -494,8 +500,9 @@ export default function AdminPage() {
                 <div className="p-4 space-y-2">
                   <p className="text-[11px] font-mono font-bold text-[var(--accent)] uppercase tracking-wider mb-3">Quick Actions</p>
                   {[
-                    { label: "Reconcile All Balances", desc: "Recalculate balanceTzs from tx history", action: handleReconcile, loading: reconciling, msg: reconcileMsg, color: "border-orange-500/40 text-orange-400 hover:bg-orange-500/10" },
-                    { label: "Resolve due Pyth now", desc: "Settle expired gold/FX/commodity markets from live Pyth prices", action: handleResolvePyth, loading: resolvingPyth, msg: resolvePythMsg, color: "border-[#00b4d8]/40 text-[#00b4d8] hover:bg-[#00b4d8]/10" },
+                    { label: "Reconcile All Balances", desc: "Recalculate balanceTzs from tx history", action: () => handleReconcile(), loading: reconciling, msg: reconcileMsg, color: "border-orange-500/40 text-orange-400 hover:bg-orange-500/10" },
+                    { label: "Preview due Pyth (dry run)", desc: "Show what WOULD resolve — live price vs target, no settling", action: () => handleResolvePyth(true), loading: resolvingPyth, msg: resolvePythMsg, color: "border-[var(--card-border)] text-[var(--muted)] hover:bg-[var(--card)]" },
+                    { label: "Resolve due Pyth now", desc: "Settle expired gold/FX/commodity markets from live Pyth prices", action: () => handleResolvePyth(false), loading: resolvingPyth, msg: resolvePythMsg, color: "border-[#00b4d8]/40 text-[#00b4d8] hover:bg-[#00b4d8]/10" },
                   ].map(a => (
                     <div key={a.label} className="border border-[var(--card-border)] p-3 space-y-1">
                       <div className="flex items-center justify-between">

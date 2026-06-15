@@ -31,6 +31,9 @@ async function handler(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Dry run (?dry=1): compute and report what WOULD resolve, without settling.
+  const dry = new URL(req.url).searchParams.get("dry") === "1";
+
   // Due Pyth markets: still OPEN, past their resolve time, carrying a PYTH tag.
   const due = await prisma.market.findMany({
     where: {
@@ -69,6 +72,19 @@ async function handler(req: NextRequest) {
     // operator "above" → YES if price ≥ target; otherwise YES if price ≤ target.
     const outcome = operator === "above" ? priceData.price >= target : priceData.price <= target;
 
+    if (dry) {
+      results.push({
+        id: m.id,
+        title: m.title,
+        symbol,
+        target,
+        operator,
+        price: priceData.price,
+        wouldResolve: outcome ? "YES" : "NO",
+      });
+      continue;
+    }
+
     try {
       const res = await fetch(`${origin}/api/markets/${m.id}/resolve`, {
         method: "POST",
@@ -95,7 +111,13 @@ async function handler(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, checked: due.length, resolved: results.filter((r) => r.resolved).length, results });
+  return NextResponse.json({
+    ok: true,
+    dry,
+    checked: due.length,
+    resolved: dry ? 0 : results.filter((r) => r.resolved).length,
+    results,
+  });
 }
 
 export async function GET(req: NextRequest) {
