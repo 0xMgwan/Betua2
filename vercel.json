@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/cron/resolve-pyth",
-      "schedule": "0 21 * * *"
+      "schedule": "0 * * * *"
     }
   ]
 }
