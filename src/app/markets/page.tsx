@@ -20,6 +20,7 @@ import { ActivityTicker } from "@/components/ActivityTicker";
 import { FirstDepositPrompt } from "@/components/FirstDepositPrompt";
 import { FeaturedDeck } from "@/components/FeaturedDeck";
 import { ReferralBanner } from "@/components/ReferralBanner";
+import { CreatorRewardsBanner } from "@/components/CreatorRewardsBanner";
 import { EmailSubscribe } from "@/components/EmailSubscribe";
 
 // Event Card Component with Quick Buy
@@ -880,6 +881,12 @@ function MarketsContent() {
                           <ReferralBanner />
                         </div>
                       )}
+                      {/* Creator rewards banner injected mid-feed after the second group */}
+                      {gi === 1 && (
+                        <div className="mb-8">
+                          <CreatorRewardsBanner />
+                        </div>
+                      )}
                     </div>
                   ));
                 })()}
@@ -889,6 +896,11 @@ function MarketsContent() {
         )}
       </div>
       
+      {/* Creator rewards promo (mirrors referral banner) */}
+      <div className="max-w-7xl mx-auto px-4 pt-2 pb-4">
+        <CreatorRewardsBanner />
+      </div>
+
       {/* Email Subscribe Section */}
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="bg-[var(--card)] border border-[var(--card-border)] p-6">

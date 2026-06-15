@@ -6,7 +6,7 @@ import { notifyMarketResolved } from "@/lib/push";
 import { ntzs } from "@/lib/ntzs";
 
 const FEE_PERCENT = parseFloat(process.env.TRANSACTION_FEE_PERCENT || "5") / 100;
-const CREATOR_FEE_PERCENT = 0.01; // 1% of total volume goes to non-admin creators
+const CREATOR_FEE_SHARE = 0.30; // non-admin creators earn 30% of the platform fees collected on their market
 const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
 const ADMIN_USER_IDS = [
@@ -143,13 +143,13 @@ export async function POST(
     })
     .filter(Boolean);
 
-  // ── Creator Fee: Pay 1% of volume to non-admin market creators ──
+  // ── Creator Fee: Pay 30% of collected platform fees to non-admin market creators ──
   const isAdminCreator = ADMIN_USER_IDS.includes(market.creatorId);
   let creatorFeeAmount = 0;
   let creatorFeePaid = false;
-  
+
   if (!isAdminCreator && market.totalVolume > 0) {
-    creatorFeeAmount = Math.round(market.totalVolume * CREATOR_FEE_PERCENT);
+    creatorFeeAmount = Math.round(market.totalVolume * FEE_PERCENT * CREATOR_FEE_SHARE);
     
     if (creatorFeeAmount > 0 && SETTLEMENT_FEE_NTZS_USER_ID) {
       // Get creator's nTZS user ID

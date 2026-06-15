@@ -447,7 +447,7 @@ export default function CreateMarketPage() {
                   {t.markets.createMarket.feeDescription}
                 </p>
                 <p className="text-[10px] font-mono text-green-400/80 mt-1 ml-6">
-                  💰 Earn 1% of total trading volume when your market resolves!
+                  💰 Earn 30% of the trading fees collected on your market when it resolves!
                 </p>
               </motion.div>
 

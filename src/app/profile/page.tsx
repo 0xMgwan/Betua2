@@ -425,8 +425,8 @@ export default function ProfilePage() {
                 </div>
                 <p className="text-xs text-[var(--muted)]">
                   {locale === "sw"
-                    ? "Pata 1% ya sauti ya kila soko unaloundwa linalotatuliwa."
-                    : "Earn 1% of volume on every market you create when it resolves."}
+                    ? "Pata 30% ya ada za biashara za kila soko unaloundwa linalotatuliwa."
+                    : "Earn 30% of the trading fees on every market you create when it resolves."}
                 </p>
 
                 {/* Summary stats */}
