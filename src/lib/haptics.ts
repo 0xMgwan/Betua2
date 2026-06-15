@@ -1,9 +1,9 @@
-// Lightweight haptics helper.
-// - Android (Chrome/Firefox): uses the Web Vibration API (navigator.vibrate).
-// - iOS Safari 17.4+: navigator.vibrate is unsupported, so we fall back to the
-//   hidden `<input type="checkbox" switch>` trick — programmatically toggling a
-//   system "switch" control emits a subtle haptic tick on supported iPhones.
-// - Anything else: gracefully no-ops.
+// Haptics helper.
+// - Android (Chrome/Firefox): Web Vibration API (navigator.vibrate).
+// - iOS Safari: the hidden <input type="checkbox" switch> hack (matches the
+//   `ios-haptics` library) — build a throwaway switch, click its label to toggle
+//   it, which makes iOS emit a haptic tick, then remove it.
+// - Anything else: no-op.
 
 export type HapticPattern =
   | "light"
@@ -18,68 +18,42 @@ const PATTERNS: Record<HapticPattern, number | number[]> = {
   light: 12,
   medium: 22,
   heavy: 35,
-  success: [12, 40, 18],
-  error: [30, 45, 30],
+  success: [50, 70, 50],
+  error: [50, 70, 50, 70, 50],
 };
 
 const STORAGE_KEY = "haptics-enabled";
 let enabled = true;
 
+// Coarse pointer ⇒ touch device (phones / tablets). Used to gate the iOS path.
+const isTouchDevice =
+  typeof window !== "undefined" &&
+  typeof window.matchMedia === "function" &&
+  window.matchMedia("(pointer: coarse)").matches;
+
 function hasVibrate(): boolean {
   return typeof navigator !== "undefined" && typeof navigator.vibrate === "function";
 }
 
-// ── iOS fallback: hidden <input type="checkbox" switch> + linked <label> ──────
-// Matches the canonical `use-haptic` implementation. Two SEPARATE sibling
-// elements (not nested) linked by id/for; clicking the LABEL forwards a click to
-// the switch, toggling it, which makes iOS 18+ emit a haptic tick. Clicking the
-// input directly does NOT work — WebKit only fires the haptic via the label.
-const IOS_SWITCH_ID = "haptic-switch";
-let iosHapticLabel: HTMLLabelElement | null = null;
-
-function ensureIosSwitch(): HTMLLabelElement | null {
-  if (typeof document === "undefined") return null;
-  if (iosHapticLabel && document.body.contains(iosHapticLabel)) return iosHapticLabel;
-
-  let input = document.getElementById(IOS_SWITCH_ID) as HTMLInputElement | null;
-  if (!input) {
-    input = document.createElement("input");
-    input.type = "checkbox";
-    input.id = IOS_SWITCH_ID;
-    input.setAttribute("switch", ""); // iOS 18+ system switch control
-    input.style.display = "none";
-    document.body.appendChild(input);
-  }
-
-  const label = document.createElement("label");
-  label.htmlFor = IOS_SWITCH_ID;
-  label.style.display = "none";
-  document.body.appendChild(label);
-  iosHapticLabel = label;
-  return label;
-}
-
-function fireIosHaptic() {
-  ensureIosSwitch()?.click();
-}
-
-function isAppleTouchDevice(): boolean {
-  if (typeof navigator === "undefined") return false;
-  // iPhone/iPod, plus iPadOS which reports as "MacIntel" with touch points.
-  return (
-    /iP(hone|ad|od)/.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
-  );
-}
-
-// True if either Android vibration OR the iOS switch trick can run.
 export function isHapticsSupported(): boolean {
-  return hasVibrate() || isAppleTouchDevice();
+  return hasVibrate() || isTouchDevice;
 }
 
-// Pre-create the iOS switch + label so the first tap fires without setup delay.
-export function primeHaptics() {
-  if (!hasVibrate() && isAppleTouchDevice()) ensureIosSwitch();
+// iOS: create a fresh hidden <label><input type="checkbox" switch></label> in
+// <head>, click the LABEL (forwards to the switch → toggles it → haptic), then
+// remove it. Verbatim technique from ios-haptics v2.
+function fireIosSwitch() {
+  if (typeof document === "undefined") return;
+  const label = document.createElement("label");
+  label.ariaHidden = "true";
+  label.style.display = "none";
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.setAttribute("switch", "");
+  label.appendChild(input);
+  document.head.appendChild(label);
+  label.click();
+  document.head.removeChild(label);
 }
 
 export function setHapticsEnabled(value: boolean) {
@@ -95,7 +69,12 @@ export function getHapticsEnabled(): boolean {
   return enabled;
 }
 
-// Hydrate the preference once on the client.
+// Kept for API compatibility (no warming needed anymore).
+export function primeHaptics() {
+  /* no-op */
+}
+
+// Hydrate the saved preference once on the client.
 if (typeof window !== "undefined") {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -107,6 +86,7 @@ if (typeof window !== "undefined") {
 
 export function haptic(pattern: HapticPattern = "light") {
   if (!enabled) return;
+
   // Android / anything exposing the Vibration API.
   if (hasVibrate()) {
     try {
@@ -116,10 +96,17 @@ export function haptic(pattern: HapticPattern = "light") {
     }
     return;
   }
-  // iOS Safari 17.4+ fallback: toggle a throwaway system switch to emit a tick.
-  // Note: the switch produces a single fixed-intensity haptic; pattern is ignored.
+
+  // iOS Safari fallback. The switch emits one fixed tick, so multi-pulse
+  // patterns are faked with repeats.
+  if (!isTouchDevice) return;
   try {
-    fireIosHaptic();
+    fireIosSwitch();
+    if (pattern === "success") setTimeout(fireIosSwitch, 120);
+    if (pattern === "error") {
+      setTimeout(fireIosSwitch, 120);
+      setTimeout(fireIosSwitch, 240);
+    }
   } catch {
     /* ignore */
   }
