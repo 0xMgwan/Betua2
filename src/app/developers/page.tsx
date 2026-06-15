@@ -414,6 +414,63 @@ export default function DevelopersPage() {
                 "totalShares": "object — Shares by outcome",
               }}
             />
+            <Endpoint
+              method="POST"
+              path="/api/v1/markets"
+              description="Create a market (binary, multi-option, or Pyth auto-resolve)"
+              body={{
+                "title": "string (required, unless pythSymbol+pythTargetPrice given)",
+                "description": "string (required)",
+                "category": "string (required) — must be one of GET /categories",
+                "subCategory": "string (optional) — only used when category = 'Sports'",
+                "resolvesAt": "string (required) — ISO 8601 date/time",
+                "creatorExternalId": "string (required) — your user ID (must exist + funded)",
+                "imageUrl": "string (optional)",
+                "options": "string[] (optional, 2–10) — for multi-option markets",
+                "initialProb": "number (optional, 1–99) — binary starting YES probability",
+                "optionProbs": "number[] (optional) — multi-option starting odds, sum ~100",
+                "fxRate": "number (optional) — display FX rate",
+                "pythSymbol": "string (optional) — e.g. 'XAU/USD'; auto-settles hourly from live price",
+                "pythTargetPrice": "number (optional, required with pythSymbol)",
+                "pythOperator": "string (optional) — 'above' | 'below' (default 'above')",
+              }}
+              response={{
+                "market": "object — created market with id, type, prices, creationFee",
+              }}
+              example={{
+                request: `curl -X POST https://www.guap.gold/api/v1/markets \\
+  -H "Authorization: Bearer gp_live_xxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "title": "Will Bitcoin be above $100k on Friday?",
+    "description": "Resolves from the live BTC/USD price.",
+    "category": "FX & Commodities",
+    "resolvesAt": "2026-07-01T18:00:00Z",
+    "creatorExternalId": "user_123",
+    "pythSymbol": "BTC/USD",
+    "pythTargetPrice": 100000,
+    "pythOperator": "above"
+  }'`,
+                response: `{
+  "market": {
+    "id": "clx...",
+    "type": "BINARY",
+    "prices": { "yes": { "probability": 50 }, "no": { "probability": 50 } },
+    "creationFee": 2000
+  }
+}`,
+              }}
+            />
+            <Endpoint
+              method="GET"
+              path="/api/v1/categories"
+              description="List valid categories, sub-categories & Pyth symbols"
+              response={{
+                "categories": "string[] — valid market categories",
+                "subCategories": "object — { Sports: [{value, label}] }",
+                "pythSymbols": "object — { crypto, fx, commodities, all } for pythSymbol",
+              }}
+            />
 
             {/* Trading */}
             <h3 className="text-sm font-mono font-bold text-orange-400 mb-3 flex items-center gap-2 mt-6">
