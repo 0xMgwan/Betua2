@@ -107,6 +107,39 @@ export async function GET() {
         },
       },
 
+      "POST /markets": {
+        description: "Create a new market (scoped to your platform). The creator must already exist (POST /users) and have a provisioned wallet with at least the creation fee balance.",
+        body: {
+          title: "string (required unless pythSymbol+pythTargetPrice given) - Market question",
+          description: "string (required)",
+          category: "string (required) - Must be one of GET /categories (e.g. Politics, Sports, FX & Commodities)",
+          subCategory: "string (optional) - Only used when category = 'Sports'; see GET /categories",
+          resolvesAt: "string (required) - ISO 8601 date/time",
+          creatorExternalId: "string (required) - Your user ID who creates the market",
+          imageUrl: "string (optional)",
+          options: "string[] (optional, 2-10) - For multi-option markets",
+          initialProb: "number (optional, 1-99) - Binary starting YES probability (default 50)",
+          optionProbs: "number[] (optional) - Multi-option starting probabilities, must sum to ~100",
+          fxRate: "number (optional) - Display FX rate",
+          pythSymbol: "string (optional) - Auto-resolve symbol, e.g. 'XAU/USD' (see GET /categories). Settles hourly from the live Pyth price.",
+          pythTargetPrice: "number (optional, required with pythSymbol) - Target price in USD",
+          pythOperator: "string (optional) - 'above' or 'below' (default 'above')",
+        },
+        response: {
+          market: "created market object with id, type (BINARY|MULTI), prices, creationFee",
+        },
+      },
+
+      // Reference data
+      "GET /categories": {
+        description: "List valid categories, Sports sub-categories, and Pyth symbols (for auto-resolving FX/commodity/crypto markets). Use these exact values when creating markets.",
+        response: {
+          categories: "string[] - Valid market categories",
+          subCategories: "object - { Sports: [{ value, label }] }",
+          pythSymbols: "object - { crypto, fx, commodities, all } for pythSymbol",
+        },
+      },
+
       // Trading
       "POST /trades": {
         description: "Place a trade",

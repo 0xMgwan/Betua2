@@ -24,6 +24,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateApiKey, checkRateLimit, logApiRequest, apiError, apiSuccess } from "@/lib/api-auth";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
+import { CATEGORIES } from "@/lib/utils";
 
 // Fee configuration
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
@@ -164,21 +165,40 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { 
-      title, 
-      description, 
-      category, 
-      subCategory, 
-      resolvesAt, 
-      imageUrl, 
+    const {
+      title,
+      description,
+      category,
+      subCategory,
+      resolvesAt,
+      imageUrl,
       options,
-      creatorExternalId 
+      creatorExternalId,
+      // Optional advanced fields (parity with the in-app market creator)
+      initialProb,      // binary: starting YES probability 1–99 (default 50)
+      optionProbs,      // multi-option: starting probabilities (must sum ~100)
+      fxRate,           // optional display FX rate
+      pythSymbol,       // auto-resolve: e.g. "XAU/USD" (see GET /api/v1/categories)
+      pythTargetPrice,  // auto-resolve: numeric target price
+      pythOperator,     // auto-resolve: "above" | "below" (default "above")
     } = body;
 
+    // For Pyth auto-resolve markets, the title can be generated automatically.
+    const effectiveTitle = title ||
+      (pythSymbol && pythTargetPrice
+        ? `Will ${pythSymbol} be ${pythOperator === "below" ? "≤" : "≥"} $${Number(pythTargetPrice).toLocaleString()} USD by resolution?`
+        : null);
+
     // Validate required fields
-    if (!title || !description || !category || !resolvesAt || !creatorExternalId) {
+    if (!effectiveTitle || !description || !category || !resolvesAt || !creatorExternalId) {
       await logApiRequest(partner.partnerId, "/api/v1/markets", "POST", 400, Date.now() - startTime, req);
-      return apiError("Missing required fields: title, description, category, resolvesAt, creatorExternalId", 400);
+      return apiError("Missing required fields: title (or pythSymbol+pythTargetPrice), description, category, resolvesAt, creatorExternalId", 400);
+    }
+
+    // Validate category against the known list (see GET /api/v1/categories)
+    if (!CATEGORIES.includes(category)) {
+      await logApiRequest(partner.partnerId, "/api/v1/markets", "POST", 400, Date.now() - startTime, req);
+      return apiError(`Invalid category '${category}'. Valid categories: ${CATEGORIES.join(", ")}`, 400);
     }
 
     // Find the partner user mapping
@@ -266,9 +286,36 @@ export async function POST(req: NextRequest) {
       return apiError("Maximum 10 options allowed", 400);
     }
 
-    // Pool configuration
+    // Pool configuration — seed pools from initialProb / optionProbs when provided
+    // (same math as the in-app creator) so markets can open at custom odds.
     const POOL_PER_OPTION = 100000;
-    const optionPools = isMultiOption ? options.map(() => POOL_PER_OPTION) : null;
+    const TOTAL_LIQUIDITY = 1000000;
+    const n = isMultiOption ? options.length : 0;
+
+    const hasValidProbs = isMultiOption
+      && Array.isArray(optionProbs)
+      && optionProbs.length === options.length
+      && optionProbs.every((pp: number) => pp > 0)
+      && Math.abs(optionProbs.reduce((s: number, pp: number) => s + pp, 0) - 100) <= 1;
+
+    const optionPools = isMultiOption
+      ? hasValidProbs
+        ? options.map((_: unknown, i: number) => Math.round(POOL_PER_OPTION / (n * (optionProbs[i] / 100))))
+        : options.map(() => POOL_PER_OPTION)
+      : null;
+
+    // Binary: P(YES) = noPool / (yesPool + noPool) = p  →  noPool = p·L, yesPool = (1-p)·L
+    const p = (!isMultiOption && initialProb != null)
+      ? Math.max(1, Math.min(99, Number(initialProb))) / 100
+      : 0.5;
+    const initYesPool = Math.round((1 - p) * TOTAL_LIQUIDITY);
+    const initNoPool = Math.round(p * TOTAL_LIQUIDITY);
+
+    // For Pyth auto-resolve markets, embed config in the description so the
+    // hourly resolver can settle them from live prices.
+    const finalDescription = pythSymbol && pythTargetPrice
+      ? `${description}\n\n[PYTH:${pythSymbol}:${pythTargetPrice}:${pythOperator || "above"}]`
+      : description;
 
     // Parse resolvesAt date
     let resolveDate: Date;
@@ -286,19 +333,20 @@ export async function POST(req: NextRequest) {
     const [market] = await prisma.$transaction([
       prisma.market.create({
         data: {
-          title,
-          description,
+          title: effectiveTitle,
+          description: finalDescription,
           category,
           subCategory: category === "Sports" ? subCategory || null : null,
           imageUrl: imageUrl || null,
           resolvesAt: resolveDate,
           creatorId: user.id,
           partnerId: partner.partnerId, // IMPORTANT: Scopes market to partner's platform
-          yesPool: isMultiOption ? 0 : 500000,
-          noPool: isMultiOption ? 0 : 500000,
-          liquidity: isMultiOption ? POOL_PER_OPTION * options.length : 1000000,
+          yesPool: isMultiOption ? 0 : initYesPool,
+          noPool: isMultiOption ? 0 : initNoPool,
+          liquidity: isMultiOption ? POOL_PER_OPTION * options.length : TOTAL_LIQUIDITY,
           options: isMultiOption ? options : undefined,
           optionPools: optionPools || undefined,
+          fxRate: fxRate ? parseFloat(fxRate) : undefined,
         },
       }),
       prisma.transaction.create({
@@ -307,7 +355,7 @@ export async function POST(req: NextRequest) {
           type: "CREATE_MARKET",
           amountTzs: CREATION_FEE_TZS,
           status: "COMPLETED",
-          recipientUsername: title,
+          recipientUsername: effectiveTitle,
         },
       }),
       prisma.user.update({
@@ -328,11 +376,10 @@ export async function POST(req: NextRequest) {
           status: market.status,
           resolvesAt: market.resolvesAt,
           type: "MULTI",
-          options: (market.options as string[]).map((opt, i) => ({
-            option: opt,
-            price: 1 / options.length,
-            probability: Math.round((1 / options.length) * 100),
-          })),
+          options: (market.options as string[]).map((opt, i) => {
+            const prob = hasValidProbs ? optionProbs[i] / 100 : 1 / options.length;
+            return { option: opt, price: prob, probability: Math.round(prob * 100) };
+          }),
           createdAt: market.createdAt,
           creationFee: CREATION_FEE_TZS,
         }
@@ -347,8 +394,8 @@ export async function POST(req: NextRequest) {
           resolvesAt: market.resolvesAt,
           type: "BINARY",
           prices: {
-            yes: { price: 0.5, probability: 50 },
-            no: { price: 0.5, probability: 50 },
+            yes: { price: p, probability: Math.round(p * 100) },
+            no: { price: 1 - p, probability: Math.round((1 - p) * 100) },
           },
           createdAt: market.createdAt,
           creationFee: CREATION_FEE_TZS,
