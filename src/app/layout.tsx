@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { UserProvider } from "@/components/UserProvider";
 import { CartButton, CartModal } from "@/components/Cart";
 import { BottomNav } from "@/components/BottomNav";
+import { HapticProvider } from "@/components/HapticProvider";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -54,6 +55,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <LanguageProvider>
             <UserProvider>
               <NotificationProvider>
+                {/* Global haptics: vibrate on touch taps of any button/link */}
+                <HapticProvider />
                 {/* Bottom padding on mobile so content clears the fixed bottom nav */}
                 <div className="pb-16 md:pb-0">{children}</div>
                 <CartButton />
