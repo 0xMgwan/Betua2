@@ -1,19 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 import { getLatestPrice, PYTH_FEED_IDS } from "@/lib/pyth";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const CRON_SECRET = process.env.CRON_SECRET || "";
+const ADMIN_USER_IDS = [
+  "cmmjemfo900046e3pyoegxsni",
+  "2e7ea0a6-472c-44b9-8a61-b6e2865fe558",
+  "c458cdc9-db89-408e-a077-dacb72af789d",
+  ...(process.env.ADMIN_USER_IDS || "").split(",").filter(Boolean),
+];
 
 // Markets created via the Pyth flow embed a tag in their description:
 //   [PYTH:<symbol>:<target>:<operator>]   e.g. [PYTH:XAU/USD:2700:above]
 const PYTH_TAG = /\[PYTH:([^:\]]+):([^:\]]+):([^:\]]+)\]/;
 
 async function handler(req: NextRequest) {
+  // Allow either the scheduled cron (CRON_SECRET bearer) OR a logged-in admin
+  // (used by the "Resolve due Pyth now" button on the admin page).
   const authHeader = req.headers.get("authorization");
-  if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+  let allowed = !CRON_SECRET || authHeader === `Bearer ${CRON_SECRET}`;
+  if (!allowed) {
+    const session = await getSession();
+    allowed = !!session && ADMIN_USER_IDS.includes(session.userId);
+  }
+  if (!allowed) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -42,6 +42,8 @@ export default function AdminPage() {
   const [search, setSearch] = useState("");
   const [reconciling, setReconciling] = useState(false);
   const [reconcileMsg, setReconcileMsg] = useState("");
+  const [resolvingPyth, setResolvingPyth] = useState(false);
+  const [resolvePythMsg, setResolvePythMsg] = useState("");
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -86,6 +88,24 @@ export default function AdminPage() {
       await loadDashboard(true);
     } catch { setReconcileMsg("❌ Failed"); }
     finally { setReconciling(false); }
+  };
+
+  const handleResolvePyth = async () => {
+    setResolvingPyth(true);
+    setResolvePythMsg("");
+    try {
+      const res = await fetch("/api/cron/resolve-pyth", { method: "POST" });
+      const d = await res.json();
+      if (!res.ok) {
+        setResolvePythMsg(`❌ ${d.error || "Failed"}`);
+      } else if (d.checked === 0) {
+        setResolvePythMsg("✓ No due Pyth markets");
+      } else {
+        setResolvePythMsg(`✅ Resolved ${d.resolved}/${d.checked} due market(s)`);
+        await loadDashboard(true);
+      }
+    } catch { setResolvePythMsg("❌ Failed"); }
+    finally { setResolvingPyth(false); }
   };
 
   if (!user || loading) {
@@ -475,6 +495,7 @@ export default function AdminPage() {
                   <p className="text-[11px] font-mono font-bold text-[var(--accent)] uppercase tracking-wider mb-3">Quick Actions</p>
                   {[
                     { label: "Reconcile All Balances", desc: "Recalculate balanceTzs from tx history", action: handleReconcile, loading: reconciling, msg: reconcileMsg, color: "border-orange-500/40 text-orange-400 hover:bg-orange-500/10" },
+                    { label: "Resolve due Pyth now", desc: "Settle expired gold/FX/commodity markets from live Pyth prices", action: handleResolvePyth, loading: resolvingPyth, msg: resolvePythMsg, color: "border-[#00b4d8]/40 text-[#00b4d8] hover:bg-[#00b4d8]/10" },
                   ].map(a => (
                     <div key={a.label} className="border border-[var(--card-border)] p-3 space-y-1">
                       <div className="flex items-center justify-between">
