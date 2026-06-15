@@ -23,7 +23,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateApiKey, checkRateLimit, logApiRequest, apiError, apiSuccess } from "@/lib/api-auth";
-import { ntzs, NtzsApiError } from "@/lib/ntzs";
+import { ntzs } from "@/lib/ntzs";
 import { CATEGORIES } from "@/lib/utils";
 
 // Fee configuration
@@ -227,56 +227,26 @@ export async function POST(req: NextRequest) {
       return apiError("Internal user not found", 404);
     }
 
-    if (!user.ntzsUserId) {
+    // Pooled model: charge the creation fee against the DB balance ledger (the
+    // funds already sit in the settlement pool). No personal wallet required.
+    if ((user.balanceTzs || 0) < CREATION_FEE_TZS) {
       await logApiRequest(partner.partnerId, "/api/v1/markets", "POST", 400, Date.now() - startTime, req);
-      return apiError("User wallet not provisioned. User must deposit first to create markets.", 400);
+      return apiError(
+        `Insufficient balance. Creating a market costs ${CREATION_FEE_TZS.toLocaleString()} TZS. User balance: ${(user.balanceTzs || 0).toLocaleString()} TZS.`,
+        400
+      );
     }
 
-    // Check balance and transfer creation fee
-    try {
-      const { balanceTzs } = await ntzs.users.getBalance(user.ntzsUserId);
-      if (balanceTzs < CREATION_FEE_TZS) {
-        await logApiRequest(partner.partnerId, "/api/v1/markets", "POST", 400, Date.now() - startTime, req);
-        return apiError(
-          `Insufficient balance. Creating a market costs ${CREATION_FEE_TZS.toLocaleString()} TZS. User balance: ${balanceTzs.toLocaleString()} TZS.`,
-          400
-        );
-      }
-    } catch (balErr) {
-      if (balErr instanceof NtzsApiError) {
-        await logApiRequest(partner.partnerId, "/api/v1/markets", "POST", 503, Date.now() - startTime, req);
-        return apiError("Could not verify balance. Please try again.", 503);
-      }
-      throw balErr;
-    }
-
-    // Transfer creation fee
-    if (PLATFORM_NTZS_USER_ID) {
-      try {
-        await ntzs.transfers.create({
-          fromUserId: user.ntzsUserId,
-          toUserId: PLATFORM_NTZS_USER_ID,
+    // Forward the creation fee from the pool to the creation-fee wallet
+    // (non-blocking; the DB balance is debited in the create transaction below).
+    if (PLATFORM_NTZS_USER_ID && CREATION_FEE_NTZS_USER_ID) {
+      ntzs.transfers
+        .create({
+          fromUserId: PLATFORM_NTZS_USER_ID,
+          toUserId: CREATION_FEE_NTZS_USER_ID,
           amountTzs: CREATION_FEE_TZS,
-        });
-
-        // Forward to creation fee wallet (non-blocking)
-        if (CREATION_FEE_NTZS_USER_ID) {
-          ntzs.transfers
-            .create({
-              fromUserId: PLATFORM_NTZS_USER_ID,
-              toUserId: CREATION_FEE_NTZS_USER_ID,
-              amountTzs: CREATION_FEE_TZS,
-            })
-            .catch((err) => console.error("Creation fee forward failed (non-fatal):", err));
-        }
-      } catch (err) {
-        if (err instanceof NtzsApiError) {
-          console.error(`Market creation fee transfer failed: ${err.message}`);
-          await logApiRequest(partner.partnerId, "/api/v1/markets", "POST", 500, Date.now() - startTime, req);
-          return apiError(`Failed to process market creation fee: ${err.message}`, 500);
-        }
-        throw err;
-      }
+        })
+        .catch((err) => console.error("Creation fee forward failed (non-fatal):", err));
     }
 
     // Validate options for multi-option markets

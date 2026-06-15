@@ -5,7 +5,7 @@
 
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { ntzs, NtzsApiError } from "@/lib/ntzs";
+import { ntzs } from "@/lib/ntzs";
 import { getPayoutForShares, getMultiOptionPayoutForShares } from "@/lib/amm";
 import { validateApiKey, checkRateLimit, logApiRequest, apiError, apiSuccess } from "@/lib/api-auth";
 
@@ -101,32 +101,16 @@ export async function POST(req: NextRequest) {
     const feeAmount = Math.round(grossPayout * FEE_PERCENT);
     const netPayout = grossPayout - feeAmount;
 
-    // Transfer payout
-    let ntzsTransferId: string | undefined;
-    if (PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
-      try {
-        const transfer = await ntzs.transfers.create({
-          fromUserId: PLATFORM_NTZS_USER_ID,
-          toUserId: user.ntzsUserId,
-          amountTzs: netPayout,
-        });
-        ntzsTransferId = transfer.id;
-      } catch (err) {
-        if (err instanceof NtzsApiError) return apiError(err.message || "Payout failed", 400);
-        throw err;
-      }
-
-      // Forward the withheld 5% to the settlement-fee wallet (non-blocking,
-      // delayed to avoid a nonce collision with the payout transfer above).
-      if (SETTLEMENT_FEE_NTZS_USER_ID && feeAmount > 0) {
-        setTimeout(() => {
-          ntzs.transfers.create({
-            fromUserId: PLATFORM_NTZS_USER_ID,
-            toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
-            amountTzs: feeAmount,
-          }).catch((e) => console.error("[sell] settlement fee forward failed (non-fatal):", e));
-        }, 1500);
-      }
+    // Pooled model: the net proceeds stay in the settlement pool and are
+    // credited to the user's DB balance below (they cash out via withdraw).
+    // Only the 5% fee moves on-chain, to the settlement-fee wallet.
+    const ntzsTransferId: string | undefined = undefined;
+    if (PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID && feeAmount > 0) {
+      ntzs.transfers.create({
+        fromUserId: PLATFORM_NTZS_USER_ID,
+        toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
+        amountTzs: feeAmount,
+      }).catch((e) => console.error("[sell] settlement fee forward failed (non-fatal):", e));
     }
 
     // Build position update

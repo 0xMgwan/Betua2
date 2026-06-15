@@ -108,7 +108,7 @@ export async function GET() {
       },
 
       "POST /markets": {
-        description: "Create a new market (scoped to your platform). The creator must already exist (POST /users) and have a provisioned wallet with at least the creation fee balance.",
+        description: "Create a new market (scoped to your platform). The creator must already exist (POST /users) and hold at least the creation fee in their balance (fund via POST /wallet/deposit).",
         body: {
           title: "string (required unless pythSymbol+pythTargetPrice given) - Market question",
           description: "string (required)",

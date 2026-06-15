@@ -95,36 +95,18 @@ export async function POST(req: NextRequest) {
 
     // Get user
     const user = await prisma.user.findUnique({ where: { id: mapping.userId } });
-    if (!user?.ntzsUserId) return apiError("User wallet not found", 404);
+    if (!user) return apiError("User not found", 404);
 
-    // Transfer payout
-    let ntzsTransferId: string | undefined;
-    if (PLATFORM_NTZS_USER_ID && payoutTzs > 0) {
-      try {
-        const transfer = await ntzs.transfers.create({
-          fromUserId: PLATFORM_NTZS_USER_ID,
-          toUserId: user.ntzsUserId,
-          amountTzs: payoutTzs,
-        });
-        ntzsTransferId = transfer.id;
-      } catch (err) {
-        // Revert redeemed flag on failure
-        await prisma.position.update({ where: { id: positionId }, data: { redeemed: false } });
-        console.error("Redeem transfer failed:", err);
-        return apiError("Transfer failed", 500);
-      }
-
-      // Forward the withheld settlement fee to the fee wallet (non-blocking,
-      // delayed to avoid a nonce collision with the payout transfer above).
-      if (SETTLEMENT_FEE_NTZS_USER_ID && settlementFee > 0) {
-        setTimeout(() => {
-          ntzs.transfers.create({
-            fromUserId: PLATFORM_NTZS_USER_ID,
-            toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
-            amountTzs: settlementFee,
-          }).catch((e) => console.error("[redeem] settlement fee forward failed (non-fatal):", e));
-        }, 1500);
-      }
+    // Pooled model: winnings stay in the settlement pool and are credited to the
+    // user's DB balance below (they cash out via withdraw). Only the settlement
+    // fee moves on-chain, to the fee wallet.
+    const ntzsTransferId: string | undefined = undefined;
+    if (PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID && settlementFee > 0) {
+      ntzs.transfers.create({
+        fromUserId: PLATFORM_NTZS_USER_ID,
+        toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
+        amountTzs: settlementFee,
+      }).catch((e) => console.error("[redeem] settlement fee forward failed (non-fatal):", e));
     }
 
     // Record transaction

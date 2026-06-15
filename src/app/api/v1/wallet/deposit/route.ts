@@ -13,6 +13,10 @@ import { prisma } from "@/lib/prisma";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
 import { validateApiKey, checkRateLimit, logApiRequest, apiError, apiSuccess } from "@/lib/api-auth";
 
+// Deposits mint into the settlement pool (same as in-app); the user's DB balance
+// is credited once the STK push is confirmed (webhook / sync), not at request time.
+const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
+
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
 
@@ -62,20 +66,24 @@ export async function POST(req: NextRequest) {
       return apiError("User not found. Create user first via POST /api/v1/users", 404);
     }
 
-    // Get user
-    const user = await prisma.user.findUnique({
-      where: { id: mapping.userId },
-      select: { id: true, ntzsUserId: true },
-    });
-
-    if (!user?.ntzsUserId) {
-      await logApiRequest(partner.partnerId, "/api/v1/wallet/deposit", "POST", 400, Date.now() - startTime, req);
-      return apiError("User wallet not provisioned", 400);
+    if (!PLATFORM_NTZS_USER_ID) {
+      await logApiRequest(partner.partnerId, "/api/v1/wallet/deposit", "POST", 500, Date.now() - startTime, req);
+      return apiError("Settlement wallet not configured.", 500);
     }
 
-    // Create deposit via nTZS
+    // Get user (no personal wallet required — pooled custodial model)
+    const user = await prisma.user.findUnique({
+      where: { id: mapping.userId },
+      select: { id: true },
+    });
+    if (!user) {
+      await logApiRequest(partner.partnerId, "/api/v1/wallet/deposit", "POST", 404, Date.now() - startTime, req);
+      return apiError("User not found", 404);
+    }
+
+    // STK push — nTZS minted into the settlement pool wallet (same as in-app).
     const deposit = await ntzs.deposits.create({
-      userId: user.ntzsUserId,
+      userId: PLATFORM_NTZS_USER_ID,
       amountTzs,
       phone,
     });

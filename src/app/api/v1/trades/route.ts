@@ -64,9 +64,9 @@ export async function POST(req: NextRequest) {
       select: { id: true, balanceTzs: true, ntzsUserId: true },
     });
 
-    if (!user || !user.ntzsUserId) {
+    if (!user) {
       await logApiRequest(partner.partnerId, "/api/v1/trades", "POST", 404, Date.now() - startTime, req);
-      return apiError("User wallet not found", 404);
+      return apiError("User not found", 404);
     }
 
     // Get market
@@ -89,15 +89,9 @@ export async function POST(req: NextRequest) {
       return apiError("Market has expired");
     }
 
-    // Check balance via nTZS
-    let availableBalance = user.balanceTzs;
-    try {
-      const ntzsUser = await ntzs.users.get(user.ntzsUserId);
-      availableBalance = ntzsUser.balanceTzs;
-    } catch {
-      // Fall back to local balance
-    }
-
+    // Pooled model: funds are already in the settlement pool; spend against the
+    // DB balance ledger (matches the in-app /api/trades flow).
+    const availableBalance = user.balanceTzs || 0;
     if (availableBalance < amountTzs) {
       await logApiRequest(partner.partnerId, "/api/v1/trades", "POST", 400, Date.now() - startTime, req);
       return apiError(`Insufficient balance. Need ${amountTzs} TZS, have ${availableBalance} TZS`);
@@ -220,26 +214,15 @@ export async function POST(req: NextRequest) {
       return tradeRecord;
     });
 
-    // Transfer funds via nTZS (non-blocking)
-    if (PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
-      try {
-        await ntzs.transfers.create({
-          fromUserId: user.ntzsUserId,
-          toUserId: PLATFORM_NTZS_USER_ID,
-          amountTzs,
-        });
-
-        // Transfer fee to settlement wallet
-        if (SETTLEMENT_FEE_NTZS_USER_ID && feeAmount > 0) {
-          ntzs.transfers.create({
-            fromUserId: PLATFORM_NTZS_USER_ID,
-            toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
-            amountTzs: feeAmount,
-          }).catch((err) => console.error("Fee transfer failed:", err));
-        }
-      } catch (err) {
-        console.error("nTZS transfer failed:", err);
-      }
+    // Pooled model: the stake is already in the settlement pool (credited at
+    // deposit), so there's no per-user→pool transfer here. Just forward the 5%
+    // fee from the pool to the settlement-fee wallet (non-blocking).
+    if (PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID && feeAmount > 0) {
+      ntzs.transfers.create({
+        fromUserId: PLATFORM_NTZS_USER_ID,
+        toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
+        amountTzs: feeAmount,
+      }).catch((err) => console.error("Fee transfer failed:", err));
     }
 
     await logApiRequest(partner.partnerId, "/api/v1/trades", "POST", 201, Date.now() - startTime, req);

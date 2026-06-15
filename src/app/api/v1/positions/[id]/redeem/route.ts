@@ -136,38 +136,20 @@ export async function POST(
       where: { id: mapping.userId },
     });
 
-    if (!user || !user.ntzsUserId) {
+    if (!user) {
       await logApiRequest(partner.partnerId, `/api/v1/positions/${positionId}/redeem`, "POST", 404, Date.now() - startTime, req);
-      return apiError("User wallet not found", 404);
+      return apiError("User not found", 404);
     }
 
-    // Transfer payout via nTZS
-    if (PLATFORM_NTZS_USER_ID) {
-      try {
-        await ntzs.transfers.create({
-          fromUserId: PLATFORM_NTZS_USER_ID,
-          toUserId: user.ntzsUserId,
-          amountTzs: payoutTzs,
-        });
-
-        // Transfer settlement fee
-        if (SETTLEMENT_FEE_NTZS_USER_ID && settlementFee > 0) {
-          ntzs.transfers.create({
-            fromUserId: PLATFORM_NTZS_USER_ID,
-            toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
-            amountTzs: settlementFee,
-          }).catch((err) => console.error("Settlement fee transfer failed:", err));
-        }
-      } catch (err) {
-        console.error("Redeem transfer failed:", err);
-        // Revert redemption status
-        await prisma.position.update({
-          where: { id: positionId },
-          data: { redeemed: false },
-        });
-        await logApiRequest(partner.partnerId, `/api/v1/positions/${positionId}/redeem`, "POST", 500, Date.now() - startTime, req);
-        return apiError("Transfer failed", 500);
-      }
+    // Pooled model: winnings stay in the settlement pool and are credited to the
+    // user's DB balance below (they cash out via withdraw). Only the settlement
+    // fee moves on-chain, to the fee wallet.
+    if (PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID && settlementFee > 0) {
+      ntzs.transfers.create({
+        fromUserId: PLATFORM_NTZS_USER_ID,
+        toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
+        amountTzs: settlementFee,
+      }).catch((err) => console.error("Settlement fee transfer failed:", err));
     }
 
     // Update local balance and create transaction
