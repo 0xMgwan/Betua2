@@ -21,7 +21,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Allow either a logged-in user (the creator) OR an internal cron call that
+  // presents the CRON_SECRET (used by the automated Pyth resolver).
+  const authHeader = req.headers.get("authorization");
+  const isCron = !!process.env.CRON_SECRET && authHeader === `Bearer ${process.env.CRON_SECRET}`;
+  if (!session && !isCron) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
   const body = await req.json();
@@ -34,7 +38,7 @@ export async function POST(
   });
 
   if (!market) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (market.creatorId !== session.userId) {
+  if (!isCron && market.creatorId !== session!.userId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   if (market.status !== "OPEN") {
@@ -366,7 +370,7 @@ export async function POST(
 
   // Notify market creator
   createNotification({
-    userId: session.userId,
+    userId: session?.userId ?? market.creatorId,
     type: "MARKET_RESOLVED",
     title: "Market Resolved",
     message: `Your market "${market.title}" has been resolved: ${winningLabel}`,
