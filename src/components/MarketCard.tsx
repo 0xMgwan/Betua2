@@ -48,7 +48,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   Other: "#94a3b8",
 };
 
-export function MarketCard({ market, index = 0, hero = false }: { market: Market; index?: number; hero?: boolean }) {
+export function MarketCard({ market, index = 0, hero = false, compact = false }: { market: Market; index?: number; hero?: boolean; compact?: boolean }) {
   const { t, locale } = useLanguage();
   const router = useRouter();
   const { addItem, openCart } = useCart();
@@ -307,6 +307,105 @@ export function MarketCard({ market, index = 0, hero = false }: { market: Market
                 </span>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Quick Buy Modal (shared) */}
+        {showBuyModal && selectedSide && (
+          <QuickBuyModal
+            isOpen={showBuyModal}
+            onClose={() => { setShowBuyModal(false); setSelectedSide(null); setSelectedOptionIndex(null); setSelectedDisplaySide(null); }}
+            market={{
+              id: market.id, title: displayTitle, category: market.category, fxRate: market.fxRate,
+              price: market.price, optionPrices: market.optionPrices || undefined,
+              yesPool: market.yesPool, noPool: market.noPool, resolvesAt: market.resolvesAt,
+              status: market.status, totalVolume: market.totalVolume,
+            }}
+            side={selectedSide}
+            optionIndex={selectedOptionIndex ?? undefined}
+            displaySide={selectedDisplaySide ?? undefined}
+          />
+        )}
+      </motion.div>
+    );
+  }
+
+  // ── Compact card — dense layout for dedicated category pages ──────────────
+  if (compact) {
+    const subInfo = market.subCategory ? SPORTS_SUBCATEGORIES.find(s => s.value === market.subCategory) : null;
+    return (
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.03, duration: 0.25 }}>
+        <div
+          onClick={() => router.push(`/markets/${market.id}`)}
+          className="group relative bg-[var(--card)] border border-[var(--card-border)] hover:border-[var(--accent)]/50 transition-all cursor-pointer rounded-lg overflow-hidden"
+        >
+          <div className="p-2.5">
+            {/* Header: tags + timer */}
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-1.5 min-w-0">
+                {hasImage ? (
+                  <img src={market.imageUrl!} alt="" className="shrink-0 w-5 h-5 rounded object-cover" onError={() => setImageError(true)} />
+                ) : subInfo?.icon?.startsWith('/') ? (
+                  <Image src={subInfo.icon} alt="" width={16} height={16} className="shrink-0 object-contain" />
+                ) : null}
+                <span className="text-[8px] font-mono font-bold uppercase tracking-wider truncate" style={{ color: catColor }}>
+                  {market.subCategory || market.category}
+                </span>
+              </div>
+              <span className="shrink-0 flex items-center gap-1 text-[8px] font-mono text-[var(--muted)]">
+                <Timer size={9} weight="bold" />
+                {market.status === "OPEN" ? timeUntil(market.resolvesAt) : "Ended"}
+              </span>
+            </div>
+
+            {/* Title — single line, clamped */}
+            <h3 className="font-mono text-xs font-bold leading-tight line-clamp-2 mb-2 group-hover:text-[var(--accent)] transition-colors min-h-[2rem]">
+              {displayTitle}
+            </h3>
+
+            {/* Buy options — compact */}
+            {isTradeable && (
+              isMultiOption ? (
+                /* Multi-option: tight horizontal scroll of small pills (label + odds) */
+                <div className="flex gap-1.5 overflow-x-auto scrollbar-none -mx-0.5 px-0.5">
+                  {displayOptions!.map((option, idx) => {
+                    const colors = ["#00e5a0", "#00b4d8", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
+                    const c = colors[idx % colors.length];
+                    const optPrice = market.optionPrices?.[idx] || 0;
+                    const originalOption = market.options?.[idx] || option;
+                    return (
+                      <button
+                        key={idx}
+                        onClick={(e) => handleQuickBuy(e, originalOption, idx)}
+                        className="shrink-0 px-2 py-1.5 border font-mono transition-all active:scale-95 flex flex-col items-center leading-none gap-0.5 min-w-[58px]"
+                        style={{ borderColor: `${c}50`, color: c, backgroundColor: `${c}10` }}
+                      >
+                        <span className="text-[8px] font-bold uppercase truncate max-w-[54px]">{option.length > 8 ? option.slice(0, 8) + "." : option}</span>
+                        <span className="text-sm font-black">{optPrice > 0 ? (1 / optPrice).toFixed(1) : '∞'}<span className="text-[8px]">x</span></span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                /* Binary: two compact buttons side by side */
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    onClick={(e) => handleQuickBuy(e, "YES")}
+                    className="py-1.5 bg-[#00e5a0]/10 border border-[#00e5a0]/50 text-[#00e5a0] font-mono transition-all hover:bg-[#00e5a0]/20 active:scale-[0.97] flex items-center justify-center gap-1.5"
+                  >
+                    <span className="text-[9px] font-bold uppercase">YES</span>
+                    <span className="text-sm font-black leading-none">{(1 / market.price.yes).toFixed(2)}<span className="text-[8px]">x</span></span>
+                  </button>
+                  <button
+                    onClick={(e) => handleQuickBuy(e, "NO")}
+                    className="py-1.5 bg-red-500/10 border border-red-500/50 text-red-400 font-mono transition-all hover:bg-red-500/20 active:scale-[0.97] flex items-center justify-center gap-1.5"
+                  >
+                    <span className="text-[9px] font-bold uppercase">NO</span>
+                    <span className="text-sm font-black leading-none">{(1 / market.price.no).toFixed(2)}<span className="text-[8px]">x</span></span>
+                  </button>
+                </div>
+              )
+            )}
           </div>
         </div>
 

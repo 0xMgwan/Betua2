@@ -552,8 +552,8 @@ function MarketsContent() {
             />
           </div>
 
-          {/* Category-view toolbar: Categories dropdown + Sort dropdown (Limitless style) */}
-          {category !== "all" && (
+          {/* Toolbar: Categories dropdown + Sort dropdown (Limitless style) — shown on all views */}
+          {(
             <div className="flex items-center justify-between gap-2">
               {/* Categories dropdown */}
               <div className="relative">
@@ -748,7 +748,7 @@ function MarketsContent() {
               allItems.push({ type: 'market', market: m });
             });
 
-            const renderItem = (item: typeof allItems[number], i: number, asHero = false): ReactNode => {
+            const renderItem = (item: typeof allItems[number], i: number, asHero = false, asCompact = false): ReactNode => {
               if (item.type === 'event') {
                 const firstMarket = item.markets[0];
                 const eventData = item.event as { id: string; title: string; imageUrl?: string; category?: string; subCategory?: string };
@@ -772,6 +772,7 @@ function MarketsContent() {
                   market={item.market as unknown as Parameters<typeof MarketCard>[0]["market"]}
                   index={i}
                   hero={asHero}
+                  compact={asCompact}
                 />
               );
             };
@@ -785,8 +786,8 @@ function MarketsContent() {
 
             return (
               <>
-                {/* Featured hero deck — stacked, swipe top card to send it back */}
-                {featured.length > 1 && (
+                {/* Featured hero deck — only on the "All" markets view */}
+                {category === "all" && featured.length > 1 && (
                   <div className="sm:max-w-md">
                     <FeaturedDeck
                       label={locale === "sw" ? "Maarufu" : "Featured"}
@@ -851,15 +852,27 @@ function MarketsContent() {
                           </div>
                         )}
 
-                        {/* Mobile: horizontal swipe row (Limitless). Desktop: responsive grid. */}
-                        <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 overflow-x-auto sm:overflow-visible snap-x scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0 pb-2 sm:pb-0">
-                          {items.map((item) => {
-                            const node = renderItem(item, runningIndex++);
-                            return (
-                              <div key={item.type === 'event' ? item.eventId : item.market.id} className="snap-start shrink-0 w-[85%] sm:w-auto">{node}</div>
-                            );
-                          })}
-                        </div>
+                        {category === "all" ? (
+                          /* "All" view: horizontal swipe row on mobile, grid on desktop */
+                          <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 overflow-x-auto sm:overflow-visible snap-x scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0 pb-2 sm:pb-0">
+                            {items.map((item) => {
+                              const node = renderItem(item, runningIndex++);
+                              return (
+                                <div key={item.type === 'event' ? item.eventId : item.market.id} className="snap-start shrink-0 w-[85%] sm:w-auto">{node}</div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          /* Dedicated category page: super-compact cards, 2-up on mobile */
+                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                            {items.map((item) => {
+                              const node = renderItem(item, runningIndex++, false, true);
+                              return (
+                                <div key={item.type === 'event' ? item.eventId : item.market.id}>{node}</div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </section>
                       {/* Referral banner injected after the first group (mid-feed, Limitless style) */}
                       {gi === 0 && (
