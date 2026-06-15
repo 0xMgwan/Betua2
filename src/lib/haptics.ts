@@ -29,28 +29,38 @@ function hasVibrate(): boolean {
   return typeof navigator !== "undefined" && typeof navigator.vibrate === "function";
 }
 
-// ── iOS fallback: hidden <label><input type="checkbox" switch></label> ────────
-// The proven technique (ios-haptics): a label wrapping a system "switch" control.
-// Programmatically clicking the LABEL forwards a click to the switch, toggling it,
-// which makes iOS 17.4+ emit a haptic tick. We click the label (not the input).
+// ── iOS fallback: hidden <input type="checkbox" switch> + linked <label> ──────
+// Matches the canonical `use-haptic` implementation. Two SEPARATE sibling
+// elements (not nested) linked by id/for; clicking the LABEL forwards a click to
+// the switch, toggling it, which makes iOS 18+ emit a haptic tick. Clicking the
+// input directly does NOT work — WebKit only fires the haptic via the label.
+const IOS_SWITCH_ID = "haptic-switch";
 let iosHapticLabel: HTMLLabelElement | null = null;
 
 function ensureIosSwitch(): HTMLLabelElement | null {
   if (typeof document === "undefined") return null;
   if (iosHapticLabel && document.body.contains(iosHapticLabel)) return iosHapticLabel;
+
+  let input = document.getElementById(IOS_SWITCH_ID) as HTMLInputElement | null;
+  if (!input) {
+    input = document.createElement("input");
+    input.type = "checkbox";
+    input.id = IOS_SWITCH_ID;
+    input.setAttribute("switch", ""); // iOS 18+ system switch control
+    input.style.display = "none";
+    document.body.appendChild(input);
+  }
+
   const label = document.createElement("label");
-  label.setAttribute("aria-hidden", "true");
-  // Visually hidden but actually rendered + laid out (not display:none), which is
-  // the most reliable state for the switch to emit its haptic when toggled.
-  label.style.cssText =
-    "position:fixed;bottom:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden;";
-  const input = document.createElement("input");
-  input.type = "checkbox";
-  input.setAttribute("switch", ""); // iOS 17.4+ system switch control
-  label.appendChild(input);
+  label.htmlFor = IOS_SWITCH_ID;
+  label.style.display = "none";
   document.body.appendChild(label);
   iosHapticLabel = label;
   return label;
+}
+
+function fireIosHaptic() {
+  ensureIosSwitch()?.click();
 }
 
 function isAppleTouchDevice(): boolean {
@@ -67,9 +77,9 @@ export function isHapticsSupported(): boolean {
   return hasVibrate() || isAppleTouchDevice();
 }
 
-// Pre-create the iOS switch element so the first tap fires without a setup delay.
+// Pre-create the iOS switch + label so the first tap fires without setup delay.
 export function primeHaptics() {
-  if (!hasVibrate()) ensureIosSwitch();
+  if (!hasVibrate() && isAppleTouchDevice()) ensureIosSwitch();
 }
 
 export function setHapticsEnabled(value: boolean) {
@@ -106,11 +116,10 @@ export function haptic(pattern: HapticPattern = "light") {
     }
     return;
   }
-  // iOS Safari 17.4+ fallback: click the hidden label to toggle the system switch.
+  // iOS Safari 17.4+ fallback: toggle a throwaway system switch to emit a tick.
   // Note: the switch produces a single fixed-intensity haptic; pattern is ignored.
   try {
-    const label = ensureIosSwitch();
-    label?.click();
+    fireIosHaptic();
   } catch {
     /* ignore */
   }
