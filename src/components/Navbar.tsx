@@ -199,7 +199,7 @@ export function Navbar() {
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
-                    className="absolute right-0 top-full mt-2 w-80 bg-[var(--background)] border border-[var(--card-border)] shadow-xl z-50 max-h-[70vh] flex flex-col"
+                    className="fixed right-3 top-16 sm:absolute sm:right-0 sm:top-full mt-0 sm:mt-2 w-[calc(100vw-1.5rem)] max-w-sm sm:w-80 bg-[var(--background)] border border-[var(--card-border)] shadow-xl z-50 max-h-[70vh] flex flex-col"
                   >
                     {/* Header */}
                     <div className="px-3 py-2.5 border-b border-[var(--card-border)] bg-[var(--card)]">
