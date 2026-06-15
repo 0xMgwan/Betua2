@@ -86,6 +86,11 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
   const yesPct = yesPctRaw % 1 === 0 ? Math.round(yesPctRaw) : parseFloat(yesPctRaw.toFixed(1));
   const noPct = noPctRaw % 1 === 0 ? Math.round(noPctRaw) : parseFloat(noPctRaw.toFixed(1));
   const isMultiOption = market.options && market.options.length >= 2;
+  // Sports head-to-head layout (Limitless style): 2 teams, or 2 teams + a Draw.
+  // 3-way without a draw (e.g. 3 contenders) falls through to the compact grid.
+  const optionCount = market.options?.length ?? 0;
+  const hasDrawOption = (market.options || []).some((o) => /\b(draw|tie)\b/i.test(o));
+  const isSportsMatch = market.category === "Sports" && isMultiOption && (optionCount === 2 || (optionCount === 3 && hasDrawOption));
   const catColor = CATEGORY_COLORS[market.category] || "#94a3b8";
   const hasImage = market.imageUrl && !imageError;
   const isExpired = new Date(market.resolvesAt) < new Date();
@@ -174,8 +179,8 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
   // Shared big-bold odds buttons (used by both normal and hero layouts)
   const buyButtons = isTradeable && (
     isMultiOption ? (
-      /* All options, one full-width row each: name + % + odds + cart */
-      <div className="flex flex-col gap-1.5 mb-2">
+      /* Compact 2-col grid: label + bold multiplier box, % small underneath, tiny cart overlay */
+      <div className="grid grid-cols-2 gap-1.5 mb-2">
         {displayOptions!.map((option, idx) => {
           const colors = ["#00e5a0", "#00b4d8", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#84cc16"];
           const c = colors[idx % colors.length];
@@ -184,25 +189,30 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
           const originalOption = market.options?.[idx] || option;
           const isAdded = cartAdded === `${originalOption}-${idx}`;
           return (
-            <div key={idx} className="flex items-stretch gap-1.5">
-              <button
-                onClick={(e) => handleQuickBuy(e, originalOption, idx)}
-                className="flex-1 min-w-0 flex items-center gap-2 px-2.5 py-2 border-2 font-mono transition-all active:scale-[0.98] hover:opacity-90"
-                style={{ borderColor: `${c}55`, color: c, backgroundColor: `${c}10` }}
-              >
-                <span className="flex-1 min-w-0 text-left text-xs font-bold truncate">{option}</span>
-                <span className="shrink-0 text-[10px] font-bold opacity-60 tabular-nums">{pct}%</span>
-                <span className="shrink-0 text-base font-black leading-none tabular-nums">{optPrice > 0 ? (1 / optPrice).toFixed(1) : '∞'}<span className="text-[10px]">x</span></span>
-              </button>
-              <button
+            <button
+              key={idx}
+              onClick={(e) => handleQuickBuy(e, originalOption, idx)}
+              className="relative flex items-center gap-1.5 px-2 py-1.5 border font-mono transition-all active:scale-[0.98] hover:opacity-90 text-left"
+              style={{ borderColor: `${c}55`, color: c, backgroundColor: `${c}0d` }}
+            >
+              <span className="flex-1 min-w-0 flex flex-col leading-none gap-0.5">
+                <span className="text-[11px] font-bold truncate">{option}</span>
+                <span className="text-[9px] font-black tabular-nums opacity-50">{pct}%</span>
+              </span>
+              {/* Multiplier in the bolded/highlighted box */}
+              <span className="shrink-0 px-1.5 py-1 text-sm font-black leading-none tabular-nums rounded-sm" style={{ backgroundColor: `${c}26` }}>
+                {optPrice > 0 ? (1 / optPrice).toFixed(1) : '∞'}<span className="text-[9px]">x</span>
+              </span>
+              {/* Tiny add-to-cart overlay */}
+              <span
                 onClick={(e) => handleAddToCart(e, originalOption, idx)}
-                className="shrink-0 px-2 border-2 transition-all active:scale-95 flex items-center justify-center"
-                style={{ borderColor: isAdded ? '#00e5a0' : `${c}55`, color: isAdded ? '#000' : c, backgroundColor: isAdded ? '#00e5a0' : 'var(--background)' }}
+                className="absolute -top-1.5 -right-1.5 p-0.5 border rounded-full transition-all active:scale-95"
+                style={{ borderColor: isAdded ? '#00e5a0' : `${c}66`, color: isAdded ? '#000' : c, backgroundColor: isAdded ? '#00e5a0' : 'var(--card)' }}
                 title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
               >
-                {isAdded ? <Check size={14} weight="bold" /> : <ShoppingCart size={14} weight="bold" />}
-              </button>
-            </div>
+                {isAdded ? <Check size={10} weight="bold" /> : <ShoppingCart size={10} weight="bold" />}
+              </span>
+            </button>
           );
         })}
       </div>
@@ -215,6 +225,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
           >
             <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">YES</span>
             <span className="text-xl font-black leading-none">{(1 / market.price.yes).toFixed(2)}<span className="text-xs">x</span></span>
+            <span className="text-[10px] font-bold opacity-60">{yesPct}%</span>
           </button>
           <button
             onClick={(e) => handleAddToCart(e, "YES")}
@@ -231,6 +242,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
           >
             <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">NO</span>
             <span className="text-xl font-black leading-none">{(1 / market.price.no).toFixed(2)}<span className="text-xs">x</span></span>
+            <span className="text-[10px] font-bold opacity-60">{noPct}%</span>
           </button>
           <button
             onClick={(e) => handleAddToCart(e, "NO")}
@@ -430,6 +442,98 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
     );
   }
 
+  // ── Sports match body (Limitless style) — Team · time · Team, %-box + multiplier ──
+  let matchBody: React.ReactNode = null;
+  if (isSportsMatch) {
+    const fmtPct = (p: number) => {
+      const v = p * 100;
+      return v % 1 === 0 ? Math.round(v) : parseFloat(v.toFixed(1));
+    };
+    // Build outcomes with their original index, detect the Draw
+    const outcomes = displayOptions!.map((label, idx) => ({
+      label,
+      original: market.options?.[idx] || label,
+      idx,
+      price: market.optionPrices?.[idx] || 0,
+      isDraw: /\b(draw|tie)\b/i.test(market.options?.[idx] || label),
+    }));
+    const draw = outcomes.find((o) => o.isDraw) || null;
+    const teams = outcomes.filter((o) => !o.isDraw).slice(0, 2);
+    const matchDate = new Date(market.resolvesAt);
+    const dateStr = matchDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+    const timeStr = matchDate.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+
+    const teamColors = ["#00e5a0", "#00b4d8"];
+    const drawColor = "#94a3b8";
+
+    // One outcome cell: %-box (button when tradeable) + multiplier underneath
+    const OutcomeCell = (o: typeof outcomes[number], color: string, withLabel: boolean) => {
+      const pct = fmtPct(o.price);
+      const mult = o.price > 0 ? (1 / o.price).toFixed(2) : "∞";
+      const isAdded = cartAdded === `${o.original}-${o.idx}`;
+      return (
+        <div className="flex flex-col items-center gap-1">
+          {isTradeable ? (
+            <button
+              onClick={(e) => handleQuickBuy(e, o.original, o.idx)}
+              className="relative w-full py-2 px-1 border-2 font-mono transition-all active:scale-[0.97] hover:opacity-90 text-center"
+              style={{ borderColor: `${color}55`, color, backgroundColor: `${color}1a` }}
+            >
+              {/* Multiplier in the bolded box */}
+              <span className="text-base font-black tabular-nums leading-none">{mult}<span className="text-[10px]">x</span></span>
+              <span
+                onClick={(e) => handleAddToCart(e, o.original, o.idx)}
+                className="absolute top-0.5 right-0.5 p-0.5 border transition-all active:scale-95"
+                style={{ borderColor: isAdded ? "#00e5a0" : `${color}40`, color: isAdded ? "#000" : color, backgroundColor: isAdded ? "#00e5a0" : "transparent" }}
+                title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
+              >
+                {isAdded ? <Check size={10} weight="bold" /> : <ShoppingCart size={10} weight="bold" />}
+              </span>
+            </button>
+          ) : (
+            <div className="w-full py-2 px-1 border-2 font-mono text-center" style={{ borderColor: `${color}40`, color, backgroundColor: `${color}10` }}>
+              <span className="text-base font-black tabular-nums leading-none">{mult}<span className="text-[10px]">x</span></span>
+            </div>
+          )}
+          {/* Probability outside, as the small label */}
+          <span className="text-[11px] font-bold opacity-60 tabular-nums">{withLabel && <span className="uppercase opacity-80 mr-0.5">Draw</span>}{pct}%</span>
+        </div>
+      );
+    };
+
+    matchBody = (
+      <div className="mb-2.5">
+        {/* Teams + center time/status */}
+        <div className="grid grid-cols-3 gap-2 items-start mb-2">
+          <div className="flex flex-col items-center text-center gap-1.5">
+            {hasImage && <img src={market.imageUrl!} alt="" className="w-9 h-9 rounded object-cover border border-[var(--card-border)]" onError={() => setImageError(true)} />}
+            <span className="text-xs font-bold leading-tight line-clamp-2">{teams[0]?.label}</span>
+          </div>
+          <div className="flex flex-col items-center text-center justify-start pt-1 gap-0.5">
+            {isTradeable ? (
+              <>
+                <span className="text-[10px] font-mono text-[var(--muted)] leading-none">{dateStr}</span>
+                <span className="text-sm font-mono font-black leading-tight">{timeStr}</span>
+              </>
+            ) : (
+              <span className="text-[11px] font-mono font-bold text-blue-400 leading-tight">{market.status === "RESOLVED" ? (locale === "sw" ? "Imekamilika" : "Resolved") : (locale === "sw" ? "Imeisha" : "Ended")}</span>
+            )}
+          </div>
+          <div className="flex flex-col items-center text-center gap-1.5">
+            {hasImage && <img src={market.imageUrl!} alt="" className="w-9 h-9 rounded object-cover border border-[var(--card-border)]" onError={() => setImageError(true)} />}
+            <span className="text-xs font-bold leading-tight line-clamp-2">{teams[1]?.label}</span>
+          </div>
+        </div>
+        {/* Outcome boxes: Team · Draw · Team */}
+        <div className="grid grid-cols-3 gap-2">
+          {teams[0] && OutcomeCell(teams[0], teamColors[0], false)}
+          {draw ? OutcomeCell(draw, drawColor, true) : <div />}
+          {teams[1] && OutcomeCell(teams[1], teamColors[1], false)}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -498,7 +602,8 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
               </span>
             </div>
 
-            {/* Title row with optional thumbnail */}
+            {/* Title row with optional thumbnail (hidden for sports match — teams shown instead) */}
+            {!isSportsMatch && (
             <div className="flex gap-2.5 mb-2.5 items-center">
               {hasImage && (
                 <div className="shrink-0 w-10 h-10 border border-[var(--card-border)] overflow-hidden relative">
@@ -515,6 +620,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
                 {displayTitle}
               </h3>
             </div>
+            )}
 
             {/* Price bar — binary only (multi-option shows % inline on each option button) */}
             {!isMultiOption && (
@@ -545,8 +651,8 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
               </div>
             )}
 
-            {/* Quick Buy Buttons */}
-            {buyButtons}
+            {/* Quick Buy Buttons (sports markets get the match-style body) */}
+            {isSportsMatch ? matchBody : buyButtons}
 
             {/* Footer stats */}
             <div className="flex items-center justify-between text-[9px] font-mono text-[var(--muted)] pt-2 border-t border-[var(--card-border)]/50">

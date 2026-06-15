@@ -732,7 +732,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                       disabled={loading || !amount || Number(amount) < minAmount || !isTradeable}
                       className={`flex-1 py-4 px-3 rounded-none font-mono font-black text-sm uppercase tracking-wider transition-all disabled:opacity-40 border-2 active:scale-95 ${
                         isMultiOption
-                          ? "bg-[var(--accent)] border-[var(--accent)] text-black hover:opacity-90 hover:shadow-[0_0_20px_rgba(0,229,160,0.4)]"
+                          ? "bg-[#00e5a0] border-[#00e5a0] text-black hover:opacity-90 hover:shadow-[0_0_20px_rgba(0,229,160,0.4)]"
                         : side === "YES"
                         ? "bg-[#00e5a0] border-[#00e5a0] text-black hover:opacity-90 hover:shadow-[0_0_20px_rgba(0,229,160,0.4)]"
                         : "bg-red-500 border-red-500 text-white hover:opacity-90 hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]"
