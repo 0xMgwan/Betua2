@@ -577,6 +577,45 @@ export default function DevelopersPage() {
             />
           </div>
 
+          {/* Money model */}
+          <div className="mb-12">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Wallet size={20} className="text-green-400" />
+              How Money Works
+            </h2>
+
+            <div className="p-4 bg-[var(--card)] border border-[var(--card-border)] space-y-4">
+              <p className="text-sm text-[var(--muted)]">
+                Funds are <span className="text-[var(--foreground)] font-bold">custodial and pooled</span>. Your
+                users do <span className="text-[var(--foreground)] font-bold">not</span> each get an on-chain
+                wallet — they are tracked by a <span className="text-[var(--foreground)] font-bold">DB balance</span> that
+                represents their claim on our single settlement pool. Real nTZS only moves on-chain at
+                deposit (in) and withdrawal (out); everything in between is ledger movement.
+              </p>
+
+              <div className="space-y-2 font-mono text-xs">
+                {[
+                  ["Deposit", "STK push mints nTZS into the settlement pool → user's DB balance is credited once the payment is confirmed."],
+                  ["Create market", "Requires DB balance ≥ creation fee (2,000 TZS). DB balance is debited; the fee moves pool → CREATION_FEE wallet on-chain."],
+                  ["Buy / trade", "Requires DB balance ≥ stake. DB balance is debited; the 5% fee moves pool → SETTLEMENT_FEE wallet. The stake already sits in the pool."],
+                  ["Sell / redeem", "Proceeds are credited to the user's DB balance (they stay in the pool); the 5% fee moves pool → SETTLEMENT_FEE wallet."],
+                  ["Withdraw", "DB balance is debited and real nTZS is sent from the pool → user's phone. Reversed automatically if the payout fails."],
+                ].map(([k, v]) => (
+                  <div key={k} className="flex gap-3 p-2 bg-[var(--background)] border border-[var(--card-border)]">
+                    <span className="text-[var(--accent)] font-bold shrink-0 w-28">{k}</span>
+                    <span className="text-[var(--muted)]">{v}</span>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-xs text-[var(--muted)]">
+                So to create a market, trade, or anything that costs money, the user must have
+                <span className="text-[var(--foreground)] font-bold"> deposited first</span> (giving them a DB balance).
+                No nTZS wallet provisioning is required.
+              </p>
+            </div>
+          </div>
+
           {/* Fees */}
           <div className="mb-12">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
