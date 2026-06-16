@@ -25,6 +25,7 @@ import { prisma } from "@/lib/prisma";
 import { validateApiKey, checkRateLimit, logApiRequest, apiError, apiSuccess } from "@/lib/api-auth";
 import { ntzs } from "@/lib/ntzs";
 import { CATEGORIES } from "@/lib/utils";
+import { sendPartnerWebhook } from "@/lib/partnerWebhooks";
 
 // Fee configuration
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
@@ -370,6 +371,14 @@ export async function POST(req: NextRequest) {
           createdAt: market.createdAt,
           creationFee: CREATION_FEE_TZS,
         };
+
+    // Notify the partner's webhook that a market was created
+    await sendPartnerWebhook(partner.partnerId, "market.created", {
+      marketId: market.id,
+      title: market.title,
+      category: market.category,
+      resolvesAt: market.resolvesAt,
+    });
 
     await logApiRequest(partner.partnerId, "/api/v1/markets", "POST", 201, Date.now() - startTime, req);
     return apiSuccess({ market: response }, 201);

@@ -36,6 +36,9 @@ export default function PartnerDashboard() {
 
   // Settings form state
   const [webhookUrl, setWebhookUrl] = useState("");
+  const [webhookSecret, setWebhookSecret] = useState("");
+  const [showSecret, setShowSecret] = useState(false);
+  const [secretCopied, setSecretCopied] = useState(false);
   const [tradingFee, setTradingFee] = useState("5");
   const [creationFee, setCreationFee] = useState("2000");
   const [saving, setSaving] = useState(false);
@@ -50,6 +53,7 @@ export default function PartnerDashboard() {
         const p = (await meRes.json()).partner;
         setPartner(p);
         setWebhookUrl(p.webhookUrl || "");
+        setWebhookSecret(p.webhookSecret || "");
         const fees = p.metadata?.fees || {};
         if (fees.tradingFeePercent != null) setTradingFee(String(fees.tradingFeePercent));
         if (fees.creationFeeTzs != null) setCreationFee(String(fees.creationFeeTzs));
@@ -98,6 +102,7 @@ export default function PartnerDashboard() {
         }),
       });
       const data = await res.json();
+      if (res.ok && data.webhookSecret) setWebhookSecret(data.webhookSecret);
       setSavedMsg(res.ok ? "✓ Saved" : `✕ ${data.error || "Failed"}`);
     } catch { setSavedMsg("✕ Network error"); }
     finally { setSaving(false); setTimeout(() => setSavedMsg(""), 4000); }
@@ -203,7 +208,7 @@ export default function PartnerDashboard() {
             <h2 className="text-lg font-bold flex items-center gap-2"><FloppyDisk size={20} className="text-[var(--accent)]" />Settings</h2>
             <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full border border-yellow-500/40 text-yellow-500 bg-yellow-500/10">Preview</span>
           </div>
-          <p className="text-xs text-[var(--muted)] mb-4">Saved to your profile. Custom-fee enforcement and webhook delivery are rolling out — talk to us to activate them for your account.</p>
+          <p className="text-xs text-[var(--muted)] mb-4">Webhook delivery is live. Custom-fee enforcement is rolling out — fees are saved as preferences for now.</p>
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <label className="text-xs text-[var(--muted)] mb-1 flex items-center gap-1.5"><Globe size={13} />Webhook URL</label>
@@ -212,7 +217,19 @@ export default function PartnerDashboard() {
                 placeholder="https://yourapp.com/webhooks/guap"
                 className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--card-border)] rounded text-sm font-mono focus:border-[var(--accent)] outline-none"
               />
-              <p className="text-[11px] text-[var(--muted)] mt-1">Where deposit/withdrawal/market events will be delivered.</p>
+              <p className="text-[11px] text-[var(--muted)] mt-1">Signed events (deposit, withdrawal, market.created, market.resolved) are POSTed here.</p>
+              {webhookSecret && (
+                <div className="mt-3">
+                  <label className="text-xs text-[var(--muted)] mb-1 block">Signing secret <span className="opacity-60">— verify the X-GUAP-Signature header</span></label>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 px-3 py-2 bg-[var(--background)] border border-[var(--card-border)] rounded text-xs font-mono overflow-hidden text-ellipsis whitespace-nowrap">
+                      {showSecret ? webhookSecret : `whsec_${"•".repeat(20)}`}
+                    </code>
+                    <button onClick={() => setShowSecret(!showSecret)} className="p-2 text-[var(--muted)] hover:text-[var(--foreground)]">{showSecret ? <EyeSlash size={16} /> : <Eye size={16} />}</button>
+                    <button onClick={() => { navigator.clipboard.writeText(webhookSecret); setSecretCopied(true); setTimeout(() => setSecretCopied(false), 2000); }} className="p-2 text-[var(--muted)] hover:text-[var(--foreground)]">{secretCopied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}</button>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

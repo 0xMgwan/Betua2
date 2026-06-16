@@ -25,6 +25,7 @@ export async function GET(req: NextRequest) {
         apiKeyPrefix: true,
         rawApiKey: true,
         webhookUrl: true,
+        webhookSecret: true,
         metadata: true,
         createdAt: true,
       },

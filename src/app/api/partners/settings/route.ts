@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { jwtVerify } from "jose";
+import crypto from "crypto";
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "partner-secret");
 
@@ -15,7 +16,7 @@ export async function POST(req: NextRequest) {
 
     const partner = await prisma.partner.findUnique({
       where: { id: partnerId },
-      select: { metadata: true },
+      select: { metadata: true, webhookSecret: true },
     });
     if (!partner) return NextResponse.json({ error: "Partner not found" }, { status: 404 });
 
@@ -24,12 +25,18 @@ export async function POST(req: NextRequest) {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data: any = {};
+    let webhookSecret = partner.webhookSecret;
 
     if (webhookUrl !== undefined) {
       if (webhookUrl && !/^https?:\/\/.+/.test(webhookUrl)) {
         return NextResponse.json({ error: "webhookUrl must be a valid http(s) URL" }, { status: 400 });
       }
       data.webhookUrl = webhookUrl || null;
+      // Generate a signing secret the first time a webhook URL is configured.
+      if (webhookUrl && !webhookSecret) {
+        webhookSecret = `whsec_${crypto.randomBytes(24).toString("hex")}`;
+        data.webhookSecret = webhookSecret;
+      }
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,7 +61,7 @@ export async function POST(req: NextRequest) {
     data.metadata = { ...meta, fees };
 
     await prisma.partner.update({ where: { id: partnerId }, data });
-    return NextResponse.json({ ok: true, webhookUrl: data.webhookUrl ?? undefined, fees });
+    return NextResponse.json({ ok: true, webhookUrl: data.webhookUrl ?? undefined, webhookSecret, fees });
   } catch {
     return NextResponse.json({ error: "Failed to update settings" }, { status: 500 });
   }

@@ -577,6 +577,51 @@ export default function DevelopersPage() {
             />
           </div>
 
+          {/* Webhooks */}
+          <div className="mb-12">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Lightning size={20} className="text-yellow-400" />
+              Webhooks
+            </h2>
+            <div className="p-4 bg-[var(--card)] border border-[var(--card-border)] space-y-4">
+              <p className="text-sm text-[var(--muted)]">
+                Set a <span className="text-[var(--foreground)] font-bold">Webhook URL</span> in your
+                dashboard and we&apos;ll <span className="text-[var(--foreground)] font-bold">POST</span> a
+                signed JSON event each time something happens. Events for a user also include that
+                user&apos;s <code className="text-[var(--accent)]">externalId</code>.
+              </p>
+              <div className="space-y-1.5 font-mono text-xs">
+                {[
+                  ["deposit.completed", "A user's deposit was confirmed and their balance credited."],
+                  ["deposit.failed", "A deposit failed; no balance was credited."],
+                  ["withdrawal.completed", "A withdrawal was paid out."],
+                  ["withdrawal.failed", "A withdrawal failed; the balance was refunded."],
+                  ["market.created", "A market was created via your API."],
+                  ["market.resolved", "One of your markets resolved (includes outcome)."],
+                ].map(([k, v]) => (
+                  <div key={k} className="flex gap-3 p-2 bg-[var(--background)] border border-[var(--card-border)]">
+                    <span className="text-yellow-400 font-bold shrink-0 w-44">{k}</span>
+                    <span className="text-[var(--muted)]">{v}</span>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <h4 className="text-[10px] font-mono text-[var(--muted)] uppercase mb-2">Payload & Verification</h4>
+                <div className="bg-[var(--background)] p-3 font-mono text-xs text-[var(--muted)] whitespace-pre overflow-x-auto">{`POST <your webhook URL>
+Headers:
+  X-GUAP-Event: market.resolved
+  X-GUAP-Signature: sha256=<hmac>
+
+Body:
+  { "event": "market.resolved",
+    "data": { "marketId": "...", "outcomeLabel": "YES", ... },
+    "timestamp": "2026-06-16T12:00:00.000Z" }
+
+Verify: HMAC-SHA256(rawBody, yourSigningSecret) === signature`}</div>
+              </div>
+            </div>
+          </div>
+
           {/* Money model */}
           <div className="mb-12">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">

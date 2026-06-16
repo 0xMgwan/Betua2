@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { processReferralReward } from "@/lib/referral";
+import { notifyUserPartners } from "@/lib/partnerWebhooks";
 
 export async function POST(req: NextRequest) {
   const event = await req.json();
@@ -23,6 +24,7 @@ export async function POST(req: NextRequest) {
         ]);
 
         processReferralReward(tx.userId, tx.id, tx.amountTzs).catch(() => {});
+        await notifyUserPartners(tx.userId, "deposit.completed", { amountTzs: tx.amountTzs, transactionId: tx.id });
         break;
       }
 
@@ -34,14 +36,19 @@ export async function POST(req: NextRequest) {
 
         // Mark FAILED — no balance credit was made so nothing to reverse
         await prisma.transaction.update({ where: { id: tx.id }, data: { status: "FAILED" } });
+        await notifyUserPartners(tx.userId, "deposit.failed", { amountTzs: tx.amountTzs, transactionId: tx.id });
         break;
       }
 
       case "withdrawal.completed": {
+        const wtx = await prisma.transaction.findFirst({
+          where: { ntzsWithdrawId: event.data.id },
+        });
         await prisma.transaction.updateMany({
           where: { ntzsWithdrawId: event.data.id },
           data: { status: "COMPLETED" },
         });
+        if (wtx) await notifyUserPartners(wtx.userId, "withdrawal.completed", { amountTzs: wtx.amountTzs, transactionId: wtx.id });
         break;
       }
 
@@ -59,6 +66,7 @@ export async function POST(req: NextRequest) {
             data: { balanceTzs: { increment: wtx.amountTzs } },
           }),
         ]);
+        await notifyUserPartners(wtx.userId, "withdrawal.failed", { amountTzs: wtx.amountTzs, transactionId: wtx.id });
         break;
       }
     }

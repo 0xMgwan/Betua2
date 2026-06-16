@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { createNotification, createNotifications } from "@/lib/notify";
 import { notifyMarketResolved } from "@/lib/push";
 import { ntzs } from "@/lib/ntzs";
+import { sendPartnerWebhook } from "@/lib/partnerWebhooks";
 
 const FEE_PERCENT = parseFloat(process.env.TRANSACTION_FEE_PERCENT || "5") / 100;
 const CREATOR_FEE_SHARE = 0.30; // non-admin creators earn 30% of the platform fees collected on their market
@@ -376,6 +377,18 @@ export async function POST(
     message: `Your market "${market.title}" has been resolved: ${winningLabel}`,
     link: `/markets/${id}`,
   });
+
+  // Notify the owning partner (if this is a partner-scoped market)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const partnerId = (market as any).partnerId as string | null;
+  if (partnerId) {
+    await sendPartnerWebhook(partnerId, "market.resolved", {
+      marketId: id,
+      title: market.title,
+      outcome: winningOutcome,
+      outcomeLabel: winningLabel,
+    });
+  }
 
   return NextResponse.json({
     ok: true,
