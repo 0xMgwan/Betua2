@@ -44,6 +44,38 @@ export default function PartnerDashboard() {
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState("");
 
+  // Payout state
+  const [payoutPhone, setPayoutPhone] = useState("");
+  const [payoutAmount, setPayoutAmount] = useState("");
+  const [payingOut, setPayingOut] = useState(false);
+  const [payoutMsg, setPayoutMsg] = useState("");
+
+  const refreshStats = async () => {
+    const r = await fetch("/api/partners/stats");
+    if (r.ok) setStats(await r.json());
+  };
+
+  const requestPayout = async () => {
+    setPayingOut(true);
+    setPayoutMsg("");
+    try {
+      const res = await fetch("/api/partners/payout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amountTzs: Number(payoutAmount), phone: payoutPhone }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPayoutMsg(`✓ ${Number(data.amountTzs).toLocaleString()} TZS sent to ${data.phone}`);
+        setPayoutAmount("");
+        await refreshStats();
+      } else {
+        setPayoutMsg(`✕ ${data.error || "Failed"}`);
+      }
+    } catch { setPayoutMsg("✕ Network error"); }
+    finally { setPayingOut(false); setTimeout(() => setPayoutMsg(""), 6000); }
+  };
+
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
@@ -255,6 +287,35 @@ export default function PartnerDashboard() {
             </button>
             {savedMsg && <span className="text-sm font-mono text-[var(--muted)]">{savedMsg}</span>}
           </div>
+        </section>
+
+        {/* Earnings & payout */}
+        <section className="bg-[var(--card)] border border-[var(--card-border)] p-6 rounded-lg">
+          <h2 className="text-lg font-bold mb-1 flex items-center gap-2"><CurrencyDollar size={20} className="text-[var(--accent)]" />Earnings &amp; Payout</h2>
+          <p className="text-xs text-[var(--muted)] mb-4">Withdraw your accrued markup earnings to mobile money.</p>
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+            <div className="shrink-0">
+              <span className="text-xs text-[var(--muted)] block">Available</span>
+              <span className="text-3xl font-bold text-[var(--accent)] tabular-nums">{(stats?.earningsTzs ?? 0).toLocaleString()}<span className="text-sm text-[var(--muted)] ml-1">TZS</span></span>
+            </div>
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-[var(--muted)] mb-1 block">Phone (mobile money)</label>
+                <input type="tel" value={payoutPhone} onChange={(e) => setPayoutPhone(e.target.value)} placeholder="07XXXXXXXX"
+                  className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--card-border)] rounded text-sm font-mono focus:border-[var(--accent)] outline-none" />
+              </div>
+              <div>
+                <label className="text-xs text-[var(--muted)] mb-1 block">Amount (TZS)</label>
+                <input type="number" min={1000} step={500} value={payoutAmount} onChange={(e) => setPayoutAmount(e.target.value)} placeholder="min 1,000"
+                  className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--card-border)] rounded text-sm font-mono focus:border-[var(--accent)] outline-none" />
+              </div>
+            </div>
+            <button onClick={requestPayout} disabled={payingOut || !payoutPhone || !payoutAmount}
+              className="py-2 px-5 bg-[var(--accent)] text-[var(--background)] text-sm font-mono font-bold rounded hover:opacity-90 disabled:opacity-50 transition-opacity shrink-0">
+              {payingOut ? "Sending…" : "Withdraw"}
+            </button>
+          </div>
+          {payoutMsg && <p className="text-sm font-mono text-[var(--muted)] mt-3">{payoutMsg}</p>}
         </section>
 
         {/* Recent API activity */}
