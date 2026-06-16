@@ -241,6 +241,7 @@ model Partner {
   isApproved    Boolean       @default(false)
   passwordHash  String?
   rawApiKey     String?
+  earningsTzs   Int           @default(0) // accrued partner markup earnings (withdrawable)
   apiLogs       ApiLog[]
   events        Event[]
   markets       Market[]

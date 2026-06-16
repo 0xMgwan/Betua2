@@ -687,9 +687,12 @@ Verify: HMAC-SHA256(rawBody, yourSigningSecret) === signature`}</div>
                 </div>
               </div>
 
-              <p className="text-xs text-[var(--muted)] mt-4 text-center">
-                Partners keep 100% of their own fees. 
-              </p>
+              <div className="mt-4 p-3 bg-[var(--background)] border border-[var(--card-border)] rounded text-xs text-[var(--muted)]">
+                <span className="text-[var(--foreground)] font-bold">Partner markup:</span> in your dashboard you can set a
+                trading markup (%) and a creation markup (TZS). These are charged <span className="text-[var(--foreground)] font-bold">on top</span> of
+                the platform fee on your markets, and <span className="text-[var(--foreground)] font-bold">100% accrues to your earnings</span> balance
+                (shown on the dashboard). The platform base fee is unaffected.
+              </div>
             </div>
           </div>
 

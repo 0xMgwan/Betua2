@@ -26,6 +26,7 @@ import { validateApiKey, checkRateLimit, logApiRequest, apiError, apiSuccess } f
 import { ntzs } from "@/lib/ntzs";
 import { CATEGORIES } from "@/lib/utils";
 import { sendPartnerWebhook } from "@/lib/partnerWebhooks";
+import { getPartnerMarkup } from "@/lib/partnerFees";
 
 // Fee configuration
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
@@ -228,12 +229,16 @@ export async function POST(req: NextRequest) {
       return apiError("Internal user not found", 404);
     }
 
+    // Partner creation markup: charged on top of the base fee, 100% to the partner.
+    const { creationMarkupTzs } = await getPartnerMarkup(partner.partnerId);
+    const totalCreationCost = CREATION_FEE_TZS + creationMarkupTzs;
+
     // Pooled model: charge the creation fee against the DB balance ledger (the
     // funds already sit in the settlement pool). No personal wallet required.
-    if ((user.balanceTzs || 0) < CREATION_FEE_TZS) {
+    if ((user.balanceTzs || 0) < totalCreationCost) {
       await logApiRequest(partner.partnerId, "/api/v1/markets", "POST", 400, Date.now() - startTime, req);
       return apiError(
-        `Insufficient balance. Creating a market costs ${CREATION_FEE_TZS.toLocaleString()} TZS. User balance: ${(user.balanceTzs || 0).toLocaleString()} TZS.`,
+        `Insufficient balance. Creating a market costs ${totalCreationCost.toLocaleString()} TZS. User balance: ${(user.balanceTzs || 0).toLocaleString()} TZS.`,
         400
       );
     }
@@ -331,8 +336,14 @@ export async function POST(req: NextRequest) {
       }),
       prisma.user.update({
         where: { id: user.id },
-        data: { balanceTzs: { decrement: CREATION_FEE_TZS } },
+        data: { balanceTzs: { decrement: totalCreationCost } },
       }),
+      ...(creationMarkupTzs > 0
+        ? [prisma.partner.update({
+            where: { id: partner.partnerId },
+            data: { earningsTzs: { increment: creationMarkupTzs } },
+          })]
+        : []),
     ]);
 
     // Calculate prices for response

@@ -12,8 +12,11 @@ export async function GET(req: NextRequest) {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     const partnerId = payload.partnerId as string;
 
-    // Get partner users count
-    const usersCount = await prisma.partnerUser.count({ where: { partnerId } });
+    // Get partner users count + accrued earnings
+    const [usersCount, partnerRow] = await Promise.all([
+      prisma.partnerUser.count({ where: { partnerId } }),
+      prisma.partner.findUnique({ where: { id: partnerId }, select: { earningsTzs: true } }),
+    ]);
 
     // Get API logs stats
     const now = new Date();
@@ -48,6 +51,7 @@ export async function GET(req: NextRequest) {
       users: usersCount,
       apiCalls: { total: totalCalls, today: todayCalls, thisMonth: monthCalls },
       trades: { count: tradesCount, volume: totalVolume._sum.amountTzs || 0 },
+      earningsTzs: partnerRow?.earningsTzs || 0,
       recentLogs,
     });
   } catch {

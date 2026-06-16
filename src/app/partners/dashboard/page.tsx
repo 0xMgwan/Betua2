@@ -39,8 +39,8 @@ export default function PartnerDashboard() {
   const [webhookSecret, setWebhookSecret] = useState("");
   const [showSecret, setShowSecret] = useState(false);
   const [secretCopied, setSecretCopied] = useState(false);
-  const [tradingFee, setTradingFee] = useState("5");
-  const [creationFee, setCreationFee] = useState("2000");
+  const [tradingMarkup, setTradingMarkup] = useState("0");
+  const [creationMarkup, setCreationMarkup] = useState("0");
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState("");
 
@@ -55,8 +55,8 @@ export default function PartnerDashboard() {
         setWebhookUrl(p.webhookUrl || "");
         setWebhookSecret(p.webhookSecret || "");
         const fees = p.metadata?.fees || {};
-        if (fees.tradingFeePercent != null) setTradingFee(String(fees.tradingFeePercent));
-        if (fees.creationFeeTzs != null) setCreationFee(String(fees.creationFeeTzs));
+        if (fees.tradingMarkupPercent != null) setTradingMarkup(String(fees.tradingMarkupPercent));
+        if (fees.creationMarkupTzs != null) setCreationMarkup(String(fees.creationMarkupTzs));
         if (statsRes.ok) setStats(await statsRes.json());
       })
       .catch(() => router.push("/partners"))
@@ -97,8 +97,8 @@ export default function PartnerDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           webhookUrl,
-          tradingFeePercent: Number(tradingFee),
-          creationFeeTzs: Number(creationFee),
+          tradingMarkupPercent: Number(tradingMarkup),
+          creationMarkupTzs: Number(creationMarkup),
         }),
       });
       const data = await res.json();
@@ -161,7 +161,11 @@ export default function PartnerDashboard() {
           <StatCard icon={<Users size={14} />} label="Users" value={stats?.users ?? 0} />
           <StatCard icon={<ChartLine size={14} />} label="Trades" value={stats?.trades?.count ?? 0} />
           <StatCard icon={<Lightning size={14} />} label="Calls Today" value={stats?.apiCalls?.today ?? 0} />
-          <StatCard icon={<CurrencyDollar size={14} />} label="Volume (TZS)" value={`${((stats?.trades?.volume ?? 0) / 1000).toFixed(1)}K`} />
+          <StatCard
+            icon={<CurrencyDollar size={14} />}
+            label="Your Earnings (TZS)"
+            value={<span className="text-[var(--accent)]">{(stats?.earningsTzs ?? 0).toLocaleString()}</span>}
+          />
         </section>
 
         <div className="grid lg:grid-cols-2 gap-6">
@@ -206,9 +210,9 @@ export default function PartnerDashboard() {
         <section className="bg-[var(--card)] border border-[var(--card-border)] p-6 rounded-lg">
           <div className="flex items-center justify-between mb-1">
             <h2 className="text-lg font-bold flex items-center gap-2"><FloppyDisk size={20} className="text-[var(--accent)]" />Settings</h2>
-            <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full border border-yellow-500/40 text-yellow-500 bg-yellow-500/10">Preview</span>
+            <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full border border-green-500/40 text-green-500 bg-green-500/10">Live</span>
           </div>
-          <p className="text-xs text-[var(--muted)] mb-4">Webhook delivery is live. Custom-fee enforcement is rolling out — fees are saved as preferences for now.</p>
+          <p className="text-xs text-[var(--muted)] mb-4">Webhook delivery and your markup fees are live. Markup is charged on top of the platform fee on your markets and accrues to your earnings.</p>
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <label className="text-xs text-[var(--muted)] mb-1 flex items-center gap-1.5"><Globe size={13} />Webhook URL</label>
@@ -233,15 +237,16 @@ export default function PartnerDashboard() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-[var(--muted)] mb-1 flex items-center gap-1.5"><CurrencyDollar size={13} />Trading fee %</label>
-                <input type="number" min={0} max={20} step={0.5} value={tradingFee} onChange={(e) => setTradingFee(e.target.value)}
+                <label className="text-xs text-[var(--muted)] mb-1 flex items-center gap-1.5"><CurrencyDollar size={13} />Your trading markup %</label>
+                <input type="number" min={0} max={20} step={0.5} value={tradingMarkup} onChange={(e) => setTradingMarkup(e.target.value)}
                   className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--card-border)] rounded text-sm font-mono focus:border-[var(--accent)] outline-none" />
               </div>
               <div>
-                <label className="text-xs text-[var(--muted)] mb-1 flex items-center gap-1.5"><CurrencyDollar size={13} />Creation fee (TZS)</label>
-                <input type="number" min={0} max={100000} step={100} value={creationFee} onChange={(e) => setCreationFee(e.target.value)}
+                <label className="text-xs text-[var(--muted)] mb-1 flex items-center gap-1.5"><CurrencyDollar size={13} />Your creation markup (TZS)</label>
+                <input type="number" min={0} max={100000} step={100} value={creationMarkup} onChange={(e) => setCreationMarkup(e.target.value)}
                   className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--card-border)] rounded text-sm font-mono focus:border-[var(--accent)] outline-none" />
               </div>
+              <p className="col-span-2 text-[11px] text-[var(--muted)]">Charged on top of the platform fee, on your markets. You keep 100% — it accrues to your earnings.</p>
             </div>
           </div>
           <div className="flex items-center gap-3 mt-5">

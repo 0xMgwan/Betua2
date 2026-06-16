@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { ntzs } from "@/lib/ntzs";
 import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
 import { validateApiKey, checkRateLimit, logApiRequest, apiError, apiSuccess } from "@/lib/api-auth";
+import { getPartnerMarkup } from "@/lib/partnerFees";
 
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
 const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
@@ -89,12 +90,18 @@ export async function POST(req: NextRequest) {
       return apiError("Market has expired");
     }
 
+    // Partner markup: charged on top of the stake, 100% to the market's owning
+    // partner. Kept separate from the pot, so AMM/solvency math is untouched.
+    const { tradingMarkupPercent } = await getPartnerMarkup(market.partnerId);
+    const markupAmount = Math.round(amountTzs * (tradingMarkupPercent / 100));
+
     // Pooled model: funds are already in the settlement pool; spend against the
     // DB balance ledger (matches the in-app /api/trades flow).
     const availableBalance = user.balanceTzs || 0;
-    if (availableBalance < amountTzs) {
+    const totalDebit = amountTzs + markupAmount;
+    if (availableBalance < totalDebit) {
       await logApiRequest(partner.partnerId, "/api/v1/trades", "POST", 400, Date.now() - startTime, req);
-      return apiError(`Insufficient balance. Need ${amountTzs} TZS, have ${availableBalance} TZS`);
+      return apiError(`Insufficient balance. Need ${totalDebit} TZS (incl. ${markupAmount} fee), have ${availableBalance} TZS`);
     }
 
     // Calculate fees and shares
@@ -182,11 +189,19 @@ export async function POST(req: NextRequest) {
         await tx.position.create({ data: positionData });
       }
 
-      // Deduct local balance
+      // Deduct local balance (stake + partner markup)
       await tx.user.update({
         where: { id: user.id },
-        data: { balanceTzs: { decrement: amountTzs } },
+        data: { balanceTzs: { decrement: totalDebit } },
       });
+
+      // Credit the owning partner's earnings with the markup
+      if (markupAmount > 0 && market.partnerId) {
+        await tx.partner.update({
+          where: { id: market.partnerId },
+          data: { earningsTzs: { increment: markupAmount } },
+        });
+      }
 
       // Create trade record
       const tradeRecord = await tx.trade.create({

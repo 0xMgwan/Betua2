@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     if (!partner) return NextResponse.json({ error: "Partner not found" }, { status: 404 });
 
     const body = await req.json();
-    const { webhookUrl, tradingFeePercent, creationFeeTzs } = body;
+    const { webhookUrl, tradingMarkupPercent, creationMarkupTzs } = body;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data: any = {};
@@ -43,19 +43,19 @@ export async function POST(req: NextRequest) {
     const meta = (partner.metadata as any) || {};
     const fees = { ...(meta.fees || {}) };
 
-    if (tradingFeePercent !== undefined) {
-      const f = Number(tradingFeePercent);
+    if (tradingMarkupPercent !== undefined) {
+      const f = Number(tradingMarkupPercent);
       if (Number.isNaN(f) || f < 0 || f > 20) {
-        return NextResponse.json({ error: "tradingFeePercent must be between 0 and 20" }, { status: 400 });
+        return NextResponse.json({ error: "tradingMarkupPercent must be between 0 and 20" }, { status: 400 });
       }
-      fees.tradingFeePercent = f;
+      fees.tradingMarkupPercent = f;
     }
-    if (creationFeeTzs !== undefined) {
-      const c = Math.round(Number(creationFeeTzs));
+    if (creationMarkupTzs !== undefined) {
+      const c = Math.round(Number(creationMarkupTzs));
       if (Number.isNaN(c) || c < 0 || c > 100000) {
-        return NextResponse.json({ error: "creationFeeTzs must be between 0 and 100,000" }, { status: 400 });
+        return NextResponse.json({ error: "creationMarkupTzs must be between 0 and 100,000" }, { status: 400 });
       }
-      fees.creationFeeTzs = c;
+      fees.creationMarkupTzs = c;
     }
 
     data.metadata = { ...meta, fees };
