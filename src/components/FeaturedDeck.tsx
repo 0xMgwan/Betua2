@@ -29,6 +29,10 @@ export function FeaturedDeck({ items, label }: { items: DeckItem[]; label?: stri
     setOrder((prev) => (prev.length > 1 ? [...prev.slice(1), prev[0]] : prev));
     setPos((p) => (p + 1) % total);
   };
+  const retreat = () => {
+    setOrder((prev) => (prev.length > 1 ? [prev[prev.length - 1], ...prev.slice(0, -1)] : prev));
+    setPos((p) => (p - 1 + total) % total);
+  };
 
   const top = order[0];
   const peek1 = order[1];
@@ -41,20 +45,39 @@ export function FeaturedDeck({ items, label }: { items: DeckItem[]; label?: stri
           ★ {label || "Featured"}
         </p>
         {total > 1 && (
-          <span className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-[var(--accent)] uppercase tracking-wider">
-            <motion.span animate={{ x: [-3, 3, -3] }} transition={{ repeat: Infinity, duration: 1.3, ease: "easeInOut" }}>
-              ←
-            </motion.span>
+          <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-[var(--accent)] uppercase tracking-wider">
+            <button onClick={retreat} aria-label="Previous" className="px-1 hover:opacity-70 transition-opacity">
+              <motion.span className="inline-block" animate={{ x: [-3, 3, -3] }} transition={{ repeat: Infinity, duration: 1.3, ease: "easeInOut" }}>←</motion.span>
+            </button>
             swipe
-            <motion.span animate={{ x: [3, -3, 3] }} transition={{ repeat: Infinity, duration: 1.3, ease: "easeInOut" }}>
-              →
-            </motion.span>
-          </span>
+            <button onClick={advance} aria-label="Next" className="px-1 hover:opacity-70 transition-opacity">
+              <motion.span className="inline-block" animate={{ x: [3, -3, 3] }} transition={{ repeat: Infinity, duration: 1.3, ease: "easeInOut" }}>→</motion.span>
+            </button>
+          </div>
         )}
       </div>
 
       {/* Deck — extra right/bottom padding gives the peek cards room to show */}
       <div className="relative pr-3 pb-3">
+        {/* Desktop click-through arrows (mouse drag also works) */}
+        {total > 1 && (
+          <>
+            <button
+              onClick={retreat}
+              aria-label="Previous featured market"
+              className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-20 w-10 h-10 items-center justify-center rounded-full bg-[var(--card)] border border-[var(--card-border)] shadow-lg text-[var(--foreground)] hover:bg-[var(--accent)] hover:text-[var(--background)] transition-colors"
+            >
+              ‹
+            </button>
+            <button
+              onClick={advance}
+              aria-label="Next featured market"
+              className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-20 w-10 h-10 items-center justify-center rounded-full bg-[var(--card)] border border-[var(--card-border)] shadow-lg text-[var(--foreground)] hover:bg-[var(--accent)] hover:text-[var(--background)] transition-colors"
+            >
+              ›
+            </button>
+          </>
+        )}
         {/* Peek card 2 (furthest back) */}
         {peek2 && (
           <div className="absolute inset-y-0 left-0 right-0 -z-20 origin-center scale-[0.92] translate-x-4 translate-y-3 rounded-xl overflow-hidden opacity-40 pointer-events-none shadow-lg">

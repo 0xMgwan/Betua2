@@ -789,7 +789,7 @@ function MarketsContent() {
               <>
                 {/* Featured hero deck — only on the "All" markets view */}
                 {category === "all" && featured.length > 1 && (
-                  <div className="sm:max-w-md">
+                  <div className="max-w-md sm:max-w-2xl mx-auto">
                     <FeaturedDeck
                       label={locale === "sw" ? "Maarufu" : "Featured"}
                       items={featured.map((item, i) => ({
