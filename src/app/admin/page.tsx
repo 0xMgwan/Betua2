@@ -45,6 +45,8 @@ export default function AdminPage() {
   const [reconcileMsg, setReconcileMsg] = useState("");
   const [resolvingPyth, setResolvingPyth] = useState(false);
   const [resolvePythMsg, setResolvePythMsg] = useState("");
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillMsg, setBackfillMsg] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [partners, setPartners] = useState<any[] | null>(null);
   const [expandedPartner, setExpandedPartner] = useState<string | null>(null);
@@ -99,6 +101,18 @@ export default function AdminPage() {
       await loadDashboard(true);
     } catch { setReconcileMsg("❌ Failed"); }
     finally { setReconciling(false); }
+  };
+
+  const handleBackfillImplied = async () => {
+    setBackfilling(true);
+    setBackfillMsg("");
+    try {
+      const res = await fetch("/api/admin/backfill-implied", { method: "POST" });
+      const d = await res.json();
+      if (!res.ok) setBackfillMsg(`❌ ${d.error || "Failed"}`);
+      else setBackfillMsg(`✅ Backfilled ${d.updated}/${d.scanned} open positions`);
+    } catch { setBackfillMsg("❌ Failed"); }
+    finally { setBackfilling(false); }
   };
 
   const handleResolvePyth = async (dryRun = false) => {
@@ -594,6 +608,7 @@ export default function AdminPage() {
                     { label: "Reconcile All Balances", desc: "Recalculate balanceTzs from tx history", action: () => handleReconcile(), loading: reconciling, msg: reconcileMsg, color: "border-orange-500/40 text-orange-400 hover:bg-orange-500/10" },
                     { label: "Preview due Pyth (dry run)", desc: "Show what WOULD resolve — live price vs target, no settling", action: () => handleResolvePyth(true), loading: resolvingPyth, msg: resolvePythMsg, color: "border-[var(--card-border)] text-[var(--muted)] hover:bg-[var(--card)]" },
                     { label: "Resolve due Pyth now", desc: "Settle expired gold/FX/commodity markets from live Pyth prices", action: () => handleResolvePyth(false), loading: resolvingPyth, msg: resolvePythMsg, color: "border-[#00b4d8]/40 text-[#00b4d8] hover:bg-[#00b4d8]/10" },
+                    { label: "Backfill fixed-odds payouts", desc: "Set locked-in payouts on legacy open positions (shares × 0.95)", action: () => handleBackfillImplied(), loading: backfilling, msg: backfillMsg, color: "border-purple-500/40 text-purple-400 hover:bg-purple-500/10" },
                   ].map(a => (
                     <div key={a.label} className="border border-[var(--card-border)] p-3 space-y-1">
                       <div className="flex items-center justify-between">
