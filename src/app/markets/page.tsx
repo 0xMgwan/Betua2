@@ -795,15 +795,20 @@ function MarketsContent() {
                     id: item.type === 'market' ? item.market.id : `e-${i}`,
                     render: () => renderItem(item, i, true),
                   }));
-                  const topCat = featured[0]?.market.category || "Markets";
                   const ctaHref = featured[0]?.market.id ? `/markets/${featured[0].market.id}` : "#";
+                  // All categories present across markets, Sports first — the
+                  // headline rotates through these so it isn't pinned to one.
+                  const catOf = (it: typeof allItems[number]) =>
+                    it.type === 'market' ? it.market.category : (it.event?.category || it.markets?.[0]?.category);
+                  const presentCats = new Set(allItems.map(catOf).filter(Boolean) as string[]);
+                  const featuredCats = orderedCategories.filter(c => c !== "all" && presentCats.has(c));
                   return (
                     <>
                       <div className="hidden lg:block">
                         <FeaturedHero
                           items={deckItems}
                           eyebrow={locale === "sw" ? "Maarufu" : "Featured"}
-                          headline={locale === "sw" ? `Soko za ${topCat} moja kwa moja` : `${topCat} markets, live`}
+                          categories={featuredCats}
                           subhead={locale === "sw" ? "Tabiri tukio, pata GUAP." : "Predict the moment. Earn GUAP."}
                           ctaLabel={locale === "sw" ? "Angalia" : "Trade now"}
                           ctaHref={ctaHref}
@@ -835,7 +840,14 @@ function MarketsContent() {
                   });
 
                   let runningIndex = 0;
-                  return [...groups.entries()].map(([groupName, items], gi) => (
+                  // In "All" view, order sections by priority (Sports first, then
+                  // Business, Entertainment, …); subcategory groups keep natural order.
+                  const orderedGroups = [...groups.entries()].sort((a, b) => {
+                    if (category !== "all") return 0;
+                    const ia = orderedCategories.indexOf(a[0]); const ib = orderedCategories.indexOf(b[0]);
+                    return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+                  });
+                  return orderedGroups.map(([groupName, items], gi) => (
                     <div key={groupName}>
                       <section className="mb-8">
                         {/* Section header — category/subcategory + count, outside the cards.
