@@ -12,7 +12,8 @@ const ADMIN_NTZS = [
   "c458cdc9-db89-408e-a077-dacb72af789d",
 ];
 
-type Tab = "overview" | "users" | "markets" | "tools";
+type Tab = "overview" | "users" | "markets" | "partners" | "tools";
+type AnyUser = { externalId: string; username: string | null; email: string | null; phone: string | null; balanceTzs: number; balanceUsdc: number };
 
 interface Summary {
   totalUsers: number; totalBalanceTzs: number; totalVolume: number;
@@ -44,6 +45,9 @@ export default function AdminPage() {
   const [reconcileMsg, setReconcileMsg] = useState("");
   const [resolvingPyth, setResolvingPyth] = useState(false);
   const [resolvePythMsg, setResolvePythMsg] = useState("");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [partners, setPartners] = useState<any[] | null>(null);
+  const [expandedPartner, setExpandedPartner] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -77,6 +81,13 @@ export default function AdminPage() {
     const interval = setInterval(() => loadDashboard(true), 20000);
     return () => clearInterval(interval);
   }, [user, isAdmin, router, loadDashboard]);
+
+  // Lazy-load partners the first time the Partners tab is opened
+  useEffect(() => {
+    if (tab === "partners" && partners === null && isAdmin) {
+      fetch("/api/admin/partners").then(r => r.ok ? r.json() : { partners: [] }).then(d => setPartners(d.partners || []));
+    }
+  }, [tab, partners, isAdmin]);
 
   const handleReconcile = async () => {
     setReconciling(true);
@@ -139,6 +150,7 @@ export default function AdminPage() {
     { key: "overview", label: "Overview" },
     { key: "users", label: `Users (${data?.users.length || 0})` },
     { key: "markets", label: `Markets (${data?.markets.length || 0})` },
+    { key: "partners", label: `Partners${partners ? ` (${partners.length})` : ""}` },
     { key: "tools", label: "Tools" },
   ];
 
@@ -388,6 +400,85 @@ export default function AdminPage() {
               </table>
               {filteredMarkets.length === 0 && <p className="text-center text-[var(--muted)] text-xs py-8">No markets found</p>}
             </div>
+          </div>
+        )}
+
+        {/* ── PARTNERS ── */}
+        {tab === "partners" && (
+          <div className="space-y-3">
+            {partners === null ? (
+              <p className="text-center text-[var(--muted)] text-xs py-8">Loading partners…</p>
+            ) : partners.length === 0 ? (
+              <p className="text-center text-[var(--muted)] text-xs py-8">No partners yet</p>
+            ) : (
+              partners.map((p) => {
+                const open = expandedPartner === p.id;
+                return (
+                  <div key={p.id} className="border border-[var(--card-border)] bg-[var(--card)]">
+                    {/* Partner header row */}
+                    <button
+                      onClick={() => setExpandedPartner(open ? null : p.id)}
+                      className="w-full text-left px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-2 hover:bg-[var(--background)]/40 transition-colors"
+                    >
+                      <div className="flex-1 min-w-[160px]">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-sm">{p.name}</span>
+                          <span className={`text-[9px] font-mono px-1.5 py-0.5 border ${p.isApproved ? "border-green-500/40 text-green-500" : "border-yellow-500/40 text-yellow-500"}`}>{p.isApproved ? "approved" : "pending"}</span>
+                          {!p.isActive && <span className="text-[9px] font-mono px-1.5 py-0.5 border border-red-500/40 text-red-500">inactive</span>}
+                        </div>
+                        <div className="text-[11px] font-mono text-[var(--muted)]">{p.email} · {p.tier}</div>
+                      </div>
+                      <div className="text-center"><div className="text-sm font-mono font-bold">{p._count.users}</div><div className="text-[9px] text-[var(--muted)]">users</div></div>
+                      <div className="text-center"><div className="text-sm font-mono font-bold">{p._count.markets}</div><div className="text-[9px] text-[var(--muted)]">markets</div></div>
+                      <div className="text-center"><div className="text-sm font-mono font-bold">{p._count.apiLogs}</div><div className="text-[9px] text-[var(--muted)]">API calls</div></div>
+                      <div className="text-center"><div className="text-sm font-mono font-bold text-[var(--accent)]">{(p.earningsTzs || 0).toLocaleString()}</div><div className="text-[9px] text-[var(--muted)]">earnings TZS</div></div>
+                      <div className="text-center"><div className="text-sm font-mono font-bold">{(p.totalUserBalanceTzs || 0).toLocaleString()}</div><div className="text-[9px] text-[var(--muted)]">user bal TZS</div></div>
+                      <span className="text-[var(--muted)] text-xs font-mono">{open ? "▾" : "▸"}</span>
+                    </button>
+
+                    {/* Expanded: webhook + users */}
+                    {open && (
+                      <div className="border-t border-[var(--card-border)] p-4 space-y-3">
+                        <div className="text-[11px] font-mono text-[var(--muted)] flex flex-wrap gap-x-6 gap-y-1">
+                          <span>Webhook: {p.webhookUrl ? <span className="text-[var(--foreground)]">{p.webhookUrl}</span> : "—"}</span>
+                          <span>Rate: {p.rateLimit}/min</span>
+                          <span>Joined: {new Date(p.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        {p.users.length === 0 ? (
+                          <p className="text-[11px] text-[var(--muted)]">No users yet.</p>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs font-mono">
+                              <thead>
+                                <tr className="text-[var(--muted)] text-[10px] border-b border-[var(--card-border)]">
+                                  <th className="text-left font-normal py-1.5">External ID</th>
+                                  <th className="text-left font-normal py-1.5">Username</th>
+                                  <th className="text-left font-normal py-1.5 hidden sm:table-cell">Contact</th>
+                                  <th className="text-right font-normal py-1.5">Balance TZS</th>
+                                  <th className="text-right font-normal py-1.5 hidden sm:table-cell">USDC</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {p.users.map((u: AnyUser, i: number) => (
+                                  <tr key={i} className="border-b border-[var(--card-border)]/40">
+                                    <td className="py-1.5 text-[var(--muted)] max-w-[140px] truncate">{u.externalId}</td>
+                                    <td className="py-1.5">{u.username || "—"}</td>
+                                    <td className="py-1.5 text-[var(--muted)] hidden sm:table-cell max-w-[160px] truncate">{u.email || u.phone || "—"}</td>
+                                    <td className="py-1.5 text-right tabular-nums">{(u.balanceTzs || 0).toLocaleString()}</td>
+                                    <td className="py-1.5 text-right tabular-nums hidden sm:table-cell">{((u.balanceUsdc || 0) / 1_000_000).toFixed(2)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                            {p.users.length >= 100 && <p className="text-[10px] text-[var(--muted)] mt-2">Showing first 100 users.</p>}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         )}
 
