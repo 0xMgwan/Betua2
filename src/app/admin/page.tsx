@@ -52,6 +52,8 @@ export default function AdminPage() {
   const [expandedPartner, setExpandedPartner] = useState<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [analytics, setAnalytics] = useState<any | null>(null);
+  const [analyticsDays, setAnalyticsDays] = useState(30);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -93,12 +95,16 @@ export default function AdminPage() {
     }
   }, [tab, partners, isAdmin]);
 
-  // Load behavior analytics once for the overview
+  // Load behavior analytics for the overview; refetch when the window changes
   useEffect(() => {
-    if (isAdmin && analytics === null) {
-      fetch("/api/admin/analytics").then(r => r.ok ? r.json() : null).then(d => d && setAnalytics(d)).catch(() => {});
-    }
-  }, [isAdmin, analytics]);
+    if (!isAdmin) return;
+    setAnalyticsLoading(true);
+    fetch(`/api/admin/analytics?days=${analyticsDays}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => d && setAnalytics(d))
+      .catch(() => {})
+      .finally(() => setAnalyticsLoading(false));
+  }, [isAdmin, analyticsDays]);
 
   const handleReconcile = async () => {
     setReconciling(true);
@@ -303,17 +309,69 @@ export default function AdminPage() {
             {/* ── USER BEHAVIOR ANALYTICS (30d) ── */}
             {analytics && (
               <div className="space-y-4">
-                <div className="flex items-baseline justify-between border-b border-[var(--card-border)] pb-2">
-                  <h2 className="text-sm font-mono font-black uppercase tracking-wider">Trading Behavior</h2>
-                  <span className="text-[10px] font-mono text-[var(--muted)]">last {analytics.windowDays} days</span>
+                <div className="flex items-center justify-between border-b border-[var(--card-border)] pb-2">
+                  <h2 className="text-sm font-mono font-black uppercase tracking-wider">Trading Behavior{analyticsLoading && <span className="text-[10px] text-[var(--muted)] ml-2">updating…</span>}</h2>
+                  <div className="flex gap-1">
+                    {[{ d: 7, l: "7D" }, { d: 30, l: "30D" }, { d: 90, l: "90D" }, { d: 0, l: "ALL" }].map(w => (
+                      <button
+                        key={w.d}
+                        onClick={() => setAnalyticsDays(w.d)}
+                        className={`px-2 py-1 text-[10px] font-mono border transition-colors ${analyticsDays === w.d ? "border-[var(--accent)] text-[var(--accent)] bg-[var(--accent)]/10" : "border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)]"}`}
+                      >
+                        {w.l}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Buy/sell split + new vs returning */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-[var(--card)] border border-[var(--card-border)]">
+                    <p className="text-[10px] font-mono text-[var(--muted)] uppercase mb-3">Buys vs Sells</p>
+                    {(() => {
+                      const b = analytics.buySell.buys, sl = analytics.buySell.sells;
+                      const tot = b.volume + sl.volume || 1;
+                      return (
+                        <>
+                          <div className="flex h-3 overflow-hidden mb-2">
+                            <div className="bg-[#00e5a0]" style={{ width: `${(b.volume / tot) * 100}%` }} />
+                            <div className="bg-red-400" style={{ width: `${(sl.volume / tot) * 100}%` }} />
+                          </div>
+                          <div className="flex justify-between text-[11px] font-mono">
+                            <span className="text-[#00e5a0]">Buys: {formatTZS(b.volume)} · {b.count}</span>
+                            <span className="text-red-400">Sells: {formatTZS(sl.volume)} · {sl.count}</span>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                  <div className="p-4 bg-[var(--card)] border border-[var(--card-border)]">
+                    <p className="text-[10px] font-mono text-[var(--muted)] uppercase mb-3">New vs Returning Traders {analyticsDays === 0 && <span className="opacity-60">(n/a all-time)</span>}</p>
+                    {(() => {
+                      const n = analytics.newTraders, r = analytics.returningTraders;
+                      const tot = n + r || 1;
+                      return (
+                        <>
+                          <div className="flex h-3 overflow-hidden mb-2">
+                            <div className="bg-blue-400" style={{ width: `${(n / tot) * 100}%` }} />
+                            <div className="bg-purple-400" style={{ width: `${(r / tot) * 100}%` }} />
+                          </div>
+                          <div className="flex justify-between text-[11px] font-mono">
+                            <span className="text-blue-400">New: {n}</span>
+                            <span className="text-purple-400">Returning: {r}</span>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
                 </div>
 
                 {/* Behavior KPIs */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {[
                     { label: "Avg Trade", value: formatTZS(analytics.avgTrade), color: "text-[var(--accent)]" },
-                    { label: "Trades (30d)", value: analytics.totalTrades.toLocaleString(), color: "text-blue-400" },
-                    { label: "Volume (30d)", value: formatTZS(analytics.totalVolume), color: "text-[#00e5a0]" },
+                    { label: `Trades (${analyticsDays === 0 ? "all" : analyticsDays + "d"})`, value: analytics.totalTrades.toLocaleString(), color: "text-blue-400" },
+                    { label: `Volume (${analyticsDays === 0 ? "all" : analyticsDays + "d"})`, value: formatTZS(analytics.totalVolume), color: "text-[#00e5a0]" },
                     { label: "Active Traders", value: analytics.uniqueTraders.toLocaleString(), color: "text-purple-400" },
                   ].map(k => (
                     <div key={k.label} className="p-4 bg-[var(--card)] border border-[var(--card-border)]">
@@ -333,9 +391,9 @@ export default function AdminPage() {
                         const max = analytics.categories[0]?.volume || 1;
                         return (
                           <div key={c.category}>
-                            <div className="flex justify-between text-[11px] font-mono mb-0.5">
+                            <div className="flex justify-between text-[11px] font-mono mb-0.5 gap-2">
                               <span>{c.category}</span>
-                              <span className="text-[var(--muted)]">{c.pct}% · {c.count}</span>
+                              <span className="text-[var(--muted)] shrink-0">{c.pct}% · {c.count} trades · avg {formatTZS(c.avgTrade)}</span>
                             </div>
                             <div className="h-2 bg-[var(--background)] overflow-hidden">
                               <div className="h-full bg-[var(--accent)]" style={{ width: `${Math.max(2, (c.volume / max) * 100)}%` }} />
