@@ -779,11 +779,26 @@ function MarketsContent() {
               );
             };
 
-            // Featured = TRENDING standalone markets (highest volume), top 5
-            const featured = allItems
+            // Featured = open (non-expired) standalone markets: a blend of the
+            // hottest (by volume) plus the newest, so fresh markets replace any
+            // that have expired. Expired/resolved markets are never featured.
+            const nowMs = Date.now();
+            const openMarketItems = allItems
               .filter((it): it is Extract<typeof allItems[number], { type: 'market' }> => it.type === 'market')
-              .sort((a, b) => (b.market.totalVolume || 0) - (a.market.totalVolume || 0))
-              .slice(0, 5);
+              .filter((it) => {
+                const m = it.market as { status?: string; resolvesAt?: string };
+                const notResolved = !m.status || m.status === "OPEN";
+                const notExpired = !m.resolvesAt || new Date(m.resolvesAt).getTime() > nowMs;
+                return notResolved && notExpired;
+              });
+            const byVolume = [...openMarketItems].sort((a, b) => (b.market.totalVolume || 0) - (a.market.totalVolume || 0));
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const createdMs = (it: typeof openMarketItems[number]) => new Date((it.market as any).createdAt || 0).getTime();
+            const byNewest = [...openMarketItems].sort((a, b) => createdMs(b) - createdMs(a));
+            const featured: typeof openMarketItems = [];
+            const seenIds = new Set<string>();
+            for (const it of byVolume.slice(0, 3)) { if (!seenIds.has(it.market.id)) { featured.push(it); seenIds.add(it.market.id); } }
+            for (const it of byNewest) { if (featured.length >= 5) break; if (!seenIds.has(it.market.id)) { featured.push(it); seenIds.add(it.market.id); } }
             const rest = allItems;
 
             return (
@@ -792,7 +807,7 @@ function MarketsContent() {
                     Desktop: full-width branded hero carousel. Mobile/tablet: swipe deck. */}
                 {category === "all" && featured.length > 1 && (() => {
                   const deckItems = featured.map((item, i) => ({
-                    id: item.type === 'market' ? item.market.id : `e-${i}`,
+                    id: item.market.id,
                     render: () => renderItem(item, i, true),
                   }));
                   const ctaHref = featured[0]?.market.id ? `/markets/${featured[0].market.id}` : "#";
