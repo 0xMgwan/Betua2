@@ -50,6 +50,8 @@ export default function AdminPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [partners, setPartners] = useState<any[] | null>(null);
   const [expandedPartner, setExpandedPartner] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [analytics, setAnalytics] = useState<any | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -90,6 +92,13 @@ export default function AdminPage() {
       fetch("/api/admin/partners").then(r => r.ok ? r.json() : { partners: [] }).then(d => setPartners(d.partners || []));
     }
   }, [tab, partners, isAdmin]);
+
+  // Load behavior analytics once for the overview
+  useEffect(() => {
+    if (isAdmin && analytics === null) {
+      fetch("/api/admin/analytics").then(r => r.ok ? r.json() : null).then(d => d && setAnalytics(d)).catch(() => {});
+    }
+  }, [isAdmin, analytics]);
 
   const handleReconcile = async () => {
     setReconciling(true);
@@ -290,6 +299,115 @@ export default function AdminPage() {
                 </div>
               );
             })()}
+
+            {/* ── USER BEHAVIOR ANALYTICS (30d) ── */}
+            {analytics && (
+              <div className="space-y-4">
+                <div className="flex items-baseline justify-between border-b border-[var(--card-border)] pb-2">
+                  <h2 className="text-sm font-mono font-black uppercase tracking-wider">Trading Behavior</h2>
+                  <span className="text-[10px] font-mono text-[var(--muted)]">last {analytics.windowDays} days</span>
+                </div>
+
+                {/* Behavior KPIs */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { label: "Avg Trade", value: formatTZS(analytics.avgTrade), color: "text-[var(--accent)]" },
+                    { label: "Trades (30d)", value: analytics.totalTrades.toLocaleString(), color: "text-blue-400" },
+                    { label: "Volume (30d)", value: formatTZS(analytics.totalVolume), color: "text-[#00e5a0]" },
+                    { label: "Active Traders", value: analytics.uniqueTraders.toLocaleString(), color: "text-purple-400" },
+                  ].map(k => (
+                    <div key={k.label} className="p-4 bg-[var(--card)] border border-[var(--card-border)]">
+                      <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider mb-1">{k.label}</p>
+                      <p className={`text-xl font-black tabular-nums ${k.color}`}>{k.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Volume by category */}
+                  <div className="p-4 bg-[var(--card)] border border-[var(--card-border)]">
+                    <p className="text-[10px] font-mono text-[var(--muted)] uppercase mb-3">Volume by Category</p>
+                    <div className="space-y-2">
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      {analytics.categories.map((c: any) => {
+                        const max = analytics.categories[0]?.volume || 1;
+                        return (
+                          <div key={c.category}>
+                            <div className="flex justify-between text-[11px] font-mono mb-0.5">
+                              <span>{c.category}</span>
+                              <span className="text-[var(--muted)]">{c.pct}% · {c.count}</span>
+                            </div>
+                            <div className="h-2 bg-[var(--background)] overflow-hidden">
+                              <div className="h-full bg-[var(--accent)]" style={{ width: `${Math.max(2, (c.volume / max) * 100)}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {analytics.categories.length === 0 && <p className="text-[11px] text-[var(--muted)]">No trades in window.</p>}
+                    </div>
+                  </div>
+
+                  {/* Top markets */}
+                  <div className="p-4 bg-[var(--card)] border border-[var(--card-border)]">
+                    <p className="text-[10px] font-mono text-[var(--muted)] uppercase mb-3">Top Markets by Volume</p>
+                    <div className="space-y-2">
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      {analytics.topMarkets.map((m: any) => {
+                        const max = analytics.topMarkets[0]?.volume || 1;
+                        return (
+                          <div key={m.title}>
+                            <div className="flex justify-between text-[11px] font-mono mb-0.5 gap-2">
+                              <span className="truncate">{m.title}</span>
+                              <span className="text-[var(--muted)] shrink-0">{formatTZS(m.volume)}</span>
+                            </div>
+                            <div className="h-2 bg-[var(--background)] overflow-hidden">
+                              <div className="h-full bg-blue-400" style={{ width: `${Math.max(2, (m.volume / max) * 100)}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {analytics.topMarkets.length === 0 && <p className="text-[11px] text-[var(--muted)]">No trades in window.</p>}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Trades by hour of day (EAT) */}
+                <div className="p-4 bg-[var(--card)] border border-[var(--card-border)]">
+                  <p className="text-[10px] font-mono text-[var(--muted)] uppercase mb-3">When Users Trade (hour of day · EAT)</p>
+                  <div className="flex items-end gap-0.5 h-28">
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                    {analytics.byHour.map((h: any, i: number) => {
+                      const max = Math.max(...analytics.byHour.map((x: any) => x.count), 1);
+                      return (
+                        <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group relative">
+                          <div className="w-full bg-purple-400/80 hover:bg-purple-400 transition-colors" style={{ height: `${(h.count / max) * 100}%` }} title={`${i}:00 — ${h.count} trades`} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex justify-between text-[8px] font-mono text-[var(--muted)] mt-1">
+                    <span>00</span><span>06</span><span>12</span><span>18</span><span>23</span>
+                  </div>
+                </div>
+
+                {/* Daily volume (last 14d) */}
+                <div className="p-4 bg-[var(--card)] border border-[var(--card-border)]">
+                  <p className="text-[10px] font-mono text-[var(--muted)] uppercase mb-3">Daily Volume (last 14 days)</p>
+                  <div className="flex items-end gap-1 h-28">
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                    {analytics.days.map((d: any, i: number) => {
+                      const max = Math.max(...analytics.days.map((x: any) => x.volume), 1);
+                      return (
+                        <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
+                          <div className="w-full bg-[#00e5a0]/80 hover:bg-[#00e5a0] transition-colors" style={{ height: `${(d.volume / max) * 100}%` }} title={`${d.date} — ${formatTZS(d.volume)} · ${d.count} trades`} />
+                          <span className="text-[7px] font-mono text-[var(--muted)] mt-1 rotate-0">{d.date}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
