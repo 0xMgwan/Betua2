@@ -137,6 +137,11 @@ export async function POST(req: NextRequest) {
       newNoPool = isYes ? result.newPoolIn : result.newPoolOut;
     }
 
+    // Fixed-odds payout locked in at trade time: each winning share resolves to
+    // 1 TZS, net of the 5% settlement fee. Redeem pays this directly (guaranteed
+    // odds), backed by the platform pool — never diluted by the market's seed.
+    const payoutIfWin = Math.round(sharesOut * (1 - FEE_PERCENT));
+
     // Execute trade in transaction
     const trade = await prisma.$transaction(async (tx) => {
       // Update market pools
@@ -159,17 +164,19 @@ export async function POST(req: NextRequest) {
         if (isMultiOption) {
           const currentShares = (existingPosition.optionShares as Record<string, number>) || {};
           currentShares[String(optionIndex)] = (currentShares[String(optionIndex)] || 0) + sharesOut;
+          const currentImplied = (existingPosition.optionImpliedPayouts as Record<string, number>) || {};
+          currentImplied[String(optionIndex)] = (currentImplied[String(optionIndex)] || 0) + payoutIfWin;
           await tx.position.update({
             where: { id: existingPosition.id },
-            data: { optionShares: currentShares },
+            data: { optionShares: currentShares, optionImpliedPayouts: currentImplied },
           });
         } else {
           const isYes = side.toUpperCase() === "YES";
           await tx.position.update({
             where: { id: existingPosition.id },
             data: isYes
-              ? { yesShares: { increment: sharesOut } }
-              : { noShares: { increment: sharesOut } },
+              ? { yesShares: { increment: sharesOut }, yesImpliedPayout: { increment: payoutIfWin } }
+              : { noShares: { increment: sharesOut }, noImpliedPayout: { increment: payoutIfWin } },
           });
         }
       } else {
@@ -181,10 +188,11 @@ export async function POST(req: NextRequest) {
         };
         if (isMultiOption) {
           positionData.optionShares = { [String(optionIndex)]: sharesOut };
+          positionData.optionImpliedPayouts = { [String(optionIndex)]: payoutIfWin };
         } else {
           const isYes = side.toUpperCase() === "YES";
-          if (isYes) positionData.yesShares = sharesOut;
-          else positionData.noShares = sharesOut;
+          if (isYes) { positionData.yesShares = sharesOut; positionData.yesImpliedPayout = payoutIfWin; }
+          else { positionData.noShares = sharesOut; positionData.noImpliedPayout = payoutIfWin; }
         }
         await tx.position.create({ data: positionData });
       }

@@ -67,44 +67,51 @@ export async function GET() {
     const pot = Math.round(mkt.totalVolume * (1 - FEE_PERCENT));
     const totals = marketShareTotals[mkt.id] || { yes: 0, no: 0, options: {} };
 
-    // For resolved markets, use actual outcome — losers get 0, winners get their payout
-    // Must match redeem API calculation exactly
+    // For resolved markets, use actual outcome — losers get 0, winners get their payout.
+    // Prefer the fixed-odds payout locked in at trade time (matches the redeem API,
+    // backed by the platform pool, never diluted by the market seed). Fall back to
+    // parimutuel only for legacy positions that never stored an implied payout.
     if (mkt.status === "RESOLVED" && mkt.outcome !== null) {
       if (isMultiOption) {
         const optShares = (p.optionShares as Record<string, number>) || {};
         const winningShares = optShares[String(mkt.outcome)] || 0;
-        const totalWinShares = totals.options[String(mkt.outcome)] || 1;
-        // Proportional pot distribution: (yourShares / totalShares) * pot
-        const grossPayout = totalWinShares > 0
-          ? Math.round((winningShares / totalWinShares) * pot)
-          : 0;
-        // Settlement fee: 5% of gross payout
-        const settlementFee = Math.round(grossPayout * FEE_PERCENT);
-        const currentValue = grossPayout - settlementFee;
+        const storedImplied = ((p.optionImpliedPayouts as Record<string, number>) || {})[String(mkt.outcome)] || 0;
+        let currentValue: number;
+        if (storedImplied > 0) {
+          currentValue = Math.round(storedImplied);
+        } else {
+          const totalWinShares = totals.options[String(mkt.outcome)] || 1;
+          const grossPayout = totalWinShares > 0 ? Math.round((winningShares / totalWinShares) * pot) : 0;
+          currentValue = grossPayout - Math.round(grossPayout * FEE_PERCENT);
+        }
         const prices = mkt.optionPools ? getMultiOptionPrices(mkt.optionPools as number[]) : [];
         return { ...p, currentValue, price: getPrice(mkt.yesPool, mkt.noPool), optionPrices: prices };
       }
 
       const winningShares = mkt.outcome === 1 ? p.yesShares : p.noShares;
-      const totalWinShares = mkt.outcome === 1 ? totals.yes : totals.no;
-      // Proportional pot distribution: (yourShares / totalShares) * pot
-      const grossPayout = totalWinShares > 0
-        ? Math.round((winningShares / totalWinShares) * pot)
-        : 0;
-      // Settlement fee: 5% of gross payout
-      const settlementFee = Math.round(grossPayout * FEE_PERCENT);
-      const currentValue = grossPayout - settlementFee;
+      const storedImplied = mkt.outcome === 1 ? (p.yesImpliedPayout || 0) : (p.noImpliedPayout || 0);
+      let currentValue: number;
+      if (storedImplied > 0) {
+        currentValue = Math.round(storedImplied);
+      } else {
+        const totalWinShares = mkt.outcome === 1 ? totals.yes : totals.no;
+        const grossPayout = totalWinShares > 0 ? Math.round((winningShares / totalWinShares) * pot) : 0;
+        currentValue = grossPayout - Math.round(grossPayout * FEE_PERCENT);
+      }
       return { ...p, currentValue, price: getPrice(mkt.yesPool, mkt.noPool) };
     }
 
+    // OPEN markets — mark-to-market: fixed-odds payout × current probability.
     if (isMultiOption && mkt.optionPools) {
       const prices = getMultiOptionPrices(mkt.optionPools as number[]);
       const optShares = (p.optionShares as Record<string, number>) || {};
-      // Expected value = sum over each option: probability × (myShares/totalShares) × pot
+      const implied = (p.optionImpliedPayouts as Record<string, number>) || {};
       let totalValue = 0;
       for (const [idx, shares] of Object.entries(optShares)) {
-        const totalForOption = totals.options[idx] || 1;
-        const payoutIfWin = totalForOption > 0 ? (shares / totalForOption) * pot * (1 - FEE_PERCENT) : 0;
+        const storedImplied = implied[idx] || 0;
+        const payoutIfWin = storedImplied > 0
+          ? storedImplied
+          : (totals.options[idx] || 1) > 0 ? (shares / (totals.options[idx] || 1)) * pot * (1 - FEE_PERCENT) : 0;
         totalValue += payoutIfWin * (prices[Number(idx)] || 0);
       }
       return { ...p, currentValue: Math.round(totalValue), price: getPrice(mkt.yesPool, mkt.noPool), optionPrices: prices };
@@ -112,8 +119,12 @@ export async function GET() {
 
     const price = getPrice(mkt.yesPool, mkt.noPool);
     // Expected value: P(yes) × payoutIfYesWins + P(no) × payoutIfNoWins
-    const yesPayoutIfWin = totals.yes > 0 ? (p.yesShares / totals.yes) * pot * (1 - FEE_PERCENT) : 0;
-    const noPayoutIfWin = totals.no > 0 ? (p.noShares / totals.no) * pot * (1 - FEE_PERCENT) : 0;
+    const yesPayoutIfWin = (p.yesImpliedPayout || 0) > 0
+      ? p.yesImpliedPayout
+      : (totals.yes > 0 ? (p.yesShares / totals.yes) * pot * (1 - FEE_PERCENT) : 0);
+    const noPayoutIfWin = (p.noImpliedPayout || 0) > 0
+      ? p.noImpliedPayout
+      : (totals.no > 0 ? (p.noShares / totals.no) * pot * (1 - FEE_PERCENT) : 0);
     const currentValue = yesPayoutIfWin * price.yes + noPayoutIfWin * price.no;
     return { ...p, currentValue: Math.round(currentValue), price };
   });

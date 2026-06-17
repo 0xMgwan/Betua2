@@ -241,9 +241,13 @@ export async function POST(req: NextRequest) {
             const optShares = (existingPosition.optionShares as Record<string, number>) || {};
             optShares[String(trade.optionIndex)] = (optShares[String(trade.optionIndex)] || 0) + Math.round(sharesOut);
             updateData.optionShares = optShares;
+            // Lock in the fixed-odds payout for this option (so redeem pays the odds shown).
+            const optImplied = (existingPosition.optionImpliedPayouts as Record<string, number>) || {};
+            optImplied[String(trade.optionIndex)] = (optImplied[String(trade.optionIndex)] || 0) + payoutIfWin;
+            updateData.optionImpliedPayouts = optImplied;
           } else {
-            if (trade.side === "YES") updateData.yesShares = { increment: Math.round(sharesOut) };
-            else updateData.noShares = { increment: Math.round(sharesOut) };
+            if (trade.side === "YES") { updateData.yesShares = { increment: Math.round(sharesOut) }; updateData.yesImpliedPayout = { increment: payoutIfWin }; }
+            else { updateData.noShares = { increment: Math.round(sharesOut) }; updateData.noImpliedPayout = { increment: payoutIfWin }; }
           }
           await tx.position.update({ where: { id: existingPosition.id }, data: updateData });
         } else {
@@ -256,9 +260,10 @@ export async function POST(req: NextRequest) {
           };
           if (isMultiOption && trade.optionIndex !== undefined) {
             createData.optionShares = { [String(trade.optionIndex)]: Math.round(sharesOut) };
+            createData.optionImpliedPayouts = { [String(trade.optionIndex)]: payoutIfWin };
           } else {
-            if (trade.side === "YES") createData.yesShares = Math.round(sharesOut);
-            else createData.noShares = Math.round(sharesOut);
+            if (trade.side === "YES") { createData.yesShares = Math.round(sharesOut); createData.yesImpliedPayout = payoutIfWin; }
+            else { createData.noShares = Math.round(sharesOut); createData.noImpliedPayout = payoutIfWin; }
           }
           await tx.position.create({ data: createData });
         }
