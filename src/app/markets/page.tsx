@@ -21,6 +21,7 @@ import { FirstDepositPrompt } from "@/components/FirstDepositPrompt";
 import { FeaturedDeck } from "@/components/FeaturedDeck";
 import { ReferralBanner } from "@/components/ReferralBanner";
 import { CreatorRewardsBanner } from "@/components/CreatorRewardsBanner";
+import { FeaturedHero } from "@/components/FeaturedHero";
 import { EmailSubscribe } from "@/components/EmailSubscribe";
 
 // Event Card Component with Quick Buy
@@ -787,18 +788,36 @@ function MarketsContent() {
 
             return (
               <>
-                {/* Featured hero deck — only on the "All" markets view */}
-                {category === "all" && featured.length > 1 && (
-                  <div className="max-w-md sm:max-w-2xl mx-auto">
-                    <FeaturedDeck
-                      label={locale === "sw" ? "Maarufu" : "Featured"}
-                      items={featured.map((item, i) => ({
-                        id: item.type === 'market' ? item.market.id : `e-${i}`,
-                        render: () => renderItem(item, i, true),
-                      }))}
-                    />
-                  </div>
-                )}
+                {/* Featured — only on the "All" markets view.
+                    Desktop: full-width branded hero carousel. Mobile/tablet: swipe deck. */}
+                {category === "all" && featured.length > 1 && (() => {
+                  const deckItems = featured.map((item, i) => ({
+                    id: item.type === 'market' ? item.market.id : `e-${i}`,
+                    render: () => renderItem(item, i, true),
+                  }));
+                  const topCat = featured[0]?.market.category || "Markets";
+                  const ctaHref = featured[0]?.market.id ? `/markets/${featured[0].market.id}` : "#";
+                  return (
+                    <>
+                      <div className="hidden lg:block">
+                        <FeaturedHero
+                          items={deckItems}
+                          eyebrow={locale === "sw" ? "Maarufu" : "Featured"}
+                          headline={locale === "sw" ? `Soko za ${topCat} moja kwa moja` : `${topCat} markets, live`}
+                          subhead={locale === "sw" ? "Tabiri tukio, pata GUAP." : "Predict the moment. Earn GUAP."}
+                          ctaLabel={locale === "sw" ? "Angalia" : "Trade now"}
+                          ctaHref={ctaHref}
+                        />
+                      </div>
+                      <div className="lg:hidden max-w-md sm:max-w-2xl mx-auto">
+                        <FeaturedDeck
+                          label={locale === "sw" ? "Maarufu" : "Featured"}
+                          items={deckItems}
+                        />
+                      </div>
+                    </>
+                  );
+                })()}
 
                 {/* Grouped sections (Limitless style): category headers outside the cards.
                     In "All" view group by category; within a category group by subcategory. */}
