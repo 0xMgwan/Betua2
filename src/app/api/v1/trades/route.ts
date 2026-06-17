@@ -195,11 +195,20 @@ export async function POST(req: NextRequest) {
         data: { balanceTzs: { decrement: totalDebit } },
       });
 
-      // Credit the owning partner's earnings with the markup
+      // Credit the owning partner's earnings with the markup + ledger entry
       if (markupAmount > 0 && market.partnerId) {
         await tx.partner.update({
           where: { id: market.partnerId },
           data: { earningsTzs: { increment: markupAmount } },
+        });
+        await tx.partnerEarning.create({
+          data: {
+            partnerId: market.partnerId,
+            type: "TRADE_MARKUP",
+            amountTzs: markupAmount,
+            marketId,
+            description: `${tradingMarkupPercent}% markup on trade · ${market.title}`,
+          },
         });
       }
 

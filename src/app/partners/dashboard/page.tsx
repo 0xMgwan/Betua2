@@ -29,6 +29,7 @@ export default function PartnerDashboard() {
   const [mounted, setMounted] = useState(false);
   const [partner, setPartner] = useState<AnyObj | null>(null);
   const [stats, setStats] = useState<AnyObj | null>(null);
+  const [earnings, setEarnings] = useState<AnyObj[]>([]);
   const [loading, setLoading] = useState(true);
   const [showApiKey, setShowApiKey] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -51,8 +52,9 @@ export default function PartnerDashboard() {
   const [payoutMsg, setPayoutMsg] = useState("");
 
   const refreshStats = async () => {
-    const r = await fetch("/api/partners/stats");
-    if (r.ok) setStats(await r.json());
+    const [s, e] = await Promise.all([fetch("/api/partners/stats"), fetch("/api/partners/earnings?limit=50")]);
+    if (s.ok) setStats(await s.json());
+    if (e.ok) setEarnings((await e.json()).entries || []);
   };
 
   const requestPayout = async () => {
@@ -90,6 +92,7 @@ export default function PartnerDashboard() {
         if (fees.tradingMarkupPercent != null) setTradingMarkup(String(fees.tradingMarkupPercent));
         if (fees.creationMarkupTzs != null) setCreationMarkup(String(fees.creationMarkupTzs));
         if (statsRes.ok) setStats(await statsRes.json());
+        fetch("/api/partners/earnings?limit=50").then(async (e) => { if (e.ok) setEarnings((await e.json()).entries || []); });
       })
       .catch(() => router.push("/partners"))
       .finally(() => setLoading(false));
@@ -316,6 +319,41 @@ export default function PartnerDashboard() {
             </button>
           </div>
           {payoutMsg && <p className="text-sm font-mono text-[var(--muted)] mt-3">{payoutMsg}</p>}
+
+          {/* Earnings ledger */}
+          {earnings.length > 0 && (
+            <div className="mt-5 pt-5 border-t border-[var(--card-border)]">
+              <h3 className="text-xs font-mono uppercase tracking-wider text-[var(--muted)] mb-3">Earnings History</h3>
+              <div className="overflow-x-auto max-h-72 overflow-y-auto">
+                <table className="w-full text-sm font-mono">
+                  <thead>
+                    <tr className="text-[var(--muted)] text-xs border-b border-[var(--card-border)] sticky top-0 bg-[var(--card)]">
+                      <th className="text-left font-normal py-2">Type</th>
+                      <th className="text-left font-normal py-2">Detail</th>
+                      <th className="text-right font-normal py-2">Amount</th>
+                      <th className="text-right font-normal py-2 hidden sm:table-cell">When</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {earnings.map((e) => (
+                      <tr key={e.id} className="border-b border-[var(--card-border)]/50">
+                        <td className="py-2">
+                          <span className={e.type === "PAYOUT" ? "text-[var(--muted)]" : "text-[var(--accent)]"}>
+                            {e.type === "TRADE_MARKUP" ? "Trade" : e.type === "CREATION_MARKUP" ? "Creation" : "Payout"}
+                          </span>
+                        </td>
+                        <td className="py-2 text-[var(--muted)] max-w-[280px] truncate">{e.description}</td>
+                        <td className={`py-2 text-right tabular-nums ${e.amountTzs < 0 ? "text-red-500" : "text-green-500"}`}>
+                          {e.amountTzs < 0 ? "" : "+"}{e.amountTzs.toLocaleString()}
+                        </td>
+                        <td className="py-2 text-right text-[var(--muted)] hidden sm:table-cell">{new Date(e.createdAt).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Recent API activity */}

@@ -339,10 +339,20 @@ export async function POST(req: NextRequest) {
         data: { balanceTzs: { decrement: totalCreationCost } },
       }),
       ...(creationMarkupTzs > 0
-        ? [prisma.partner.update({
-            where: { id: partner.partnerId },
-            data: { earningsTzs: { increment: creationMarkupTzs } },
-          })]
+        ? [
+            prisma.partner.update({
+              where: { id: partner.partnerId },
+              data: { earningsTzs: { increment: creationMarkupTzs } },
+            }),
+            prisma.partnerEarning.create({
+              data: {
+                partnerId: partner.partnerId,
+                type: "CREATION_MARKUP",
+                amountTzs: creationMarkupTzs,
+                description: `Creation markup · ${effectiveTitle}`,
+              },
+            }),
+          ]
         : []),
     ]);
 

@@ -266,6 +266,20 @@ model PartnerUser {
   @@index([userId])
 }
 
+// Line-item ledger of partner markup earnings and payouts.
+// amountTzs is positive for earnings, negative for payouts.
+model PartnerEarning {
+  id          String   @id @default(cuid())
+  partnerId   String
+  type        String // "TRADE_MARKUP" | "CREATION_MARKUP" | "PAYOUT"
+  amountTzs   Int      @default(0)
+  marketId    String?
+  description String?
+  createdAt   DateTime @default(now())
+
+  @@index([partnerId, createdAt])
+}
+
 model ApiLog {
   id           String   @id @default(cuid())
   partnerId    String

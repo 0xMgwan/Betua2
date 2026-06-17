@@ -51,6 +51,14 @@ export async function POST(req: NextRequest) {
         amountTzs: amt,
         phone,
       });
+      await prisma.partnerEarning.create({
+        data: {
+          partnerId,
+          type: "PAYOUT",
+          amountTzs: -amt,
+          description: `Payout to ${phone}`,
+        },
+      });
       return NextResponse.json({ ok: true, withdrawalId: withdrawal.id, amountTzs: amt, phone });
     } catch (err) {
       // Reverse the debit on failure.
