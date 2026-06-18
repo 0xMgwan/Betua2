@@ -71,6 +71,8 @@ export function Navbar() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const notifRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -100,10 +102,13 @@ export function Navbar() {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
         setNotifOpen(false);
       }
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
     }
-    if (notifOpen) document.addEventListener("mousedown", handleClick);
+    if (notifOpen || profileOpen) document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [notifOpen]);
+  }, [notifOpen, profileOpen]);
 
   const markAllRead = async () => {
     try {
@@ -310,6 +315,55 @@ export function Navbar() {
               >
                 {displayCurrency === 'USDC' ? `$${userBalance.toFixed(2)}` : formatBalance(userBalance)}
               </Link>
+
+              {/* Account menu — desktop only (mobile uses the bottom nav) */}
+              <div className="relative hidden md:block" ref={profileRef}>
+                <button
+                  onClick={() => setProfileOpen(!profileOpen)}
+                  className="flex items-center gap-1.5 p-2 border border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[var(--accent)] transition-all"
+                  title="Account"
+                >
+                  <User size={17} weight="bold" />
+                </button>
+                <AnimatePresence>
+                  {profileOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      className="absolute right-0 top-full mt-2 w-56 bg-[var(--background)] border border-[var(--card-border)] shadow-xl z-50"
+                    >
+                      <div className="px-4 py-3 border-b border-[var(--card-border)] bg-[var(--card)]">
+                        <p className="text-sm font-bold truncate">@{user.username || "account"}</p>
+                        {user.email && <p className="text-[10px] text-[var(--muted)] truncate">{user.email}</p>}
+                      </div>
+                      {[
+                        { href: "/profile", label: "Profile", icon: User },
+                        { href: "/portfolio", label: "Portfolio", icon: TrendUp },
+                        { href: "/wallet", label: t.nav.wallet, icon: Wallet },
+                        { href: "/markets/create", label: "Create Market", icon: Plus },
+                      ].map(({ href, label, icon: Icon }) => (
+                        <Link
+                          key={href}
+                          href={href}
+                          onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-2 px-4 py-3 text-xs font-mono font-bold tracking-wider uppercase border-b border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card)] transition-colors"
+                        >
+                          <Icon size={14} />
+                          {label}
+                        </Link>
+                      ))}
+                      <button
+                        onClick={() => { logout(); setProfileOpen(false); }}
+                        className="w-full flex items-center gap-2 px-4 py-3 text-xs font-mono font-bold tracking-wider uppercase text-red-500 hover:bg-[var(--card)] transition-colors"
+                      >
+                        <SignOut size={14} />
+                        Sign out
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </>
           ) : (
             <div className="hidden md:flex items-center gap-2">
