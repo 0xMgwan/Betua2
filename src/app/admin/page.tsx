@@ -52,6 +52,8 @@ export default function AdminPage() {
   const [expandedPartner, setExpandedPartner] = useState<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [referrals, setReferrals] = useState<any | null>(null);
+  const [retryingRef, setRetryingRef] = useState(false);
+  const [retryRefMsg, setRetryRefMsg] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [analytics, setAnalytics] = useState<any | null>(null);
   const [analyticsDays, setAnalyticsDays] = useState(30);
@@ -125,6 +127,22 @@ export default function AdminPage() {
       await loadDashboard(true);
     } catch { setReconcileMsg("❌ Failed"); }
     finally { setReconciling(false); }
+  };
+
+  const handleRetryReferrals = async () => {
+    setRetryingRef(true);
+    setRetryRefMsg("");
+    try {
+      const res = await fetch("/api/admin/referrals/retry", { method: "POST" });
+      const d = await res.json();
+      if (!res.ok) setRetryRefMsg(`❌ ${d.error || "Failed"}`);
+      else {
+        setRetryRefMsg(`✅ Paid ${d.credited} (${formatTZS(d.amountTzs)})${d.skipped ? `, ${d.skipped} skipped` : ""}`);
+        const r = await fetch("/api/admin/referrals");
+        if (r.ok) setReferrals(await r.json());
+      }
+    } catch { setRetryRefMsg("❌ Failed"); }
+    finally { setRetryingRef(false); }
   };
 
   const handleBackfillImplied = async () => {
@@ -689,7 +707,21 @@ export default function AdminPage() {
               <p className="text-center text-[var(--muted)] text-xs py-8">Loading referrals…</p>
             ) : (
               <>
-                <p className="text-[11px] font-mono text-[var(--muted)]">Reward = <span className="text-[var(--foreground)] font-bold">{referrals.percent}%</span> of each referred user&apos;s first deposit (one-time).</p>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[11px] font-mono text-[var(--muted)]">Reward = <span className="text-[var(--foreground)] font-bold">{referrals.percent}%</span> of each referred user&apos;s first deposit (one-time).</p>
+                  <div className="flex items-center gap-2">
+                    {retryRefMsg && <span className="text-[10px] font-mono text-[var(--muted)]">{retryRefMsg}</span>}
+                    {referrals.summary.owedTzs > 0 && (
+                      <button
+                        onClick={handleRetryReferrals}
+                        disabled={retryingRef}
+                        className="px-3 py-1.5 text-[10px] font-mono font-bold border border-orange-500/40 text-orange-400 hover:bg-orange-500/10 disabled:opacity-50 transition-colors"
+                      >
+                        {retryingRef ? "Paying…" : `Pay owed (${formatTZS(referrals.summary.owedTzs)})`}
+                      </button>
+                    )}
+                  </div>
+                </div>
                 {/* Summary */}
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                   {[

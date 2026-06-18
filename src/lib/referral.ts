@@ -1,9 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { ntzs } from "@/lib/ntzs";
 import { createNotification } from "@/lib/notify";
 
 const REFERRAL_REWARD_PERCENT = 0.01; // 1% of first deposit
-const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID;
 
 /**
  * Process referral reward when a deposit completes.
@@ -39,51 +37,31 @@ export async function processReferralReward(userId: string, depositTxId: string,
     // 4. Calculate reward
     const rewardAmount = Math.max(1, Math.round(depositAmountTzs * REFERRAL_REWARD_PERCENT));
 
-    // 5. Get referrer's nTZS user ID
+    // 5. Get referrer
     const referrer = await prisma.user.findUnique({
       where: { id: user.referredById },
-      select: { id: true, username: true, ntzsUserId: true },
+      select: { id: true, username: true },
     });
-    if (!referrer?.ntzsUserId || !PLATFORM_NTZS_USER_ID) {
-      // Can't pay out — create record as FAILED
-      await prisma.referralReward.create({
+    if (!referrer) return;
+
+    // 6. Pooled custodial model: credit the referrer's DB balance (the reward
+    // stays in the settlement pool as their claim) and record the reward +
+    // transaction atomically. No on-chain transfer; no personal wallet needed.
+    await prisma.$transaction([
+      prisma.referralReward.create({
         data: {
           referrerId: user.referredById,
           referredId: userId,
           depositTxId,
           amountTzs: rewardAmount,
-          status: "FAILED",
+          status: "COMPLETED",
         },
-      });
-      return;
-    }
-
-    // 6. Create the reward record first (as PENDING)
-    const reward = await prisma.referralReward.create({
-      data: {
-        referrerId: user.referredById,
-        referredId: userId,
-        depositTxId,
-        amountTzs: rewardAmount,
-        status: "PENDING",
-      },
-    });
-
-    // 7. Transfer from platform escrow to referrer's wallet
-    try {
-      const transfer = await ntzs.transfers.create({
-        fromUserId: PLATFORM_NTZS_USER_ID,
-        toUserId: referrer.ntzsUserId,
-        amountTzs: rewardAmount,
-      });
-
-      await prisma.referralReward.update({
-        where: { id: reward.id },
-        data: { status: "COMPLETED", ntzsTransferId: transfer.id },
-      });
-
-      // 8. Record it as a transaction so it shows in wallet history
-      await prisma.transaction.create({
+      }),
+      prisma.user.update({
+        where: { id: referrer.id },
+        data: { balanceTzs: { increment: rewardAmount } },
+      }),
+      prisma.transaction.create({
         data: {
           userId: referrer.id,
           type: "REFERRAL_REWARD",
@@ -91,25 +69,19 @@ export async function processReferralReward(userId: string, depositTxId: string,
           status: "COMPLETED",
           recipientUsername: user.username,
         },
-      });
+      }),
+    ]);
 
-      // 9. Notify the referrer
-      createNotification({
-        userId: referrer.id,
-        type: "REFERRAL_REWARD",
-        title: "Referral Reward!",
-        message: `You earned ${rewardAmount.toLocaleString()} TZS from @${user.username}'s first deposit!`,
-        link: "/profile",
-      });
+    // 7. Notify the referrer
+    createNotification({
+      userId: referrer.id,
+      type: "REFERRAL_REWARD",
+      title: "Referral Reward!",
+      message: `You earned ${rewardAmount.toLocaleString()} TZS from @${user.username}'s first deposit!`,
+      link: "/profile",
+    });
 
-      console.log(`[Referral] Paid ${rewardAmount} TZS to @${referrer.username} for referring @${user.username}`);
-    } catch (err) {
-      console.error("[Referral] Transfer failed:", err);
-      await prisma.referralReward.update({
-        where: { id: reward.id },
-        data: { status: "FAILED" },
-      });
-    }
+    console.log(`[Referral] Credited ${rewardAmount} TZS to @${referrer.username} for referring @${user.username}`);
   } catch (err) {
     console.error("[Referral] processReferralReward error:", err);
   }
