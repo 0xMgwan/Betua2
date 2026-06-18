@@ -12,7 +12,7 @@ const ADMIN_NTZS = [
   "c458cdc9-db89-408e-a077-dacb72af789d",
 ];
 
-type Tab = "overview" | "users" | "markets" | "partners" | "tools";
+type Tab = "overview" | "users" | "markets" | "partners" | "referrals" | "tools";
 type AnyUser = { externalId: string; username: string | null; email: string | null; phone: string | null; balanceTzs: number; balanceUsdc: number };
 
 interface Summary {
@@ -50,6 +50,8 @@ export default function AdminPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [partners, setPartners] = useState<any[] | null>(null);
   const [expandedPartner, setExpandedPartner] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [referrals, setReferrals] = useState<any | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [analytics, setAnalytics] = useState<any | null>(null);
   const [analyticsDays, setAnalyticsDays] = useState(30);
@@ -94,6 +96,13 @@ export default function AdminPage() {
       fetch("/api/admin/partners").then(r => r.ok ? r.json() : { partners: [] }).then(d => setPartners(d.partners || []));
     }
   }, [tab, partners, isAdmin]);
+
+  // Lazy-load referrals the first time the Referrals tab is opened
+  useEffect(() => {
+    if (tab === "referrals" && referrals === null && isAdmin) {
+      fetch("/api/admin/referrals").then(r => r.ok ? r.json() : null).then(d => d && setReferrals(d));
+    }
+  }, [tab, referrals, isAdmin]);
 
   // Load behavior analytics for the overview; refetch when the window changes
   useEffect(() => {
@@ -180,6 +189,7 @@ export default function AdminPage() {
     { key: "users", label: `Users (${data?.users.length || 0})` },
     { key: "markets", label: `Markets (${data?.markets.length || 0})` },
     { key: "partners", label: `Partners${partners ? ` (${partners.length})` : ""}` },
+    { key: "referrals", label: "Referrals" },
     { key: "tools", label: "Tools" },
   ];
 
@@ -668,6 +678,94 @@ export default function AdminPage() {
                   </div>
                 );
               })
+            )}
+          </div>
+        )}
+
+        {/* ── REFERRALS ── */}
+        {tab === "referrals" && (
+          <div className="space-y-4">
+            {referrals === null ? (
+              <p className="text-center text-[var(--muted)] text-xs py-8">Loading referrals…</p>
+            ) : (
+              <>
+                <p className="text-[11px] font-mono text-[var(--muted)]">Reward = <span className="text-[var(--foreground)] font-bold">{referrals.percent}%</span> of each referred user&apos;s first deposit (one-time).</p>
+                {/* Summary */}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  {[
+                    { label: "Referred Users", value: referrals.summary.referredUsers.toLocaleString(), color: "text-[var(--accent)]" },
+                    { label: "Rewards", value: referrals.summary.rewardCount.toLocaleString(), color: "text-blue-400" },
+                    { label: "Paid Out", value: formatTZS(referrals.summary.paidTzs), color: "text-[#00e5a0]" },
+                    { label: "Owed (pending+failed)", value: formatTZS(referrals.summary.owedTzs), color: "text-orange-400" },
+                    { label: "Failed", value: formatTZS(referrals.summary.failedTzs), color: "text-red-400" },
+                  ].map(k => (
+                    <div key={k.label} className="p-4 bg-[var(--card)] border border-[var(--card-border)]">
+                      <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider mb-1">{k.label}</p>
+                      <p className={`text-lg font-black tabular-nums ${k.color}`}>{k.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Top referrers */}
+                <div className="border border-[var(--card-border)] bg-[var(--card)]">
+                  <div className="px-4 py-2 border-b border-[var(--card-border)] bg-[var(--background)]"><span className="text-[10px] font-mono text-[var(--muted)] uppercase">Top Referrers</span></div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs font-mono">
+                      <thead>
+                        <tr className="text-[var(--muted)] text-[10px] border-b border-[var(--card-border)]">
+                          <th className="text-left font-normal px-4 py-2">User</th>
+                          <th className="text-right font-normal px-4 py-2">Referrals</th>
+                          <th className="text-right font-normal px-4 py-2">Rewards</th>
+                          <th className="text-right font-normal px-4 py-2">Paid</th>
+                          <th className="text-right font-normal px-4 py-2">Owed</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                        {referrals.topReferrers.map((r: any, i: number) => (
+                          <tr key={i} className="border-b border-[var(--card-border)]/40">
+                            <td className="px-4 py-2">@{r.username}</td>
+                            <td className="px-4 py-2 text-right tabular-nums">{r.referrals}</td>
+                            <td className="px-4 py-2 text-right tabular-nums">{r.rewardCount}</td>
+                            <td className="px-4 py-2 text-right tabular-nums text-[#00e5a0]">{formatTZS(r.paid)}</td>
+                            <td className={`px-4 py-2 text-right tabular-nums ${r.owed > 0 ? "text-orange-400" : "text-[var(--muted)]"}`}>{formatTZS(r.owed)}</td>
+                          </tr>
+                        ))}
+                        {referrals.topReferrers.length === 0 && <tr><td colSpan={5} className="text-center text-[var(--muted)] py-6">No referrals yet</td></tr>}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Recent rewards */}
+                <div className="border border-[var(--card-border)] bg-[var(--card)]">
+                  <div className="px-4 py-2 border-b border-[var(--card-border)] bg-[var(--background)]"><span className="text-[10px] font-mono text-[var(--muted)] uppercase">Recent Rewards</span></div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs font-mono">
+                      <thead>
+                        <tr className="text-[var(--muted)] text-[10px] border-b border-[var(--card-border)]">
+                          <th className="text-left font-normal px-4 py-2">Referrer → Referred</th>
+                          <th className="text-right font-normal px-4 py-2">Amount</th>
+                          <th className="text-right font-normal px-4 py-2">Status</th>
+                          <th className="text-right font-normal px-4 py-2 hidden sm:table-cell">When</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                        {referrals.recent.map((r: any, i: number) => (
+                          <tr key={i} className="border-b border-[var(--card-border)]/40">
+                            <td className="px-4 py-2">@{r.referrer} <span className="text-[var(--muted)]">→</span> @{r.referred}</td>
+                            <td className="px-4 py-2 text-right tabular-nums">{formatTZS(r.amountTzs)}</td>
+                            <td className={`px-4 py-2 text-right ${r.status === "COMPLETED" ? "text-[#00e5a0]" : r.status === "PENDING" ? "text-yellow-500" : "text-red-400"}`}>{r.status.toLowerCase()}</td>
+                            <td className="px-4 py-2 text-right text-[var(--muted)] hidden sm:table-cell">{new Date(r.createdAt).toLocaleDateString()}</td>
+                          </tr>
+                        ))}
+                        {referrals.recent.length === 0 && <tr><td colSpan={4} className="text-center text-[var(--muted)] py-6">No rewards yet</td></tr>}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         )}
