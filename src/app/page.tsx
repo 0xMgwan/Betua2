@@ -17,6 +17,7 @@ import { GlitchText } from "@/components/ui/glitch-text";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useUser } from "@/store/useUser";
 import { ActivityTicker } from "@/components/ActivityTicker";
+import { QuickBuyModal } from "@/components/QuickBuyModal";
 
 /* ─────────────────────────────────────────────────────────
    Live market mockup — animated YES/NO bar
@@ -26,6 +27,8 @@ function LiveMarketCard() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [markets, setMarkets] = useState<any[]>([]);
   const [idx, setIdx] = useState(0);
+  const [showBuy, setShowBuy] = useState(false);
+  const [side, setSide] = useState<"YES" | "NO">("YES");
 
   // Pull real open markets (binary preferred for the YES/NO showcase).
   useEffect(() => {
@@ -40,15 +43,16 @@ function LiveMarketCard() {
       .catch(() => {});
   }, []);
 
-  // Auto-rotate every ~4.5s, like the markets-page hero.
+  // Auto-rotate every ~4.5s, like the markets-page hero (paused while buying).
   useEffect(() => {
-    if (markets.length < 2) return;
+    if (markets.length < 2 || showBuy) return;
     const id = setInterval(() => setIdx((i) => (i + 1) % markets.length), 4500);
     return () => clearInterval(id);
-  }, [markets.length]);
+  }, [markets.length, showBuy]);
 
   const m = markets[idx];
   const isMulti = m?.options && m.options.length >= 2;
+  const openBuy = (s: "YES" | "NO") => { if (!m) return; setSide(s); setShowBuy(true); };
   const yesPct = m ? Math.round(((isMulti ? (m.optionPrices?.[0] ?? 0.5) : (m.price?.yes ?? 0.5)) * 100)) : 51;
   const noPct = 100 - yesPct;
   const volume = m?.totalVolume ?? 0;
@@ -97,14 +101,28 @@ function LiveMarketCard() {
             </div>
           </div>
 
-          {/* Buttons → open the real market */}
+          {/* Buttons → quick-buy modal (binary), or open the market for multi */}
           <div className="grid grid-cols-2 gap-2 mb-4">
-            <Link href={href} className="text-center py-2.5 border border-[var(--foreground)] text-[var(--foreground)] font-mono font-bold text-xs tracking-wider hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all uppercase">
-              {t.landing.liveMarket.buyYes}
-            </Link>
-            <Link href={href} className="text-center py-2.5 border border-[var(--muted)] text-[var(--muted)] font-mono font-bold text-xs tracking-wider hover:bg-[var(--muted)] hover:text-[var(--background)] transition-all uppercase">
-              {t.landing.liveMarket.buyNo}
-            </Link>
+            {isMulti ? (
+              <Link href={href} className="col-span-2 text-center py-2.5 bg-[var(--foreground)] text-[var(--background)] font-mono font-bold text-xs tracking-wider hover:opacity-90 transition-opacity uppercase">
+                Trade →
+              </Link>
+            ) : (
+              <>
+                <button
+                  onClick={() => openBuy("YES")}
+                  className="py-2.5 bg-[var(--foreground)] text-[var(--background)] border border-[var(--foreground)] font-mono font-bold text-xs tracking-wider hover:opacity-90 transition-opacity uppercase"
+                >
+                  {t.landing.liveMarket.buyYes}
+                </button>
+                <button
+                  onClick={() => openBuy("NO")}
+                  className="py-2.5 bg-transparent border border-[var(--foreground)]/40 text-[var(--foreground)] font-mono font-bold text-xs tracking-wider hover:bg-[var(--foreground)]/5 transition-colors uppercase"
+                >
+                  {t.landing.liveMarket.buyNo}
+                </button>
+              </>
+            )}
           </div>
 
           {/* Footer stats — real */}
@@ -115,6 +133,27 @@ function LiveMarketCard() {
           </div>
         </motion.div>
       </AnimatePresence>
+
+      {showBuy && m && (
+        <QuickBuyModal
+          isOpen={showBuy}
+          onClose={() => setShowBuy(false)}
+          market={{
+            id: m.id,
+            title: m.title,
+            category: m.category,
+            fxRate: m.fxRate,
+            price: m.price,
+            optionPrices: m.optionPrices || undefined,
+            yesPool: m.yesPool,
+            noPool: m.noPool,
+            resolvesAt: m.resolvesAt,
+            status: m.status,
+            totalVolume: m.totalVolume,
+          }}
+          side={side}
+        />
+      )}
     </div>
   );
 }
