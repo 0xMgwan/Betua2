@@ -708,7 +708,7 @@ export default function AdminPage() {
             ) : (
               <>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[11px] font-mono text-[var(--muted)]">Reward = <span className="text-[var(--foreground)] font-bold">{referrals.percent}%</span> of each referred user&apos;s first deposit (one-time).</p>
+                  <p className="text-[11px] font-mono text-[var(--muted)]">Reward = <span className="text-[var(--foreground)] font-bold">{formatTZS(referrals.rewardTzs)}</span> per referred user who onboards AND deposits (paid manually).</p>
                   <div className="flex items-center gap-2">
                     {retryRefMsg && <span className="text-[10px] font-mono text-[var(--muted)]">{retryRefMsg}</span>}
                     {referrals.summary.owedTzs > 0 && (
@@ -723,13 +723,12 @@ export default function AdminPage() {
                   </div>
                 </div>
                 {/* Summary */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {[
                     { label: "Referred Users", value: referrals.summary.referredUsers.toLocaleString(), color: "text-[var(--accent)]" },
-                    { label: "Rewards", value: referrals.summary.rewardCount.toLocaleString(), color: "text-blue-400" },
+                    { label: "Deposited", value: referrals.summary.depositedCount.toLocaleString(), color: "text-blue-400" },
                     { label: "Paid Out", value: formatTZS(referrals.summary.paidTzs), color: "text-[#00e5a0]" },
-                    { label: "Owed (pending+failed)", value: formatTZS(referrals.summary.owedTzs), color: "text-orange-400" },
-                    { label: "Failed", value: formatTZS(referrals.summary.failedTzs), color: "text-red-400" },
+                    { label: "Owed", value: formatTZS(referrals.summary.owedTzs), color: "text-orange-400" },
                   ].map(k => (
                     <div key={k.label} className="p-4 bg-[var(--card)] border border-[var(--card-border)]">
                       <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider mb-1">{k.label}</p>
@@ -746,8 +745,8 @@ export default function AdminPage() {
                       <thead>
                         <tr className="text-[var(--muted)] text-[10px] border-b border-[var(--card-border)]">
                           <th className="text-left font-normal px-4 py-2">User</th>
-                          <th className="text-right font-normal px-4 py-2">Referrals</th>
-                          <th className="text-right font-normal px-4 py-2">Rewards</th>
+                          <th className="text-right font-normal px-4 py-2">Referred</th>
+                          <th className="text-right font-normal px-4 py-2">Deposited</th>
                           <th className="text-right font-normal px-4 py-2">Paid</th>
                           <th className="text-right font-normal px-4 py-2">Owed</th>
                         </tr>
@@ -758,7 +757,7 @@ export default function AdminPage() {
                           <tr key={i} className="border-b border-[var(--card-border)]/40">
                             <td className="px-4 py-2">@{r.username}</td>
                             <td className="px-4 py-2 text-right tabular-nums">{r.referrals}</td>
-                            <td className="px-4 py-2 text-right tabular-nums">{r.rewardCount}</td>
+                            <td className="px-4 py-2 text-right tabular-nums">{r.deposited}</td>
                             <td className="px-4 py-2 text-right tabular-nums text-[#00e5a0]">{formatTZS(r.paid)}</td>
                             <td className={`px-4 py-2 text-right tabular-nums ${r.owed > 0 ? "text-orange-400" : "text-[var(--muted)]"}`}>{formatTZS(r.owed)}</td>
                           </tr>
@@ -769,30 +768,32 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Recent rewards */}
+                {/* Referred users — deposit status */}
                 <div className="border border-[var(--card-border)] bg-[var(--card)]">
-                  <div className="px-4 py-2 border-b border-[var(--card-border)] bg-[var(--background)]"><span className="text-[10px] font-mono text-[var(--muted)] uppercase">Recent Rewards</span></div>
+                  <div className="px-4 py-2 border-b border-[var(--card-border)] bg-[var(--background)]"><span className="text-[10px] font-mono text-[var(--muted)] uppercase">Referred Users · Deposit Status</span></div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs font-mono">
                       <thead>
                         <tr className="text-[var(--muted)] text-[10px] border-b border-[var(--card-border)]">
                           <th className="text-left font-normal px-4 py-2">Referrer → Referred</th>
+                          <th className="text-right font-normal px-4 py-2">Deposited</th>
                           <th className="text-right font-normal px-4 py-2">Amount</th>
-                          <th className="text-right font-normal px-4 py-2">Status</th>
-                          <th className="text-right font-normal px-4 py-2 hidden sm:table-cell">When</th>
+                          <th className="text-right font-normal px-4 py-2">Reward</th>
                         </tr>
                       </thead>
                       <tbody>
                         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                        {referrals.recent.map((r: any, i: number) => (
+                        {referrals.referredUsers.map((r: any, i: number) => (
                           <tr key={i} className="border-b border-[var(--card-border)]/40">
                             <td className="px-4 py-2">@{r.referrer} <span className="text-[var(--muted)]">→</span> @{r.referred}</td>
-                            <td className="px-4 py-2 text-right tabular-nums">{formatTZS(r.amountTzs)}</td>
-                            <td className={`px-4 py-2 text-right ${r.status === "COMPLETED" ? "text-[#00e5a0]" : r.status === "PENDING" ? "text-yellow-500" : "text-red-400"}`}>{r.status.toLowerCase()}</td>
-                            <td className="px-4 py-2 text-right text-[var(--muted)] hidden sm:table-cell">{new Date(r.createdAt).toLocaleDateString()}</td>
+                            <td className={`px-4 py-2 text-right ${r.deposited ? "text-[#00e5a0]" : "text-[var(--muted)]"}`}>{r.deposited ? "yes" : "no"}</td>
+                            <td className="px-4 py-2 text-right tabular-nums">{r.deposited ? formatTZS(r.depositedTzs) : "—"}</td>
+                            <td className={`px-4 py-2 text-right tabular-nums ${r.rewardStatus === "COMPLETED" ? "text-[#00e5a0]" : r.rewardStatus ? "text-orange-400" : "text-[var(--muted)]"}`}>
+                              {r.rewardStatus ? `${formatTZS(r.rewardTzs)} ${r.rewardStatus === "COMPLETED" ? "paid" : "owed"}` : "—"}
+                            </td>
                           </tr>
                         ))}
-                        {referrals.recent.length === 0 && <tr><td colSpan={4} className="text-center text-[var(--muted)] py-6">No rewards yet</td></tr>}
+                        {referrals.referredUsers.length === 0 && <tr><td colSpan={4} className="text-center text-[var(--muted)] py-6">No referred users yet</td></tr>}
                       </tbody>
                     </table>
                   </div>

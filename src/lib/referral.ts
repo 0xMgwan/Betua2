@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { createNotification } from "@/lib/notify";
 
-const REFERRAL_REWARD_PERCENT = 0.01; // 1% of first deposit
+// Flat reward per referred user who onboards AND makes their first deposit.
+// Recorded as PENDING (owed) and paid out manually from the admin Referrals tab.
+export const REFERRAL_REWARD_TZS = 1000;
 
 /**
  * Process referral reward when a deposit completes.
@@ -34,54 +35,29 @@ export async function processReferralReward(userId: string, depositTxId: string,
     });
     if (existing) return;
 
-    // 4. Calculate reward
-    const rewardAmount = Math.max(1, Math.round(depositAmountTzs * REFERRAL_REWARD_PERCENT));
+    // 4. Flat reward (paid manually)
+    const rewardAmount = REFERRAL_REWARD_TZS;
 
-    // 5. Get referrer
+    // 5. Ensure the referrer still exists
     const referrer = await prisma.user.findUnique({
       where: { id: user.referredById },
       select: { id: true, username: true },
     });
     if (!referrer) return;
 
-    // 6. Pooled custodial model: credit the referrer's DB balance (the reward
-    // stays in the settlement pool as their claim) and record the reward +
-    // transaction atomically. No on-chain transfer; no personal wallet needed.
-    await prisma.$transaction([
-      prisma.referralReward.create({
-        data: {
-          referrerId: user.referredById,
-          referredId: userId,
-          depositTxId,
-          amountTzs: rewardAmount,
-          status: "COMPLETED",
-        },
-      }),
-      prisma.user.update({
-        where: { id: referrer.id },
-        data: { balanceTzs: { increment: rewardAmount } },
-      }),
-      prisma.transaction.create({
-        data: {
-          userId: referrer.id,
-          type: "REFERRAL_REWARD",
-          amountTzs: rewardAmount,
-          status: "COMPLETED",
-          recipientUsername: user.username,
-        },
-      }),
-    ]);
-
-    // 7. Notify the referrer
-    createNotification({
-      userId: referrer.id,
-      type: "REFERRAL_REWARD",
-      title: "Referral Reward!",
-      message: `You earned ${rewardAmount.toLocaleString()} TZS from @${user.username}'s first deposit!`,
-      link: "/profile",
+    // 6. Record the reward as OWED (PENDING). Settlement is manual — the admin
+    // reviews who deposited in the Referrals tab and pays via "Pay owed".
+    await prisma.referralReward.create({
+      data: {
+        referrerId: user.referredById,
+        referredId: userId,
+        depositTxId,
+        amountTzs: rewardAmount,
+        status: "PENDING",
+      },
     });
 
-    console.log(`[Referral] Credited ${rewardAmount} TZS to @${referrer.username} for referring @${user.username}`);
+    console.log(`[Referral] Owed ${rewardAmount} TZS to @${referrer.username} for @${user.username}'s first deposit (pending manual payout)`);
   } catch (err) {
     console.error("[Referral] processReferralReward error:", err);
   }

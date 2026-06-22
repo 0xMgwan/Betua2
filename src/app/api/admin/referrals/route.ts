@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { REFERRAL_REWARD_TZS } from "@/lib/referral";
 
 const ADMIN_USER_IDS = [
   "cmmjemfo900046e3pyoegxsni",
@@ -9,82 +10,93 @@ const ADMIN_USER_IDS = [
   ...(process.env.ADMIN_USER_IDS || "").split(",").filter(Boolean),
 ];
 
-// Admin view of the referral programme: who referred whom, earnings, and what
-// is still owed (pending + failed payouts).
+// Admin view of the referral programme: who referred whom, whether the referred
+// user deposited (and how much), what's been paid, and what is still owed.
 export async function GET() {
   const session = await getSession();
   if (!session || !ADMIN_USER_IDS.includes(session.userId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const [rewards, referredUsers] = await Promise.all([
+  const [referredUsers, rewards] = await Promise.all([
+    prisma.user.findMany({
+      where: { referredById: { not: null } },
+      select: { id: true, username: true, referredById: true, createdAt: true },
+    }),
     prisma.referralReward.findMany({
       select: { referrerId: true, referredId: true, amountTzs: true, status: true, createdAt: true },
       orderBy: { createdAt: "desc" },
     }),
-    // Users who were referred (regardless of whether a reward fired yet)
-    prisma.user.findMany({ where: { referredById: { not: null } }, select: { id: true, referredById: true } }),
   ]);
 
-  // Per-referrer aggregation
-  const byReferrer = new Map<string, { paid: number; pending: number; failed: number; rewardCount: number }>();
-  const sum = { paid: 0, pending: 0, failed: 0 };
-  for (const r of rewards) {
-    const e = byReferrer.get(r.referrerId) || { paid: 0, pending: 0, failed: 0, rewardCount: 0 };
-    e.rewardCount++;
-    if (r.status === "COMPLETED") { e.paid += r.amountTzs; sum.paid += r.amountTzs; }
-    else if (r.status === "PENDING") { e.pending += r.amountTzs; sum.pending += r.amountTzs; }
-    else { e.failed += r.amountTzs; sum.failed += r.amountTzs; }
-    byReferrer.set(r.referrerId, e);
+  const referredIds = referredUsers.map((u) => u.id);
+
+  // Completed deposits per referred user (count + total amount)
+  const depositRows = referredIds.length
+    ? await prisma.transaction.groupBy({
+        by: ["userId"],
+        where: { userId: { in: referredIds }, type: "DEPOSIT", status: "COMPLETED" },
+        _sum: { amountTzs: true },
+        _count: true,
+      })
+    : [];
+  const depositByUser = new Map(depositRows.map((d) => [d.userId, { amount: d._sum.amountTzs || 0, count: d._count }]));
+
+  // Reward status per referred user
+  const rewardByReferred = new Map(rewards.map((r) => [r.referredId, r]));
+
+  // Usernames for referrers
+  const referrerIds = [...new Set(referredUsers.map((u) => u.referredById!).filter(Boolean))];
+  const referrers = await prisma.user.findMany({ where: { id: { in: referrerIds } }, select: { id: true, username: true } });
+  const referrerName = new Map(referrers.map((u) => [u.id, u.username]));
+
+  // Per-referred-user rows
+  const rows = referredUsers.map((u) => {
+    const dep = depositByUser.get(u.id);
+    const reward = rewardByReferred.get(u.id);
+    return {
+      referrer: referrerName.get(u.referredById!) || "—",
+      referred: u.username,
+      deposited: !!dep,
+      depositedTzs: dep?.amount || 0,
+      rewardStatus: reward?.status || (dep ? "PENDING" : null), // owed once deposited
+      rewardTzs: reward?.amountTzs ?? (dep ? REFERRAL_REWARD_TZS : 0),
+      joinedAt: u.createdAt,
+    };
+  }).sort((a, b) => Number(b.deposited) - Number(a.deposited) || b.depositedTzs - a.depositedTzs);
+
+  // Summary
+  const depositedCount = rows.filter((r) => r.deposited).length;
+  let paidTzs = 0, owedTzs = 0;
+  for (const r of rows) {
+    if (r.rewardStatus === "COMPLETED") paidTzs += r.rewardTzs;
+    else if (r.rewardStatus === "PENDING" || r.rewardStatus === "FAILED") owedTzs += r.rewardTzs;
   }
 
-  // Referral counts (how many people each user referred)
-  const referralCounts = new Map<string, number>();
-  for (const u of referredUsers) {
-    if (u.referredById) referralCounts.set(u.referredById, (referralCounts.get(u.referredById) || 0) + 1);
+  // Per-referrer totals
+  const byReferrer = new Map<string, { referrals: number; deposited: number; paid: number; owed: number }>();
+  for (const r of rows) {
+    const e = byReferrer.get(r.referrer) || { referrals: 0, deposited: 0, paid: 0, owed: 0 };
+    e.referrals++;
+    if (r.deposited) e.deposited++;
+    if (r.rewardStatus === "COMPLETED") e.paid += r.rewardTzs;
+    else if (r.rewardStatus === "PENDING" || r.rewardStatus === "FAILED") e.owed += r.rewardTzs;
+    byReferrer.set(r.referrer, e);
   }
-
-  // Resolve usernames for everyone involved
-  const ids = new Set<string>();
-  rewards.forEach((r) => { ids.add(r.referrerId); ids.add(r.referredId); });
-  referralCounts.forEach((_, id) => ids.add(id));
-  const users = await prisma.user.findMany({ where: { id: { in: [...ids] } }, select: { id: true, username: true } });
-  const nameOf = new Map(users.map((u) => [u.id, u.username]));
-
-  // Top referrers (by total earned + owed)
-  const topReferrers = [...new Set([...byReferrer.keys(), ...referralCounts.keys()])]
-    .map((id) => {
-      const agg = byReferrer.get(id) || { paid: 0, pending: 0, failed: 0, rewardCount: 0 };
-      return {
-        username: nameOf.get(id) || "—",
-        referrals: referralCounts.get(id) || 0,
-        rewardCount: agg.rewardCount,
-        paid: agg.paid,
-        owed: agg.pending + agg.failed,
-      };
-    })
+  const topReferrers = [...byReferrer.entries()]
+    .map(([username, v]) => ({ username, ...v }))
     .sort((a, b) => (b.paid + b.owed) - (a.paid + a.owed))
     .slice(0, 25);
 
-  const recent = rewards.slice(0, 25).map((r) => ({
-    referrer: nameOf.get(r.referrerId) || "—",
-    referred: nameOf.get(r.referredId) || "—",
-    amountTzs: r.amountTzs,
-    status: r.status,
-    createdAt: r.createdAt,
-  }));
-
   return NextResponse.json({
-    percent: 1, // % of the referred user's first deposit
+    rewardTzs: REFERRAL_REWARD_TZS,
     summary: {
       referredUsers: referredUsers.length,
-      rewardCount: rewards.length,
-      paidTzs: sum.paid,
-      pendingTzs: sum.pending,
-      failedTzs: sum.failed,
-      owedTzs: sum.pending + sum.failed,
+      depositedCount,
+      paidTzs,
+      owedTzs,
     },
     topReferrers,
-    recent,
+    referredUsers: rows.slice(0, 100),
   });
 }
