@@ -23,78 +23,98 @@ import { ActivityTicker } from "@/components/ActivityTicker";
    ───────────────────────────────────────────────────────── */
 function LiveMarketCard() {
   const { t } = useLanguage();
-  const [pct, setPct] = useState(52);
-  const [tick, setTick] = useState(0);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [markets, setMarkets] = useState<any[]>([]);
+  const [idx, setIdx] = useState(0);
 
+  // Pull real open markets (binary preferred for the YES/NO showcase).
   useEffect(() => {
-    const id = setInterval(() => {
-      setPct((p) => Math.min(84, Math.max(46, p + (Math.random() - 0.48) * 1.6)));
-      setTick((t) => t + 1);
-    }, 2000);
-    return () => clearInterval(id);
+    fetch("/api/markets?status=OPEN&sort=volume")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const all: any[] = d?.markets || [];
+        const binary = all.filter((m) => !m.options || m.options.length < 2);
+        setMarkets((binary.length ? binary : all).slice(0, 8));
+      })
+      .catch(() => {});
   }, []);
+
+  // Auto-rotate every ~4.5s, like the markets-page hero.
+  useEffect(() => {
+    if (markets.length < 2) return;
+    const id = setInterval(() => setIdx((i) => (i + 1) % markets.length), 4500);
+    return () => clearInterval(id);
+  }, [markets.length]);
+
+  const m = markets[idx];
+  const isMulti = m?.options && m.options.length >= 2;
+  const yesPct = m ? Math.round(((isMulti ? (m.optionPrices?.[0] ?? 0.5) : (m.price?.yes ?? 0.5)) * 100)) : 51;
+  const noPct = 100 - yesPct;
+  const volume = m?.totalVolume ?? 0;
+  const volLabel = volume >= 1_000_000 ? `${(volume / 1_000_000).toFixed(1)}M` : volume >= 1000 ? `${(volume / 1000).toFixed(1)}K` : `${volume}`;
+  const href = m ? `/markets/${m.id}` : "/markets";
 
   return (
     <div className="bg-[var(--card)] border-2 border-[var(--card-border)] p-5 shadow-xl w-full">
-      {/* Header */}
-      <div className="flex items-start gap-3 mb-4">
-        <div className="w-10 h-10 border border-[var(--foreground)]/30 flex items-center justify-center text-lg shrink-0">
-          📈
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="font-bold text-sm leading-snug font-mono">Will CRDB shares be above 600 TSH by end of week?</p>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-xs px-2 py-0.5 border border-[var(--foreground)]/30 text-[var(--foreground)] font-mono tracking-wider uppercase">{t.landing.liveMarket.business}</span>
-            <span className="flex items-center gap-1 text-xs text-[var(--muted)] font-mono">
-              <span className="w-1.5 h-1.5 bg-[var(--foreground)] animate-pulse" />
-              {t.landing.liveMarket.live}
-            </span>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={m?.id ?? "loading"}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.4 }}
+        >
+          {/* Header */}
+          <div className="flex items-start gap-3 mb-4">
+            <div className="w-10 h-10 border border-[var(--foreground)]/30 flex items-center justify-center text-lg shrink-0 overflow-hidden">
+              {m?.imageUrl ? <img src={m.imageUrl} alt="" className="w-full h-full object-cover" /> : "📈"}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-bold text-sm leading-snug font-mono line-clamp-2 min-h-[2.5em]">{m?.title || "Predict the outcome. Earn GUAP."}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-xs px-2 py-0.5 border border-[var(--foreground)]/30 text-[var(--foreground)] font-mono tracking-wider uppercase">{m?.category || t.landing.liveMarket.business}</span>
+                <span className="flex items-center gap-1 text-xs text-[var(--muted)] font-mono">
+                  <span className="w-1.5 h-1.5 bg-[var(--foreground)] animate-pulse" />
+                  {t.landing.liveMarket.live}
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Probability */}
-      <div className="mb-4">
-        <div className="flex justify-between items-center mb-1.5">
-          <span className="text-sm font-bold text-[var(--foreground)] font-mono">YES {Math.round(pct)}%</span>
-          <span className="text-sm font-bold text-[var(--muted)] font-mono">NO {Math.round(100 - pct)}%</span>
-        </div>
-        <div className="h-3 bg-[var(--muted)]/15 border border-[var(--muted)]/10 overflow-hidden">
-          <motion.div
-            className="h-full bg-[var(--foreground)]"
-            animate={{ width: `${pct}%` }}
-            transition={{ duration: 1.4, ease: "easeOut" }}
-          />
-        </div>
-      </div>
+          {/* Probability */}
+          <div className="mb-4">
+            <div className="flex justify-between items-center mb-1.5">
+              <span className="text-sm font-bold text-[var(--foreground)] font-mono truncate max-w-[55%]">{isMulti ? (m.options?.[0] ?? "YES") : "YES"} {yesPct}%</span>
+              <span className="text-sm font-bold text-[var(--muted)] font-mono">{isMulti ? "OTHER" : "NO"} {noPct}%</span>
+            </div>
+            <div className="h-3 bg-[var(--muted)]/15 border border-[var(--muted)]/10 overflow-hidden">
+              <motion.div
+                className="h-full bg-[var(--foreground)]"
+                animate={{ width: `${yesPct}%` }}
+                transition={{ duration: 0.9, ease: "easeOut" }}
+              />
+            </div>
+          </div>
 
-      {/* Buttons */}
-      <div className="grid grid-cols-2 gap-2 mb-4">
-        <button className="py-2.5 border border-[var(--foreground)] text-[var(--foreground)] font-mono font-bold text-xs tracking-wider hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all uppercase">
-          {t.landing.liveMarket.buyYes}
-        </button>
-        <button className="py-2.5 border border-[var(--muted)] text-[var(--muted)] font-mono font-bold text-xs tracking-wider hover:bg-[var(--muted)] hover:text-[var(--background)] transition-all uppercase">
-          {t.landing.liveMarket.buyNo}
-        </button>
-      </div>
+          {/* Buttons → open the real market */}
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <Link href={href} className="text-center py-2.5 border border-[var(--foreground)] text-[var(--foreground)] font-mono font-bold text-xs tracking-wider hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all uppercase">
+              {t.landing.liveMarket.buyYes}
+            </Link>
+            <Link href={href} className="text-center py-2.5 border border-[var(--muted)] text-[var(--muted)] font-mono font-bold text-xs tracking-wider hover:bg-[var(--muted)] hover:text-[var(--background)] transition-all uppercase">
+              {t.landing.liveMarket.buyNo}
+            </Link>
+          </div>
 
-      {/* Footer stats */}
-      <div className="flex items-center justify-between pt-3 border-t border-[var(--card-border)] text-xs text-[var(--muted)] font-mono">
-        <span className="flex items-center gap-1"><UsersThree size={11} /> 3.2K</span>
-        <span className="flex items-center gap-1"><CurrencyDollar size={11} /> 12.5M</span>
-        <AnimatePresence mode="wait">
-          <motion.span
-            key={tick}
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="flex items-center gap-1 text-[var(--foreground)] font-bold"
-          >
-            <ChartLineUp size={12} weight="fill" />
-            {(Math.random() > 0.5 ? "+" : "-")}{Math.floor(Math.random() * 500 + 50)} TZS
-          </motion.span>
-        </AnimatePresence>
-      </div>
+          {/* Footer stats — real */}
+          <div className="flex items-center justify-between pt-3 border-t border-[var(--card-border)] text-xs text-[var(--muted)] font-mono">
+            <span className="flex items-center gap-1"><UsersThree size={11} /> {m?._count?.trades ?? 0}</span>
+            <span className="flex items-center gap-1"><CurrencyDollar size={11} /> {volLabel}</span>
+            <span className="flex items-center gap-1 text-[var(--foreground)] font-bold"><ChartLineUp size={12} weight="fill" /> {yesPct}%</span>
+          </div>
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
