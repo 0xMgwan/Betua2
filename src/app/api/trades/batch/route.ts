@@ -109,14 +109,18 @@ export async function POST(req: NextRequest) {
         );
       }
     } else {
-      // TZS — check nTZS API balance if available, else local
-      let availableTzs = user.balanceTzs;
+      // TZS — the DB balance is the source of truth (pooled model) and is what
+      // we deduct below. Only let a legacy personal wallet RAISE the available
+      // amount (for users whose funds still sit there); never lower it. This
+      // matches the single-trade endpoint and fixes the cart rejecting users
+      // who have a healthy DB balance but a stale personal-wallet balance.
+      let availableTzs = user.balanceTzs || 0;
       if (user.ntzsUserId) {
         try {
-          const { balanceTzs } = await ntzs.users.getBalance(user.ntzsUserId);
-          availableTzs = balanceTzs;
+          const { balanceTzs: walletTzs } = await ntzs.users.getBalance(user.ntzsUserId);
+          availableTzs = Math.max(availableTzs, walletTzs || 0);
         } catch (err) {
-          console.error("[BatchTrade] nTZS balance check failed, using local:", err);
+          console.error("[BatchTrade] nTZS balance check failed, using DB balance:", err);
         }
       }
       if (availableTzs < totalAmountTzs) {
