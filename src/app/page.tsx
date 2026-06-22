@@ -128,7 +128,7 @@ function LiveMarketCard() {
           {/* Footer stats — real */}
           <div className="flex items-center justify-between pt-3 border-t border-[var(--card-border)] text-xs text-[var(--muted)] font-mono">
             <span className="flex items-center gap-1"><UsersThree size={11} /> {m?._count?.trades ?? 0}</span>
-            <span className="flex items-center gap-1"><CurrencyDollar size={11} /> {volLabel}</span>
+            <span className="flex items-center gap-1">TSh {volLabel}</span>
             <span className="flex items-center gap-1 text-[var(--foreground)] font-bold"><ChartLineUp size={12} weight="fill" /> {yesPct}%</span>
           </div>
         </motion.div>
