@@ -61,6 +61,8 @@ export default function ProfilePage() {
   const [stats, setStats] = useState<Stats>({ totalTrades: 0, totalVolume: 0, openPositions: 0, marketsCreated: 0 });
   const [referral, setReferral] = useState<ReferralData | null>(null);
   const [refCopied, setRefCopied] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [creatorRewards, setCreatorRewards] = useState<CreatorRewardsData | null>(null);
   const [lpRewards, setLpRewards] = useState<{
     totalSeeded: number; totalReturned: number; netPnl: number;
@@ -725,6 +727,51 @@ export default function ProfilePage() {
                 <SignOut size={15} weight="bold" />
                 {locale === "sw" ? "Toka" : "Sign Out"}
               </button>
+
+              {/* Danger zone — Delete account */}
+              <div className="mt-8 pt-6 border-t border-[var(--card-border)]">
+                <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-red-500 mb-1">{locale === "sw" ? "Futa Akaunti" : "Delete Account"}</h3>
+                <p className="text-[11px] text-[var(--muted)] mb-3">
+                  {locale === "sw"
+                    ? "Hii itafuta taarifa zako zote za binafsi kabisa na huwezi kuingia tena. Toa pesa zako kwanza."
+                    : "This permanently removes your personal data and you won't be able to sign in again. Withdraw any balance first — it cannot be recovered."}
+                </p>
+                {!deleteConfirm ? (
+                  <button
+                    onClick={() => setDeleteConfirm(true)}
+                    className="w-full py-3 border-2 border-red-500/40 text-red-500 font-mono font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-red-500/10 transition-all active:scale-95"
+                  >
+                    {locale === "sw" ? "Futa Akaunti Yangu" : "Delete My Account"}
+                  </button>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-bold text-red-500">{locale === "sw" ? "Una uhakika? Hatua hii haiwezi kutenduliwa." : "Are you sure? This cannot be undone."}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setDeleteConfirm(false)}
+                        disabled={deleting}
+                        className="py-3 border-2 border-[var(--card-border)] text-[var(--muted)] font-mono font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-[var(--card)] transition-all disabled:opacity-50"
+                      >
+                        {locale === "sw" ? "Ghairi" : "Cancel"}
+                      </button>
+                      <button
+                        onClick={async () => {
+                          setDeleting(true);
+                          try {
+                            const res = await fetch("/api/account/delete", { method: "POST" });
+                            if (res.ok) { logout(); window.location.href = "/"; }
+                            else { alert("Failed to delete account. Please try again."); setDeleting(false); }
+                          } catch { alert("Network error. Please try again."); setDeleting(false); }
+                        }}
+                        disabled={deleting}
+                        className="py-3 bg-red-500 text-white font-mono font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-red-600 transition-all disabled:opacity-50"
+                      >
+                        {deleting ? (locale === "sw" ? "Inafuta…" : "Deleting…") : (locale === "sw" ? "Ndiyo, Futa" : "Yes, Delete")}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
