@@ -362,10 +362,10 @@ export default function DevelopersPage() {
             <Endpoint
               method="POST"
               path="/api/v1/wallet/send"
-              description="Send TZS between users"
+              description="Move TZS balance between two of your users (DB ledger, no fee). Use to allocate from a treasury user to end-users."
               body={{
-                "fromExternalId": "string (required)",
-                "toExternalId": "string (required)",
+                "fromExternalId": "string (required) - sender (e.g. your treasury user)",
+                "toExternalId": "string (required) - recipient end-user",
                 "amountTzs": "number (required)",
               }}
             />
@@ -655,9 +655,19 @@ Verify: HMAC-SHA256(rawBody, yourSigningSecret) === signature`}</div>
 
               <p className="text-xs text-[var(--muted)]">
                 So to create a market, trade, or anything that costs money, the user must have
-                <span className="text-[var(--foreground)] font-bold"> deposited first</span> (giving them a DB balance).
+                <span className="text-[var(--foreground)] font-bold"> a funded DB balance</span>.
                 No nTZS wallet provisioning is required.
               </p>
+
+              <div className="mt-2 p-3 bg-[var(--background)] border border-[var(--card-border)] rounded text-xs text-[var(--muted)]">
+                <span className="text-[var(--foreground)] font-bold">Funding users from a treasury (recommended for partners).</span>{" "}
+                If you hold funds on your side, you don&apos;t need each user to deposit through us. Instead:
+                <span className="block mt-2 font-mono text-[11px] whitespace-pre-wrap">{`1. POST /users           → create a "treasury" user (any externalId)
+2. POST /wallet/deposit  → fund the treasury user (one lump sum → our pool)
+3. POST /wallet/send     → allocate balance: treasury → end-user (DB ledger, no fee)
+4. The end-user now trades against their balance.`}</span>
+                <span className="block mt-2">Winnings credit the user&apos;s balance; you reconcile per-user on your platform and listen to the deposit/market webhooks.</span>
+              </div>
             </div>
           </div>
 
