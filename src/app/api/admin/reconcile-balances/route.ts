@@ -34,43 +34,48 @@ export async function POST() {
   const CREDIT_TYPES = ["DEPOSIT", "REDEEM", "SELL_SHARES", "RECEIVE", "REFERRAL_REWARD", "CREATOR_FEE", "LP_REDEEM"];
   const DEBIT_TYPES  = ["BUY_SHARES", "CREATE_MARKET", "SEED_LIQUIDITY", "WITHDRAWAL", "SEND"];
 
-  // Fetch all completed TZS transactions grouped by user
-  const txs = await prisma.transaction.findMany({
-    where: { status: "COMPLETED", currency: { in: ["TZS", null as unknown as string] } },
-    select: { userId: true, type: true, amountTzs: true },
-  });
+  try {
+    // Fetch all completed TZS transactions
+    const txs = await prisma.transaction.findMany({
+      where: { status: "COMPLETED", currency: "TZS" },
+      select: { userId: true, type: true, amountTzs: true },
+    });
 
-  // Calculate per-user balance
-  const balanceMap = new Map<string, number>();
-  for (const tx of txs) {
-    const prev = balanceMap.get(tx.userId) ?? 0;
-    if (CREDIT_TYPES.includes(tx.type)) {
-      balanceMap.set(tx.userId, prev + (tx.amountTzs || 0));
-    } else if (DEBIT_TYPES.includes(tx.type)) {
-      balanceMap.set(tx.userId, prev - (tx.amountTzs || 0));
+    // Calculate per-user balance
+    const balanceMap = new Map<string, number>();
+    for (const tx of txs) {
+      const prev = balanceMap.get(tx.userId) ?? 0;
+      if (CREDIT_TYPES.includes(tx.type)) {
+        balanceMap.set(tx.userId, prev + (tx.amountTzs || 0));
+      } else if (DEBIT_TYPES.includes(tx.type)) {
+        balanceMap.set(tx.userId, prev - (tx.amountTzs || 0));
+      }
     }
+
+    // Only touch users that still EXIST and whose balance actually changed, and
+    // write in parallel batches so it doesn't time out with many users.
+    const ids = [...balanceMap.keys()];
+    const current = await prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, balanceTzs: true } });
+    const currentMap = new Map(current.map((u) => [u.id, u.balanceTzs || 0]));
+
+    const toUpdate = [...balanceMap.entries()]
+      .map(([userId, calc]) => ({ userId, corrected: Math.max(0, calc) }))
+      .filter(({ userId, corrected }) => currentMap.has(userId) && currentMap.get(userId) !== corrected);
+
+    let updated = 0;
+    const CHUNK = 25;
+    for (let i = 0; i < toUpdate.length; i += CHUNK) {
+      const chunk = toUpdate.slice(i, i + CHUNK);
+      await Promise.all(chunk.map(({ userId, corrected }) =>
+        prisma.user.update({ where: { id: userId }, data: { balanceTzs: corrected } })));
+      updated += chunk.length;
+    }
+
+    return NextResponse.json({ success: true, usersReconciled: updated, scanned: balanceMap.size });
+  } catch (err) {
+    console.error("[reconcile-balances] failed:", err);
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Reconcile failed" }, { status: 500 });
   }
-
-  // Only touch users whose balance actually changed (skip no-ops), and write in
-  // parallel batches so this doesn't time out with many users.
-  const ids = [...balanceMap.keys()];
-  const current = await prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, balanceTzs: true } });
-  const currentMap = new Map(current.map((u) => [u.id, u.balanceTzs || 0]));
-
-  const toUpdate = [...balanceMap.entries()]
-    .map(([userId, calc]) => ({ userId, corrected: Math.max(0, calc) }))
-    .filter(({ userId, corrected }) => (currentMap.get(userId) ?? 0) !== corrected);
-
-  let updated = 0;
-  const CHUNK = 25;
-  for (let i = 0; i < toUpdate.length; i += CHUNK) {
-    const chunk = toUpdate.slice(i, i + CHUNK);
-    await Promise.all(chunk.map(({ userId, corrected }) =>
-      prisma.user.update({ where: { id: userId }, data: { balanceTzs: corrected } })));
-    updated += chunk.length;
-  }
-
-  return NextResponse.json({ success: true, usersReconciled: updated, scanned: balanceMap.size });
 }
 
 // GET: preview without writing
