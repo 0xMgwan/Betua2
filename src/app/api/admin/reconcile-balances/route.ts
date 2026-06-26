@@ -15,6 +15,9 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+
 const ADMIN_USER_IDS = [
   "cmmjemfo900046e3pyoegxsni",
   "2e7ea0a6-472c-44b9-8a61-b6e2865fe558",
@@ -48,18 +51,26 @@ export async function POST() {
     }
   }
 
-  // Update each user's balance — clamp to 0 minimum
+  // Only touch users whose balance actually changed (skip no-ops), and write in
+  // parallel batches so this doesn't time out with many users.
+  const ids = [...balanceMap.keys()];
+  const current = await prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, balanceTzs: true } });
+  const currentMap = new Map(current.map((u) => [u.id, u.balanceTzs || 0]));
+
+  const toUpdate = [...balanceMap.entries()]
+    .map(([userId, calc]) => ({ userId, corrected: Math.max(0, calc) }))
+    .filter(({ userId, corrected }) => (currentMap.get(userId) ?? 0) !== corrected);
+
   let updated = 0;
-  for (const [userId, calculatedBalance] of balanceMap.entries()) {
-    const corrected = Math.max(0, calculatedBalance);
-    await prisma.user.update({
-      where: { id: userId },
-      data: { balanceTzs: corrected },
-    });
-    updated++;
+  const CHUNK = 25;
+  for (let i = 0; i < toUpdate.length; i += CHUNK) {
+    const chunk = toUpdate.slice(i, i + CHUNK);
+    await Promise.all(chunk.map(({ userId, corrected }) =>
+      prisma.user.update({ where: { id: userId }, data: { balanceTzs: corrected } })));
+    updated += chunk.length;
   }
 
-  return NextResponse.json({ success: true, usersReconciled: updated });
+  return NextResponse.json({ success: true, usersReconciled: updated, scanned: balanceMap.size });
 }
 
 // GET: preview without writing

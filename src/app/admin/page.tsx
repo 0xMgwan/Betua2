@@ -122,10 +122,14 @@ export default function AdminPage() {
     setReconcileMsg("");
     try {
       const res = await fetch("/api/admin/reconcile-balances", { method: "POST" });
-      const d = await res.json();
-      setReconcileMsg(`✅ Reconciled ${d.usersReconciled} users`);
-      await loadDashboard(true);
-    } catch { setReconcileMsg("❌ Failed"); }
+      const d = await res.json().catch(() => null);
+      if (!res.ok || !d?.success) {
+        setReconcileMsg(`❌ ${d?.error || `Failed (${res.status})`}`);
+      } else {
+        setReconcileMsg(`✅ Reconciled ${d.usersReconciled} of ${d.scanned} users`);
+        await loadDashboard(true);
+      }
+    } catch (e) { setReconcileMsg(`❌ ${e instanceof Error ? e.message : "Network/timeout error"}`); }
     finally { setReconciling(false); }
   };
 
