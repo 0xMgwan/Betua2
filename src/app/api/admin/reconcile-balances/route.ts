@@ -28,7 +28,7 @@ export async function POST() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const CREDIT_TYPES = ["DEPOSIT", "REDEEM", "SELL"];
+  const CREDIT_TYPES = ["DEPOSIT", "REDEEM", "SELL_SHARES", "RECEIVE", "REFERRAL_REWARD", "CREATOR_FEE", "LP_REDEEM"];
   const DEBIT_TYPES  = ["BUY_SHARES", "CREATE_MARKET", "SEED_LIQUIDITY", "WITHDRAWAL", "SEND"];
 
   // Fetch all completed TZS transactions grouped by user
@@ -69,7 +69,7 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const CREDIT_TYPES = ["DEPOSIT", "REDEEM", "SELL"];
+  const CREDIT_TYPES = ["DEPOSIT", "REDEEM", "SELL_SHARES", "RECEIVE", "REFERRAL_REWARD", "CREATOR_FEE", "LP_REDEEM"];
   const DEBIT_TYPES  = ["BUY_SHARES", "CREATE_MARKET", "SEED_LIQUIDITY", "WITHDRAWAL", "SEND"];
 
   const txs = await prisma.transaction.findMany({

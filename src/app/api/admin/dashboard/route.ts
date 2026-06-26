@@ -71,21 +71,14 @@ export async function GET() {
     const systemWallet = u.ntzsUserId ? (SYSTEM_WALLETS[u.ntzsUserId] || null) : null;
     let balanceTzs  = Math.max(0, u.balanceTzs  || 0);
     let balanceUsdc = Math.max(0, u.balanceUsdc  || 0);
-    // For system wallets, show the live on-chain balance (the truth), don't sync DB
-    if (u.ntzsUserId && (systemWallet || balanceTzs === 0)) {
+    // System/house wallets: show the live on-chain balance (the truth). For
+    // regular users the DB balance is the source of truth — never sync from the
+    // personal nTZS wallet (that re-inflated balances and undid reconcile).
+    if (u.ntzsUserId && systemWallet) {
       try {
         const bal = await ntzs.users.getBalance(u.ntzsUserId);
-        const liveTzs  = Math.max(0, bal.balanceTzs  || 0);
-        const liveUsdc = Math.max(0, bal.balanceUsdc  || 0);
-        if (systemWallet) {
-          // House account — always show live on-chain balance
-          balanceTzs = liveTzs;
-          balanceUsdc = liveUsdc;
-        } else if (liveTzs > balanceTzs) {
-          balanceTzs = liveTzs;
-          prisma.user.update({ where: { id: u.id }, data: { balanceTzs: liveTzs, balanceUsdc: liveUsdc } }).catch(() => {});
-          if (liveUsdc > balanceUsdc) balanceUsdc = liveUsdc;
-        }
+        balanceTzs = Math.max(0, bal.balanceTzs || 0);
+        balanceUsdc = Math.max(0, bal.balanceUsdc || 0);
       } catch { /* skip if API down */ }
     }
     return { ...u, balanceTzs, balanceUsdc, systemWallet };

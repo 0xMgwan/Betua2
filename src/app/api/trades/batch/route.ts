@@ -109,20 +109,10 @@ export async function POST(req: NextRequest) {
         );
       }
     } else {
-      // TZS — the DB balance is the source of truth (pooled model) and is what
-      // we deduct below. Only let a legacy personal wallet RAISE the available
-      // amount (for users whose funds still sit there); never lower it. This
-      // matches the single-trade endpoint and fixes the cart rejecting users
-      // who have a healthy DB balance but a stale personal-wallet balance.
-      let availableTzs = user.balanceTzs || 0;
-      if (user.ntzsUserId) {
-        try {
-          const { balanceTzs: walletTzs } = await ntzs.users.getBalance(user.ntzsUserId);
-          availableTzs = Math.max(availableTzs, walletTzs || 0);
-        } catch (err) {
-          console.error("[BatchTrade] nTZS balance check failed, using DB balance:", err);
-        }
-      }
+      // TZS — DB balance is the single source of truth (pooled model) and is
+      // what we deduct below. We do NOT consult the legacy personal nTZS wallet
+      // (that re-credited balances and leaked free money).
+      const availableTzs = user.balanceTzs || 0;
       if (availableTzs < totalAmountTzs) {
         return NextResponse.json(
           {

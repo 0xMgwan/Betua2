@@ -22,25 +22,12 @@ export async function GET() {
     if (!user) return NextResponse.json({ user: null });
 
     // DB is the source of truth — all deposits/withdrawals/trades update balanceTzs directly.
-    // For legacy users whose nTZS wallet still holds unmigrated funds (not yet reflected in DB),
-    // we add the difference so they don't lose visibility of those funds.
-    let balanceTzs  = Math.max(0, user.balanceTzs  || 0);
-    let balanceUsdc = Math.max(0, user.balanceUsdc  || 0);
-    const balanceKes = Math.max(0, user.balanceKes  || 0);
-
-    if (user.ntzsUserId && balanceTzs === 0) {
-      // Only check nTZS wallet when DB shows 0 — avoids overriding correct DB balance
-      // (e.g. after a withdrawal the DB is lower but nTZS wallet may lag)
-      try {
-        const bal = await ntzs.users.getBalance(user.ntzsUserId);
-        const ntzsTzs  = Math.max(0, bal.balanceTzs  || 0);
-        const ntzsUsdc = Math.max(0, bal.balanceUsdc  || 0);
-        if (ntzsTzs > 0)  balanceTzs  = ntzsTzs;
-        if (ntzsUsdc > 0) balanceUsdc = ntzsUsdc;
-      } catch {
-        // nTZS API unavailable — DB value already used
-      }
-    }
+    // DB balance is the single source of truth (pooled model). We no longer
+    // display the legacy personal nTZS wallet balance — showing it when DB was 0
+    // surfaced a phantom balance that couldn't actually be spent.
+    const balanceTzs  = Math.max(0, user.balanceTzs  || 0);
+    const balanceUsdc = Math.max(0, user.balanceUsdc || 0);
+    const balanceKes  = Math.max(0, user.balanceKes  || 0);
 
     return NextResponse.json({
       user: { ...user, balanceTzs, balanceUsdc, balanceKes }

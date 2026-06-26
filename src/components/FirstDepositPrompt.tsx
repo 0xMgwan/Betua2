@@ -35,8 +35,8 @@ export function FirstDepositPrompt() {
       {/* Scanline accent */}
       <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_3px,rgba(0,229,160,0.02)_3px,rgba(0,229,160,0.02)_5px)] pointer-events-none" />
       <div className="relative flex items-center gap-3 p-4">
-        <div className="shrink-0 w-11 h-11 flex items-center justify-center bg-[var(--accent)]/15 border-2 border-[var(--accent)]/40">
-          <Sparkle size={22} weight="fill" className="text-[var(--accent)]" />
+        <div className="shrink-0 w-11 h-11 flex items-center justify-center bg-[#00e5a0]/15 border-2 border-[#00e5a0]/40">
+          <Sparkle size={22} weight="fill" className="text-[#00e5a0]" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-mono font-black text-sm text-[var(--foreground)] uppercase tracking-wide">
@@ -50,7 +50,7 @@ export function FirstDepositPrompt() {
         </div>
         <Link
           href="/wallet"
-          className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 bg-[var(--accent)] text-black font-mono font-black text-xs uppercase tracking-wider hover:opacity-90 transition-opacity active:scale-95"
+          className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 bg-[#00e5a0] text-black font-mono font-black text-xs uppercase tracking-wider hover:opacity-90 transition-opacity active:scale-95"
         >
           <ArrowDownLeft size={15} weight="bold" />
           {locale === "sw" ? "Weka" : "Deposit"}
