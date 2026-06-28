@@ -63,6 +63,10 @@ export default function AdminPage() {
 
   // LP Repair state
   const [lpMarketId, setLpMarketId] = useState("");
+  const [auditUser, setAuditUser] = useState("");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [auditResult, setAuditResult] = useState<any | null>(null);
+  const [auditing, setAuditing] = useState(false);
   const [lpStatus, setLpStatus] = useState<"idle"|"diagnosing"|"repairing"|"done"|"error">("idle");
   const [lpDiagnosis, setLpDiagnosis] = useState<{
     market: { id: string; title: string; status: string; outcomeLabel: string; seedAmount: number; totalVolume: number };
@@ -810,6 +814,71 @@ export default function AdminPage() {
         {/* ── TOOLS ── */}
         {tab === "tools" && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            {/* Balance Audit — verify a user's balance against their ledger */}
+            <div className="space-y-4 lg:col-span-2">
+              <div className="border border-[var(--card-border)] bg-[var(--card)]">
+                <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--card-border)] bg-[var(--background)]">
+                  <div className="flex gap-1"><div className="w-2.5 h-2.5 rounded-full bg-red-500/70"/><div className="w-2.5 h-2.5 rounded-full bg-yellow-500/70"/><div className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]/70"/></div>
+                  <span className="text-[10px] font-mono text-[var(--muted)]">admin::audit_balance.sh</span>
+                </div>
+                <div className="p-4 space-y-3">
+                  <p className="text-[11px] font-mono font-bold text-[var(--accent)] uppercase tracking-wider">Balance Audit</p>
+                  <p className="text-[10px] font-mono text-[var(--muted)]">Verify a user&apos;s stored balance against their transaction ledger (credits − debits).</p>
+                  <div className="flex gap-2">
+                    <input
+                      value={auditUser}
+                      onChange={(e) => setAuditUser(e.target.value)}
+                      placeholder="username or email"
+                      className="flex-1 px-3 py-2 bg-[var(--background)] border border-[var(--card-border)] rounded text-xs font-mono focus:border-[var(--accent)] outline-none"
+                    />
+                    <button
+                      onClick={async () => {
+                        if (!auditUser.trim()) return;
+                        setAuditing(true); setAuditResult(null);
+                        try {
+                          const res = await fetch(`/api/admin/audit-balance?username=${encodeURIComponent(auditUser.trim())}`);
+                          const d = await res.json();
+                          setAuditResult(res.ok ? d : { error: d.error || "Failed" });
+                        } catch { setAuditResult({ error: "Network error" }); }
+                        finally { setAuditing(false); }
+                      }}
+                      disabled={auditing || !auditUser.trim()}
+                      className="px-4 py-2 text-[10px] font-mono font-bold border border-[var(--accent)]/40 text-[var(--accent)] hover:bg-[var(--accent)]/10 disabled:opacity-50 transition-colors"
+                    >
+                      {auditing ? "…" : "Audit"}
+                    </button>
+                  </div>
+                  {auditResult && (auditResult.error ? (
+                    <p className="text-[11px] font-mono text-red-400">❌ {auditResult.error}</p>
+                  ) : (
+                    <div className="space-y-2 text-[11px] font-mono">
+                      <div className="flex flex-wrap gap-x-6 gap-y-1">
+                        <span>@{auditResult.username}</span>
+                        <span className="text-[var(--muted)]">Stored: <span className="font-bold text-[var(--foreground)]">{formatTZS(auditResult.storedTzs)}</span></span>
+                        <span className="text-[var(--muted)]">Ledger: <span className="font-bold text-[var(--foreground)]">{formatTZS(auditResult.computedTzs)}</span></span>
+                        <span className={auditResult.match ? "text-[#00e5a0] font-bold" : "text-red-400 font-bold"}>{auditResult.match ? "✓ matches" : "✗ MISMATCH"}</span>
+                        {auditResult.rawComputed < 0 && <span className="text-yellow-500">(raw {formatTZS(auditResult.rawComputed)} — spent phantom funds)</span>}
+                      </div>
+                      <table className="w-full text-[10px]">
+                        <thead><tr className="text-[var(--muted)] border-b border-[var(--card-border)]"><th className="text-left font-normal py-1">Type</th><th className="text-right font-normal py-1">Count</th><th className="text-right font-normal py-1">Total</th><th className="text-right font-normal py-1">Dir</th></tr></thead>
+                        <tbody>
+                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                          {auditResult.breakdown.map((b: any, i: number) => (
+                            <tr key={i} className="border-b border-[var(--card-border)]/40">
+                              <td className="py-1">{b.type}</td>
+                              <td className="py-1 text-right">{b.count}</td>
+                              <td className="py-1 text-right tabular-nums">{formatTZS(b.total)}</td>
+                              <td className={`py-1 text-right ${b.direction === "credit" ? "text-[#00e5a0]" : b.direction === "debit" ? "text-red-400" : "text-[var(--muted)]"}`}>{b.direction}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
 
             {/* LP Repair */}
             <div className="space-y-4">
