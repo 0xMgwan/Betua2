@@ -28,8 +28,13 @@ export async function GET(req: NextRequest) {
   });
   if (!user) return NextResponse.json({ error: `No user '${q}'` }, { status: 404 });
 
+  // COMPLETED txns, plus PENDING withdrawals (debited at initiation).
   const txs = await prisma.transaction.findMany({
-    where: { userId: user.id, status: "COMPLETED", currency: "TZS" },
+    where: {
+      userId: user.id,
+      currency: "TZS",
+      OR: [{ status: "COMPLETED" }, { status: "PENDING", type: "WITHDRAWAL" }],
+    },
     select: { type: true, amountTzs: true },
   });
 

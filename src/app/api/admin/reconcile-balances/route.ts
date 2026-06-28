@@ -35,9 +35,15 @@ export async function POST() {
   const DEBIT_TYPES  = ["BUY_SHARES", "CREATE_MARKET", "SEED_LIQUIDITY", "WITHDRAWAL", "SEND"];
 
   try {
-    // Fetch all completed TZS transactions
+    // Fetch TZS transactions that affect the balance:
+    //  - all COMPLETED transactions, PLUS
+    //  - PENDING WITHDRAWALs (the balance is debited at initiation and only
+    //    reversed on FAILED — so a pending withdrawal is money already out).
     const txs = await prisma.transaction.findMany({
-      where: { status: "COMPLETED", currency: "TZS" },
+      where: {
+        currency: "TZS",
+        OR: [{ status: "COMPLETED" }, { status: "PENDING", type: "WITHDRAWAL" }],
+      },
       select: { userId: true, type: true, amountTzs: true },
     });
 
@@ -89,7 +95,7 @@ export async function GET() {
   const DEBIT_TYPES  = ["BUY_SHARES", "CREATE_MARKET", "SEED_LIQUIDITY", "WITHDRAWAL", "SEND"];
 
   const txs = await prisma.transaction.findMany({
-    where: { status: "COMPLETED" },
+    where: { currency: "TZS", OR: [{ status: "COMPLETED" }, { status: "PENDING", type: "WITHDRAWAL" }] },
     select: { userId: true, type: true, amountTzs: true },
   });
 
