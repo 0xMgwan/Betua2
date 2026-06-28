@@ -18,6 +18,8 @@ const ADMIN_NTZS_USER_IDS = [
   "5e89781c-b8c0-4a49-a235-0bb0048ac18d",
   "2e7ea0a6-472c-44b9-8a61-b6e2865fe558",
   "c458cdc9-db89-408e-a077-dacb72af789d",
+  "cmqr2tyew000004icz2ibal5y", // @goodmusic__tz — admin (no nTZS wallet, keyed by userId)
+  ...(process.env.ADMIN_USER_IDS || "").split(",").filter(Boolean),
 ];
 
 export async function GET(req: NextRequest) {

@@ -11,6 +11,10 @@ const ADMIN_NTZS = [
   "2e7ea0a6-472c-44b9-8a61-b6e2865fe558",
   "c458cdc9-db89-408e-a077-dacb72af789d",
 ];
+// Admins identified by userId (e.g. pooled users with no nTZS wallet)
+const ADMIN_IDS = [
+  "cmqr2tyew000004icz2ibal5y", // @goodmusic__tz
+];
 
 type Tab = "overview" | "users" | "markets" | "partners" | "referrals" | "tools";
 type AnyUser = { externalId: string; username: string | null; email: string | null; phone: string | null; balanceTzs: number; balanceUsdc: number };
@@ -75,7 +79,7 @@ export default function AdminPage() {
   const [lpRepairResult, setLpRepairResult] = useState<{ payoutTzs?: number; note?: string } | null>(null);
   const [lpError, setLpError] = useState("");
 
-  const isAdmin = user && (ADMIN_NTZS.includes(user.ntzsUserId || ""));
+  const isAdmin = user && (ADMIN_NTZS.includes(user.ntzsUserId || "") || ADMIN_IDS.includes(user.id || ""));
 
   const loadDashboard = useCallback(async (isPoll = false) => {
     if (isPoll) setRefreshing(true);
