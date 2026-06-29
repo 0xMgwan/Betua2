@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'GUAP',
   webDir: 'public',
   server: {
-    url: 'https://guap.gold/auth/register',
+    url: 'https://www.guap.gold',
     cleartext: true
   },
   android: {
