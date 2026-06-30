@@ -52,25 +52,25 @@ export async function PATCH(
       subCategory: subCategory !== undefined ? subCategory : market.subCategory,
     };
 
-    // Handle market type changes (binary <-> multi-option)
-    // Only allowed if there are no trades yet
+    // Handle option edits. Renaming labels is always safe (positions/pools are
+    // keyed by option index), so it's allowed even after trades. Structural
+    // changes (binary<->multi, adding/removing options) reset the pools and are
+    // therefore blocked once trades exist.
     if (options !== undefined) {
-      // TEMPORARILY DISABLED: Allow editing even with trades to fix timezone issues
-      // if (market._count.trades > 0) {
-      //   return NextResponse.json(
-      //     { error: "Cannot change market type after trades have been placed" },
-      //     { status: 400 }
-      //   );
-      // }
+      const currentOptions = (market.options as string[] | null) || [];
+      const isCurrentlyMulti = currentOptions.length >= 2;
+      const hasTrades = market._count.trades > 0;
 
       if (options === null || (Array.isArray(options) && options.length === 0)) {
-        // Switch to binary (YES/NO)
+        // Switch to binary (YES/NO) — structural change.
+        if (hasTrades && isCurrentlyMulti) {
+          return NextResponse.json({ error: "Cannot change market type after trades have been placed" }, { status: 400 });
+        }
         updateData.options = [];
         updateData.optionPools = [];
         updateData.yesPool = INIT_POOL;
         updateData.noPool = INIT_POOL;
       } else if (Array.isArray(options) && options.length >= 2) {
-        // Switch to multi-option
         const validOptions = options.map((o: string) => o.trim()).filter(Boolean);
         if (validOptions.length < 2) {
           return NextResponse.json({ error: "At least 2 options required" }, { status: 400 });
@@ -78,10 +78,24 @@ export async function PATCH(
         if (validOptions.length > 10) {
           return NextResponse.json({ error: "Maximum 10 options" }, { status: 400 });
         }
+
+        // Pure rename: same number of options on an already-multi market — keep
+        // the existing pools/odds and just update the labels.
+        const isRename = isCurrentlyMulti && validOptions.length === currentOptions.length;
+        if (hasTrades && !isRename) {
+          return NextResponse.json(
+            { error: "After trades you can only rename existing options, not add, remove, or change the market type." },
+            { status: 400 }
+          );
+        }
+
         updateData.options = validOptions;
-        updateData.optionPools = validOptions.map(() => POOL_PER_OPTION);
-        updateData.yesPool = INIT_POOL;
-        updateData.noPool = INIT_POOL;
+        if (!isRename) {
+          // Structural change (no trades) — (re)seed equal pools.
+          updateData.optionPools = validOptions.map(() => POOL_PER_OPTION);
+          updateData.yesPool = INIT_POOL;
+          updateData.noPool = INIT_POOL;
+        }
       }
     }
 
