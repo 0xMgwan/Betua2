@@ -99,9 +99,12 @@ export function FeaturedDeck({ items, label }: { items: DeckItem[]; label?: stri
           dragElastic={0.55}
           dragSnapToOrigin
           onDragEnd={(_, info) => {
-            if (Math.abs(info.offset.x) > 80 || Math.abs(info.velocity.x) > 350) {
-              advance();
-            }
+            const passed = Math.abs(info.offset.x) > 80 || Math.abs(info.velocity.x) > 350;
+            if (!passed) return;
+            // Honour swipe direction: right → forward, left → back.
+            const dir = info.offset.x !== 0 ? info.offset.x : info.velocity.x;
+            if (dir > 0) advance();
+            else retreat();
           }}
           initial={{ scale: 0.97, opacity: 0.6 }}
           animate={{ scale: 1, opacity: 1, rotate: 0 }}
