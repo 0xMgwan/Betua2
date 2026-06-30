@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { NotificationProvider } from "@/components/NotificationProvider";
@@ -11,6 +11,22 @@ import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+
+// Native-app-like viewport: lock scale so the UI never appears zoomed (and iOS
+// doesn't auto-zoom when focusing inputs), and extend under the notch/home bar
+// so safe-area insets can be used for stable, full-bleed layout.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  minimumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+  ],
+};
 
 export const metadata: Metadata = {
   title: "GUAP — Predict the Future. Earn GUAP.",
@@ -57,8 +73,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <NotificationProvider>
                 {/* Global haptics: vibrate on touch taps of any button/link */}
                 <HapticProvider />
-                {/* Bottom padding on mobile so content clears the fixed bottom nav */}
-                <div className="pb-16 md:pb-0">{children}</div>
+                {/* Bottom padding on mobile so content clears the fixed bottom nav
+                    (plus the device safe-area inset on notched phones). */}
+                <div className="pb-bottomnav md:pb-0">{children}</div>
                 <CartButton />
                 <CartModal />
                 <BottomNav />

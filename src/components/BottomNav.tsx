@@ -22,7 +22,10 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--background)]/95 backdrop-blur-xl border-t-2 border-[var(--card-border)]">
+    <nav
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--background)]/95 backdrop-blur-xl border-t-2 border-[var(--card-border)]"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
       <div className="grid grid-cols-5">
         {ITEMS.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || (href !== "/" && pathname.startsWith(href));
