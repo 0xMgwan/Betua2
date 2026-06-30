@@ -60,6 +60,14 @@ function getMarketPrices(m: EventMarket): { yes: number; no: number } {
   return { yes: 0.5, no: 0.5 };
 }
 
+// Payout multiplier for a winning share = 1 / implied-probability.
+// Formatted compactly: "2×", "2.9×", "10×".
+function fmtMult(prob: number): string {
+  if (!prob || prob <= 0) return "—";
+  const m = 1 / prob;
+  return `${m >= 10 ? Math.round(m) : m.toFixed(1).replace(/\.0$/, "")}×`;
+}
+
 interface EventCardProps {
   eventId: string;
   eventTitle: string;
@@ -237,7 +245,8 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
                               return (
                                 <div key={i} className="flex items-center justify-between gap-2 text-[10px]">
                                   <span className="truncate flex-1 text-[var(--muted)]">{opt}</span>
-                                  <span className="font-mono text-purple-400">{Math.round(optPrice * 100)}%</span>
+                                  <span className="font-mono text-purple-400 tabular-nums">{Math.round(optPrice * 100)}%</span>
+                                  <span className="font-mono text-[9px] font-bold text-purple-400/80 bg-purple-500/10 border border-purple-500/20 rounded px-1 leading-tight tabular-nums">{fmtMult(optPrice)}</span>
                                   <button
                                     onClick={(e) => handleBuyClick(m, `option_${i}`, i, e)}
                                     className="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 border border-purple-500/30 hover:bg-purple-500/30 font-bold"
@@ -271,7 +280,7 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
                         onClick={(e) => handleBuyClick(m, "yes", undefined, e)}
                         className="flex-1 py-1 text-[10px] font-bold bg-[#00e5a0]/20 text-[#00e5a0] border border-[#00e5a0]/30 hover:bg-[#00e5a0]/30"
                       >
-                        YES {Math.round(yesPrice * 100)}%
+                        YES {Math.round(yesPrice * 100)}% <span className="opacity-60 font-mono">· {fmtMult(yesPrice)}</span>
                       </button>
                       <button
                         onClick={(e) => handleAddToCart(m, "yes", undefined, e)}
@@ -290,7 +299,7 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
                         onClick={(e) => handleBuyClick(m, "no", undefined, e)}
                         className="flex-1 py-1 text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
                       >
-                        NO {Math.round(noPrice * 100)}%
+                        NO {Math.round(noPrice * 100)}% <span className="opacity-60 font-mono">· {fmtMult(noPrice)}</span>
                       </button>
                       <button
                         onClick={(e) => handleAddToCart(m, "no", undefined, e)}
