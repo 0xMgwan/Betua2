@@ -847,8 +847,15 @@ function MarketsContent() {
                   const getSub = (item: typeof rest[number]) =>
                     item.type === 'market' ? (item.market.subCategory || '') : (item.event.subCategory || item.markets[0]?.subCategory || '');
 
+                  // In category/subcategory view, pull events into their own top-level
+                  // group so they're always visible regardless of subCategory match.
+                  const topEvents: typeof rest = [];
                   const groups = new Map<string, typeof rest>();
                   rest.forEach((item) => {
+                    if (category !== "all" && item.type === "event") {
+                      topEvents.push(item);
+                      return;
+                    }
                     const key = category === "all" ? getCat(item) : (getSub(item) || (locale === "sw" ? "Nyingine" : "Other"));
                     if (!groups.has(key)) groups.set(key, []);
                     groups.get(key)!.push(item);
@@ -862,7 +869,22 @@ function MarketsContent() {
                     const ia = orderedCategories.indexOf(a[0]); const ib = orderedCategories.indexOf(b[0]);
                     return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
                   });
-                  return orderedGroups.map(([groupName, items], gi) => (
+                  return (<>
+                    {/* Events section — pinned at top of any category/subcategory view */}
+                    {topEvents.length > 0 && (
+                      <div className="mb-8">
+                        <div className="flex items-baseline gap-2 mb-3 border-b border-[var(--card-border)] pb-2">
+                          <h2 className="text-lg font-mono font-black">{locale === "sw" ? "Matukio" : "Events"}</h2>
+                          <span className="text-sm font-mono text-[var(--muted)]">({topEvents.length})</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {topEvents.map((item) => (
+                            <div key={(item as { eventId: string }).eventId}>{renderItem(item, runningIndex++)}</div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {orderedGroups.map(([groupName, items], gi) => (
                     <div key={groupName}>
                       <section className="mb-8">
                         {/* Section header — category/subcategory + count, outside the cards.
@@ -948,7 +970,8 @@ function MarketsContent() {
                         </div>
                       )}
                     </div>
-                  ));
+                  ))}
+                  </>);
                 })()}
               </>
             );

@@ -31,14 +31,21 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get("q");
     const sort = searchParams.get("sort") || "volume";
 
+    const baseWhere = {
+      status: status === "all" ? undefined : status,
+      category: category && category !== "all" ? category : undefined,
+      ...(search ? { title: { contains: search, mode: "insensitive" as const } } : {}),
+      resolvesAt: { gte: new Date() },
+    };
+
+    // When a subCategory filter is active, always include event-linked markets for
+    // the same category regardless of their subCategory (events span multiple
+    // sub-markets and shouldn't be buried by the subcategory drill-down).
+    const subCatFilter = subCategory && subCategory !== "all";
     const markets = await prisma.market.findMany({
-      where: {
-        status: status === "all" ? undefined : status,
-        category: category && category !== "all" ? category : undefined,
-        subCategory: subCategory && subCategory !== "all" ? subCategory : undefined,
-        ...(search ? { title: { contains: search, mode: "insensitive" as const } } : {}),
-        resolvesAt: { gte: new Date() },
-      },
+      where: subCatFilter
+        ? { ...baseWhere, OR: [{ subCategory }, { eventId: { not: null } }] }
+        : baseWhere,
       include: {
         creator: { select: { username: true, avatarUrl: true } },
         event: { select: { id: true, title: true, imageUrl: true, category: true, subCategory: true } },
