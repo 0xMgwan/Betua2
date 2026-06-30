@@ -23,7 +23,7 @@ export async function POST(
   }
 
   const body = await request.json();
-  const { title, description, resolvesAt, options } = body;
+  const { title, description, resolvesAt, options, optionProbs, initialProb } = body;
 
   if (!title) {
     return NextResponse.json({ error: "Title is required" }, { status: 400 });
@@ -47,23 +47,38 @@ export async function POST(
   };
 
   if (isMultiOption) {
-    // Multi-option market: each option gets equal initial pool
-    const optionPools = options.map(() => INITIAL_POOL);
+    // Multi-option market: weight initial pools by probability when provided.
+    // pool_i = INITIAL_POOL / (n * p_i)  →  P(i) = (1/pool_i) / Σ(1/pool_j) = p_i
+    const n = options.length;
+    const hasValidProbs =
+      Array.isArray(optionProbs) &&
+      optionProbs.length === n &&
+      optionProbs.every((p: number) => p > 0) &&
+      Math.abs(optionProbs.reduce((s: number, p: number) => s + p, 0) - 100) <= 1;
+
+    const optionPools = hasValidProbs
+      ? options.map((_: unknown, i: number) => Math.round(INITIAL_POOL / (n * (optionProbs[i] / 100))))
+      : options.map(() => INITIAL_POOL);
+
     marketData = {
       ...marketData,
       options,
       optionPools,
       yesPool: 0,
       noPool: 0,
-      liquidity: INITIAL_POOL * options.length,
+      liquidity: optionPools.reduce((s: number, v: number) => s + v, 0),
     };
   } else {
-    // Binary YES/NO market
+    // Binary YES/NO market — seed pools from initial probability when provided.
+    // P(YES) = noPool / (yesPool + noPool) = p  →  noPool = p·L, yesPool = (1−p)·L
+    const TOTAL_LIQUIDITY = INITIAL_POOL * 2;
+    const p =
+      initialProb != null ? Math.max(1, Math.min(99, Number(initialProb))) / 100 : 0.5;
     marketData = {
       ...marketData,
-      yesPool: INITIAL_POOL,
-      noPool: INITIAL_POOL,
-      liquidity: INITIAL_POOL * 2,
+      yesPool: Math.round((1 - p) * TOTAL_LIQUIDITY),
+      noPool: Math.round(p * TOTAL_LIQUIDITY),
+      liquidity: TOTAL_LIQUIDITY,
     };
   }
 

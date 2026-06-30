@@ -71,9 +71,15 @@ export default function CreateMarketPage() {
     title: string;
     type: "binary" | "multi";
     options?: string[];
+    optionProbs?: number[];
+    initialProb?: number;
   }
   const [eventMarkets, setEventMarkets] = useState<EventMarket[]>([]);
-  const [newEventMarket, setNewEventMarket] = useState({ title: "", type: "binary" as "binary" | "multi", options: ["", ""] });
+  const [newEventMarket, setNewEventMarket] = useState({ title: "", type: "binary" as "binary" | "multi", options: ["", ""], optionProbs: [50, 50], initialProb: 50 });
+
+  const newEventProbsTotal = newEventMarket.optionProbs
+    .slice(0, newEventMarket.options.length)
+    .reduce((s, p) => s + (p || 0), 0);
 
   const optionProbsTotal = optionProbs.reduce((s, p) => s + p, 0);
 
@@ -271,6 +277,8 @@ export default function CreateMarketPage() {
             body: JSON.stringify({
               title: market.title,
               options: market.type === "multi" ? market.options : undefined,
+              optionProbs: market.type === "multi" ? market.optionProbs : undefined,
+              initialProb: market.type === "binary" ? market.initialProb : undefined,
             }),
           });
         }
@@ -817,7 +825,9 @@ export default function CreateMarketPage() {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-mono truncate">{market.title}</p>
                           <p className="text-[10px] text-[var(--muted)]">
-                            {market.type === "binary" ? "YES/NO" : `${market.options?.length || 0} options`}
+                            {market.type === "binary"
+                              ? `YES/NO · ${market.initialProb ?? 50}%`
+                              : `${market.options?.length || 0} options · ${(market.optionProbs || []).join("/")}%`}
                           </p>
                         </div>
                         <button
@@ -865,25 +875,83 @@ export default function CreateMarketPage() {
                           MULTI
                         </button>
                       </div>
+                      {newEventMarket.type === "binary" && (
+                        <div className="space-y-1.5 pt-1">
+                          <div className="flex items-center justify-between text-[10px] font-mono text-[var(--muted)] uppercase">
+                            <span>{locale === "sw" ? "Nafasi ya YES" : "YES Chance"}</span>
+                            <span className="text-[var(--accent)] font-bold">
+                              {newEventMarket.initialProb}% · ×{(100 / newEventMarket.initialProb).toFixed(1)}x
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min={1}
+                            max={99}
+                            value={newEventMarket.initialProb}
+                            onChange={(e) => setNewEventMarket({ ...newEventMarket, initialProb: Number(e.target.value) })}
+                            className="w-full accent-[#00e5a0]"
+                          />
+                        </div>
+                      )}
                       {newEventMarket.type === "multi" && (
                         <div className="space-y-1">
                           {newEventMarket.options.map((opt, i) => (
-                            <input
-                              key={i}
-                              type="text"
-                              value={opt}
-                              onChange={(e) => {
-                                const newOpts = [...newEventMarket.options];
-                                newOpts[i] = e.target.value;
-                                setNewEventMarket({ ...newEventMarket, options: newOpts });
-                              }}
-                              placeholder={`${locale === "sw" ? "Chaguo" : "Option"} ${i + 1}`}
-                              className="w-full px-2 py-1.5 bg-[var(--background)] border border-[var(--card-border)] text-xs font-mono"
-                            />
+                            <div key={i} className="flex items-center gap-1.5">
+                              <input
+                                type="text"
+                                value={opt}
+                                onChange={(e) => {
+                                  const newOpts = [...newEventMarket.options];
+                                  newOpts[i] = e.target.value;
+                                  setNewEventMarket({ ...newEventMarket, options: newOpts });
+                                }}
+                                placeholder={`${locale === "sw" ? "Chaguo" : "Option"} ${i + 1}`}
+                                className="flex-1 min-w-0 px-2 py-1.5 bg-[var(--background)] border border-[var(--card-border)] text-xs font-mono"
+                              />
+                              <div className="flex items-center gap-0.5 shrink-0">
+                                <input
+                                  type="number"
+                                  min={1}
+                                  max={98}
+                                  value={newEventMarket.optionProbs[i] ?? 0}
+                                  onChange={(e) => {
+                                    const newProbs = [...newEventMarket.optionProbs];
+                                    newProbs[i] = Math.max(1, Math.min(98, Number(e.target.value)));
+                                    setNewEventMarket({ ...newEventMarket, optionProbs: newProbs });
+                                  }}
+                                  className="w-12 px-1.5 py-1.5 bg-[var(--background)] border border-purple-500/30 text-xs font-mono text-center focus:outline-none focus:border-purple-500/60"
+                                />
+                                <span className="text-[10px] font-mono text-[var(--muted)]">%</span>
+                              </div>
+                              {newEventMarket.options.length > 2 && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setNewEventMarket({
+                                      ...newEventMarket,
+                                      options: newEventMarket.options.filter((_, j) => j !== i),
+                                      optionProbs: newEventMarket.optionProbs.filter((_, j) => j !== i),
+                                    });
+                                  }}
+                                  className="p-1 text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
+                                >
+                                  <Trash size={12} />
+                                </button>
+                              )}
+                            </div>
                           ))}
+                          <div className={cn(
+                            "flex items-center justify-between px-2 py-1 border text-[10px] font-mono",
+                            Math.abs(newEventProbsTotal - 100) <= 1
+                              ? "border-[var(--accent)]/30 bg-[var(--accent)]/5 text-[var(--accent)]"
+                              : "border-red-500/30 bg-red-500/5 text-red-400"
+                          )}>
+                            <span>{locale === "sw" ? "Jumla" : "Total"}</span>
+                            <span className="font-bold">{newEventProbsTotal}% {Math.abs(newEventProbsTotal - 100) <= 1 ? "✓" : ""}</span>
+                          </div>
                           <button
                             type="button"
-                            onClick={() => setNewEventMarket({ ...newEventMarket, options: [...newEventMarket.options, ""] })}
+                            onClick={() => setNewEventMarket({ ...newEventMarket, options: [...newEventMarket.options, ""], optionProbs: [...newEventMarket.optionProbs, 0] })}
                             className="text-[10px] text-purple-400 hover:underline"
                           >
                             + {locale === "sw" ? "Ongeza chaguo" : "Add option"}
@@ -894,10 +962,23 @@ export default function CreateMarketPage() {
                         type="button"
                         onClick={() => {
                           if (!newEventMarket.title.trim()) return;
-                          const validOptions = newEventMarket.type === "multi" 
-                            ? newEventMarket.options.filter(o => o.trim()) 
-                            : undefined;
-                          if (newEventMarket.type === "multi" && (!validOptions || validOptions.length < 2)) return;
+                          let validOptions: string[] | undefined;
+                          let validProbs: number[] | undefined;
+                          if (newEventMarket.type === "multi") {
+                            const kept: number[] = [];
+                            validOptions = newEventMarket.options
+                              .map((o, i) => ({ o: o.trim(), i }))
+                              .filter(({ o }) => o)
+                              .map(({ o, i }) => { kept.push(newEventMarket.optionProbs[i] ?? 0); return o; });
+                            if (validOptions.length < 2) return;
+                            const sum = kept.reduce((s, p) => s + p, 0);
+                            if (Math.abs(sum - 100) > 1) {
+                              setError(locale === "sw" ? `Uwezekano lazima uwe 100% (sasa: ${sum}%)` : `Option probabilities must sum to 100% (currently: ${sum}%)`);
+                              return;
+                            }
+                            validProbs = kept;
+                          }
+                          setError("");
                           setEventMarkets([
                             ...eventMarkets,
                             {
@@ -905,9 +986,11 @@ export default function CreateMarketPage() {
                               title: newEventMarket.title,
                               type: newEventMarket.type,
                               options: validOptions,
+                              optionProbs: validProbs,
+                              initialProb: newEventMarket.type === "binary" ? newEventMarket.initialProb : undefined,
                             },
                           ]);
-                          setNewEventMarket({ title: "", type: "binary", options: ["", ""] });
+                          setNewEventMarket({ title: "", type: "binary", options: ["", ""], optionProbs: [50, 50], initialProb: 50 });
                         }}
                         className="w-full py-2 border border-orange-500/50 text-orange-400 text-xs font-mono font-bold hover:bg-orange-500/10 transition-all flex items-center justify-center gap-1.5"
                       >
