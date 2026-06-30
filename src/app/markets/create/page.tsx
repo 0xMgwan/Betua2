@@ -923,6 +923,9 @@ export default function CreateMarketPage() {
                                 />
                                 <span className="text-[10px] font-mono text-[var(--muted)]">%</span>
                               </div>
+                              <span className="w-12 text-[10px] font-mono text-center text-[var(--accent)] shrink-0">
+                                {(newEventMarket.optionProbs[i] ?? 0) > 0 ? `×${(100 / newEventMarket.optionProbs[i]).toFixed(1)}x` : "—"}
+                              </span>
                               {newEventMarket.options.length > 2 && (
                                 <button
                                   type="button"
