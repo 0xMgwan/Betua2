@@ -271,16 +271,22 @@ export default function CreateMarketPage() {
 
         // Step 2: Create each market under the event
         for (const market of eventMarkets) {
-          await fetch(`/api/events/${eventId}/markets`, {
+          const mRes = await fetch(`/api/events/${eventId}/markets`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               title: market.title,
+              resolvesAt: form.resolvesAt,
               options: market.type === "multi" ? market.options : undefined,
               optionProbs: market.type === "multi" ? market.optionProbs : undefined,
               initialProb: market.type === "binary" ? market.initialProb : undefined,
             }),
           });
+          if (!mRes.ok) {
+            const mErr = await mRes.json().catch(() => ({}));
+            setLoading(false);
+            return setError(mErr.error || `Failed to create market "${market.title}"`);
+          }
         }
 
         router.push(`/events/${eventId}`);

@@ -10,7 +10,7 @@ import {
   Sun, Moon, TrendUp, ChartBar, Trophy, Wallet,
   User,  Plus, SignOut, List, X, Globe, Bell,
   ShoppingCart, Storefront, Target, PaperPlaneTilt,
-  ArrowDownLeft, CurrencyDollar, Gift, CheckCircle,
+  ArrowDownLeft, CurrencyDollar, Gift, CheckCircle, Stack,
 } from "@phosphor-icons/react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
@@ -134,6 +134,7 @@ export function Navbar() {
 
   const NAV_LINKS = [
     { href: "/markets", label: t.nav.markets, icon: ChartBar },
+    { href: "/events", label: "Events", icon: Stack },
     { href: "/portfolio", label: "Portfolio", icon: TrendUp },
     { href: "/leaderboard", label: t.nav.leaderboard, icon: Trophy },
     { href: "/wallet", label: t.nav.wallet, icon: Wallet },
