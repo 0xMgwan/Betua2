@@ -134,7 +134,6 @@ export function Navbar() {
 
   const NAV_LINKS = [
     { href: "/markets", label: t.nav.markets, icon: ChartBar },
-    { href: "/events", label: "Events", icon: Stack },
     { href: "/portfolio", label: "Portfolio", icon: TrendUp },
     { href: "/leaderboard", label: t.nav.leaderboard, icon: Trophy },
     { href: "/wallet", label: t.nav.wallet, icon: Wallet },
