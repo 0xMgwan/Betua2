@@ -119,6 +119,18 @@ export async function PATCH(
     },
   });
 
+  // Keep sub-markets' category/subCategory in sync with the event so they aren't
+  // filtered out of category/subcategory views on the markets page.
+  if (category !== undefined || subCategory !== undefined) {
+    await prisma.market.updateMany({
+      where: { eventId: id },
+      data: {
+        ...(category && { category }),
+        ...(subCategory !== undefined && { subCategory }),
+      },
+    });
+  }
+
   return NextResponse.json({ event: updatedEvent });
 }
 
