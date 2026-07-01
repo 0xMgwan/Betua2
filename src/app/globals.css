@@ -84,6 +84,11 @@ body {
   }
 }
 
+/* Clears the status bar / notch for whatever element sits at the very top of a
+   page (e.g. the live-activity ticker above the navbar). No-op in the browser
+   where env() is 0; only adds height in a standalone / installed PWA. */
+.pt-safe-top { padding-top: env(safe-area-inset-top); }
+
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-geist-mono), 'Courier New', monospace;
   letter-spacing: 0.05em;
