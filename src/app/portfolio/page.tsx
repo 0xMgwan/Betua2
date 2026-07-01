@@ -23,6 +23,10 @@ interface Position {
   yesShares: number;
   noShares: number;
   optionShares?: Record<string, number> | null;
+  // Fixed-odds payout locked in at trade time (what you receive if that side wins).
+  yesImpliedPayout?: number | null;
+  noImpliedPayout?: number | null;
+  optionImpliedPayouts?: Record<string, number> | null;
   currentValue: number;
   totalInvested: number;
   redeemed: boolean;
@@ -233,17 +237,23 @@ export default function PortfolioPage() {
     .filter(t => !t.side.startsWith("SELL_") && openMarketIds.has(t.market.id))
     .reduce((sum, t) => sum + t.amountTzs, 0);
 
-  // Total potential payout: sum of shares across all open positions
-  // Each share pays 1 TZS if the outcome is correct
+  // Total potential payout: sum of the fixed-odds payout locked in at trade time
+  // for each open position (what you'd receive if that pick wins), not the raw
+  // share count. Falls back to shares for legacy positions with no stored payout.
   const totalPayout = positions
     .filter((p) => p.market.status === "OPEN")
     .reduce((sum, p) => {
       const isMultiOpt = !!(p.market.options && p.market.options.length >= 2);
       if (isMultiOpt && p.optionShares) {
-        // Sum of all option shares (best case: all correct)
-        return sum + Object.values(p.optionShares).reduce((s, v) => s + v, 0);
+        return sum + Object.entries(p.optionShares).reduce((s, [idx, sh]) => {
+          if (sh <= 0) return s;
+          const implied = p.optionImpliedPayouts?.[idx] ?? 0;
+          return s + (implied > 0 ? implied : sh);
+        }, 0);
       }
-      return sum + p.yesShares + p.noShares;
+      return sum
+        + (p.yesShares > 0 ? ((p.yesImpliedPayout ?? 0) > 0 ? (p.yesImpliedPayout as number) : p.yesShares) : 0)
+        + (p.noShares > 0 ? ((p.noImpliedPayout ?? 0) > 0 ? (p.noImpliedPayout as number) : p.noShares) : 0);
     }, 0);
 
   if (!user) {
@@ -491,9 +501,18 @@ export default function PortfolioPage() {
                             : ((p.market.outcome === 1 && p.yesShares > 0) || (p.market.outcome === 0 && p.noShares > 0))
                         );
 
+                        // "If correct" = the fixed-odds payout locked in at trade time
+                        // (reflects the odds/multiplier you bought at), NOT the raw
+                        // share count. Fall back to shares only for legacy positions
+                        // that never stored an implied payout.
                         const positionPayout = isMultiOpt && p.optionShares
-                          ? Object.values(p.optionShares).reduce((s, v) => s + v, 0)
-                          : p.yesShares + p.noShares;
+                          ? Object.entries(p.optionShares).reduce((s, [idx, sh]) => {
+                              if (sh <= 0) return s;
+                              const implied = p.optionImpliedPayouts?.[idx] ?? 0;
+                              return s + (implied > 0 ? implied : sh);
+                            }, 0)
+                          : (p.yesShares > 0 ? ((p.yesImpliedPayout ?? 0) > 0 ? (p.yesImpliedPayout as number) : p.yesShares) : 0)
+                            + (p.noShares > 0 ? ((p.noImpliedPayout ?? 0) > 0 ? (p.noImpliedPayout as number) : p.noShares) : 0);
 
                         const valuePct = positionPayout > 0 ? Math.min((p.currentValue / positionPayout) * 100, 100) : 0;
 
