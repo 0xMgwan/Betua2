@@ -385,7 +385,7 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
               status: selectedMarket.status,
               totalVolume: selectedMarket.totalVolume,
             }}
-            side={selectedSide}
+            side={selectedSide.toUpperCase()}
             optionIndex={selectedOptionIndex}
             displaySide={selectedOptionIndex !== undefined ? selectedMarket.options?.[selectedOptionIndex] : selectedSide.toUpperCase()}
           />
