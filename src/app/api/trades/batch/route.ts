@@ -74,28 +74,14 @@ export async function POST(req: NextRequest) {
 
     // ── Balance check ─────────────────────────────────────────────────────
     if (userCurrency === "USDC") {
-      if (!user.ntzsUserId) {
+      // DB balance is the single source of truth (pooled model) — same as TZS/KES.
+      const availableUsdc = user.balanceUsdc || 0;
+      if (availableUsdc < totalAmountUsdc) {
         return NextResponse.json(
-          { error: "Wallet not provisioned. Please deposit first." },
+          {
+            error: `Insufficient USDC balance. Need $${totalAmountUsdc.toFixed(2)}, have $${availableUsdc.toFixed(2)}`,
+          },
           { status: 400 }
-        );
-      }
-      try {
-        const balances = await ntzs.users.getBalance(user.ntzsUserId);
-        const availableUsdc = balances.balanceUsdc || 0;
-        if (availableUsdc < totalAmountUsdc) {
-          return NextResponse.json(
-            {
-              error: `Insufficient USDC balance. Need $${totalAmountUsdc.toFixed(2)}, have $${availableUsdc.toFixed(2)}`,
-            },
-            { status: 400 }
-          );
-        }
-      } catch (err) {
-        console.error("[BatchTrade] USDC balance check failed:", err);
-        return NextResponse.json(
-          { error: "Could not verify USDC balance. Please try again." },
-          { status: 503 }
         );
       }
     } else if (userCurrency === "KES") {
@@ -123,29 +109,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ── USDC: swap USDC → nTZS before escrow transfer ─────────────────────
-    if (userCurrency === "USDC" && PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
-      try {
-        console.log(`[BatchTrade] Swapping $${totalAmountUsdc.toFixed(4)} USDC → ${totalAmountTzs} TZS for user ${user.ntzsUserId}`);
-        const swapResult = await ntzs.swap.executeAndWait({
-          userId: user.ntzsUserId,
-          fromToken: "USDC",
-          toToken: "NTZS",
-          amount: totalAmountUsdc,
-          slippageBps: 100,
-        });
-        console.log(`[BatchTrade] USDC swap completed: ${swapResult.txHash}`);
-      } catch (err) {
-        const detail = err instanceof Error ? err.message : String(err);
-        console.error("[BatchTrade] USDC swap failed:", detail);
-        const isLiquidity = detail.toLowerCase().includes("liquidity");
-        return NextResponse.json({
-          error: isLiquidity
-            ? "USDC swap temporarily unavailable due to low liquidity. Please try a smaller amount or use TZS."
-            : `USDC payment failed: ${detail}`,
-        }, { status: 500 });
-      }
-    }
+    // Pooled model: no per-trade on-chain swap. All currencies settle against the
+    // user's DB balance (deducted below) — USDC/KES debit balanceUsdc/balanceKes.
+    // Funds physically move only at deposit and withdrawal.
 
     const FEE_PERCENT = parseFloat(process.env.TRANSACTION_FEE_PERCENT || "5") / 100;
     const results: Array<{
@@ -302,18 +268,9 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    // ── Transfer to platform escrow via nTZS ──────────────────────────────
-    if (PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
-      try {
-        await ntzs.transfers.create({
-          fromUserId: user.ntzsUserId,
-          toUserId: PLATFORM_NTZS_USER_ID,
-          amountTzs: totalAmountTzs,
-        });
-      } catch (err) {
-        console.error("[BatchTrade] nTZS escrow transfer failed:", err);
-      }
-    }
+    // Pooled model: no user→platform escrow transfer. The buy is already paid by
+    // deducting the user's DB balance above; the legacy personal-wallet debit
+    // double-charged legacy users, so it's removed. Fees still forward on-chain below.
 
     // Transfer fees from platform escrow → settlement fee wallet (non-blocking)
     const totalFees = Math.round(totalAmountTzs * FEE_PERCENT);

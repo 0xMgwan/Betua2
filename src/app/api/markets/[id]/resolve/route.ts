@@ -156,52 +156,36 @@ export async function POST(
   if (!isAdminCreator && market.totalVolume > 0) {
     creatorFeeAmount = Math.round(market.totalVolume * FEE_PERCENT * CREATOR_FEE_SHARE);
     
-    if (creatorFeeAmount > 0 && SETTLEMENT_FEE_NTZS_USER_ID) {
-      // Get creator's nTZS user ID
-      const creator = await prisma.user.findUnique({
-        where: { id: market.creatorId },
-        select: { ntzsUserId: true, username: true },
-      });
-      
-      if (creator?.ntzsUserId) {
-        try {
-          // Creator fee comes from SETTLEMENT_FEE wallet (collected fees), NOT platform escrow
-          // This ensures solvency: winners get full pot, creator fee comes from platform's fee revenue
-          await ntzs.transfers.create({
-            fromUserId: SETTLEMENT_FEE_NTZS_USER_ID,
-            toUserId: creator.ntzsUserId,
-            amountTzs: creatorFeeAmount,
-          });
-          creatorFeePaid = true;
-          
-          // Update creator's local balance too
-          await prisma.user.update({
-            where: { id: market.creatorId },
-            data: { balanceTzs: { increment: creatorFeeAmount } },
-          });
-          
-          // Create transaction record for creator
-          await prisma.transaction.create({
-            data: {
-              userId: market.creatorId,
-              type: "CREATOR_FEE",
-              amountTzs: creatorFeeAmount,
-              status: "COMPLETED",
-              recipientUsername: `Creator reward: ${market.title}`,
-            },
-          });
-          
-          // Notify creator about their reward
-          createNotification({
+    if (creatorFeeAmount > 0) {
+      // Pooled model: credit the creator's reward to their DB balance only. The
+      // collected fee stays in the fee wallet on-chain; the reward leaves the
+      // platform only on withdrawal to mobile money. Previously this pushed nTZS to
+      // the creator's personal wallet AND credited DB (double-pay), and skipped
+      // creators who had no personal wallet at all.
+      try {
+        creatorFeePaid = true;
+        await prisma.user.update({
+          where: { id: market.creatorId },
+          data: { balanceTzs: { increment: creatorFeeAmount } },
+        });
+        await prisma.transaction.create({
+          data: {
             userId: market.creatorId,
             type: "CREATOR_FEE",
-            title: "Creator Reward!",
-            message: `You earned ${creatorFeeAmount.toLocaleString()} TZS for creating "${market.title}"`,
-            link: `/wallet`,
-          });
-        } catch (err) {
-          console.error("Creator fee transfer failed:", err);
-        }
+            amountTzs: creatorFeeAmount,
+            status: "COMPLETED",
+            recipientUsername: `Creator reward: ${market.title}`,
+          },
+        });
+        createNotification({
+          userId: market.creatorId,
+          type: "CREATOR_FEE",
+          title: "Creator Reward!",
+          message: `You earned ${creatorFeeAmount.toLocaleString()} TZS for creating "${market.title}"`,
+          link: `/wallet`,
+        });
+      } catch (err) {
+        console.error("Creator fee credit failed:", err);
       }
     }
   }
@@ -292,31 +276,10 @@ export async function POST(
               ? ((creator.preferredCurrency as string) || getUserCurrency(creator.country, creator.phone))
               : 'TZS';
 
-            // On-chain payout: settlement pool → creator's wallet or phone
-            // Falls through to DB credit even if on-chain transfer fails/skipped
-            if (PLATFORM_NTZS_USER_ID && creator) {
-              try {
-                if (creator.ntzsUserId) {
-                  // Legacy: creator has personal nTZS wallet
-                  await ntzs.transfers.create({
-                    fromUserId: PLATFORM_NTZS_USER_ID,
-                    toUserId: creator.ntzsUserId,
-                    amountTzs: payoutTzs,
-                  });
-                } else if (creator.phone) {
-                  // New model: withdraw from settlement pool to creator's phone
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  await (ntzs as any).withdrawals.create({
-                    userId: PLATFORM_NTZS_USER_ID,
-                    amountTzs: payoutTzs,
-                    phone: creator.phone,
-                  });
-                }
-                // If no wallet and no phone, just credit DB below — funds stay in pool
-              } catch (transferErr) {
-                console.error('[LP auto-redeem] on-chain transfer error (continuing to credit DB):', transferErr);
-              }
-            }
+            // Pooled model: credit the creator's DB balance only (below). Funds stay
+            // in the platform wallet and leave it only on withdrawal to mobile money —
+            // we do NOT push nTZS to personal wallets or auto-withdraw to phone here
+            // (that double-paid legacy creators and pushed money out unrequested).
 
             // Settlement fee (delayed 1.5s to avoid nonce collision)
             if (SETTLEMENT_FEE_NTZS_USER_ID && settlementFee > 0) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { ntzs, NtzsApiError } from "@/lib/ntzs";
+import { ntzs } from "@/lib/ntzs";
 import { getPayoutForShares, getMultiOptionPayoutForShares } from "@/lib/amm";
 import { createNotification } from "@/lib/notify";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
@@ -104,49 +104,12 @@ export async function POST(req: NextRequest) {
     const feeAmount = Math.round(grossPayout * FEE_PERCENT);
     const netPayout = grossPayout - feeAmount;
 
-    // Transfer payout: platform escrow → user via NTZS
-    // For USDC users: transfer nTZS first, then swap to USDC
-    let ntzsTransferId: string | undefined;
-    if (PLATFORM_NTZS_USER_ID && user.ntzsUserId) {
-      try {
-        // Step 1: Transfer nTZS from escrow to user
-        const transfer = await ntzs.transfers.create({
-          fromUserId: PLATFORM_NTZS_USER_ID,
-          toUserId: user.ntzsUserId,
-          amountTzs: netPayout,
-        });
-        ntzsTransferId = transfer.id;
-
-        // Step 2: If user prefers USDC or KES, swap nTZS to their currency
-        if (preferredCurrency === 'USDC') {
-          console.log(`[Sell] Swapping ${netPayout} nTZS → USDC for user ${user.ntzsUserId}`);
-          const swapResult = await ntzs.swap.executeAndWait({
-            userId: user.ntzsUserId,
-            fromToken: 'NTZS',
-            toToken: 'USDC',
-            amount: netPayout,
-            slippageBps: 100,
-          });
-          console.log(`[Sell] Swap completed: ${swapResult.txHash}`);
-        } else if (preferredCurrency === 'KES') {
-          console.log(`[Sell] Swapping ${netPayout} nTZS → bKES for user ${user.ntzsUserId}`);
-          const swapResult = await ntzs.swap.executeAndWait({
-            userId: user.ntzsUserId,
-            fromToken: 'NTZS',
-            toToken: 'BKES',
-            amount: netPayout,
-            slippageBps: 100,
-          });
-          console.log(`[Sell] nTZS→bKES swap completed: ${swapResult.txHash}`);
-        }
-      } catch (err) {
-        if (err instanceof NtzsApiError) {
-          return NextResponse.json({ error: err.message || "Payout transfer failed" }, { status: 400 });
-        }
-        console.error("[Sell] Payout/swap failed:", err);
-        return NextResponse.json({ error: "Payout failed. Please try again." }, { status: 500 });
-      }
-    }
+    // Pooled custodial model: sell proceeds are credited to the user's DB balance
+    // only (in the atomic transaction below). Funds stay in the platform wallet and
+    // leave it exclusively on withdrawal to mobile money. We deliberately do NOT
+    // push nTZS to personal wallets here — that double-paid legacy users who still
+    // had a personal nTZS wallet (once as real nTZS, once as DB balance).
+    const ntzsTransferId: string | undefined = undefined;
 
     // Transfer fee: platform escrow → settlement fee wallet (non-blocking)
     if (PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID && feeAmount > 0) {
