@@ -981,7 +981,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
           {/* ═══ Right: Trade panel ═══ */}
           <div className="space-y-4">
-            <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-xl overflow-hidden lg:sticky lg:top-24 lg:z-20">
+            <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-xl overflow-hidden">
               {/* Terminal header */}
               <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--card-border)]">
                 <div className="w-1.5 h-1.5 bg-[#00e5a0]" />
