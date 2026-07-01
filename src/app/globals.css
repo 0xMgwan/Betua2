@@ -34,7 +34,11 @@
 html,
 body {
   max-width: 100vw;
-  overflow-x: hidden;
+  /* Use `clip`, not `hidden`: `overflow: hidden` turns html/body into a scroll
+     container, which breaks `position: fixed` in iOS standalone (installed PWA)
+     mode — the fixed bottom nav scrolls with the page. `clip` prevents the
+     horizontal scroll without creating that scroll container. */
+  overflow-x: clip;
   /* Prevent mobile browsers from auto-inflating font sizes on rotate/zoom.
      No effect on desktop. */
   -webkit-text-size-adjust: 100%;
