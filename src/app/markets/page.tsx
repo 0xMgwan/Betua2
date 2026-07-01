@@ -450,8 +450,8 @@ function MarketsContent() {
   return (
     <div className="min-h-screen">
       {/* Live activity ticker — single line, pinned at the very top above the navbar.
-          pt-safe-top clears the status bar/notch in the installed (standalone) app. */}
-      <ActivityTicker compact className="pt-safe-top" />
+          The body owns the status-bar/notch inset, so no per-element padding here. */}
+      <ActivityTicker compact />
       <Navbar />
 
       {/* Category tabs — directly below the navbar, single-line swipe (Limitless style) */}

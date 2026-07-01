@@ -73,6 +73,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <NotificationProvider>
                 {/* Global haptics: vibrate on touch taps of any button/link */}
                 <HapticProvider />
+                {/* Status-bar filler: covers the notch/status-bar area with a solid
+                    bar in the installed (standalone) app so page content scrolling
+                    behind it isn't visible under the status bar. 0px in the browser. */}
+                <div
+                  aria-hidden
+                  className="fixed top-0 left-0 right-0 z-[45] bg-[var(--background)] pointer-events-none"
+                  style={{ height: "env(safe-area-inset-top)" }}
+                />
                 {/* Bottom padding on mobile so content clears the fixed bottom nav
                     (plus the device safe-area inset on notched phones). */}
                 <div className="pb-bottomnav md:pb-0">{children}</div>

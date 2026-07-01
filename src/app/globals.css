@@ -52,7 +52,11 @@ body {
   letter-spacing: 0.02em;
   transition: background-color 0.2s, color 0.2s;
   /* Respect the notch / home indicator so fixed UI isn't clipped. env() is 0 on
-     desktop, so this is a no-op there. */
+     desktop and in a normal mobile browser, so this is a no-op there — it only
+     adds room in a standalone / installed app. Owning the top inset here (once)
+     means individual top elements (ticker, navbar) don't each reserve it, which
+     is what caused a double gap between the ticker and navbar. */
+  padding-top: env(safe-area-inset-top);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
 }
@@ -83,11 +87,6 @@ body {
     touch-action: manipulation;
   }
 }
-
-/* Clears the status bar / notch for whatever element sits at the very top of a
-   page (e.g. the live-activity ticker above the navbar). No-op in the browser
-   where env() is 0; only adds height in a standalone / installed PWA. */
-.pt-safe-top { padding-top: env(safe-area-inset-top); }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-geist-mono), 'Courier New', monospace;
