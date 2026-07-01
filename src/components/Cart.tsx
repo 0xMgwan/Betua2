@@ -23,7 +23,8 @@ export function CartButton() {
         initial={{ y: 60 }}
         animate={{ y: 0 }}
         onClick={toggleCart}
-        className="md:hidden fixed bottom-16 left-0 right-0 z-40 bg-[#00e5a0] text-black flex items-center justify-between px-4 py-3 border-t-2 border-black/10 active:opacity-90"
+        style={{ bottom: "calc(4rem + env(safe-area-inset-bottom))" }}
+        className="md:hidden fixed left-0 right-0 z-40 bg-[#00e5a0] text-black flex items-center justify-between px-4 py-3 border-t-2 border-black/10 active:opacity-90"
       >
         <span className="flex items-center gap-2 font-mono font-black text-sm uppercase tracking-wider">
           <ShoppingCart size={18} weight="fill" />
@@ -150,8 +151,11 @@ export function CartModal() {
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
             className="fixed right-0 top-0 h-full w-full sm:w-[400px] bg-[var(--background)] border-l border-[var(--card-border)] z-50 flex flex-col"
           >
-            {/* Header */}
-            <div className="p-4 border-b border-[var(--card-border)] flex items-center justify-between">
+            {/* Header — pad past the status bar / notch in standalone PWA mode */}
+            <div
+              className="p-4 border-b border-[var(--card-border)] flex items-center justify-between"
+              style={{ paddingTop: "calc(1rem + env(safe-area-inset-top))" }}
+            >
               <div className="flex items-center gap-2">
                 <ShoppingCart size={20} weight="fill" className="text-[var(--accent)]" />
                 <h2 className="font-mono font-bold text-lg">
@@ -305,9 +309,12 @@ export function CartModal() {
               )}
             </div>
 
-            {/* Footer */}
+            {/* Footer — clear the home indicator in standalone PWA mode */}
             {items.length > 0 && (
-              <div className="p-3 sm:p-4 border-t border-[var(--card-border)] space-y-2 sm:space-y-3">
+              <div
+                className="p-3 sm:p-4 border-t border-[var(--card-border)] space-y-2 sm:space-y-3"
+                style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+              >
                 {error && (
                   <div className="text-xs font-mono text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded">
                     {error}
