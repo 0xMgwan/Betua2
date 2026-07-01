@@ -107,7 +107,7 @@ export default function AboutPage() {
   const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.1 } } };
 
   return (
-    <div className="min-h-screen bg-[var(--background)] overflow-x-hidden">
+    <div className="min-h-screen bg-[var(--background)] overflow-x-clip">
       <Navbar />
 
       {/* Hero */}

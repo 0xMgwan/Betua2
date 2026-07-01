@@ -274,7 +274,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--background)] overflow-x-hidden" suppressHydrationWarning>
+    <div className="min-h-screen bg-[var(--background)] overflow-x-clip" suppressHydrationWarning>
       <Navbar />
 
       {/* Activity Ticker */}
