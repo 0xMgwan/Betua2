@@ -1201,8 +1201,8 @@ export default function CreateMarketPage() {
                 >
                   <label className="flex items-center gap-2 text-xs font-mono text-[var(--accent)] mb-2 uppercase tracking-wider">
                     <CalendarBlank size={12} weight="bold" />
-                    {marketType === "event" 
-                      ? (locale === "sw" ? "Wakati wa Tukio" : "Event Start Time")
+                    {marketType === "event"
+                      ? (locale === "sw" ? "Muda wa Kumaliza Tukio" : "Event End Time")
                       : t.markets.createMarket.resolutionDate}
                   </label>
                   
