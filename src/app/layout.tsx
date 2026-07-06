@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { UserProvider } from "@/components/UserProvider";
 import { CartButton, CartModal } from "@/components/Cart";
 import { BottomNav } from "@/components/BottomNav";
+import { HowItWorks } from "@/components/HowItWorks";
 import { HapticProvider } from "@/components/HapticProvider";
 import "./globals.css";
 
@@ -86,6 +87,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <div className="pb-bottomnav md:pb-0">{children}</div>
                 <CartButton />
                 <CartModal />
+                {/* "How it works" explainer above the bottom nav — logged-out users only */}
+                <HowItWorks />
                 <BottomNav />
               </NotificationProvider>
             </UserProvider>
