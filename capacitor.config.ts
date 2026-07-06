@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'GUAP',
   webDir: 'public',
   server: {
-    url: 'https://www.guap.gold',
+    url: 'https://guap.gold/markets',
     cleartext: true
   },
   android: {
