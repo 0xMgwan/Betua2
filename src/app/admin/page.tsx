@@ -28,6 +28,7 @@ interface Summary {
 interface User {
   id: string; username: string; displayName: string; email: string; phone: string;
   country: string; balanceTzs: number; balanceUsdc: number; balanceKes: number;
+  inPositionsTzs?: number;
   ntzsUserId: string | null; createdAt: string; systemWallet?: string | null;
   _count: { trades: number; marketsCreated: number; positions: number };
 }
@@ -523,7 +524,7 @@ export default function AdminPage() {
               <table className="w-full text-[11px] border-collapse">
                 <thead>
                   <tr className="border-b border-[var(--card-border)]">
-                    {["Username","Email","Phone","Country","TZS Balance","USDC","Trades","Markets","Positions","Wallet","Joined"].map(h => (
+                    {["Username","Email","Phone","Country","TZS Balance","In Positions","USDC","Trades","Markets","Positions","Wallet","Joined"].map(h => (
                       <th key={h} className="text-left px-3 py-2 text-[9px] text-[var(--muted)] uppercase tracking-wider font-bold whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -541,6 +542,12 @@ export default function AdminPage() {
                       <td className="px-3 py-2 tabular-nums font-bold text-right">
                         <span className={(u.balanceTzs || 0) > 0 ? "text-[#00e5a0]" : "text-[var(--muted)]"}>
                           {formatTZS(Math.max(0, u.balanceTzs || 0))}
+                        </span>
+                      </td>
+                      {/* Net stake locked in open markets — 0 balance + big "in positions" = fully invested, not broke */}
+                      <td className="px-3 py-2 tabular-nums text-right">
+                        <span className={(u.inPositionsTzs || 0) > 0 ? "text-yellow-400" : "text-[var(--muted)]"}>
+                          {(u.inPositionsTzs || 0) > 0 ? formatTZS(u.inPositionsTzs || 0) : "—"}
                         </span>
                       </td>
                       <td className="px-3 py-2 tabular-nums text-right">{(u.balanceUsdc || 0) > 0 ? `$${(u.balanceUsdc || 0).toFixed(2)}` : "—"}</td>

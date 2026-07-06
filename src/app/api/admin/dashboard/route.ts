@@ -64,6 +64,19 @@ export async function GET() {
     }),
   ]);
 
+  // Per-user net stake currently locked in OPEN markets (buys − sells, excluding
+  // LP seed). Surfaces users who look like "0 balance" only because their whole
+  // bankroll is inside open positions.
+  const openMarketIds = markets.filter((m) => m.status === "OPEN").map((m) => m.id);
+  const inPlayRows = openMarketIds.length
+    ? await prisma.trade.groupBy({
+        by: ["userId"],
+        where: { marketId: { in: openMarketIds }, isLpSeed: false },
+        _sum: { amountTzs: true },
+      })
+    : [];
+  const inPlayByUser = new Map(inPlayRows.map((r) => [r.userId, Math.max(0, r._sum.amountTzs || 0)]));
+
   // For legacy users with nTZS wallets: use max(DB, nTZS wallet) — same logic as me/
   // Sync any higher nTZS wallet balance back to DB so DB becomes accurate going forward
   const { ntzs } = await import('@/lib/ntzs');
@@ -81,7 +94,7 @@ export async function GET() {
         balanceUsdc = Math.max(0, bal.balanceUsdc || 0);
       } catch { /* skip if API down */ }
     }
-    return { ...u, balanceTzs, balanceUsdc, systemWallet };
+    return { ...u, balanceTzs, balanceUsdc, systemWallet, inPositionsTzs: inPlayByUser.get(u.id) || 0 };
   }));
 
   // Total outstanding fixed-odds payout obligations on open markets
