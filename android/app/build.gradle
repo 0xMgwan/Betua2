@@ -10,7 +10,7 @@ android {
     namespace = "gold.guap.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "gold.guap.app"
+        applicationId "gold.guap.android"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 2

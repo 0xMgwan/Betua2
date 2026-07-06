@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'gold.guap.app',
+  appId: 'gold.guap.android',
   appName: 'GUAP',
   webDir: 'public',
   server: {
