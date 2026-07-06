@@ -288,6 +288,37 @@ a {
   z-index: 9999;
 }
 
+/* Compact the datepicker on small phones so all 7 day columns (incl. Sunday)
+   plus the time panel fit within a ~375px viewport: 7×(26+2) + 16 + 72 ≈ 284px. */
+@media (max-width: 480px) {
+  .terminal-calendar .react-datepicker__month {
+    padding: 8px;
+  }
+  .terminal-calendar .react-datepicker__day-names {
+    padding: 6px 8px;
+  }
+  .terminal-calendar .react-datepicker__day-name,
+  .terminal-calendar .react-datepicker__day {
+    width: 26px;
+    height: 26px;
+    line-height: 26px;
+    font-size: 12px;
+    margin: 1px;
+  }
+  .terminal-calendar .react-datepicker__time-container {
+    width: 72px;
+  }
+  .terminal-calendar .react-datepicker__time-list-item {
+    padding: 6px 4px;
+    font-size: 11px;
+  }
+  /* react-datepicker sizes the time box with an inline width — override so it
+     follows the narrower container. */
+  .terminal-calendar .react-datepicker__time-container .react-datepicker__time-box {
+    width: 100% !important;
+  }
+}
+
 .yes-pill {
   background: rgba(0, 0, 0, 0.06);
   color: var(--foreground);
