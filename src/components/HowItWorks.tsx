@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, CaretUp, DeviceMobile, CheckCircle, Trophy, Lightning, Question, CaretLeft } from "@phosphor-icons/react";
 import { useUser } from "@/store/useUser";
@@ -40,6 +41,7 @@ export function HowItWorks() {
   const { user } = useUser();
   const { items } = useCart();
   const { locale } = useLanguage();
+  const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [dismissed, setDismissed] = useState(true);
   const [expanded, setExpanded] = useState(false);
@@ -58,7 +60,8 @@ export function HowItWorks() {
 
   const open = () => { setStep(0); setExpanded(true); };
 
-  if (!mounted || user || dismissed || items.length > 0) return null;
+  // Hidden on auth pages too, so sign-up/login screens stay completely clean.
+  if (!mounted || user || dismissed || items.length > 0 || pathname?.startsWith("/auth")) return null;
 
   const sw = locale === "sw";
   const steps = [
@@ -249,6 +252,7 @@ export function HowItWorks() {
                   {isLast ? (
                     <Link
                       href="/auth/register"
+                      onClick={() => setExpanded(false)}
                       className="flex-1 py-3 text-center bg-[#00e5a0] text-black font-mono font-black text-xs uppercase tracking-wider rounded-xl active:opacity-90"
                     >
                       {sw ? "Jisajili Bure →" : "Get Started — It's Free →"}

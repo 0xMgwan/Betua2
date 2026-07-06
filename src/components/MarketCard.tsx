@@ -35,6 +35,33 @@ interface Market {
   creator?: { username: string };
 }
 
+// Polymarket-style semicircular probability gauge: arc fills with the YES
+// probability, colored by likelihood, with the % and side label beneath.
+function ProbGauge({ pct }: { pct: number }) {
+  const color = pct >= 50 ? "#00e5a0" : pct >= 34 ? "#fbbf24" : "#f87171";
+  const arcLen = Math.PI * 16; // r=16 semicircle length
+  return (
+    <div className="shrink-0 flex flex-col items-center w-12" aria-label={`YES ${pct}%`}>
+      <div className="relative w-12 h-[26px]">
+        <svg viewBox="0 0 40 22" className="w-full h-full overflow-visible">
+          <path d="M 4 20 A 16 16 0 0 1 36 20" fill="none" stroke="var(--card-border)" strokeWidth="4" strokeLinecap="round" />
+          <motion.path
+            d="M 4 20 A 16 16 0 0 1 36 20"
+            fill="none" stroke={color} strokeWidth="4" strokeLinecap="round"
+            initial={{ strokeDasharray: `0 ${arcLen}` }}
+            animate={{ strokeDasharray: `${(Math.min(Math.max(pct, 2), 100) / 100) * arcLen} ${arcLen}` }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+          />
+        </svg>
+      </div>
+      <span className="text-[13px] font-mono font-black tabular-nums leading-none -mt-2" style={{ color }}>
+        {pct}%
+      </span>
+      <span className="text-[7px] font-mono font-bold uppercase tracking-widest text-[var(--muted)] mt-0.5">yes</span>
+    </div>
+  );
+}
+
 const CATEGORY_COLORS: Record<string, string> = {
   Politics: "#f59e0b",
   Geopolitics: "#6366f1",
@@ -192,7 +219,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
             <button
               key={idx}
               onClick={(e) => handleQuickBuy(e, originalOption, idx)}
-              className="relative flex items-center gap-1.5 px-2 py-1.5 border font-mono transition-all active:scale-[0.98] hover:opacity-90 text-left"
+              className="relative flex items-center gap-1.5 px-2 py-1.5 rounded-lg border font-mono transition-all active:scale-[0.98] hover:opacity-90 text-left"
               style={{ borderColor: `${c}55`, color: c, backgroundColor: `${c}0d` }}
             >
               <span className="flex-1 min-w-0 flex flex-col leading-none gap-0.5">
@@ -221,9 +248,9 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
         <div className="relative">
           <button
             onClick={(e) => handleQuickBuy(e, "YES")}
-            className="w-full py-3.5 px-3 bg-[#00e5a0]/10 border-2 border-[#00e5a0]/50 text-[#00e5a0] font-mono transition-all hover:bg-[#00e5a0]/20 hover:border-[#00e5a0] active:scale-[0.97] flex flex-col items-center gap-0.5"
+            className="w-full py-3.5 px-3 rounded-xl bg-[#00e5a0]/10 border-2 border-[#00e5a0]/50 text-[#00e5a0] font-mono transition-all hover:bg-[#00e5a0]/20 hover:border-[#00e5a0] active:scale-[0.97] flex flex-col items-center gap-0.5"
           >
-            <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">YES</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{locale === "sw" ? "Nunua" : "Buy"} YES ↑</span>
             <span className="text-xl font-black leading-none">{(1 / market.price.yes).toFixed(2)}<span className="text-xs">x</span></span>
             <span className="text-[10px] font-bold opacity-60">{yesPct}%</span>
           </button>
@@ -238,9 +265,9 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
         <div className="relative">
           <button
             onClick={(e) => handleQuickBuy(e, "NO")}
-            className="w-full py-3.5 px-3 bg-red-500/10 border-2 border-red-500/50 text-red-400 font-mono transition-all hover:bg-red-500/20 hover:border-red-500 active:scale-[0.97] flex flex-col items-center gap-0.5"
+            className="w-full py-3.5 px-3 rounded-xl bg-red-500/10 border-2 border-red-500/50 text-red-400 font-mono transition-all hover:bg-red-500/20 hover:border-red-500 active:scale-[0.97] flex flex-col items-center gap-0.5"
           >
-            <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">NO</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{locale === "sw" ? "Nunua" : "Buy"} NO ↓</span>
             <span className="text-xl font-black leading-none">{(1 / market.price.no).toFixed(2)}<span className="text-xs">x</span></span>
             <span className="text-[10px] font-bold opacity-60">{noPct}%</span>
           </button>
@@ -542,7 +569,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
     >
       <div
         onClick={() => router.push(`/markets/${market.id}`)}
-        className="group relative bg-[var(--card)] border border-[var(--card-border)] overflow-hidden hover:border-[var(--accent)]/60 transition-all duration-200 hover:shadow-[0_0_20px_rgba(0,229,160,0.1)] cursor-pointer"
+        className="group relative bg-[var(--card)] border border-[var(--card-border)] rounded-xl overflow-hidden hover:border-[var(--accent)]/60 transition-all duration-200 hover:shadow-[0_0_20px_rgba(0,229,160,0.1)] cursor-pointer"
       >
           {/* Accent top line */}
           <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, ${catColor}, transparent)` }} />
@@ -602,11 +629,12 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
               </span>
             </div>
 
-            {/* Title row with optional thumbnail (hidden for sports match — teams shown instead) */}
+            {/* Title row with optional thumbnail (hidden for sports match — teams shown instead).
+                Binary markets get a Polymarket-style probability gauge on the right. */}
             {!isSportsMatch && (
             <div className="flex gap-2.5 mb-2.5 items-center">
               {hasImage && (
-                <div className="shrink-0 w-10 h-10 border border-[var(--card-border)] overflow-hidden relative">
+                <div className="shrink-0 w-10 h-10 rounded-lg border border-[var(--card-border)] overflow-hidden relative">
                   <img
                     src={market.imageUrl!}
                     alt=""
@@ -619,36 +647,8 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
               <h3 className="flex-1 min-w-0 font-mono text-[13px] sm:text-sm font-bold leading-snug group-hover:text-[var(--accent)] transition-colors line-clamp-2">
                 {displayTitle}
               </h3>
+              {!isMultiOption && <ProbGauge pct={yesPct} />}
             </div>
-            )}
-
-            {/* Price bar — binary only (multi-option shows % inline on each option button) */}
-            {!isMultiOption && (
-              <div className="mb-2">
-                {/* Combined YES/NO bar */}
-                <div className="flex items-center justify-between mb-1 font-mono text-[10px]">
-                  <span className="text-[#00e5a0] font-bold">YES {yesPct}%</span>
-                  <span className="text-red-400 font-bold">NO {noPct}%</span>
-                </div>
-                <div className="h-1.5 bg-[var(--background)] border border-[var(--card-border)]/50 overflow-hidden flex">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${yesPct}%` }}
-                    transition={{ duration: 0.6, delay: index * 0.05 }}
-                    className="h-full bg-[#00e5a0] relative"
-                  >
-                    <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,transparent,transparent_3px,rgba(0,0,0,0.15)_3px,rgba(0,0,0,0.15)_4px)]" />
-                  </motion.div>
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${noPct}%` }}
-                    transition={{ duration: 0.6, delay: index * 0.05 + 0.1 }}
-                    className="h-full bg-red-400/80 relative"
-                  >
-                    <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,transparent,transparent_3px,rgba(0,0,0,0.15)_3px,rgba(0,0,0,0.15)_4px)]" />
-                  </motion.div>
-                </div>
-              </div>
             )}
 
             {/* Quick Buy Buttons (sports markets get the match-style body) */}
