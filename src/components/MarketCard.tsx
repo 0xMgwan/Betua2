@@ -38,25 +38,30 @@ interface Market {
 // Polymarket-style semicircular probability gauge: arc fills with the YES
 // probability, colored by likelihood, with the % and side label beneath.
 function ProbGauge({ pct }: { pct: number }) {
-  const color = pct >= 50 ? "#00e5a0" : pct >= 34 ? "#fbbf24" : "#f87171";
+  const rounded = Math.round(pct); // whole numbers only — decimals overflow the dial
+  const color = rounded >= 50 ? "#00e5a0" : rounded >= 34 ? "#fbbf24" : "#f87171";
   const arcLen = Math.PI * 16; // r=16 semicircle length
   return (
-    <div className="shrink-0 flex flex-col items-center w-12" aria-label={`YES ${pct}%`}>
-      <div className="relative w-12 h-[26px]">
+    <div className="shrink-0 flex flex-col items-center w-[52px]" aria-label={`YES ${rounded}%`}>
+      <div className="relative w-[52px] h-[30px]">
         <svg viewBox="0 0 40 22" className="w-full h-full overflow-visible">
           <path d="M 4 20 A 16 16 0 0 1 36 20" fill="none" stroke="var(--card-border)" strokeWidth="4" strokeLinecap="round" />
           <motion.path
             d="M 4 20 A 16 16 0 0 1 36 20"
             fill="none" stroke={color} strokeWidth="4" strokeLinecap="round"
             initial={{ strokeDasharray: `0 ${arcLen}` }}
-            animate={{ strokeDasharray: `${(Math.min(Math.max(pct, 2), 100) / 100) * arcLen} ${arcLen}` }}
+            animate={{ strokeDasharray: `${(Math.min(Math.max(rounded, 2), 100) / 100) * arcLen} ${arcLen}` }}
             transition={{ duration: 0.7, ease: "easeOut" }}
           />
         </svg>
+        {/* % nested inside the dial opening so it can never overflow the card */}
+        <span
+          className="absolute inset-x-0 bottom-0 text-center text-[11px] font-mono font-black tabular-nums leading-none"
+          style={{ color }}
+        >
+          {rounded}%
+        </span>
       </div>
-      <span className="text-[13px] font-mono font-black tabular-nums leading-none -mt-2" style={{ color }}>
-        {pct}%
-      </span>
       <span className="text-[7px] font-mono font-bold uppercase tracking-widest text-[var(--muted)] mt-0.5">yes</span>
     </div>
   );
@@ -122,6 +127,8 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
   const hasImage = market.imageUrl && !imageError;
   const isExpired = new Date(market.resolvesAt) < new Date();
   const isTradeable = market.status === "OPEN" && !isExpired;
+  // Ending within 24h — timer turns amber with a pulsing dot (Limitless-style urgency)
+  const endingSoon = isTradeable && new Date(market.resolvesAt).getTime() - Date.now() < 24 * 3600 * 1000;
 
   // Fetch translation when locale is Swahili
   useEffect(() => {
@@ -206,9 +213,11 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
   // Shared big-bold odds buttons (used by both normal and hero layouts)
   const buyButtons = isTradeable && (
     isMultiOption ? (
-      /* Compact 2-col grid: label + bold multiplier box, % small underneath, tiny cart overlay */
-      <div className="grid grid-cols-2 gap-1.5 mb-2">
-        {displayOptions!.map((option, idx) => {
+      /* Polymarket-style outcome rows: name + % + thin progress bar, multiplier
+         pill and cart on the right. Capped at 4 rows — the card links to the
+         full market for the rest. */
+      <div className="space-y-1.5 mb-2">
+        {displayOptions!.slice(0, 4).map((option, idx) => {
           const colors = ["#00e5a0", "#00b4d8", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#84cc16"];
           const c = colors[idx % colors.length];
           const optPrice = market.optionPrices?.[idx] || 0;
@@ -219,29 +228,45 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
             <button
               key={idx}
               onClick={(e) => handleQuickBuy(e, originalOption, idx)}
-              className="relative flex items-center gap-1.5 px-2 py-1.5 rounded-lg border font-mono transition-all active:scale-[0.98] hover:opacity-90 text-left"
-              style={{ borderColor: `${c}55`, color: c, backgroundColor: `${c}0d` }}
+              className="w-full flex items-center gap-2 font-mono transition-all active:scale-[0.99] group/row"
             >
-              <span className="flex-1 min-w-0 flex flex-col leading-none gap-0.5">
-                <span className="text-[11px] font-bold truncate">{option}</span>
-                <span className="text-[9px] font-black tabular-nums opacity-50">{pct}%</span>
+              <span className="flex-1 min-w-0">
+                <span className="flex items-center justify-between leading-none mb-1">
+                  <span className="text-[11px] font-bold truncate pr-2 text-left">{option}</span>
+                  <span className="text-[11px] font-black tabular-nums shrink-0" style={{ color: c }}>{pct}%</span>
+                </span>
+                <span className="block h-1 rounded-full bg-[var(--background)] border border-[var(--card-border)]/40 overflow-hidden">
+                  <motion.span
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.max(pct, 2)}%` }}
+                    transition={{ duration: 0.5, delay: idx * 0.06 }}
+                    className="block h-full rounded-full"
+                    style={{ backgroundColor: c }}
+                  />
+                </span>
               </span>
-              {/* Multiplier in the bolded/highlighted box */}
-              <span className="shrink-0 px-1.5 py-1 text-sm font-black leading-none tabular-nums rounded-sm" style={{ backgroundColor: `${c}26` }}>
+              <span
+                className="shrink-0 px-2 py-1.5 rounded-lg text-xs font-black leading-none tabular-nums border transition-all group-hover/row:opacity-90"
+                style={{ color: c, borderColor: `${c}44`, backgroundColor: `${c}14` }}
+              >
                 {optPrice > 0 ? (1 / optPrice).toFixed(1) : '∞'}<span className="text-[9px]">x</span>
               </span>
-              {/* Tiny add-to-cart overlay */}
               <span
                 onClick={(e) => handleAddToCart(e, originalOption, idx)}
-                className="absolute -top-1.5 -right-1.5 p-0.5 border rounded-full transition-all active:scale-95"
-                style={{ borderColor: isAdded ? '#00e5a0' : `${c}66`, color: isAdded ? '#000' : c, backgroundColor: isAdded ? '#00e5a0' : 'var(--card)' }}
+                className="shrink-0 p-1.5 rounded-lg border transition-all active:scale-95"
+                style={{ borderColor: isAdded ? '#00e5a0' : `${c}44`, color: isAdded ? '#000' : c, backgroundColor: isAdded ? '#00e5a0' : 'transparent' }}
                 title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
               >
-                {isAdded ? <Check size={10} weight="bold" /> : <ShoppingCart size={10} weight="bold" />}
+                {isAdded ? <Check size={11} weight="bold" /> : <ShoppingCart size={11} weight="bold" />}
               </span>
             </button>
           );
         })}
+        {displayOptions!.length > 4 && (
+          <div className="text-[10px] font-mono font-bold text-[var(--muted)] text-center pt-0.5">
+            +{displayOptions!.length - 4} {locale === "sw" ? "zaidi" : "more"} →
+          </div>
+        )}
       </div>
     ) : (
       <div className="grid grid-cols-2 gap-2 mb-2">
@@ -622,8 +647,9 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
               </div>
               <span className={cn(
                 "flex items-center gap-1 text-[9px] font-mono",
-                market.status === "OPEN" ? "text-[var(--muted)]" : "text-blue-400"
+                endingSoon ? "text-amber-400 font-bold" : market.status === "OPEN" ? "text-[var(--muted)]" : "text-blue-400"
               )}>
+                {endingSoon && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />}
                 <Timer size={10} weight="bold" />
                 {market.status === "OPEN" ? timeUntil(market.resolvesAt) : "Ended"}
               </span>
