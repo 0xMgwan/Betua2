@@ -314,17 +314,17 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
       <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3 }}>
         <div
           onClick={() => router.push(`/markets/${market.id}`)}
-          className="group relative bg-[var(--card)] border-2 border-[var(--card-border)] overflow-hidden hover:border-[var(--accent)]/60 transition-all cursor-pointer rounded-xl"
+          className="group relative bg-[var(--card)] border-2 border-[var(--card-border)] overflow-hidden hover:border-[var(--accent)]/60 transition-all cursor-pointer rounded-2xl"
         >
-          {/* Hero image header */}
-          <div className="relative h-36 w-full overflow-hidden bg-[var(--background)]">
+          {/* Full-bleed hero image header (Limitless style) */}
+          <div className="relative h-44 w-full overflow-hidden bg-[var(--background)]">
             {hasImage ? (
-              <img src={market.imageUrl!} alt="" className="w-full h-full object-cover" onError={() => setImageError(true)} />
+              <img src={market.imageUrl!} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={() => setImageError(true)} />
             ) : (
               <div className="w-full h-full" style={{ background: `linear-gradient(135deg, ${catColor}40, var(--background))` }} />
             )}
             {/* Dark gradient for text legibility */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/40" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-black/40" />
             {/* Top badges */}
             <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
               <div className="flex items-center gap-1.5">
@@ -345,10 +345,19 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
                 {market.status === "OPEN" ? timeUntil(market.resolvesAt) : "Ended"}
               </span>
             </div>
-            {/* Title overlaid at bottom */}
-            <h3 className="absolute bottom-2 left-3 right-3 font-mono text-base font-black text-white leading-tight line-clamp-2 drop-shadow-lg">
+            {/* Title overlaid at bottom (leaves room for the gauge chip on binary) */}
+            <h3 className={cn(
+              "absolute bottom-2 left-3 font-mono text-base font-black text-white leading-tight line-clamp-2 drop-shadow-lg",
+              !isMultiOption ? "right-[76px]" : "right-3"
+            )}>
               {displayTitle}
             </h3>
+            {/* Probability gauge in a glass chip over the image */}
+            {!isMultiOption && (
+              <div className="absolute bottom-2 right-2 px-1.5 pt-1.5 pb-1 rounded-xl bg-black/45 backdrop-blur-md border border-white/15">
+                <ProbGauge pct={yesPct} />
+              </div>
+            )}
           </div>
 
           {/* Odds buttons */}

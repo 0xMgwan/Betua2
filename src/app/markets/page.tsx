@@ -42,6 +42,38 @@ interface EventMarket {
   _count?: { trades: number };
 }
 
+// Structured loading placeholder mirroring the market-card layout (tag row,
+// thumb + title + gauge, two buy buttons, footer) with a shimmer sweep.
+function MarketCardSkeleton() {
+  return (
+    <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-xl overflow-hidden skeleton-shimmer">
+      <div className="h-[2px] w-full bg-[var(--card-border)]" />
+      <div className="p-3 space-y-2.5">
+        <div className="flex items-center justify-between">
+          <div className="h-4 w-24 rounded bg-[var(--background)]" />
+          <div className="h-3 w-12 rounded bg-[var(--background)]" />
+        </div>
+        <div className="flex gap-2.5 items-center">
+          <div className="w-10 h-10 rounded-lg bg-[var(--background)] shrink-0" />
+          <div className="flex-1 space-y-1.5">
+            <div className="h-3 rounded bg-[var(--background)] w-full" />
+            <div className="h-3 rounded bg-[var(--background)] w-2/3" />
+          </div>
+          <div className="w-12 h-6 rounded-t-full bg-[var(--background)] shrink-0" />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="h-[72px] rounded-xl bg-[var(--background)]" />
+          <div className="h-[72px] rounded-xl bg-[var(--background)]" />
+        </div>
+        <div className="flex items-center justify-between pt-1">
+          <div className="h-3 w-20 rounded bg-[var(--background)]" />
+          <div className="h-3 w-14 rounded bg-[var(--background)]" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Helper to get yes/no prices from market
 function getMarketPrices(m: EventMarket): { yes: number; no: number } {
   if (typeof m.price === 'object' && m.price !== null) {
@@ -413,6 +445,17 @@ function MarketsContent() {
   const PRIORITY_CATS = ["Sports", "Business", "Entertainment", "FX & Commodities"];
   const orderedCategories = ["all", ...PRIORITY_CATS, ...CATEGORIES.filter((c) => !PRIORITY_CATS.includes(c))];
 
+  const CATEGORY_EMOJI: Record<string, string> = {
+    all: "🌐", Sports: "⚽", Business: "💼", Entertainment: "🎬",
+    "FX & Commodities": "💱", Politics: "🏛️", Geopolitics: "🌍",
+    Technology: "🤖", Science: "🔬", Weather: "⛅", Crypto: "🪙", Other: "✨",
+  };
+  // Live per-category counts from the fetched list (accurate in the "All" view).
+  const catCounts: Record<string, number> = { all: markets.length };
+  for (const m of markets as { category?: string }[]) {
+    if (m.category) catCounts[m.category] = (catCounts[m.category] || 0) + 1;
+  }
+
   const SORT_OPTIONS = [
     { value: "volume", label: locale === "sw" ? "Maarufu" : "Trending" },
     { value: "ending", label: locale === "sw" ? "Inamalizika" : "Ending Soon" },
@@ -454,35 +497,53 @@ function MarketsContent() {
       <ActivityTicker compact />
       <Navbar />
 
-      {/* Category tabs — directly below the navbar, single-line swipe (Limitless style) */}
+      {/* Category chips — directly below the navbar, single-line swipe (Polymarket-style
+          pills with emoji + live market counts). */}
       <div className="sticky top-0 z-30 bg-[var(--background)]/95 backdrop-blur-xl border-b border-[var(--card-border)]">
-        <div className="max-w-7xl mx-auto flex gap-1 overflow-x-auto scrollbar-none snap-x px-3">
-          {/* Trending tab */}
+        <div className="max-w-7xl mx-auto flex gap-1.5 overflow-x-auto scrollbar-none snap-x px-3 py-2">
+          {/* Trending chip */}
           <button
             onClick={() => { setSort("volume"); setCategory("all"); setSubCategory("all"); }}
             className={cn(
-              "shrink-0 snap-start px-3 py-2.5 text-[13px] font-mono font-bold whitespace-nowrap border-b-2 transition-colors",
+              "shrink-0 snap-start px-3 py-1.5 rounded-full text-[12px] font-mono font-bold whitespace-nowrap border transition-colors flex items-center gap-1",
               category === "all" && sort === "volume"
-                ? "border-[var(--accent)] text-[var(--accent)]"
-                : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"
+                ? "border-[var(--accent)] text-[var(--accent)] bg-[var(--accent)]/10"
+                : "border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[var(--foreground)]/30"
             )}
           >
             🔥 {locale === "sw" ? "Maarufu" : "Trending"}
           </button>
-          {orderedCategories.map((c) => (
-            <button
-              key={c}
-              onClick={() => { setCategory(c); setSubCategory("all"); if (c !== "all") setSort("new"); }}
-              className={cn(
-                "shrink-0 snap-start px-3 py-2.5 text-[13px] font-mono font-bold whitespace-nowrap border-b-2 transition-colors",
-                category === c && !(c === "all" && sort === "volume")
-                  ? "border-[var(--foreground)] text-[var(--foreground)]"
-                  : "border-transparent text-[var(--muted)] hover:text-[var(--foreground)]"
-              )}
-            >
-              {c === "all" ? (locale === "sw" ? "Zote" : "All") : (locale === "sw" ? (t.markets.categories as Record<string, string>)[c.toLowerCase()] || c : c)}
-            </button>
-          ))}
+          {orderedCategories.map((c) => {
+            const emoji = CATEGORY_EMOJI[c] || "✨";
+            // Counts are only accurate in the "All" view (the API returns just the
+            // active category otherwise) — show them there, plus for the active chip.
+            const count = catCounts[c] || 0;
+            const showCount = count > 0 && (category === "all" || category === c);
+            const active = category === c && !(c === "all" && sort === "volume");
+            return (
+              <button
+                key={c}
+                onClick={() => { setCategory(c); setSubCategory("all"); if (c !== "all") setSort("new"); }}
+                className={cn(
+                  "shrink-0 snap-start px-3 py-1.5 rounded-full text-[12px] font-mono font-bold whitespace-nowrap border transition-colors flex items-center gap-1",
+                  active
+                    ? "border-[var(--foreground)] text-[var(--background)] bg-[var(--foreground)]"
+                    : "border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[var(--foreground)]/30"
+                )}
+              >
+                <span>{emoji}</span>
+                {c === "all" ? (locale === "sw" ? "Zote" : "All") : (locale === "sw" ? (t.markets.categories as Record<string, string>)[c.toLowerCase()] || c : c)}
+                {showCount && (
+                  <span className={cn(
+                    "text-[10px] tabular-nums px-1 rounded-full",
+                    active ? "bg-[var(--background)]/25" : "bg-[var(--card)] border border-[var(--card-border)]"
+                  )}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Sub-category chips — shown under the Sports tab (Limitless style) */}
@@ -700,7 +761,7 @@ function MarketsContent() {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-64 bg-[var(--card)] border border-[var(--card-border)] rounded-2xl animate-pulse" />
+              <MarketCardSkeleton key={i} />
             ))}
           </div>
         ) : markets.length === 0 ? (
