@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { ShareCardButton } from "@/components/ShareCard";
 import { QRCodeModal } from "@/components/QRCodeModal";
 import { UserAvatar } from "@/components/UserAvatar";
+import { MentionText } from "@/components/MentionText";
 import { UserProfileModal } from "@/components/UserProfileModal";
 import { Footer } from "@/components/Footer";
 import { PriceChart } from "@/components/PriceChart";
@@ -967,7 +968,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                             </div>
                             <div>
                               <button onClick={() => setProfileUsername(c.user.username)} className="font-medium text-sm mr-2 hover:text-[var(--accent)] transition-colors">@{c.user.username}</button>
-                              <span className="text-sm text-[var(--muted)]">{c.body}</span>
+                              <span className="text-sm text-[var(--muted)]"><MentionText text={c.body} /></span>
                             </div>
                           </div>
                         ))

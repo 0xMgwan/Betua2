@@ -11,7 +11,8 @@ export type NotificationType =
   | "WINNINGS"
   | "REDEEM"
   | "REFERRAL_REWARD"
-  | "CREATOR_FEE";
+  | "CREATOR_FEE"
+  | "MENTION";
 
 interface CreateNotificationInput {
   userId: string;

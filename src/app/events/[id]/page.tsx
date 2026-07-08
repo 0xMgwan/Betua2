@@ -6,6 +6,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { QuickBuyModal } from "@/components/QuickBuyModal";
 import { UserAvatar } from "@/components/UserAvatar";
+import { MentionText } from "@/components/MentionText";
 import { UserProfileModal } from "@/components/UserProfileModal";
 import { EventChart } from "@/components/EventChart";
 import { ActivityTicker } from "@/components/ActivityTicker";
@@ -413,7 +414,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
                             {timeAgo(c.createdAt)}
                           </span>
                         </div>
-                        <p className="text-sm text-[var(--foreground)]">{c.body}</p>
+                        <p className="text-sm text-[var(--foreground)]"><MentionText text={c.body} /></p>
                       </div>
                     </div>
                   ))

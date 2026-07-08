@@ -10,7 +10,7 @@ import {
   Sun, Moon, TrendUp, ChartBar, Trophy, Wallet,
   User,  Plus, SignOut, List, X, Globe, Bell,
   ShoppingCart, Storefront, Target, PaperPlaneTilt,
-  ArrowDownLeft, CurrencyDollar, Gift, CheckCircle, Stack,
+  ArrowDownLeft, CurrencyDollar, Gift, CheckCircle, Stack, At,
 } from "@phosphor-icons/react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
@@ -36,6 +36,7 @@ const NOTIF_ICONS: Record<string, typeof Bell> = {
   WITHDRAW: CurrencyDollar,
   WINNINGS: Gift,
   REDEEM: CheckCircle,
+  MENTION: At,
 };
 
 function timeAgo(dateStr: string): string {
