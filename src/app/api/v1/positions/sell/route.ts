@@ -5,13 +5,11 @@
 
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { ntzs } from "@/lib/ntzs";
 import { getPayoutForShares, getMultiOptionPayoutForShares } from "@/lib/amm";
 import { validateApiKey, checkRateLimit, logApiRequest, apiError, apiSuccess } from "@/lib/api-auth";
 
-const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
-const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
-const FEE_PERCENT = parseFloat(process.env.TRANSACTION_FEE_PERCENT || "5") / 100;
+// Early-exit fee on sells (default 50%) — matches /api/sell.
+const SELL_FEE_PERCENT = parseFloat(process.env.SELL_FEE_PERCENT || "50") / 100;
 
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
@@ -98,20 +96,15 @@ export async function POST(req: NextRequest) {
 
     if (grossPayout <= 0) return apiError("Shares have no value at current price", 400);
 
-    const feeAmount = Math.round(grossPayout * FEE_PERCENT);
+    // Early-exit (sell) fee — matches /api/sell: sellers receive the
+    // SELL_FEE-complement of AMM value; the haircut stays in the settlement
+    // pool (no on-chain transfer) to discourage buy→sell flips.
+    const feeAmount = Math.round(grossPayout * SELL_FEE_PERCENT);
     const netPayout = grossPayout - feeAmount;
 
     // Pooled model: the net proceeds stay in the settlement pool and are
     // credited to the user's DB balance below (they cash out via withdraw).
-    // Only the 5% fee moves on-chain, to the settlement-fee wallet.
     const ntzsTransferId: string | undefined = undefined;
-    if (PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID && feeAmount > 0) {
-      ntzs.transfers.create({
-        fromUserId: PLATFORM_NTZS_USER_ID,
-        toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
-        amountTzs: feeAmount,
-      }).catch((e) => console.error("[sell] settlement fee forward failed (non-fatal):", e));
-    }
 
     // Build position update
     let positionUpdate: Record<string, unknown>;

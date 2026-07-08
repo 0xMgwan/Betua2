@@ -789,9 +789,10 @@ export default function PortfolioPage() {
                                 sideLabel = sellSide;
                               }
 
-                              // Estimate payout
+                              // Estimate payout — early-exit fee matches /api/sell
+                              // (SELL_FEE_PERCENT, default 50%)
                               let estPayout = 0;
-                              const FEE = 0.05;
+                              const FEE = 0.5;
                               if (sellShares && Number(sellShares) >= 1) {
                                 try {
                                   if (isMultiOpt && p.market.optionPools) {

@@ -516,6 +516,8 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
   // Estimate shares for current input (matching trade API: 5% fee then AMM)
   const FEE_PERCENT = 0.05;
+  // Early-exit fee on sells (matches /api/sell SELL_FEE_PERCENT default)
+  const SELL_FEE_PCT = 0.5;
   let estimatedShares = 0;
   let estimatedPrice = 0;
   const minTradeAmount = displayCurrency === 'USDC' ? 0.5 : displayCurrency === 'KES' ? 50 : 100;
@@ -549,7 +551,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
       if (isMultiOption && market.optionPools) {
         const result = getMultiOptionPayoutForShares(Number(sellShares), selectedOption, market.optionPools);
         const gross = result.payout;
-        sellFee = Math.round(gross * FEE_PERCENT);
+        sellFee = Math.round(gross * SELL_FEE_PCT);
         estimatedPayout = gross - sellFee;
         estimatedSellPrice = result.avgPrice;
       } else {
@@ -557,7 +559,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
           ? getPayoutForShares(Number(sellShares), market.yesPool, market.noPool)
           : getPayoutForShares(Number(sellShares), market.noPool, market.yesPool);
         const gross = Math.round(result.payout);
-        sellFee = Math.round(gross * FEE_PERCENT);
+        sellFee = Math.round(gross * SELL_FEE_PCT);
         estimatedPayout = gross - sellFee;
         estimatedSellPrice = result.avgPrice;
       }
@@ -1536,7 +1538,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                             <span className="font-medium">{displayCurrency === 'USDC' ? `$${(estimatedSellPrice / 2630).toFixed(4)}` : displayCurrency === 'KES' ? `KES ${(estimatedSellPrice / 18.5).toFixed(2)}` : `TSh ${estimatedSellPrice.toFixed(2)}`}/share</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-[var(--muted)]">{locale === "sw" ? "Ada (5%)" : "Fee (5%)"}</span>
+                            <span className="text-[var(--muted)]">{locale === "sw" ? "Ada ya kutoka mapema (50%)" : "Early exit fee (50%)"}</span>
                             <span className="text-[var(--muted)]">-{formatAmount(sellFee)}</span>
                           </div>
                         </div>

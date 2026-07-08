@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { ntzs } from "@/lib/ntzs";
 import { getPayoutForShares, getMultiOptionPayoutForShares } from "@/lib/amm";
 import { createNotification } from "@/lib/notify";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
 
-const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
-const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
-const FEE_PERCENT = parseFloat(process.env.TRANSACTION_FEE_PERCENT || "5") / 100;
+// Early-exit fee on sells (default 50%): sellers receive half the AMM value;
+// the haircut stays in the settlement pool. Override via SELL_FEE_PERCENT env.
+const SELL_FEE_PERCENT = parseFloat(process.env.SELL_FEE_PERCENT || "50") / 100;
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -100,8 +99,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Shares have no value at current price" }, { status: 400 });
     }
 
-    // Apply 5% sell fee
-    const feeAmount = Math.round(grossPayout * FEE_PERCENT);
+    // Early-exit (sell) fee — users receive SELL_FEE-complement of the AMM value;
+    // the haircut stays in the settlement pool backing user balances. Deliberately
+    // steep to discourage buy→sell flips that extract value from thin markets
+    // (stale-odds sniping); holding to resolution pays the normal 5% fee instead.
+    const feeAmount = Math.round(grossPayout * SELL_FEE_PERCENT);
     const netPayout = grossPayout - feeAmount;
 
     // Pooled custodial model: sell proceeds are credited to the user's DB balance
@@ -109,18 +111,9 @@ export async function POST(req: NextRequest) {
     // leave it exclusively on withdrawal to mobile money. We deliberately do NOT
     // push nTZS to personal wallets here — that double-paid legacy users who still
     // had a personal nTZS wallet (once as real nTZS, once as DB balance).
+    // The sell haircut also stays in the pool (no on-chain fee transfer) so it
+    // strengthens solvency rather than draining the pool.
     const ntzsTransferId: string | undefined = undefined;
-
-    // Transfer fee: platform escrow → settlement fee wallet (non-blocking)
-    if (PLATFORM_NTZS_USER_ID && SETTLEMENT_FEE_NTZS_USER_ID && feeAmount > 0) {
-      ntzs.transfers.create({
-        fromUserId: PLATFORM_NTZS_USER_ID,
-        toUserId: SETTLEMENT_FEE_NTZS_USER_ID,
-        amountTzs: feeAmount,
-      }).catch((feeErr) => {
-        console.error("Sell fee transfer failed (non-fatal):", feeErr);
-      });
-    }
 
     // Build position update
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
