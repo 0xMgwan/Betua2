@@ -21,6 +21,7 @@ import { ShareCardButton } from "@/components/ShareCard";
 import { QRCodeModal } from "@/components/QRCodeModal";
 import { UserAvatar } from "@/components/UserAvatar";
 import { MentionText } from "@/components/MentionText";
+import { MentionInput } from "@/components/MentionInput";
 import { UserProfileModal } from "@/components/UserProfileModal";
 import { Footer } from "@/components/Footer";
 import { PriceChart } from "@/components/PriceChart";
@@ -942,11 +943,11 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   <div className="space-y-3">
                     {user && (
                       <form onSubmit={handleComment} className="flex gap-2">
-                        <input
+                        <MentionInput
                           value={comment}
-                          onChange={(e) => setComment(e.target.value)}
-                          placeholder={locale === "sw" ? "Shiriki mawazo yako…" : "Share your thoughts…"}
-                          className="flex-1 px-3 py-2 bg-[var(--background)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
+                          onChange={setComment}
+                          placeholder={locale === "sw" ? "Shiriki mawazo yako… (@ kutaja)" : "Share your thoughts… (@ to mention)"}
+                          className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--card-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
                         />
                         <button
                           type="submit"
