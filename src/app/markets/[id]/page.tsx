@@ -51,6 +51,7 @@ interface MarketData {
   totalYesShares: number;
   totalNoShares: number;
   totalOptionShares: Record<string, number>;
+  userPosition?: { yesShares: number; noShares: number; optionShares: Record<string, number> } | null;
   creator: { username: string; displayName?: string | null; avatarUrl?: string | null };
   _count: { trades: number; comments: number };
   trades: { id: string; side: string; amountTzs: number; shares: number; price: number; createdAt: string; user: { username: string; avatarUrl?: string | null } }[];
@@ -566,19 +567,29 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
     } catch {}
   }
 
-  // Get user's current position shares for the selected side/option
+  // Get user's current sellable shares for the selected side/option.
+  // Prefer the authoritative position returned by the API (userPosition); fall
+  // back to summing the visible trades only if the position isn't available
+  // (e.g. legacy responses) — the trades list is capped at 20 so it can undercount.
   let mySharesForSide = 0;
   if (market && user) {
-    const myTrades = market.trades.filter(tr => tr.user.username === user.username);
-    if (isMultiOption && market.options) {
-      const optName = market.options[selectedOption];
-      mySharesForSide = myTrades
-        .filter(tr => tr.side === optName || tr.side === `SELL_${optName}`)
-        .reduce((s, tr) => s + tr.shares, 0);
+    const up = market.userPosition;
+    if (up) {
+      mySharesForSide = isMultiOption
+        ? (up.optionShares?.[String(selectedOption)] || 0)
+        : (side === "YES" ? up.yesShares : up.noShares);
     } else {
-      mySharesForSide = myTrades
-        .filter(tr => tr.side === side || tr.side === `SELL_${side}`)
-        .reduce((s, tr) => s + tr.shares, 0);
+      const myTrades = market.trades.filter(tr => tr.user.username === user.username);
+      if (isMultiOption && market.options) {
+        const optName = market.options[selectedOption];
+        mySharesForSide = myTrades
+          .filter(tr => tr.side === optName || tr.side === `SELL_${optName}`)
+          .reduce((s, tr) => s + tr.shares, 0);
+      } else {
+        mySharesForSide = myTrades
+          .filter(tr => tr.side === side || tr.side === `SELL_${side}`)
+          .reduce((s, tr) => s + tr.shares, 0);
+      }
     }
     mySharesForSide = Math.max(0, mySharesForSide);
   }
@@ -1538,7 +1549,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                             <span className="font-medium">{displayCurrency === 'USDC' ? `$${(estimatedSellPrice / 2630).toFixed(4)}` : displayCurrency === 'KES' ? `KES ${(estimatedSellPrice / 18.5).toFixed(2)}` : `TSh ${estimatedSellPrice.toFixed(2)}`}/share</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-[var(--muted)]">{locale === "sw" ? "Ada ya kutoka mapema (50%)" : "Early exit fee (50%)"}</span>
+                            <span className="text-[var(--muted)]">{locale === "sw" ? "Ada ya kutoka mapema" : "Early exit fee"}</span>
                             <span className="text-[var(--muted)]">-{formatAmount(sellFee)}</span>
                           </div>
                         </div>

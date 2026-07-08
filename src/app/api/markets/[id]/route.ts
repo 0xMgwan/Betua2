@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getPrice, getMultiOptionPrices } from "@/lib/amm";
+import { getSession } from "@/lib/auth";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const session = await getSession();
 
   const market = await prisma.market.findUnique({
     where: { id },
@@ -48,6 +50,22 @@ export async function GET(
     }
   }
 
+  // The signed-in user's own holding (authoritative — never derived from the
+  // capped trades list). Used by the sell panel to know how many shares are
+  // sellable per side/option.
+  let userPosition: { yesShares: number; noShares: number; optionShares: Record<string, number> } | null = null;
+  if (session) {
+    const pos = positions.find((p) => p.userId === session.userId);
+    if (pos) {
+      userPosition = {
+        yesShares: pos.yesShares,
+        noShares: pos.noShares,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        optionShares: ((pos as any).optionShares as Record<string, number>) || {},
+      };
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const m = market as any;
   return NextResponse.json({
@@ -60,6 +78,7 @@ export async function GET(
       totalYesShares,
       totalNoShares,
       totalOptionShares,
+      userPosition,
     },
   });
 }
