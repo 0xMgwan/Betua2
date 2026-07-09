@@ -731,8 +731,35 @@ export default function PortfolioPage() {
                                 className="overflow-hidden"
                               >
                                 <div className="border border-t-0 border-[var(--card-border)] bg-[var(--card)]/50 px-4 py-3">
+                                  {/* Total held — the authoritative, currently-sellable holding (from
+                                      the position, not the capped recent-trades list below). */}
+                                  <div className="mb-3 pb-3 border-b border-[var(--card-border)]/60">
+                                    <div className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider mb-1.5">
+                                      {locale === "sw" ? "Jumla Uliyonayo" : "Total Held"}
+                                    </div>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {(isMultiOpt && p.optionShares
+                                        ? Object.entries(p.optionShares)
+                                            .filter(([, s]) => s > 0)
+                                            .map(([idx, s]) => ({ label: p.market.options?.[Number(idx)] || `Opt ${idx}`, shares: s, color: "#00b4d8" }))
+                                        : [
+                                            ...(p.yesShares > 0 ? [{ label: "YES", shares: p.yesShares, color: "#00e5a0" }] : []),
+                                            ...(p.noShares > 0 ? [{ label: "NO", shares: p.noShares, color: "#f87171" }] : []),
+                                          ]
+                                      ).map((h, i) => (
+                                        <span
+                                          key={i}
+                                          className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[11px] font-mono font-bold tabular-nums"
+                                          style={{ borderColor: `${h.color}44`, color: h.color, backgroundColor: `${h.color}12` }}
+                                        >
+                                          <span className="truncate max-w-[110px]">{h.label}</span>
+                                          <span className="font-black">{formatNumber(h.shares)}</span>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
                                   <div className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider mb-2">
-                                    {locale === "sw" ? "Biashara Zako" : "Your Trades"}
+                                    {locale === "sw" ? "Biashara za Hivi Karibuni" : "Recent Trades"}
                                   </div>
                                   <div className="space-y-1.5">
                                     {trades
