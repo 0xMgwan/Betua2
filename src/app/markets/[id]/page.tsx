@@ -965,7 +965,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                         <button
                           type="submit"
                           disabled={commentLoading || !comment.trim()}
-                          className="p-2 bg-[var(--accent)] text-black rounded-xl disabled:opacity-50 hover:opacity-90 transition-all"
+                          className="p-2 bg-[#00e5a0] text-black rounded-xl disabled:opacity-50 hover:opacity-90 transition-all"
                         >
                           <PaperPlaneTilt size={16} />
                         </button>
