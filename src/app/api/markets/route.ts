@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { title, description, category, subCategory, resolvesAt, imageUrl, pythSymbol, pythTargetPrice, pythOperator, options, initialProb, optionProbs, seedAmount: rawSeedAmount, seedCurrency, seedDistribution, fxRate } = body;
+    const { title, description, category, subCategory, resolvesAt, imageUrl, pythSymbol, pythTargetPrice, pythOperator, options, optionImages, initialProb, optionProbs, seedAmount: rawSeedAmount, seedCurrency, seedDistribution, fxRate } = body;
     const seedAmount = Math.max(0, Math.round(Number(rawSeedAmount) || 0));
     const isSeedUsdc = seedCurrency === 'USDC';
     const useProportionalSeed = seedDistribution === 'proportional';
@@ -239,6 +239,10 @@ export async function POST(req: NextRequest) {
       liquidity: isMultiOption ? POOL_PER_OPTION * options.length : TOTAL_LIQUIDITY,
       options: isMultiOption ? options : undefined,
       optionPools: optionPools || undefined,
+      // Per-option (per-team) logos, index-aligned with options. Only kept if any is set.
+      optionImages: isMultiOption && Array.isArray(optionImages) && optionImages.some((u: unknown) => typeof u === "string" && u)
+        ? optionImages.map((u: unknown) => (typeof u === "string" ? u : "")).slice(0, options.length)
+        : undefined,
       seedAmount: effectiveSeed,
       totalVolume: effectiveSeed, // seed immediately backs the pot
       fxRate: fxRate ? parseFloat(fxRate) : undefined,

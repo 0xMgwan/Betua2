@@ -15,7 +15,7 @@ export async function PATCH(
   const { id } = await params;
 
   try {
-    const { title, description, imageUrl, resolvesAt, category, subCategory, options } = await req.json();
+    const { title, description, imageUrl, resolvesAt, category, subCategory, options, optionImages } = await req.json();
 
     // Find the market and verify ownership
     const market = await prisma.market.findUnique({
@@ -51,6 +51,14 @@ export async function PATCH(
       category: category || market.category,
       subCategory: subCategory !== undefined ? subCategory : market.subCategory,
     };
+
+    // Per-option (per-team) logos — index-aligned with options. Safe to change
+    // anytime (display only). Empty array/all-empty clears them.
+    if (optionImages !== undefined) {
+      updateData.optionImages = Array.isArray(optionImages) && optionImages.some((u: unknown) => typeof u === "string" && u)
+        ? optionImages.map((u: unknown) => (typeof u === "string" ? u : ""))
+        : null;
+    }
 
     // Handle option edits. Renaming labels is always safe (positions/pools are
     // keyed by option index), so it's allowed even after trades. Structural

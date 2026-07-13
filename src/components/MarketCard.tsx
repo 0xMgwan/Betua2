@@ -31,6 +31,7 @@ interface Market {
   price: { yes: number; no: number };
   options?: string[] | null;
   optionPrices?: number[] | null;
+  optionImages?: string[] | null;
   _count?: { trades: number };
   creator?: { username: string };
 }
@@ -567,7 +568,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
         {/* Teams + center time/status */}
         <div className="grid grid-cols-3 gap-2 items-start mb-2">
           <div className="flex flex-col items-center text-center gap-1.5">
-            {hasImage && <img src={market.imageUrl!} alt="" className="w-9 h-9 rounded object-cover border border-[var(--card-border)]" onError={() => setImageError(true)} />}
+            {(() => { const img = market.optionImages?.[teams[0]?.idx ?? -1] || market.imageUrl; return img ? <img src={img} alt="" className="w-9 h-9 rounded object-cover border border-[var(--card-border)]" onError={() => setImageError(true)} /> : null; })()}
             <span className="text-xs font-bold leading-tight line-clamp-2">{teams[0]?.label}</span>
           </div>
           <div className="flex flex-col items-center text-center justify-start pt-1 gap-0.5">
@@ -581,7 +582,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
             )}
           </div>
           <div className="flex flex-col items-center text-center gap-1.5">
-            {hasImage && <img src={market.imageUrl!} alt="" className="w-9 h-9 rounded object-cover border border-[var(--card-border)]" onError={() => setImageError(true)} />}
+            {(() => { const img = market.optionImages?.[teams[1]?.idx ?? -1] || market.imageUrl; return img ? <img src={img} alt="" className="w-9 h-9 rounded object-cover border border-[var(--card-border)]" onError={() => setImageError(true)} /> : null; })()}
             <span className="text-xs font-bold leading-tight line-clamp-2">{teams[1]?.label}</span>
           </div>
         </div>

@@ -64,6 +64,20 @@ export default function CreateMarketPage() {
   const [customOptions, setCustomOptions] = useState<string[]>(["", ""]);
   // Per-option probabilities for multi-option markets (must sum to 100)
   const [optionProbs, setOptionProbs] = useState<number[]>([50, 50]);
+  // Per-option image URLs (uploaded on submit or pasted), index-aligned with options.
+  const [optionImages, setOptionImages] = useState<string[]>(["", ""]);
+  const [optionImageFiles, setOptionImageFiles] = useState<(File | null)[]>([null, null]);
+
+  async function handleOptionImageSelect(index: number, file: File | null) {
+    const files = [...optionImageFiles];
+    files[index] = file;
+    setOptionImageFiles(files);
+    if (file) {
+      const imgs = [...optionImages];
+      imgs[index] = URL.createObjectURL(file); // local preview until uploaded on submit
+      setOptionImages(imgs);
+    }
+  }
 
   // Event markets (when marketType === "event")
   interface EventMarket {
@@ -87,12 +101,16 @@ export default function CreateMarketPage() {
     if (customOptions.length >= 10) return;
     setCustomOptions([...customOptions, ""]);
     setOptionProbs([...optionProbs, 0]);
+    setOptionImages([...optionImages, ""]);
+    setOptionImageFiles([...optionImageFiles, null]);
   }
 
   function removeOption(index: number) {
     if (customOptions.length <= 2) return;
     setCustomOptions(customOptions.filter((_, i) => i !== index));
     setOptionProbs(optionProbs.filter((_, i) => i !== index));
+    setOptionImages(optionImages.filter((_, i) => i !== index));
+    setOptionImageFiles(optionImageFiles.filter((_, i) => i !== index));
   }
 
   function updateOption(index: number, value: string) {
@@ -321,6 +339,28 @@ export default function CreateMarketPage() {
         }
         body.options = validOptions;
         body.optionProbs = probsForValid;
+
+        // Upload any per-option image files, then pass the URL list (index-aligned
+        // with the valid options). Files upload; otherwise a pasted URL is used.
+        const keptIdx = customOptions.map((o, i) => ({ o: o.trim(), i })).filter(x => x.o).map(x => x.i);
+        const finalOptionImages: string[] = [];
+        for (const i of keptIdx) {
+          const file = optionImageFiles[i];
+          if (file) {
+            const fd = new FormData();
+            fd.append("file", file);
+            try {
+              const res = await fetch("/api/upload", { method: "POST", body: fd });
+              const data = await res.json();
+              finalOptionImages.push(res.ok ? data.url : "");
+            } catch { finalOptionImages.push(""); }
+          } else {
+            // pasted URL (ignore blob: preview URLs)
+            const u = optionImages[i] || "";
+            finalOptionImages.push(u.startsWith("blob:") ? "" : u);
+          }
+        }
+        if (finalOptionImages.some(Boolean)) body.optionImages = finalOptionImages;
       }
 
       // Add optional fxRate for custom FX markets
@@ -738,11 +778,29 @@ export default function CreateMarketPage() {
                         transition={{ delay: i * 0.04 }}
                         className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2"
                       >
-                        {/* Row 1 (mobile) / full row (desktop): letter badge + option text */}
+                        {/* Row 1 (mobile) / full row (desktop): logo uploader + option text */}
                         <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <span className={cn("w-7 h-7 shrink-0 flex items-center justify-center text-[10px] font-mono font-black border", optColors[i % optColors.length])}>
-                            {String.fromCharCode(65 + i)}
-                          </span>
+                          {/* Per-option logo (e.g. team badge). Click to upload. */}
+                          <label
+                            className={cn("w-8 h-8 shrink-0 flex items-center justify-center border cursor-pointer overflow-hidden relative group/logo", optColors[i % optColors.length])}
+                            title={locale === "sw" ? "Pakia nembo" : "Upload logo"}
+                          >
+                            {optionImages[i] ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={optionImages[i]} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-[10px] font-mono font-black">{String.fromCharCode(65 + i)}</span>
+                            )}
+                            <span className="absolute inset-0 bg-black/50 opacity-0 group-hover/logo:opacity-100 flex items-center justify-center transition-opacity">
+                              <ImageIcon size={12} weight="bold" className="text-white" />
+                            </span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => handleOptionImageSelect(i, e.target.files?.[0] || null)}
+                            />
+                          </label>
                           <input
                             type="text"
                             value={opt}

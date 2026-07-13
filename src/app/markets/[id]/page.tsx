@@ -14,7 +14,7 @@ import {
   Clock, TrendUp, UsersThree, ChatCircle,
   CheckCircle, XCircle, Warning, PaperPlaneTilt,
   ShareNetwork, WhatsappLogo, XLogo, FacebookLogo, TelegramLogo,
-  PencilSimple, QrCode,
+  PencilSimple, QrCode, Image as ImageIcon,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { ShareCardButton } from "@/components/ShareCard";
@@ -48,6 +48,7 @@ interface MarketData {
   options?: string[] | null;
   optionPools?: number[] | null;
   optionPrices?: number[] | null;
+  optionImages?: string[] | null;
   totalYesShares: number;
   totalNoShares: number;
   totalOptionShares: Record<string, number>;
@@ -132,6 +133,8 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   const [editError, setEditError] = useState("");
   const [editMarketType, setEditMarketType] = useState<"binary" | "multi">("binary");
   const [editCustomOptions, setEditCustomOptions] = useState<string[]>(["", ""]);
+  const [editOptionImages, setEditOptionImages] = useState<string[]>([]);
+  const [editOptionImageFiles, setEditOptionImageFiles] = useState<(File | null)[]>([]);
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
   const [editImagePreview, setEditImagePreview] = useState("");
   const [editUploading, setEditUploading] = useState(false);
@@ -469,6 +472,8 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
     const hasOptions = market.options && market.options.length >= 2;
     setEditMarketType(hasOptions ? "multi" : "binary");
     setEditCustomOptions(hasOptions ? [...market.options!] : ["", ""]);
+    setEditOptionImages(hasOptions ? (market.options!.map((_, i) => market.optionImages?.[i] || "")) : []);
+    setEditOptionImageFiles(hasOptions ? market.options!.map(() => null) : []);
     setEditImageFile(null);
     setEditImagePreview("");
     setShowEditModal(true);
@@ -490,8 +495,26 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
       // Build edit payload with optional market type change
       const editPayload: Record<string, unknown> = { ...editForm, imageUrl: finalImageUrl };
       if (editMarketType === "multi") {
-        const validOptions = editCustomOptions.map(o => o.trim()).filter(Boolean);
-        editPayload.options = validOptions;
+        const keptIdx = editCustomOptions.map((o, i) => ({ o: o.trim(), i })).filter(x => x.o).map(x => x.i);
+        editPayload.options = keptIdx.map(i => editCustomOptions[i].trim());
+        // Upload any newly-selected per-option logo files; keep existing URLs otherwise.
+        const imgs: string[] = [];
+        for (const i of keptIdx) {
+          const file = editOptionImageFiles[i];
+          if (file) {
+            const fd = new FormData();
+            fd.append("file", file);
+            try {
+              const r = await fetch("/api/upload", { method: "POST", body: fd });
+              const d = await r.json();
+              imgs.push(r.ok ? d.url : "");
+            } catch { imgs.push(""); }
+          } else {
+            const u = editOptionImages[i] || "";
+            imgs.push(u.startsWith("blob:") ? "" : u);
+          }
+        }
+        editPayload.optionImages = imgs;
       } else {
         editPayload.options = null;
       }
@@ -1738,7 +1761,11 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                           </p>
                           {editCustomOptions.map((opt, i) => (
                             <div key={i} className="flex items-center gap-2">
-                              <span className="text-[10px] font-mono text-[var(--muted)] w-5">{i + 1}.</span>
+                              <label className="w-8 h-8 shrink-0 flex items-center justify-center border border-[var(--card-border)] rounded-lg cursor-pointer overflow-hidden relative group/l" title={locale === "sw" ? "Pakia nembo" : "Upload logo"}>
+                                {editOptionImages[i] ? <img src={editOptionImages[i]} alt="" className="w-full h-full object-cover" /> : <span className="text-[10px] font-mono text-[var(--muted)]">{i + 1}</span>}
+                                <span className="absolute inset-0 bg-black/50 opacity-0 group-hover/l:opacity-100 flex items-center justify-center transition-opacity"><ImageIcon size={12} weight="bold" className="text-white" /></span>
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0] || null; const files = [...editOptionImageFiles]; files[i] = f; setEditOptionImageFiles(files); if (f) { const imgs = [...editOptionImages]; imgs[i] = URL.createObjectURL(f); setEditOptionImages(imgs); } }} />
+                              </label>
                               <input
                                 type="text"
                                 value={opt}
@@ -1803,7 +1830,11 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                             </label>
                             {editCustomOptions.map((opt, i) => (
                               <div key={i} className="flex items-center gap-2">
-                                <span className="text-[10px] font-mono text-[var(--muted)] w-5">{i + 1}.</span>
+                                <label className="w-8 h-8 shrink-0 flex items-center justify-center border border-[var(--card-border)] rounded-lg cursor-pointer overflow-hidden relative group/l" title={locale === "sw" ? "Pakia nembo" : "Upload logo"}>
+                                  {editOptionImages[i] ? <img src={editOptionImages[i]} alt="" className="w-full h-full object-cover" /> : <span className="text-[10px] font-mono text-[var(--muted)]">{i + 1}</span>}
+                                  <span className="absolute inset-0 bg-black/50 opacity-0 group-hover/l:opacity-100 flex items-center justify-center transition-opacity"><ImageIcon size={12} weight="bold" className="text-white" /></span>
+                                  <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0] || null; const files = [...editOptionImageFiles]; files[i] = f; setEditOptionImageFiles(files); if (f) { const imgs = [...editOptionImages]; imgs[i] = URL.createObjectURL(f); setEditOptionImages(imgs); } }} />
+                                </label>
                                 <input
                                   type="text"
                                   value={opt}
@@ -1819,7 +1850,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                                 {editCustomOptions.length > 2 && (
                                   <button
                                     type="button"
-                                    onClick={() => setEditCustomOptions(editCustomOptions.filter((_, j) => j !== i))}
+                                    onClick={() => { setEditCustomOptions(editCustomOptions.filter((_, j) => j !== i)); setEditOptionImages(editOptionImages.filter((_, j) => j !== i)); setEditOptionImageFiles(editOptionImageFiles.filter((_, j) => j !== i)); }}
                                     className="p-1.5 text-red-400 hover:bg-red-500/10 transition-colors rounded"
                                   >
                                     <XCircle size={14} />
@@ -1830,7 +1861,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                             {editCustomOptions.length < 10 && (
                               <button
                                 type="button"
-                                onClick={() => setEditCustomOptions([...editCustomOptions, ""])}
+                                onClick={() => { setEditCustomOptions([...editCustomOptions, ""]); setEditOptionImages([...editOptionImages, ""]); setEditOptionImageFiles([...editOptionImageFiles, null]); }}
                                 className="w-full py-2 border border-dashed border-purple-500/30 text-purple-400 text-xs font-mono hover:bg-purple-500/5 transition-colors rounded-lg"
                               >
                                 + {locale === "sw" ? "Ongeza chaguo" : "Add option"}
