@@ -755,9 +755,19 @@ export default function CreateMarketPage() {
                       </button>
                     </div>
 
+                    {/* Logo-upload hint — tapping each option's badge sets a per-team logo */}
+                    <div className="flex items-center gap-1.5 mb-2 px-2 py-1.5 bg-purple-500/5 border border-purple-500/20 rounded-lg">
+                      <ImageIcon size={12} weight="bold" className="text-purple-400 shrink-0" />
+                      <span className="text-[10px] font-mono text-purple-400 leading-tight">
+                        {locale === "sw"
+                          ? "Gonga beji ya chaguo (A, B…) kupakia nembo ya timu."
+                          : "Tap each option's badge (A, B…) to upload a team logo."}
+                      </span>
+                    </div>
+
                     {/* Column headers — desktop only, mobile uses stacked layout */}
                     <div className="hidden sm:flex items-center gap-2 px-1 mb-1">
-                      <span className="w-7 shrink-0" />
+                      <span className="w-8 shrink-0 text-[9px] font-mono text-[var(--muted)] uppercase text-center">{locale === "sw" ? "Nembo" : "Logo"}</span>
                       <span className="flex-1 text-[9px] font-mono text-[var(--muted)] uppercase">
                         {locale === "sw" ? "Chaguo" : "Option"}
                       </span>
@@ -793,6 +803,10 @@ export default function CreateMarketPage() {
                             )}
                             <span className="absolute inset-0 bg-black/50 opacity-0 group-hover/logo:opacity-100 flex items-center justify-center transition-opacity">
                               <ImageIcon size={12} weight="bold" className="text-white" />
+                            </span>
+                            {/* Persistent corner indicator so it's clearly an upload target */}
+                            <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-purple-500 border border-[var(--card)] flex items-center justify-center">
+                              <ImageIcon size={8} weight="fill" className="text-white" />
                             </span>
                             <input
                               type="file"
