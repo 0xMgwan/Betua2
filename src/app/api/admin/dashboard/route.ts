@@ -77,6 +77,25 @@ export async function GET() {
     : [];
   const inPlayByUser = new Map(inPlayRows.map((r) => [r.userId, Math.max(0, r._sum.amountTzs || 0)]));
 
+  // Per-user lifetime deposits (COMPLETED) and withdrawals (COMPLETED + PENDING —
+  // withdrawals debit at initiation), so admins can see real money in vs out.
+  const [depositRows, withdrawRows] = await Promise.all([
+    prisma.transaction.groupBy({
+      by: ["userId"],
+      where: { type: "DEPOSIT", status: "COMPLETED" },
+      _sum: { amountTzs: true },
+      _count: true,
+    }),
+    prisma.transaction.groupBy({
+      by: ["userId"],
+      where: { type: "WITHDRAWAL", status: { in: ["COMPLETED", "PENDING"] } },
+      _sum: { amountTzs: true },
+      _count: true,
+    }),
+  ]);
+  const depositsByUser = new Map(depositRows.map((r) => [r.userId, { total: r._sum.amountTzs || 0, count: r._count }]));
+  const withdrawalsByUser = new Map(withdrawRows.map((r) => [r.userId, { total: r._sum.amountTzs || 0, count: r._count }]));
+
   // For legacy users with nTZS wallets: use max(DB, nTZS wallet) — same logic as me/
   // Sync any higher nTZS wallet balance back to DB so DB becomes accurate going forward
   const { ntzs } = await import('@/lib/ntzs');
@@ -94,7 +113,14 @@ export async function GET() {
         balanceUsdc = Math.max(0, bal.balanceUsdc || 0);
       } catch { /* skip if API down */ }
     }
-    return { ...u, balanceTzs, balanceUsdc, systemWallet, inPositionsTzs: inPlayByUser.get(u.id) || 0 };
+    const dep = depositsByUser.get(u.id);
+    const wd = withdrawalsByUser.get(u.id);
+    return {
+      ...u, balanceTzs, balanceUsdc, systemWallet,
+      inPositionsTzs: inPlayByUser.get(u.id) || 0,
+      depositedTzs: dep?.total || 0, depositCount: dep?.count || 0,
+      withdrawnTzs: wd?.total || 0, withdrawCount: wd?.count || 0,
+    };
   }));
 
   // Total outstanding fixed-odds payout obligations on open markets
