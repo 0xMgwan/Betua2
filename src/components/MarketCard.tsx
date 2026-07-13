@@ -276,6 +276,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
             onClick={(e) => handleQuickBuy(e, "YES")}
             className="w-full py-3.5 px-3 rounded-xl bg-[#00e5a0]/10 border-2 border-[#00e5a0]/50 text-[#00e5a0] font-mono transition-all hover:bg-[#00e5a0]/20 hover:border-[#00e5a0] active:scale-[0.97] flex flex-col items-center gap-0.5"
           >
+            {market.optionImages?.[0] && <img src={market.optionImages[0]} alt="" className="w-8 h-8 rounded-full object-cover border border-[#00e5a0]/30 mb-0.5" />}
             <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{locale === "sw" ? "Nunua" : "Buy"} YES ↑</span>
             <span className="text-xl font-black leading-none">{(1 / market.price.yes).toFixed(2)}<span className="text-xs">x</span></span>
             <span className="text-[10px] font-bold opacity-60">{yesPct}%</span>
@@ -293,6 +294,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
             onClick={(e) => handleQuickBuy(e, "NO")}
             className="w-full py-3.5 px-3 rounded-xl bg-red-500/10 border-2 border-red-500/50 text-red-400 font-mono transition-all hover:bg-red-500/20 hover:border-red-500 active:scale-[0.97] flex flex-col items-center gap-0.5"
           >
+            {market.optionImages?.[1] && <img src={market.optionImages[1]} alt="" className="w-8 h-8 rounded-full object-cover border border-red-500/30 mb-0.5" />}
             <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{locale === "sw" ? "Nunua" : "Buy"} NO ↓</span>
             <span className="text-xl font-black leading-none">{(1 / market.price.no).toFixed(2)}<span className="text-xs">x</span></span>
             <span className="text-[10px] font-bold opacity-60">{noPct}%</span>

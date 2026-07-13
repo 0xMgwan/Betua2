@@ -41,6 +41,7 @@ export async function GET(request: Request) {
             noPool: true,
             options: true,
             optionPools: true,
+            optionImages: true,
             resolvesAt: true,
             outcome: true,
             outcomeLabel: true,

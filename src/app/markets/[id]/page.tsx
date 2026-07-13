@@ -22,6 +22,7 @@ import { QRCodeModal } from "@/components/QRCodeModal";
 import { UserAvatar } from "@/components/UserAvatar";
 import { MentionText } from "@/components/MentionText";
 import { MentionInput } from "@/components/MentionInput";
+import { LogoUploadSlot } from "@/components/LogoUploadSlot";
 import { UserProfileModal } from "@/components/UserProfileModal";
 import { Footer } from "@/components/Footer";
 import { PriceChart } from "@/components/PriceChart";
@@ -472,8 +473,11 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
     const hasOptions = market.options && market.options.length >= 2;
     setEditMarketType(hasOptions ? "multi" : "binary");
     setEditCustomOptions(hasOptions ? [...market.options!] : ["", ""]);
-    setEditOptionImages(hasOptions ? (market.options!.map((_, i) => market.optionImages?.[i] || "")) : []);
-    setEditOptionImageFiles(hasOptions ? market.options!.map(() => null) : []);
+    // Multi: one slot per option. Binary: [0]=YES, [1]=NO.
+    setEditOptionImages(hasOptions
+      ? market.options!.map((_, i) => market.optionImages?.[i] || "")
+      : [market.optionImages?.[0] || "", market.optionImages?.[1] || ""]);
+    setEditOptionImageFiles(hasOptions ? market.options!.map(() => null) : [null, null]);
     setEditImageFile(null);
     setEditImagePreview("");
     setShowEditModal(true);
@@ -517,6 +521,24 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
         editPayload.optionImages = imgs;
       } else {
         editPayload.options = null;
+        // Binary per-side logos: [0]=YES, [1]=NO. Upload picked files, keep URLs.
+        const imgs: string[] = [];
+        for (const idx of [0, 1]) {
+          const file = editOptionImageFiles[idx];
+          if (file) {
+            const fd = new FormData();
+            fd.append("file", file);
+            try {
+              const r = await fetch("/api/upload", { method: "POST", body: fd });
+              const d = await r.json();
+              imgs.push(r.ok ? d.url : "");
+            } catch { imgs.push(""); }
+          } else {
+            const u = editOptionImages[idx] || "";
+            imgs.push(u.startsWith("blob:") ? "" : u);
+          }
+        }
+        editPayload.optionImages = imgs;
       }
 
       const res = await fetch(`/api/markets/${id}/edit`, {
@@ -1872,6 +1894,25 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       </>
                     )}
                   </div>
+
+                  {/* Binary per-side logos (YES / NO teams) */}
+                  {editMarketType === "binary" && (
+                    <div>
+                      <label className="block text-sm font-semibold mb-2">
+                        {locale === "sw" ? "Nembo (hiari) — YES / NO" : "Logos (optional) — YES / NO"}
+                      </label>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <LogoUploadSlot url={editOptionImages[0]} letter="Y" title="YES logo" onFile={(f) => { const files = [...editOptionImageFiles]; files[0] = f; setEditOptionImageFiles(files); if (f) { const imgs = [...editOptionImages]; imgs[0] = URL.createObjectURL(f); setEditOptionImages(imgs); } }} />
+                          <span className="text-[11px] font-mono font-bold text-[#00e5a0]">YES</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <LogoUploadSlot url={editOptionImages[1]} letter="N" title="NO logo" onFile={(f) => { const files = [...editOptionImageFiles]; files[1] = f; setEditOptionImageFiles(files); if (f) { const imgs = [...editOptionImages]; imgs[1] = URL.createObjectURL(f); setEditOptionImages(imgs); } }} />
+                          <span className="text-[11px] font-mono font-bold text-red-400">NO</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-sm font-semibold mb-2">

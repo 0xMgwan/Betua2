@@ -36,6 +36,7 @@ interface EventMarket {
   options?: string[];
   optionPools?: number[];
   optionPrices?: number[];
+  optionImages?: string[] | null;
   totalVolume?: number;
   status?: string;
   resolvesAt?: string;
@@ -276,6 +277,7 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
                               const optPrice = m.optionPrices?.[i] || (1 / (m.options?.length || 4));
                               return (
                                 <div key={i} className="flex items-center justify-between gap-2 text-[10px]">
+                                  {m.optionImages?.[i] && <img src={m.optionImages[i]} alt="" className="w-4 h-4 rounded-full object-cover shrink-0" />}
                                   <span className="truncate flex-1 text-[var(--muted)]">{opt}</span>
                                   <span className="font-mono text-purple-400 tabular-nums">{Math.round(optPrice * 100)}%</span>
                                   <span className="font-mono text-[9px] font-bold text-purple-400/80 bg-purple-500/10 border border-purple-500/20 rounded px-1 leading-tight tabular-nums">{fmtMult(optPrice)}</span>
@@ -308,6 +310,7 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
                   // Binary YES/NO
                   <div className="flex gap-1.5">
                     <div className="flex-1 flex items-center gap-1">
+                      {m.optionImages?.[0] && <img src={m.optionImages[0]} alt="" className="w-5 h-5 rounded-full object-cover shrink-0" />}
                       <button
                         onClick={(e) => handleBuyClick(m, "yes", undefined, e)}
                         className="flex-1 py-1 text-[10px] font-bold bg-[#00e5a0]/20 text-[#00e5a0] border border-[#00e5a0]/30 hover:bg-[#00e5a0]/30"
@@ -327,6 +330,7 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
                       </button>
                     </div>
                     <div className="flex-1 flex items-center gap-1">
+                      {m.optionImages?.[1] && <img src={m.optionImages[1]} alt="" className="w-5 h-5 rounded-full object-cover shrink-0" />}
                       <button
                         onClick={(e) => handleBuyClick(m, "no", undefined, e)}
                         className="flex-1 py-1 text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"

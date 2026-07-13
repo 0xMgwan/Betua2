@@ -239,9 +239,10 @@ export async function POST(req: NextRequest) {
       liquidity: isMultiOption ? POOL_PER_OPTION * options.length : TOTAL_LIQUIDITY,
       options: isMultiOption ? options : undefined,
       optionPools: optionPools || undefined,
-      // Per-option (per-team) logos, index-aligned with options. Only kept if any is set.
-      optionImages: isMultiOption && Array.isArray(optionImages) && optionImages.some((u: unknown) => typeof u === "string" && u)
-        ? optionImages.map((u: unknown) => (typeof u === "string" ? u : "")).slice(0, options.length)
+      // Per-side/per-option logos: multi = index-aligned with options; binary =
+      // [0] YES, [1] NO. Only kept when at least one is set.
+      optionImages: Array.isArray(optionImages) && optionImages.some((u: unknown) => typeof u === "string" && u)
+        ? optionImages.map((u: unknown) => (typeof u === "string" ? u : "")).slice(0, isMultiOption ? options.length : 2)
         : undefined,
       seedAmount: effectiveSeed,
       totalVolume: effectiveSeed, // seed immediately backs the pot

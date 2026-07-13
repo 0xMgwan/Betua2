@@ -21,6 +21,7 @@ import {
 } from "@phosphor-icons/react";
 import { ALL_PYTH_SYMBOLS } from "@/lib/pyth";
 import { TerminalDatePicker } from "@/components/TerminalDatePicker";
+import { LogoUploadSlot } from "@/components/LogoUploadSlot";
 
 const CREATION_FEE_TZS = 2000;
 const USDC_TO_TZS_RATE = 2630;
@@ -87,9 +88,20 @@ export default function CreateMarketPage() {
     options?: string[];
     optionProbs?: number[];
     initialProb?: number;
+    // Local preview URLs (blob:) or files; uploaded on event submit. Binary: [0]=YES,[1]=NO.
+    optionImages?: string[];
+    optionImageFiles?: (File | null)[];
   }
   const [eventMarkets, setEventMarkets] = useState<EventMarket[]>([]);
-  const [newEventMarket, setNewEventMarket] = useState({ title: "", type: "binary" as "binary" | "multi", options: ["", ""], optionProbs: [50, 50], initialProb: 50 });
+  const [newEventMarket, setNewEventMarket] = useState<{ title: string; type: "binary" | "multi"; options: string[]; optionProbs: number[]; initialProb: number; optionImages: string[]; optionImageFiles: (File | null)[] }>({ title: "", type: "binary", options: ["", ""], optionProbs: [50, 50], initialProb: 50, optionImages: ["", ""], optionImageFiles: [null, null] });
+
+  function setEventMarketLogo(idx: number, file: File | null) {
+    setNewEventMarket(prev => {
+      const files = [...prev.optionImageFiles]; files[idx] = file;
+      const imgs = [...prev.optionImages]; if (file) imgs[idx] = URL.createObjectURL(file);
+      return { ...prev, optionImageFiles: files, optionImages: imgs };
+    });
+  }
 
   const newEventProbsTotal = newEventMarket.optionProbs
     .slice(0, newEventMarket.options.length)
@@ -289,6 +301,27 @@ export default function CreateMarketPage() {
 
         // Step 2: Create each market under the event
         for (const market of eventMarkets) {
+          // Upload any per-side/per-option logo files for this sub-market.
+          let marketOptionImages: string[] | undefined;
+          if (market.optionImages?.some(Boolean) || market.optionImageFiles?.some(Boolean)) {
+            const uploaded: string[] = [];
+            for (let i = 0; i < (market.optionImages?.length || 0); i++) {
+              const file = market.optionImageFiles?.[i];
+              if (file) {
+                const fd = new FormData();
+                fd.append("file", file);
+                try {
+                  const r = await fetch("/api/upload", { method: "POST", body: fd });
+                  const d = await r.json();
+                  uploaded.push(r.ok ? d.url : "");
+                } catch { uploaded.push(""); }
+              } else {
+                const u = market.optionImages?.[i] || "";
+                uploaded.push(u.startsWith("blob:") ? "" : u);
+              }
+            }
+            if (uploaded.some(Boolean)) marketOptionImages = uploaded;
+          }
           const mRes = await fetch(`/api/events/${eventId}/markets`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -298,6 +331,7 @@ export default function CreateMarketPage() {
               options: market.type === "multi" ? market.options : undefined,
               optionProbs: market.type === "multi" ? market.optionProbs : undefined,
               initialProb: market.type === "binary" ? market.initialProb : undefined,
+              optionImages: marketOptionImages,
             }),
           });
           if (!mRes.ok) {
@@ -321,6 +355,24 @@ export default function CreateMarketPage() {
       // Add initial probability for binary markets
       if (marketType === "binary") {
         body.initialProb = initialProb;
+        // Optional per-side logos: [0] = YES, [1] = NO. Upload files if picked.
+        const sideImages: string[] = [];
+        for (const idx of [0, 1]) {
+          const file = optionImageFiles[idx];
+          if (file) {
+            const fd = new FormData();
+            fd.append("file", file);
+            try {
+              const res = await fetch("/api/upload", { method: "POST", body: fd });
+              const data = await res.json();
+              sideImages.push(res.ok ? data.url : "");
+            } catch { sideImages.push(""); }
+          } else {
+            const u = optionImages[idx] || "";
+            sideImages.push(u.startsWith("blob:") ? "" : u);
+          }
+        }
+        if (sideImages.some(Boolean)) body.optionImages = sideImages;
       }
 
       // Add custom options for multi-option markets
@@ -730,6 +782,23 @@ export default function CreateMarketPage() {
                         ? "Uwezekano mdogo → gawio kubwa. Mfano: YES 10% = ×10x kwa washindi."
                         : "Lower probability → bigger payout. E.g., YES 10% = ×10x for winners."}
                     </p>
+
+                    {/* Optional per-side logos (e.g. team badges) — YES / NO */}
+                    <div className="pt-2 border-t border-[var(--card-border)]/40">
+                      <p className="text-[9px] font-mono text-[var(--muted)] uppercase tracking-wider mb-1.5">
+                        {locale === "sw" ? "Nembo (hiari) — timu za YES / NO" : "Logos (optional) — YES / NO teams"}
+                      </p>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <LogoUploadSlot url={optionImages[0]} letter="Y" title="YES logo" onFile={(f) => handleOptionImageSelect(0, f)} />
+                          <span className="text-[10px] font-mono font-bold text-[#00e5a0]">YES</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <LogoUploadSlot url={optionImages[1]} letter="N" title="NO logo" onFile={(f) => handleOptionImageSelect(1, f)} />
+                          <span className="text-[10px] font-mono font-bold text-red-400">NO</span>
+                        </div>
+                      </div>
+                    </div>
                   </motion.div>
                 )}
 
@@ -969,12 +1038,24 @@ export default function CreateMarketPage() {
                             onChange={(e) => setNewEventMarket({ ...newEventMarket, initialProb: Number(e.target.value) })}
                             className="w-full accent-[#00e5a0]"
                           />
+                          {/* Optional YES / NO logos */}
+                          <div className="flex items-center gap-3 pt-1">
+                            <div className="flex items-center gap-1.5">
+                              <LogoUploadSlot size={26} url={newEventMarket.optionImages[0]} letter="Y" title="YES logo" onFile={(f) => setEventMarketLogo(0, f)} />
+                              <span className="text-[9px] font-mono font-bold text-[#00e5a0]">YES</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <LogoUploadSlot size={26} url={newEventMarket.optionImages[1]} letter="N" title="NO logo" onFile={(f) => setEventMarketLogo(1, f)} />
+                              <span className="text-[9px] font-mono font-bold text-red-400">NO</span>
+                            </div>
+                          </div>
                         </div>
                       )}
                       {newEventMarket.type === "multi" && (
                         <div className="space-y-1">
                           {newEventMarket.options.map((opt, i) => (
                             <div key={i} className="flex items-center gap-1.5">
+                              <LogoUploadSlot size={28} url={newEventMarket.optionImages[i]} letter={String.fromCharCode(65 + i)} title="Option logo" onFile={(f) => setEventMarketLogo(i, f)} />
                               <input
                                 type="text"
                                 value={opt}
@@ -1045,12 +1126,21 @@ export default function CreateMarketPage() {
                           if (!newEventMarket.title.trim()) return;
                           let validOptions: string[] | undefined;
                           let validProbs: number[] | undefined;
+                          let imgs: string[] = [];
+                          let imgFiles: (File | null)[] = [];
                           if (newEventMarket.type === "multi") {
                             const kept: number[] = [];
+                            const keptImg: string[] = [];
+                            const keptFile: (File | null)[] = [];
                             validOptions = newEventMarket.options
                               .map((o, i) => ({ o: o.trim(), i }))
                               .filter(({ o }) => o)
-                              .map(({ o, i }) => { kept.push(newEventMarket.optionProbs[i] ?? 0); return o; });
+                              .map(({ o, i }) => {
+                                kept.push(newEventMarket.optionProbs[i] ?? 0);
+                                keptImg.push(newEventMarket.optionImages[i] || "");
+                                keptFile.push(newEventMarket.optionImageFiles[i] || null);
+                                return o;
+                              });
                             if (validOptions.length < 2) return;
                             const sum = kept.reduce((s, p) => s + p, 0);
                             if (Math.abs(sum - 100) > 1) {
@@ -1058,6 +1148,10 @@ export default function CreateMarketPage() {
                               return;
                             }
                             validProbs = kept;
+                            imgs = keptImg; imgFiles = keptFile;
+                          } else {
+                            imgs = [newEventMarket.optionImages[0] || "", newEventMarket.optionImages[1] || ""];
+                            imgFiles = [newEventMarket.optionImageFiles[0] || null, newEventMarket.optionImageFiles[1] || null];
                           }
                           setError("");
                           setEventMarkets([
@@ -1069,9 +1163,11 @@ export default function CreateMarketPage() {
                               options: validOptions,
                               optionProbs: validProbs,
                               initialProb: newEventMarket.type === "binary" ? newEventMarket.initialProb : undefined,
+                              optionImages: imgs,
+                              optionImageFiles: imgFiles,
                             },
                           ]);
-                          setNewEventMarket({ title: "", type: "binary", options: ["", ""], optionProbs: [50, 50], initialProb: 50 });
+                          setNewEventMarket({ title: "", type: "binary", options: ["", ""], optionProbs: [50, 50], initialProb: 50, optionImages: ["", ""], optionImageFiles: [null, null] });
                         }}
                         className="w-full py-2 border border-orange-500/50 text-orange-400 text-xs font-mono font-bold hover:bg-orange-500/10 transition-all flex items-center justify-center gap-1.5"
                       >

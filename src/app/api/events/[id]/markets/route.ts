@@ -23,7 +23,7 @@ export async function POST(
   }
 
   const body = await request.json();
-  const { title, description, resolvesAt, options, optionProbs, initialProb } = body;
+  const { title, description, resolvesAt, options, optionProbs, initialProb, optionImages } = body;
 
   if (!title) {
     return NextResponse.json({ error: "Title is required" }, { status: 400 });
@@ -35,12 +35,18 @@ export async function POST(
   // Determine if this is a multi-option market
   const isMultiOption = options && Array.isArray(options) && options.length >= 2;
 
+  // Per-side/per-option logos: multi = index-aligned; binary = [0]=YES, [1]=NO.
+  const cleanOptionImages = Array.isArray(optionImages) && optionImages.some((u: unknown) => typeof u === "string" && u)
+    ? optionImages.map((u: unknown) => (typeof u === "string" ? u : "")).slice(0, isMultiOption ? options.length : 2)
+    : undefined;
+
   let marketData: Record<string, unknown> = {
     title,
     description: description || `Market for ${event.title}`,
     category: event.category,
     subCategory: event.subCategory,
     imageUrl: event.imageUrl,
+    optionImages: cleanOptionImages,
     resolvesAt: resolveDate,
     creatorId: userId,
     eventId,
