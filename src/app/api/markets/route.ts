@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { getPrice, getMultiOptionPrices, getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
-import { createNotification } from "@/lib/notify";
+import { createNotification, broadcastNewMarket } from "@/lib/notify";
 import { getUserCurrency } from "@/lib/currency";
 
 // Fee configuration
@@ -347,7 +347,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Notification: market created
+    // Notification: creator's own confirmation
     createNotification({
       userId: session.userId,
       type: "MARKET_CREATED",
@@ -355,6 +355,15 @@ export async function POST(req: NextRequest) {
       message: `Your market "${effectiveTitle}" is now live!${effectiveSeed > 0 ? ` Seeded with ${effectiveSeed.toLocaleString()} TZS.` : ""}`,
       link: `/markets/${market.id}`,
     });
+
+    // Announce the new market to everyone else (bell + push), like resolution does.
+    // Fire-and-forget so it never delays the create response.
+    broadcastNewMarket({
+      marketId: market.id,
+      title: effectiveTitle,
+      creatorId: session.userId,
+      category,
+    }).catch((e) => console.error("[markets] broadcast failed:", e));
 
     return NextResponse.json({ market });
   } catch (err) {
