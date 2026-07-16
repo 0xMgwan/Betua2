@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
 import { getSession } from "@/lib/auth";
+import { broadcastNewEvent } from "@/lib/notify";
 
 // Fee configuration (same as market creation)
 const CREATION_FEE_NTZS_USER_ID = process.env.CREATION_FEE_NTZS_USER_ID || "";
@@ -162,6 +163,16 @@ export async function POST(request: Request) {
       },
     },
   });
+
+  // Announce the new event to everyone else (bell + push), like markets do.
+  // Fire-and-forget so it never delays the create response. Fires once per
+  // event — its sub-markets go through a separate route and don't re-broadcast.
+  broadcastNewEvent({
+    eventId: event.id,
+    title: event.title,
+    creatorId: userId,
+    category: event.category,
+  }).catch((e) => console.error("[events] broadcast failed:", e));
 
   return NextResponse.json({ event }, { status: 201 });
 }

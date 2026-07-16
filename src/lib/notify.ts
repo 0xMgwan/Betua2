@@ -63,16 +63,18 @@ export async function createNotifications(inputs: CreateNotificationInput[]) {
 }
 
 /**
- * Announce a newly-created market to every other user — in-app bell + web push,
- * mirroring how market resolution notifies traders. Non-blocking; skips the
- * creator and deleted accounts. Meant to be fired-and-forgotten (not awaited)
- * so it never slows the create response.
+ * Announce a newly-created market/event to every other user — in-app bell +
+ * web push, mirroring how resolution notifies traders. Non-blocking; skips the
+ * creator and deleted accounts. Fire-and-forget (don't await) so it never slows
+ * the create response.
  */
-export async function broadcastNewMarket(opts: {
-  marketId: string;
-  title: string;
+async function broadcast(opts: {
   creatorId: string;
-  category?: string | null;
+  type: NotificationType;
+  title: string;
+  message: string;
+  link: string;
+  pushTag: string;
 }) {
   try {
     const users = await prisma.user.findMany({
@@ -84,20 +86,50 @@ export async function broadcastNewMarket(opts: {
     });
     if (users.length === 0) return;
 
-    const title = "New Market";
-    const message = `New market: "${opts.title}"${opts.category ? ` · ${opts.category}` : ""}. Place your prediction!`;
-    const link = `/markets/${opts.marketId}`;
-
     await createNotifications(
-      users.map((u) => ({ userId: u.id, type: "MARKET_CREATED" as const, title, message, link }))
+      users.map((u) => ({ userId: u.id, type: opts.type, title: opts.title, message: opts.message, link: opts.link }))
     );
 
     const { sendPushToUsers } = await import("@/lib/push");
-    await sendPushToUsers(
-      users.map((u) => u.id),
-      { title, body: message, url: link, tag: `new-market-${opts.marketId}` }
-    );
+    await sendPushToUsers(users.map((u) => u.id), {
+      title: opts.title,
+      body: opts.message,
+      url: opts.link,
+      tag: opts.pushTag,
+    });
   } catch (err) {
-    console.error("[broadcastNewMarket] failed:", err);
+    console.error("[broadcast] failed:", err);
   }
+}
+
+export async function broadcastNewMarket(opts: {
+  marketId: string;
+  title: string;
+  creatorId: string;
+  category?: string | null;
+}) {
+  return broadcast({
+    creatorId: opts.creatorId,
+    type: "MARKET_CREATED",
+    title: "New Market",
+    message: `New market: "${opts.title}"${opts.category ? ` · ${opts.category}` : ""}. Place your prediction!`,
+    link: `/markets/${opts.marketId}`,
+    pushTag: `new-market-${opts.marketId}`,
+  });
+}
+
+export async function broadcastNewEvent(opts: {
+  eventId: string;
+  title: string;
+  creatorId: string;
+  category?: string | null;
+}) {
+  return broadcast({
+    creatorId: opts.creatorId,
+    type: "MARKET_CREATED",
+    title: "New Event",
+    message: `New event: "${opts.title}"${opts.category ? ` · ${opts.category}` : ""}. Check out the markets!`,
+    link: `/events/${opts.eventId}`,
+    pushTag: `new-event-${opts.eventId}`,
+  });
 }
