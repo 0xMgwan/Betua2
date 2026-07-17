@@ -16,7 +16,14 @@ const ADMIN_IDS = [
   "cmqr2tyew000004icz2ibal5y", // @goodmusic__tz
 ];
 
-type Tab = "overview" | "users" | "markets" | "partners" | "referrals" | "tools";
+type Tab = "overview" | "users" | "markets" | "partners" | "referrals" | "cashflow" | "tools";
+
+interface CashflowItem {
+  id: string; ntzsId: string | null; reference: string | null;
+  username: string; email: string; amountTzs: number; currency: string;
+  status: string; phone: string | null; createdAt: string;
+}
+interface CashflowData { kind: string; items: CashflowItem[]; totalCompletedTzs: number; count: number }
 type AnyUser = { externalId: string; username: string | null; email: string | null; phone: string | null; balanceTzs: number; balanceUsdc: number };
 
 interface Summary {
@@ -45,6 +52,10 @@ export default function AdminPage() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("overview");
   const [data, setData] = useState<{ summary: Summary; users: User[]; markets: Market[] } | null>(null);
+  const [cashKind, setCashKind] = useState<"deposit" | "withdrawal">("deposit");
+  const [cashflow, setCashflow] = useState<CashflowData | null>(null);
+  const [cashLoading, setCashLoading] = useState(false);
+  const [cashSearch, setCashSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [reconciling, setReconciling] = useState(false);
@@ -115,6 +126,21 @@ export default function AdminPage() {
       fetch("/api/admin/referrals").then(r => r.ok ? r.json() : null).then(d => d && setReferrals(d));
     }
   }, [tab, referrals, isAdmin]);
+
+  // Cashflow (deposits/withdrawals): reload on tab open, kind toggle, or search
+  useEffect(() => {
+    if (tab !== "cashflow" || !isAdmin) return;
+    setCashLoading(true);
+    const params = new URLSearchParams({ kind: cashKind });
+    if (cashSearch.trim()) params.set("q", cashSearch.trim());
+    const t = setTimeout(() => {
+      fetch(`/api/admin/transactions?${params}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => setCashflow(d))
+        .finally(() => setCashLoading(false));
+    }, cashSearch ? 300 : 0);
+    return () => clearTimeout(t);
+  }, [tab, cashKind, cashSearch, isAdmin]);
 
   // Load behavior analytics for the overview; refetch when the window changes
   useEffect(() => {
@@ -222,6 +248,7 @@ export default function AdminPage() {
     { key: "markets", label: `Markets (${data?.markets.length || 0})` },
     { key: "partners", label: `Partners${partners ? ` (${partners.length})` : ""}` },
     { key: "referrals", label: "Referrals" },
+    { key: "cashflow", label: "Cashflow" },
     { key: "tools", label: "Tools" },
   ];
 
@@ -839,6 +866,81 @@ export default function AdminPage() {
         )}
 
         {/* ── TOOLS ── */}
+        {/* ── CASHFLOW: deposits & withdrawals mapped to users ── */}
+        {tab === "cashflow" && (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Deposit / Withdrawal toggle */}
+              <div className="inline-flex border border-[var(--card-border)] rounded-lg overflow-hidden">
+                {(["deposit", "withdrawal"] as const).map(k => (
+                  <button
+                    key={k}
+                    onClick={() => setCashKind(k)}
+                    className={`px-4 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${
+                      cashKind === k ? "bg-[var(--accent)] text-black" : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                    }`}
+                  >
+                    {k === "deposit" ? "Deposits" : "Withdrawals"}
+                  </button>
+                ))}
+              </div>
+              <input
+                type="text"
+                placeholder="Search username, phone, or nTZS ID…"
+                value={cashSearch}
+                onChange={(e) => setCashSearch(e.target.value)}
+                className="flex-1 min-w-[220px] max-w-md px-3 py-2 bg-[var(--background)] border border-[var(--card-border)] text-sm font-mono focus:outline-none focus:border-[var(--accent)]/50 rounded-lg"
+              />
+              {cashflow && (
+                <span className="text-[11px] font-mono text-[var(--muted)] ml-auto">
+                  {cashKind === "deposit" ? "Total deposited" : "Total withdrawn"}:{" "}
+                  <span className={cashKind === "deposit" ? "text-[#00e5a0] font-bold" : "text-red-400 font-bold"}>
+                    {formatTZS(cashflow.totalCompletedTzs)}
+                  </span>{" "}
+                  · {cashflow.count} {cashKind}s
+                </span>
+              )}
+            </div>
+
+            <div className="overflow-x-auto border border-[var(--card-border)] rounded-lg">
+              <table className="w-full text-[11px] border-collapse">
+                <thead>
+                  <tr className="border-b border-[var(--card-border)] bg-[var(--background)]">
+                    {["User", "Amount", "Status", "nTZS ID", "Payer Phone", "Date (EAT)"].map(h => (
+                      <th key={h} className="text-left px-3 py-2 text-[9px] text-[var(--muted)] uppercase tracking-wider font-bold whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {cashLoading ? (
+                    <tr><td colSpan={6} className="text-center text-[var(--muted)] py-8">Loading…</td></tr>
+                  ) : (cashflow?.items.length || 0) === 0 ? (
+                    <tr><td colSpan={6} className="text-center text-[var(--muted)] py-8">No {cashKind}s found</td></tr>
+                  ) : cashflow!.items.map(it => (
+                    <tr key={it.id} className="border-b border-[var(--card-border)]/40 hover:bg-[var(--card)]">
+                      <td className="px-3 py-2 font-bold text-[var(--accent)]" title={it.email}>@{it.username}</td>
+                      <td className="px-3 py-2 tabular-nums font-bold text-right">{formatTZS(it.amountTzs)}</td>
+                      <td className="px-3 py-2">
+                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full border ${
+                          it.status === "COMPLETED" ? "text-[#00e5a0] border-[#00e5a0]/30 bg-[#00e5a0]/10"
+                          : it.status === "PENDING" ? "text-yellow-400 border-yellow-400/30 bg-yellow-400/10"
+                          : "text-red-400 border-red-400/30 bg-red-400/10"
+                        }`}>{it.status}</span>
+                      </td>
+                      <td className="px-3 py-2 font-mono text-[var(--muted)]" title={it.ntzsId || ""}>{it.ntzsId ? `${it.ntzsId.slice(0, 10)}…` : "—"}</td>
+                      <td className="px-3 py-2 font-mono text-[var(--muted)]">{it.phone || "—"}</td>
+                      <td className="px-3 py-2 text-[var(--muted)] whitespace-nowrap">{new Date(it.createdAt).toLocaleString("en-GB", { timeZone: "Africa/Nairobi", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-[10px] font-mono text-[var(--muted)]">
+              The <span className="text-[var(--foreground)]">nTZS ID</span> matches the &quot;ID&quot; column on the nTZS dashboard — paste it into search to find who a dashboard row belongs to. Payer phone is the number that paid (may differ from the user&apos;s registered phone).
+            </p>
+          </div>
+        )}
+
         {tab === "tools" && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
