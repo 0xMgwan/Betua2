@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ntzs } from "@/lib/ntzs";
+import { getHouseOnchainBalance } from "@/lib/houseWallets";
 
 export async function GET() {
   try {
@@ -21,13 +21,17 @@ export async function GET() {
     });
     if (!user) return NextResponse.json({ user: null });
 
-    // DB is the source of truth — all deposits/withdrawals/trades update balanceTzs directly.
-    // DB balance is the single source of truth (pooled model). We no longer
-    // display the legacy personal nTZS wallet balance — showing it when DB was 0
-    // surfaced a phantom balance that couldn't actually be spent.
-    const balanceTzs  = Math.max(0, user.balanceTzs  || 0);
-    const balanceUsdc = Math.max(0, user.balanceUsdc || 0);
+    // DB is the source of truth for regular users. For the platform's own
+    // house/pool wallet, show the real on-chain nTZS balance (the pool) instead
+    // of the DB accounting figure, which inflates over time.
+    let balanceTzs  = Math.max(0, user.balanceTzs  || 0);
+    let balanceUsdc = Math.max(0, user.balanceUsdc || 0);
     const balanceKes  = Math.max(0, user.balanceKes  || 0);
+    const onchain = await getHouseOnchainBalance(user.ntzsUserId);
+    if (onchain) {
+      balanceTzs = onchain.balanceTzs;
+      balanceUsdc = onchain.balanceUsdc;
+    }
 
     return NextResponse.json({
       user: { ...user, balanceTzs, balanceUsdc, balanceKes }

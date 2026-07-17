@@ -105,9 +105,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, withdrawalId });
   } catch (err) {
     console.error("Withdrawal error:", err);
-    if (err instanceof NtzsApiError) {
-      return NextResponse.json({ error: err.message || err.code }, { status: 400 });
-    }
-    return NextResponse.json({ error: "Withdrawal failed. Please try again." }, { status: 500 });
+    // The user's balance was already reversed above, so it's safe to retry.
+    // Don't surface raw nTZS errors (e.g. "insufficient balance") — those leak
+    // pool state and confuse users. Map to a friendly, retry-able message.
+    const raw = (err instanceof NtzsApiError ? (err.message || err.code) : String(err || "")).toLowerCase();
+    const friendly = /insufficient|balance|liquidity|funds/.test(raw)
+      ? "Withdrawal is temporarily unavailable. Your balance is unchanged — please try again in a little while."
+      : "We couldn't process that withdrawal right now. Your balance is unchanged — please try again.";
+    return NextResponse.json({ error: friendly }, { status: 400 });
   }
 }

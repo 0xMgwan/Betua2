@@ -569,15 +569,22 @@ export default function AdminPage() {
                       <td className="px-3 py-2 text-[var(--muted)]">{u.phone || "—"}</td>
                       <td className="px-3 py-2">{u.country || "—"}</td>
                       <td className="px-3 py-2 tabular-nums font-bold text-right">
-                        <span className={(u.balanceTzs || 0) > 0 ? "text-[#00e5a0]" : "text-[var(--muted)]"}>
-                          {formatTZS(Math.max(0, u.balanceTzs || 0))}
-                        </span>
-                        {/* House wallets: show the real on-chain balance too (differs from the
-                            DB balance because payouts drain the wallet without debiting DB). */}
-                        {u.systemWallet && u.onchainBalanceTzs != null && (
-                          <div className="text-[9px] text-orange-400/80 font-normal mt-0.5" title="Live on-chain settlement-wallet balance">
-                            on-chain: {formatTZS(u.onchainBalanceTzs)}
-                          </div>
+                        {/* House wallets show the REAL on-chain pool balance (matches what
+                            the account sees when logged in). DB figure kept as a muted
+                            reference since it inflates (deposits credit it, payouts don't). */}
+                        {u.systemWallet && u.onchainBalanceTzs != null ? (
+                          <>
+                            <span className={u.onchainBalanceTzs > 0 ? "text-[#00e5a0]" : "text-[var(--muted)]"}>
+                              {formatTZS(u.onchainBalanceTzs)}
+                            </span>
+                            <div className="text-[9px] text-[var(--muted)]/70 font-normal mt-0.5" title="DB accounting figure (inflates; not the real pool)">
+                              db: {formatTZS(Math.max(0, u.balanceTzs || 0))}
+                            </div>
+                          </>
+                        ) : (
+                          <span className={(u.balanceTzs || 0) > 0 ? "text-[#00e5a0]" : "text-[var(--muted)]"}>
+                            {formatTZS(Math.max(0, u.balanceTzs || 0))}
+                          </span>
                         )}
                       </td>
                       {/* Net stake locked in open markets — 0 balance + big "in positions" = fully invested, not broke */}
