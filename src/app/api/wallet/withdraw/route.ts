@@ -79,19 +79,35 @@ export async function POST(req: NextRequest) {
         data: { ntzsWithdrawId: withdrawal.id, status: "COMPLETED" },
       });
     } catch (wErr) {
-      // Withdrawal API failed — reverse the deduction and mark FAILED
-      await prisma.$transaction([
-        prisma.user.update({
-          where: { id: session.userId },
-          data: { balanceTzs: { increment: amountTzs } },
-        }),
-        prisma.transaction.update({
-          where: { id: tx.id },
-          data: { status: "FAILED" },
-        }),
-      ]);
-      console.error("Withdrawal API failed, reversed deduction:", wErr);
-      throw wErr;
+      // CRITICAL: only refund when we KNOW nTZS did not send the money.
+      //  - An explicit 4xx rejection (invalid input, insufficient pool, etc.)
+      //    means nTZS declined it → the payout was NOT made → safe to refund + FAIL.
+      //  - A timeout / network error / 5xx is AMBIGUOUS: nTZS may have already
+      //    burned + paid out. Refunding here caused a double-payout (money out
+      //    AND balance restored) that drained the pool. In that case we DON'T
+      //    refund — keep the balance debited and leave the row PENDING for the
+      //    withdrawal.completed/failed webhook (or admin reconcile) to resolve.
+      const isExplicitReject = wErr instanceof NtzsApiError && wErr.status >= 400 && wErr.status < 500;
+      if (isExplicitReject) {
+        await prisma.$transaction([
+          prisma.user.update({
+            where: { id: session.userId },
+            data: { balanceTzs: { increment: amountTzs } },
+          }),
+          prisma.transaction.update({ where: { id: tx.id }, data: { status: "FAILED" } }),
+        ]);
+        console.error("Withdrawal explicitly rejected by nTZS, refunded:", wErr);
+        throw wErr;
+      }
+      // Ambiguous failure — do NOT refund. Leave PENDING (balance stays debited).
+      await prisma.transaction.update({
+        where: { id: tx.id },
+        data: { status: "PENDING", description: "nTZS call errored — awaiting reconcile (no auto-refund to avoid double-payout)" },
+      });
+      console.error("Withdrawal AMBIGUOUS (timeout/5xx) — held PENDING, NOT refunded:", wErr);
+      return NextResponse.json({
+        error: "Your withdrawal is being verified. If it doesn't arrive shortly it will be reversed — please don't retry yet.",
+      }, { status: 202 });
     }
 
     createNotification({
@@ -105,9 +121,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, withdrawalId });
   } catch (err) {
     console.error("Withdrawal error:", err);
-    // The user's balance was already reversed above, so it's safe to retry.
-    // Don't surface raw nTZS errors (e.g. "insufficient balance") — those leak
-    // pool state and confuse users. Map to a friendly, retry-able message.
+    // Reaches here only for explicit rejections (balance already reversed above)
+    // or pre-nTZS validation errors. Friendly, retry-able, no pool-state leak.
     const raw = (err instanceof NtzsApiError ? (err.message || err.code) : String(err || "")).toLowerCase();
     const friendly = /insufficient|balance|liquidity|funds/.test(raw)
       ? "Withdrawal is temporarily unavailable. Your balance is unchanged — please try again in a little while."

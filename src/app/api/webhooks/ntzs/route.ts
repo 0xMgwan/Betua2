@@ -41,22 +41,46 @@ export async function POST(req: NextRequest) {
       }
 
       case "withdrawal.completed": {
-        const wtx = await prisma.transaction.findFirst({
+        // Primary match: by the nTZS withdrawal id we stored.
+        let wtx = await prisma.transaction.findFirst({
           where: { ntzsWithdrawId: event.data.id },
         });
-        await prisma.transaction.updateMany({
-          where: { ntzsWithdrawId: event.data.id },
-          data: { status: "COMPLETED" },
-        });
-        if (wtx) await notifyUserPartners(wtx.userId, "withdrawal.completed", { amountTzs: wtx.amountTzs, transactionId: wtx.id });
+        // Fallback: an AMBIGUOUS held withdrawal (the create call timed out, so we
+        // never stored an id) — match the pending row by phone + amount so a
+        // real payout gets marked COMPLETED (not double-refunded).
+        if (!wtx) {
+          const phone = event.data.phone || event.data.phoneNumber;
+          const amt = event.data.amountTzs;
+          if (phone && amt) {
+            wtx = await prisma.transaction.findFirst({
+              where: { type: "WITHDRAWAL", status: "PENDING", ntzsWithdrawId: null, phone: String(phone), amountTzs: Number(amt) },
+              orderBy: { createdAt: "desc" },
+            });
+          }
+        }
+        if (wtx) {
+          await prisma.transaction.update({ where: { id: wtx.id }, data: { status: "COMPLETED", ntzsWithdrawId: event.data.id } });
+          await notifyUserPartners(wtx.userId, "withdrawal.completed", { amountTzs: wtx.amountTzs, transactionId: wtx.id });
+        }
         break;
       }
 
       case "withdrawal.failed": {
-        // Reverse the balance deduction made at withdrawal initiation
-        const wtx = await prisma.transaction.findFirst({
+        // Reverse the balance deduction made at withdrawal initiation.
+        let wtx = await prisma.transaction.findFirst({
           where: { ntzsWithdrawId: event.data.id, status: "PENDING" },
         });
+        // Fallback: ambiguous held withdrawal (no id stored) — match by phone+amount.
+        if (!wtx) {
+          const phone = event.data.phone || event.data.phoneNumber;
+          const amt = event.data.amountTzs;
+          if (phone && amt) {
+            wtx = await prisma.transaction.findFirst({
+              where: { type: "WITHDRAWAL", status: "PENDING", ntzsWithdrawId: null, phone: String(phone), amountTzs: Number(amt) },
+              orderBy: { createdAt: "desc" },
+            });
+          }
+        }
         if (!wtx) break;
 
         await prisma.$transaction([
