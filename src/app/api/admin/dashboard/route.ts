@@ -101,22 +101,25 @@ export async function GET() {
   const { ntzs } = await import('@/lib/ntzs');
   const users = await Promise.all(rawUsers.map(async (u) => {
     const systemWallet = u.ntzsUserId ? (SYSTEM_WALLETS[u.ntzsUserId] || null) : null;
-    let balanceTzs  = Math.max(0, u.balanceTzs  || 0);
-    let balanceUsdc = Math.max(0, u.balanceUsdc  || 0);
-    // System/house wallets: show the live on-chain balance (the truth). For
-    // regular users the DB balance is the source of truth — never sync from the
-    // personal nTZS wallet (that re-inflated balances and undid reconcile).
+    // DB balance is the balance we show everywhere — matches what the account
+    // sees when logged in. For house/system wallets we ALSO fetch the live
+    // on-chain balance and expose it separately (onchainBalanceTzs) so the real
+    // settlement-wallet funds are visible next to the app-tracked balance.
+    const balanceTzs  = Math.max(0, u.balanceTzs  || 0);
+    const balanceUsdc = Math.max(0, u.balanceUsdc  || 0);
+    let onchainBalanceTzs: number | null = null;
+    let onchainBalanceUsdc: number | null = null;
     if (u.ntzsUserId && systemWallet) {
       try {
         const bal = await ntzs.users.getBalance(u.ntzsUserId);
-        balanceTzs = Math.max(0, bal.balanceTzs || 0);
-        balanceUsdc = Math.max(0, bal.balanceUsdc || 0);
+        onchainBalanceTzs = Math.max(0, bal.balanceTzs || 0);
+        onchainBalanceUsdc = Math.max(0, bal.balanceUsdc || 0);
       } catch { /* skip if API down */ }
     }
     const dep = depositsByUser.get(u.id);
     const wd = withdrawalsByUser.get(u.id);
     return {
-      ...u, balanceTzs, balanceUsdc, systemWallet,
+      ...u, balanceTzs, balanceUsdc, systemWallet, onchainBalanceTzs, onchainBalanceUsdc,
       inPositionsTzs: inPlayByUser.get(u.id) || 0,
       depositedTzs: dep?.total || 0, depositCount: dep?.count || 0,
       withdrawnTzs: wd?.total || 0, withdrawCount: wd?.count || 0,

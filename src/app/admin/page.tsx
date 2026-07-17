@@ -37,6 +37,7 @@ interface User {
   country: string; balanceTzs: number; balanceUsdc: number; balanceKes: number;
   inPositionsTzs?: number;
   depositedTzs?: number; depositCount?: number; withdrawnTzs?: number; withdrawCount?: number;
+  onchainBalanceTzs?: number | null; onchainBalanceUsdc?: number | null;
   ntzsUserId: string | null; createdAt: string; systemWallet?: string | null;
   _count: { trades: number; marketsCreated: number; positions: number };
 }
@@ -571,6 +572,13 @@ export default function AdminPage() {
                         <span className={(u.balanceTzs || 0) > 0 ? "text-[#00e5a0]" : "text-[var(--muted)]"}>
                           {formatTZS(Math.max(0, u.balanceTzs || 0))}
                         </span>
+                        {/* House wallets: show the real on-chain balance too (differs from the
+                            DB balance because payouts drain the wallet without debiting DB). */}
+                        {u.systemWallet && u.onchainBalanceTzs != null && (
+                          <div className="text-[9px] text-orange-400/80 font-normal mt-0.5" title="Live on-chain settlement-wallet balance">
+                            on-chain: {formatTZS(u.onchainBalanceTzs)}
+                          </div>
+                        )}
                       </td>
                       {/* Net stake locked in open markets — 0 balance + big "in positions" = fully invested, not broke */}
                       <td className="px-3 py-2 tabular-nums text-right">
