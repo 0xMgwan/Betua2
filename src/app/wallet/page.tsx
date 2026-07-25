@@ -29,6 +29,20 @@ interface Transaction {
   createdAt: string;
 }
 
+// A priced cash-out from /api/wallet/withdraw/quote. nTZS adds its fees on top
+// of the payout, so `burnAmountTzs` (not the amount typed) is what's charged.
+interface WithdrawQuote {
+  quoteId: string | null;
+  expiresAt: string;
+  recipientName: string | null;
+  receiveAmountTzs: number;
+  burnAmountTzs: number;
+  fees: { platformFeeTzs: number; pspFeeTzs: number; totalFeeTzs: number };
+  balanceTzs: number;
+  sufficient: boolean;
+  error?: string | null;
+}
+
 const QUICK_AMOUNTS_TZS = [5000, 10000, 50000, 100000];
 const QUICK_AMOUNTS_KES = [100, 500, 1000, 5000];
 
@@ -44,6 +58,9 @@ export default function WalletPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  // Withdrawals are two-step: price it, show the confirmation card, then send.
+  const [quote, setQuote] = useState<WithdrawQuote | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const { currency: displayCurrency, toggleCurrency, formatRaw } = useCurrency();
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -51,6 +68,9 @@ export default function WalletPage() {
   useEffect(() => {
     if (user?.phone) setPhone(user.phone);
   }, [user?.phone]);
+
+  // Any change to what's being sent invalidates the price they were shown.
+  useEffect(() => { setQuote(null); }, [amount, phone, tab]);
 
   const fetchTransactions = useCallback(async () => {
     const res = await fetch("/api/wallet/transactions");
@@ -131,8 +151,40 @@ export default function WalletPage() {
     ? balance // Already in USDC
     : balance;
 
+  // TZS cash-outs must be quoted by nTZS before they can be sent, so the user
+  // sees the recipient's registered name, the fees and the net amount first.
+  const needsQuote = tab === "withdraw" && !isKenya && displayCurrency !== "USDC";
+
+  async function fetchQuote() {
+    setQuoteLoading(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/wallet/withdraw/quote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amountTzs: Number(amount), phone }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage({ type: "error", text: data.error || "Couldn't price that withdrawal." });
+        return;
+      }
+      setQuote(data);
+      if (data.error) setMessage({ type: "error", text: data.error });
+    } catch {
+      setMessage({ type: "error", text: "Network error. Please check your connection." });
+    } finally {
+      setQuoteLoading(false);
+    }
+  }
+
   async function handleAction(e: React.FormEvent) {
     e.preventDefault();
+    // First submit on a TZS withdrawal prices it; the card's button sends it.
+    if (needsQuote && !quote) {
+      await fetchQuote();
+      return;
+    }
     setActionLoading(true);
     setMessage(null);
     try {
@@ -143,20 +195,26 @@ export default function WalletPage() {
         ? (isKenya ? "/api/wallet/withdraw-ke" : "/api/wallet/withdraw")
         : "/api/wallet/send";
       
-      const body = tab === "send" 
+      const body = tab === "send"
         ? { amountTzs: Number(amount), recipientUsername: recipient }
         : isKenya
         ? { amountKes: Number(amount), phone }
-        : { amountTzs: Number(amount), phone };
+        : { amountTzs: Number(amount), phone, ...(quote ? { expectedBurnTzs: quote.burnAmountTzs } : {}) };
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!res.ok) {
+      if (res.status === 409 && data.code === "quote_stale" && data.quote) {
+        // Fees moved while they were reading — show the new total, don't send.
+        setQuote((q) => (q ? { ...q, ...data.quote } : q));
+        setMessage({ type: "error", text: data.error });
+      } else if (!res.ok) {
         setMessage({ type: "error", text: data.error || "Failed. Please try again." });
+        setQuote(null);
       } else {
+        setQuote(null);
         setMessage({
           type: "success",
           text: tab === "deposit"
@@ -506,9 +564,54 @@ export default function WalletPage() {
                     </div>
                   )}
 
+                  {/* Cash-out confirmation: recipient name, fees and net amount
+                      must all be shown before the user commits. */}
+                  {quote && (
+                    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--background)] p-4 space-y-2.5">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wide">
+                          Sending to
+                        </span>
+                        <span className="text-sm font-bold text-right truncate">
+                          {quote.recipientName || phone}
+                        </span>
+                      </div>
+                      {quote.recipientName && (
+                        <div className="flex items-center justify-between gap-3 -mt-1.5">
+                          <span className="text-xs text-[var(--muted)]">{phone}</span>
+                          <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wide">
+                            Name verified
+                          </span>
+                        </div>
+                      )}
+                      <div className="h-px bg-[var(--card-border)]" />
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-[var(--muted)]">They receive</span>
+                        <span className="font-black">{formatTZS(quote.receiveAmountTzs)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-[var(--muted)]">Fees</span>
+                        <span className="font-semibold">{formatTZS(quote.fees.totalFeeTzs)}</span>
+                      </div>
+                      <div className="h-px bg-[var(--card-border)]" />
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-bold">Total from your balance</span>
+                        <span className="font-black text-red-500">{formatTZS(quote.burnAmountTzs)}</span>
+                      </div>
+                      <p className="text-[11px] text-[var(--muted)] pt-0.5">
+                        This price is held for 5 minutes.
+                      </p>
+                    </div>
+                  )}
+
                   <button
                     type="submit"
-                    disabled={actionLoading || !amount || Number(amount) < 1000 || (tab === "send" && !recipient)}
+                    disabled={
+                      actionLoading || quoteLoading || !amount || Number(amount) < 1000 ||
+                      (tab === "send" && !recipient) ||
+                      (needsQuote && !phone) ||
+                      (!!quote && !quote.sufficient)
+                    }
                     className={cn(
                       "w-full py-3.5 font-black rounded-xl transition-all disabled:opacity-40 text-sm flex items-center justify-center gap-2",
                       tab === "deposit"
@@ -521,14 +624,30 @@ export default function WalletPage() {
                     {tab === "deposit"
                       ? <ArrowDownLeft size={16} weight="bold" />
                       : <ArrowUpRight size={16} weight="bold" />}
-                    {actionLoading
+                    {quoteLoading
+                      ? "Checking…"
+                      : actionLoading
                       ? t.wallet.processing
                       : tab === "deposit"
                       ? t.wallet.depositButton
                       : tab === "withdraw"
-                      ? t.wallet.withdrawButton
+                      ? (!needsQuote
+                          ? t.wallet.withdrawButton
+                          : quote
+                          ? `Confirm — send ${formatTZS(quote.receiveAmountTzs)}`
+                          : "Review withdrawal")
                       : t.wallet.sendButton}
                   </button>
+
+                  {quote && (
+                    <button
+                      type="button"
+                      onClick={() => { setQuote(null); setMessage(null); }}
+                      className="w-full -mt-1 py-2 text-xs font-semibold text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  )}
                 </form>
                 )}
               </div>

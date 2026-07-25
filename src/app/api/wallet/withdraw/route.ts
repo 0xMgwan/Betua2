@@ -12,7 +12,10 @@ export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { amountTzs, phone } = await req.json();
+  // `expectedBurnTzs` is the total the user was shown on the confirmation card.
+  // If the fresh quote comes back dearer we stop and re-confirm rather than
+  // silently charging more than they agreed to.
+  const { amountTzs, phone, expectedBurnTzs } = await req.json();
 
   if (!amountTzs || amountTzs < 1000) {
     return NextResponse.json({ error: "Minimum withdrawal is 1,000 TZS" }, { status: 400 });
@@ -43,20 +46,72 @@ export async function POST(req: NextRequest) {
     }, { status: 400 });
   }
 
+  // nTZS enforces quotes on all cash-outs: POST /withdrawals without a quoteId
+  // is rejected with `quote_required`. Quote here (not on the client) so the
+  // price we charge is always one we just fetched — quotes live 5 minutes and
+  // the confirmation card's may already be stale.
+  let quote;
   try {
-    // Debit DB balance immediately + create PENDING record atomically
+    quote = await ntzs.withdrawals.quote({
+      userId: PLATFORM_NTZS_USER_ID,
+      amountTzs,
+      phone,
+    });
+  } catch (qErr) {
+    console.error("Withdrawal quote failed:", qErr);
+    return NextResponse.json({
+      error: "We couldn't price that withdrawal right now. Your balance is unchanged — please try again.",
+    }, { status: 400 });
+  }
+
+  if (!quote.quoteId || !quote.balance?.sufficient) {
+    // The pool can't cover it. Never leak pool state to the user.
+    console.error("Withdrawal quote unfunded:", { amountTzs, quoted: quote.burnAmountTzs, pool: quote.balance });
+    return NextResponse.json({
+      error: "Withdrawals are temporarily unavailable. Your balance is unchanged — please try again shortly.",
+    }, { status: 400 });
+  }
+
+  // Fees are charged on top of what lands on the phone, and the user pays them,
+  // so the amount debited is the full burn amount.
+  const burnTzs = quote.burnAmountTzs;
+
+  if (dbBalance < burnTzs) {
+    return NextResponse.json({
+      error: `Insufficient balance. This cash-out costs ${burnTzs.toLocaleString()} TZS including fees, but you have ${dbBalance.toLocaleString()} TZS.`,
+    }, { status: 400 });
+  }
+
+  if (typeof expectedBurnTzs === "number" && burnTzs > expectedBurnTzs) {
+    return NextResponse.json({
+      error: "Fees changed while you were confirming. Please review the updated total.",
+      code: "quote_stale",
+      quote: {
+        recipientName: quote.recipientName,
+        receiveAmountTzs: quote.receiveAmountTzs,
+        burnAmountTzs: burnTzs,
+        fees: quote.fees,
+      },
+    }, { status: 409 });
+  }
+
+  try {
+    // Debit DB balance immediately + create PENDING record atomically.
+    // amountTzs on the row is the burn amount — it's what we took, and what the
+    // withdrawal.failed webhook refunds.
     const [, tx] = await prisma.$transaction([
       prisma.user.update({
         where: { id: session.userId },
-        data: { balanceTzs: { decrement: amountTzs } },
+        data: { balanceTzs: { decrement: burnTzs } },
       }),
       prisma.transaction.create({
         data: {
           userId: session.userId,
           type: "WITHDRAWAL",
-          amountTzs,
+          amountTzs: burnTzs,
           status: "PENDING",
           phone,
+          description: `Sent ${quote.receiveAmountTzs.toLocaleString()} TZS + ${quote.fees.totalFeeTzs.toLocaleString()} TZS fees`,
         },
       }),
     ]);
@@ -69,8 +124,9 @@ export async function POST(req: NextRequest) {
     try {
       const withdrawal = await ntzs.withdrawals.create({
         userId: fromUserId,
-        amountTzs,
+        amountTzs, // must match the quote exactly — this is the receive amount
         phone,
+        quoteId: quote.quoteId,
       });
       withdrawalId = withdrawal.id;
       // Mark COMPLETED right away — no GET /withdrawals/:id polling needed
@@ -92,7 +148,7 @@ export async function POST(req: NextRequest) {
         await prisma.$transaction([
           prisma.user.update({
             where: { id: session.userId },
-            data: { balanceTzs: { increment: amountTzs } },
+            data: { balanceTzs: { increment: burnTzs } },
           }),
           prisma.transaction.update({ where: { id: tx.id }, data: { status: "FAILED" } }),
         ]);
@@ -114,11 +170,17 @@ export async function POST(req: NextRequest) {
       userId: session.userId,
       type: "WITHDRAW",
       title: "Withdrawal Sent",
-      message: `TSh ${amountTzs.toLocaleString()} is being sent to ${phone}. You will receive it shortly.`,
+      message: `TSh ${quote.receiveAmountTzs.toLocaleString()} is being sent to ${phone}. You will receive it shortly.`,
       link: `/wallet`,
     });
 
-    return NextResponse.json({ success: true, withdrawalId });
+    return NextResponse.json({
+      success: true,
+      withdrawalId,
+      receiveAmountTzs: quote.receiveAmountTzs,
+      burnAmountTzs: burnTzs,
+      feeTzs: quote.fees.totalFeeTzs,
+    });
   } catch (err) {
     console.error("Withdrawal error:", err);
     // Reaches here only for explicit rejections (balance already reversed above)

@@ -71,36 +71,83 @@ export async function POST(req: NextRequest) {
       return apiError(`Insufficient balance. Available: ${dbBalance.toLocaleString()} TZS`, 400);
     }
 
+    // Send nTZS → user's phone from the correct source.
+    const fromUserId = source === "wallet" && user.ntzsUserId ? user.ntzsUserId : PLATFORM_NTZS_USER_ID;
+
+    // nTZS requires a signed quote on every cash-out (`quote_required`
+    // otherwise). Fees are added on top of the payout, and the caller's balance
+    // covers them, so we debit the burn amount rather than amountTzs.
+    const quote = await ntzs.withdrawals.quote({ userId: fromUserId, amountTzs, phone });
+    if (!quote.quoteId || !quote.balance?.sufficient) {
+      await logApiRequest(partner.partnerId, "/api/v1/wallet/withdraw", "POST", 400, Date.now() - startTime, req);
+      return apiError("Withdrawals are temporarily unavailable. Please try again shortly.", 400);
+    }
+    const burnTzs = quote.burnAmountTzs;
+    if (dbBalance < burnTzs) {
+      await logApiRequest(partner.partnerId, "/api/v1/wallet/withdraw", "POST", 400, Date.now() - startTime, req);
+      return apiError(
+        `Insufficient balance. This withdrawal costs ${burnTzs.toLocaleString()} TZS including fees, available ${dbBalance.toLocaleString()} TZS`,
+        400
+      );
+    }
+
     // Debit DB balance immediately + create PENDING record atomically
     const [, tx] = await prisma.$transaction([
       prisma.user.update({
         where: { id: user.id },
-        data: { balanceTzs: { decrement: amountTzs } },
+        data: { balanceTzs: { decrement: burnTzs } },
       }),
       prisma.transaction.create({
-        data: { userId: user.id, type: "WITHDRAWAL", amountTzs, status: "PENDING", phone },
+        data: {
+          userId: user.id,
+          type: "WITHDRAWAL",
+          amountTzs: burnTzs,
+          status: "PENDING",
+          phone,
+          description: `Sent ${quote.receiveAmountTzs.toLocaleString()} TZS + ${quote.fees.totalFeeTzs.toLocaleString()} TZS fees`,
+        },
       }),
     ]);
 
-    // Send nTZS → user's phone from the correct source.
-    const fromUserId = source === "wallet" && user.ntzsUserId ? user.ntzsUserId : PLATFORM_NTZS_USER_ID;
     try {
-      const withdrawal = await ntzs.withdrawals.create({ userId: fromUserId, amountTzs, phone });
+      const withdrawal = await ntzs.withdrawals.create({ userId: fromUserId, amountTzs, phone, quoteId: quote.quoteId });
       await prisma.transaction.update({
         where: { id: tx.id },
         data: { ntzsWithdrawId: withdrawal.id, status: "COMPLETED" },
       });
 
       await logApiRequest(partner.partnerId, "/api/v1/wallet/withdraw", "POST", 201, Date.now() - startTime, req);
-      return apiSuccess({ withdrawalId: withdrawal.id, externalId, amountTzs, phone, status: "COMPLETED" }, 201);
+      return apiSuccess({
+        withdrawalId: withdrawal.id,
+        externalId,
+        amountTzs,
+        receiveAmountTzs: quote.receiveAmountTzs,
+        burnAmountTzs: burnTzs,
+        feeTzs: quote.fees.totalFeeTzs,
+        phone,
+        status: "COMPLETED",
+      }, 201);
     } catch (wErr) {
-      // nTZS API rejected it — reverse the debit and mark FAILED.
-      await prisma.$transaction([
-        prisma.user.update({ where: { id: user.id }, data: { balanceTzs: { increment: amountTzs } } }),
-        prisma.transaction.update({ where: { id: tx.id }, data: { status: "FAILED" } }),
-      ]);
-      console.error("Partner withdrawal API failed, reversed deduction:", wErr);
-      throw wErr;
+      // Only reverse when we KNOW nTZS didn't send the money. An explicit 4xx is
+      // a decline; a timeout/5xx is ambiguous — nTZS may have already burned and
+      // paid out, and refunding there double-pays and drains the pool. Hold the
+      // row PENDING and let the withdrawal.completed/failed webhook settle it.
+      const isExplicitReject = wErr instanceof NtzsApiError && wErr.status >= 400 && wErr.status < 500;
+      if (isExplicitReject) {
+        await prisma.$transaction([
+          prisma.user.update({ where: { id: user.id }, data: { balanceTzs: { increment: burnTzs } } }),
+          prisma.transaction.update({ where: { id: tx.id }, data: { status: "FAILED" } }),
+        ]);
+        console.error("Partner withdrawal explicitly rejected, reversed deduction:", wErr);
+        throw wErr;
+      }
+      await prisma.transaction.update({
+        where: { id: tx.id },
+        data: { description: "nTZS call errored — awaiting reconcile (no auto-refund to avoid double-payout)" },
+      });
+      console.error("Partner withdrawal AMBIGUOUS — held PENDING, NOT refunded:", wErr);
+      await logApiRequest(partner.partnerId, "/api/v1/wallet/withdraw", "POST", 202, Date.now() - startTime, req);
+      return apiSuccess({ externalId, amountTzs, phone, status: "PENDING", transactionId: tx.id }, 202);
     }
   } catch (err) {
     console.error("Partner withdrawal error:", err);

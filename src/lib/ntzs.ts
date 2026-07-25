@@ -102,6 +102,24 @@ export interface NtzsTransfer {
   txHash: string;
 }
 
+/**
+ * A signed withdrawal authorization from POST /withdrawals/quote.
+ *
+ * Fees are charged ON TOP of the requested amount: the recipient receives
+ * `receiveAmountTzs` (= the amountTzs you asked for) while `burnAmountTzs`
+ * (receive + fees) leaves the wallet. Valid 5 minutes; the userId/phone/amount
+ * on the withdrawal must match the quote exactly.
+ */
+export interface NtzsWithdrawalQuote {
+  quoteId: string | null; // null when the wallet can't cover the burn amount
+  expiresAt: string;
+  recipientName: string | null; // mobile-money registry lookup; may be unavailable
+  receiveAmountTzs: number;
+  burnAmountTzs: number;
+  fees: { platformFeeTzs: number; pspFeeTzs: number; totalFeeTzs: number };
+  balance: { availableTzs: number; sufficient: boolean };
+}
+
 export interface NtzsWithdrawal {
   id: string;
   userId: string;
@@ -157,12 +175,26 @@ export const ntzs = {
   },
 
   withdrawals: {
-    create: (data: { userId: string; amountTzs: number; phone: string }) => {
+    // Price a withdrawal and get the signed quoteId that POST /withdrawals now
+    // requires (enforcement is live — without it nTZS returns `quote_required`).
+    // Also returns the recipient's registered name for the confirmation card.
+    quote: (data: { userId: string; amountTzs: number; phone: string }) =>
+      ntzsRequest<NtzsWithdrawalQuote>("/withdrawals/quote", {
+        method: "POST",
+        body: JSON.stringify({
+          userId: data.userId,
+          amountTzs: data.amountTzs,
+          phoneNumber: data.phone,
+        }),
+      }),
+
+    create: (data: { userId: string; amountTzs: number; phone: string; quoteId?: string }) => {
       // nTZS API expects 'phoneNumber' not 'phone' (same as deposits)
       const payload = {
         userId: data.userId,
         amountTzs: data.amountTzs,
         phoneNumber: data.phone,
+        ...(data.quoteId ? { quoteId: data.quoteId } : {}),
       };
       console.log("[nTZS] Creating withdrawal with data:", JSON.stringify(payload, null, 2));
       return ntzsRequest<NtzsWithdrawal>("/withdrawals", {
