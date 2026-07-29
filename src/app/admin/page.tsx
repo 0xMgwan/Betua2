@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { usePolling } from "@/hooks/usePolling";
 import { useUser } from "@/store/useUser";
 import { useRouter } from "next/navigation";
 import { formatTZS } from "@/lib/utils";
@@ -106,13 +107,14 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (user && !isAdmin) { router.push("/"); return; }
-    if (!user) return;
-    loadDashboard();
-    // Auto-refresh every 20s so deposits/trades/redeems/seeds reflect live
-    const interval = setInterval(() => loadDashboard(true), 20000);
-    return () => clearInterval(interval);
-  }, [user, isAdmin, router, loadDashboard]);
+    if (user && !isAdmin) router.push("/");
+  }, [user, isAdmin, router]);
+
+  // Auto-refresh so deposits/trades/redeems/seeds reflect live. The admin
+  // dashboard is the heaviest query on the site — only poll it while an admin
+  // is actually looking at the tab.
+  const refresh = useCallback(() => { loadDashboard(true); }, [loadDashboard]);
+  usePolling(refresh, 60000, !!user && !!isAdmin);
 
   // Lazy-load partners the first time the Partners tab is opened
   useEffect(() => {

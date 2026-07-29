@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { usePolling } from "@/hooks/usePolling";
 import { cn } from "@/lib/utils";
 
 interface ChartPoint {
@@ -67,7 +68,7 @@ export function PriceChart({ marketId, className, displayOptions }: PriceChartPr
     } catch { /* */ } finally { setLoading(false); }
   }, [marketId]);
 
-  useEffect(() => { fetchChart(); const i = setInterval(fetchChart, 30000); return () => clearInterval(i); }, [fetchChart]);
+  usePolling(fetchChart, 60000);
   useEffect(() => { if (!loading && points.length >= 2) { const t = setTimeout(() => setDrawn(true), 80); return () => clearTimeout(t); } }, [loading, points.length]);
   useEffect(() => { const i = setInterval(() => setTick(t => t + 1), 530); return () => clearInterval(i); }, []);
 

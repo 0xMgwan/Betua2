@@ -2,14 +2,30 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // GET /api/activity - Get recent platform activity (trades, resolutions)
+//
+// This is the single hottest route on the site — a ticker on the landing page,
+// the markets page and every event page polls it. The data is public and
+// identical for everyone, so it's cached at the CDN: repeat polls are served by
+// Vercel and never reach the database. Without this the DB never gets to idle.
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const marketId = searchParams.get("marketId");
+  // `marketIds` (comma-separated) lets an event page fetch every one of its
+  // sub-markets in one query instead of one request per market.
+  const marketIds = searchParams.get("marketIds")?.split(",").filter(Boolean);
   const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
+
+  const cacheHeaders = {
+    "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120",
+  };
 
   try {
     // Build where clause for trades
-    const tradeWhere = marketId ? { marketId } : {};
+    const tradeWhere = marketIds?.length
+      ? { marketId: { in: marketIds } }
+      : marketId
+      ? { marketId }
+      : {};
 
     // Fetch recent trades
     const trades = await prisma.trade.findMany({
@@ -28,6 +44,7 @@ export async function GET(req: NextRequest) {
         status: "RESOLVED",
         resolvedAt: { not: null },
         ...(marketId ? { id: marketId } : {}),
+        ...(marketIds?.length ? { id: { in: marketIds } } : {}),
       },
       orderBy: { resolvedAt: "desc" },
       take: Math.min(limit, 10),
@@ -81,7 +98,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Add resolutions (only for global feed, not market-specific)
-    if (!marketId) {
+    if (!marketId && !marketIds?.length) {
       for (const market of resolvedMarkets) {
         if (market.resolvedAt) {
           activities.push({
@@ -110,15 +127,18 @@ export async function GET(req: NextRequest) {
     // Limit final result
     const finalActivities = activities.slice(0, limit);
 
-    return NextResponse.json({
-      activities: finalActivities,
-      count: finalActivities.length,
-    });
+    return NextResponse.json(
+      { activities: finalActivities, count: finalActivities.length },
+      { headers: cacheHeaders }
+    );
   } catch (err) {
     console.error("Activity feed error:", err);
+    // The ticker is decorative — when the DB is unavailable, serve an empty
+    // feed (briefly cached, so a database outage doesn't turn into a retry
+    // storm against it) rather than a 500 the client logs on every poll.
     return NextResponse.json(
-      { error: "Failed to fetch activity" },
-      { status: 500 }
+      { activities: [], count: 0 },
+      { headers: { "Cache-Control": "public, s-maxage=10" } }
     );
   }
 }

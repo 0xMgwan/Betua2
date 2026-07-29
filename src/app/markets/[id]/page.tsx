@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, use, useRef, useCallback } from "react";
+import { usePolling } from "@/hooks/usePolling";
 import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
 import { useUser } from "@/store/useUser";
@@ -180,7 +181,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
     setLoading(false);
   }, [id]);
 
-  useEffect(() => { loadMarket(); const i = setInterval(loadMarket, 30000); return () => clearInterval(i); }, [loadMarket]);
+  usePolling(loadMarket, 30000);
 
   // Reset translations when market changes
   useEffect(() => {

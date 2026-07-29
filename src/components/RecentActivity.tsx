@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePolling } from "@/hooks/usePolling";
 import { CheckCircle } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
@@ -65,31 +66,25 @@ export function RecentActivity({
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchActivity = async () => {
-      try {
-        const params = new URLSearchParams();
-        if (marketId) params.set("marketId", marketId);
-        params.set("limit", String(limit));
+  const fetchActivity = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
+      if (marketId) params.set("marketId", marketId);
+      params.set("limit", String(limit));
 
-        const res = await fetch(`/api/activity?${params}`);
-        if (res.ok) {
-          const data = await res.json();
-          setActivities(data.activities || []);
-        }
-      } catch (err) {
-        console.error("Failed to fetch activity:", err);
-      } finally {
-        setLoading(false);
+      const res = await fetch(`/api/activity?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        setActivities(data.activities || []);
       }
-    };
-
-    fetchActivity();
-
-    // Poll for updates every 30 seconds
-    const interval = setInterval(fetchActivity, 30000);
-    return () => clearInterval(interval);
+    } catch (err) {
+      console.error("Failed to fetch activity:", err);
+    } finally {
+      setLoading(false);
+    }
   }, [marketId, limit]);
+
+  usePolling(fetchActivity, 60000);
 
   if (loading) {
     return (

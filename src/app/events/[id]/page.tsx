@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState, use } from "react";
+import { useCallback, useEffect, useState, use } from "react";
+import { usePolling } from "@/hooks/usePolling";
 import Image from "next/image";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
@@ -456,25 +457,20 @@ function ActivitySidebar({ marketIds, compact }: { marketIds: string[]; compact?
   }[]>([]);
   const [collapsed, setCollapsed] = useState(true);
 
-  useEffect(() => {
-    if (marketIds.length === 0) return;
-    const fetch_ = async () => {
-      try {
-        // Fetch activity for each market, then merge & sort
-        const results = await Promise.all(
-          marketIds.map(id => fetch(`/api/activity?marketId=${id}&limit=10`).then(r => r.ok ? r.json() : { activities: [] }))
-        );
-        const merged = results.flatMap((d: { activities: typeof activities }) => d.activities || []);
-        merged.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        // Deduplicate by id
-        const seen = new Set<string>();
-        setActivities(merged.filter(a => { if (seen.has(a.id)) return false; seen.add(a.id); return true; }).slice(0, 20));
-      } catch { /* */ }
-    };
-    fetch_();
-    const i = setInterval(fetch_, 30000);
-    return () => clearInterval(i);
-  }, [marketIds.join(',')]);
+  const ids = marketIds.join(",");
+  const fetchActivity = useCallback(async () => {
+    if (!ids) return;
+    try {
+      // One request covering every sub-market, not one request per market.
+      const res = await fetch(`/api/activity?marketIds=${encodeURIComponent(ids)}&limit=20`);
+      if (res.ok) {
+        const data = await res.json();
+        setActivities(data.activities || []);
+      }
+    } catch { /* */ }
+  }, [ids]);
+
+  usePolling(fetchActivity, 60000, !!ids);
 
   const fmtAmt = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : `${n}`;
   const LIMIT = compact ? 3 : 8;

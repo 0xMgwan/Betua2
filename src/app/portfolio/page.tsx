@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { usePolling } from "@/hooks/usePolling";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { useUser } from "@/store/useUser";
@@ -105,29 +106,18 @@ export default function PortfolioPage() {
   // Global currency preference
   const { format: formatAmount, formatRaw, currency: displayCurrency, toggleCurrency } = useCurrency();
 
-  useEffect(() => {
-    fetch("/api/portfolio")
-      .then((r) => r.json())
-      .then((d) => {
-        setPositions(d.positions || []);
-        setTrades(d.trades || []);
-        setCreatedMarkets(d.createdMarkets || []);
-      })
-      .finally(() => setLoading(false));
-
-    // Silent background refresh every 30s (no loading spinner)
-    const interval = setInterval(() => {
-      fetch("/api/portfolio")
-        .then((r) => r.json())
-        .then((d) => {
-          setPositions(d.positions || []);
-          setTrades(d.trades || []);
-          setCreatedMarkets(d.createdMarkets || []);
-        })
-        .catch(() => {}); // silently ignore errors
-    }, 30000);
-    return () => clearInterval(interval);
+  // Silent background refresh (no loading spinner), paused on hidden tabs.
+  const loadPortfolio = useCallback(async () => {
+    try {
+      const d = await fetch("/api/portfolio").then((r) => r.json());
+      setPositions(d.positions || []);
+      setTrades(d.trades || []);
+      setCreatedMarkets(d.createdMarkets || []);
+    } catch { /* silently ignore errors */ }
+    finally { setLoading(false); }
   }, []);
+
+  usePolling(loadPortfolio, 60000);
 
   const handleRedeem = async (positionId: string, marketTitle: string) => {
     setRedeeming(positionId);

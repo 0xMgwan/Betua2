@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePolling } from "@/hooks/usePolling";
 import { cn } from "@/lib/utils";
 
 interface Activity {
@@ -32,34 +33,24 @@ export function ActivityTicker({ className, marketIds, compact }: { className?: 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchActivity = async () => {
-      try {
-        let fetched: Activity[] = [];
-        if (marketIds && marketIds.length > 0) {
-          const results = await Promise.all(
-            marketIds.map(id => fetch(`/api/activity?marketId=${id}&limit=10`).then(r => r.ok ? r.json() : { activities: [] }))
-          );
-          const merged = results.flatMap((d: { activities: Activity[] }) => d.activities || []);
-          merged.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-          const seen = new Set<string>();
-          fetched = merged.filter(a => { if (seen.has(a.id)) return false; seen.add(a.id); return true; }).slice(0, 10);
-        } else {
-          const res = await fetch("/api/activity?limit=10");
-          if (res.ok) { const data = await res.json(); fetched = data.activities || []; }
-        }
-        setActivities(fetched);
-      } catch (err) {
-        console.error("Failed to fetch activity:", err);
-      } finally {
-        setLoading(false);
+  const ids = marketIds?.join(",");
+  const fetchActivity = useCallback(async () => {
+    try {
+      // One request for all the event's sub-markets, not one per market.
+      const qs = ids ? `marketIds=${encodeURIComponent(ids)}&limit=10` : "limit=10";
+      const res = await fetch(`/api/activity?${qs}`);
+      if (res.ok) {
+        const data = await res.json();
+        setActivities(data.activities || []);
       }
-    };
+    } catch (err) {
+      console.error("Failed to fetch activity:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [ids]);
 
-    fetchActivity();
-    const interval = setInterval(fetchActivity, 60000);
-    return () => clearInterval(interval);
-  }, [marketIds?.join(',')]);
+  usePolling(fetchActivity, 60000);
 
   // Rotate through activities
   useEffect(() => {

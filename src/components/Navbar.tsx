@@ -6,6 +6,7 @@ import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { formatTZS } from "@/lib/utils";
 import { useCurrency } from "@/store/useCurrency";
+import { usePolling } from "@/hooks/usePolling";
 import {
   Sun, Moon, TrendUp, ChartBar, Trophy, Wallet,
   User,  Plus, SignOut, List, X, Globe, Bell,
@@ -89,13 +90,8 @@ export function Navbar() {
     setMounted(true);
   }, []);
 
-  // Poll notifications every 30s when logged in
-  useEffect(() => {
-    if (!user) return;
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, [user, fetchNotifications]);
+  // Poll notifications when logged in — only while the tab is visible.
+  usePolling(fetchNotifications, 60000, !!user);
 
   // Close dropdown on outside click
   useEffect(() => {
