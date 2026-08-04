@@ -11,6 +11,7 @@ import { useCurrency } from "@/store/useCurrency";
 import { useCart } from "@/store/useCart";
 import { notifications } from "@/lib/notifications";
 import { getSharesOut, getMultiOptionSharesOut, getPrice, getMultiOptionPrices } from "@/lib/amm";
+import { TRADING_ENABLED, tradingDisabledLabel } from "@/lib/featureFlags";
 
 interface QuickBuyModalProps {
   isOpen: boolean;
@@ -167,6 +168,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
   const netGain = payoutIfWin - amountNum;
 
   const handleAddToCart = () => {
+    if (!TRADING_ENABLED) return;
     if (!amount || Number(amount) < minAmount) {
       const currLabel = displayCurrency === 'USDC' ? '$' : 'TSh';
       setError(locale === "sw" ? `Kiasi lazima kiwe angalau ${currLabel}${minAmount}` : `Amount must be at least ${currLabel}${minAmount}`);
@@ -240,6 +242,11 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
   const handleBuy = async () => {
     if (!user) {
       router.push("/auth/login");
+      return;
+    }
+
+    if (!TRADING_ENABLED) {
+      setError(tradingDisabledLabel(locale));
       return;
     }
 
@@ -721,15 +728,16 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                   <div className="flex gap-2">
                     <button
                       onClick={handleAddToCart}
-                      disabled={!amount || Number(amount) < minAmount || !isTradeable}
+                      disabled={!TRADING_ENABLED || !amount || Number(amount) < minAmount || !isTradeable}
                       className="shrink-0 py-4 px-4 border-2 border-[var(--accent)]/50 text-[var(--accent)] rounded-none font-mono font-bold text-xs uppercase tracking-wider hover:bg-[var(--accent)]/10 transition-all disabled:opacity-40 active:scale-95 flex items-center justify-center"
-                      title={locale === "sw" ? "Ongeza" : "Add to Cart"}
+                      title={!TRADING_ENABLED ? tradingDisabledLabel(locale) : (locale === "sw" ? "Ongeza" : "Add to Cart")}
                     >
                       <ShoppingCart size={18} weight="fill" />
                     </button>
                     <button
                       onClick={handleBuy}
-                      disabled={loading || !amount || Number(amount) < minAmount || !isTradeable}
+                      disabled={!TRADING_ENABLED || loading || !amount || Number(amount) < minAmount || !isTradeable}
+                      title={!TRADING_ENABLED ? tradingDisabledLabel(locale) : undefined}
                       className={`flex-1 py-4 px-3 rounded-none font-mono font-black text-sm uppercase tracking-wider transition-all disabled:opacity-40 border-2 active:scale-95 ${
                         isMultiOption
                           ? "bg-[#00e5a0] border-[#00e5a0] text-black hover:opacity-90 hover:shadow-[0_0_20px_rgba(0,229,160,0.4)]"
@@ -738,8 +746,10 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                         : "bg-red-500 border-red-500 text-white hover:opacity-90 hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]"
                     }`}
                   >
-                    {!isTradeable
-                      ? (isResolved 
+                    {!TRADING_ENABLED
+                      ? (locale === "sw" ? "Imesimamishwa" : "Paused")
+                      : !isTradeable
+                      ? (isResolved
                           ? (locale === "sw" ? "Limetatuliwa" : "Resolved")
                           : (locale === "sw" ? "Limeisha" : "Expired"))
                       : loading

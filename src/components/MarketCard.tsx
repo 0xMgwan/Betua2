@@ -15,6 +15,7 @@ import { useCurrency } from "@/store/useCurrency";
 import { QuickBuyModal } from "./QuickBuyModal";
 import { QRCodeModal } from "./QRCodeModal";
 import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
+import { TRADING_ENABLED, tradingDisabledLabel } from "@/lib/featureFlags";
 
 interface Market {
   id: string;
@@ -128,6 +129,12 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
   const hasImage = market.imageUrl && !imageError;
   const isExpired = new Date(market.resolvesAt) < new Date();
   const isTradeable = market.status === "OPEN" && !isExpired;
+  // Whether the buy controls should actually be clickable right now. Kept
+  // separate from isTradeable, which also decides the "Resolved"/"Ended"
+  // label — an open market shouldn't get relabeled just because new trades
+  // are paused platform-wide.
+  const canBuy = isTradeable && TRADING_ENABLED;
+  const buyLockedCls = "opacity-40 grayscale pointer-events-none";
   // Ending within 24h — timer turns amber with a pulsing dot (Limitless-style urgency)
   const endingSoon = isTradeable && new Date(market.resolvesAt).getTime() - Date.now() < 24 * 3600 * 1000;
 
@@ -163,6 +170,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
   const handleQuickBuy = (e: React.MouseEvent, side: string, optionIndex?: number) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!TRADING_ENABLED) return;
     setSelectedSide(side);
     setSelectedOptionIndex(optionIndex ?? null);
     // Set display side (translated if available)
@@ -179,7 +187,8 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
   const handleAddToCart = (e: React.MouseEvent, side: string, optionIndex?: number) => {
     e.preventDefault();
     e.stopPropagation();
-    
+    if (!TRADING_ENABLED) return;
+
     const defaultAmount = 500; // Default amount for quick add
     let estimatedShares = 0;
     let currentPrice = 0;
@@ -217,7 +226,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
       /* Polymarket-style outcome rows: name + % + thin progress bar, multiplier
          pill and cart on the right. Capped at 4 rows — the card links to the
          full market for the rest. */
-      <div className="space-y-1.5 mb-2">
+      <div className={cn("space-y-1.5 mb-2", !canBuy && buyLockedCls)} title={!canBuy ? tradingDisabledLabel(locale) : undefined}>
         {displayOptions!.slice(0, 4).map((option, idx) => {
           const colors = ["#00e5a0", "#00b4d8", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#84cc16"];
           const c = colors[idx % colors.length];
@@ -270,7 +279,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
         )}
       </div>
     ) : (
-      <div className="grid grid-cols-2 gap-2 mb-2">
+      <div className={cn("grid grid-cols-2 gap-2 mb-2", !canBuy && buyLockedCls)} title={!canBuy ? tradingDisabledLabel(locale) : undefined}>
         <div className="relative">
           <button
             onClick={(e) => handleQuickBuy(e, "YES")}
@@ -444,7 +453,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
             {isTradeable && (
               isMultiOption ? (
                 /* Multi-option: tight horizontal scroll of small pills (label + odds) */
-                <div className="flex gap-1.5 overflow-x-auto scrollbar-none -mx-0.5 px-0.5">
+                <div className={cn("flex gap-1.5 overflow-x-auto scrollbar-none -mx-0.5 px-0.5", !canBuy && buyLockedCls)} title={!canBuy ? tradingDisabledLabel(locale) : undefined}>
                   {displayOptions!.map((option, idx) => {
                     const colors = ["#00e5a0", "#00b4d8", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
                     const c = colors[idx % colors.length];
@@ -465,7 +474,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
                 </div>
               ) : (
                 /* Binary: two compact buttons side by side */
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className={cn("grid grid-cols-2 gap-1.5", !canBuy && buyLockedCls)} title={!canBuy ? tradingDisabledLabel(locale) : undefined}>
                   <button
                     onClick={(e) => handleQuickBuy(e, "YES")}
                     className="py-1.5 bg-[#00e5a0]/10 border border-[#00e5a0]/50 text-[#00e5a0] font-mono transition-all hover:bg-[#00e5a0]/20 active:scale-[0.97] flex items-center justify-center gap-1.5"
@@ -537,7 +546,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
       const isAdded = cartAdded === `${o.original}-${o.idx}`;
       return (
         <div className="flex flex-col items-center gap-1">
-          {isTradeable ? (
+          {canBuy ? (
             <button
               onClick={(e) => handleQuickBuy(e, o.original, o.idx)}
               className="relative w-full py-2 px-1 border-2 font-mono transition-all active:scale-[0.97] hover:opacity-90 text-center"

@@ -6,7 +6,7 @@ import { bkes } from "@/lib/bkes";
 import { getSharesOut, getMultiOptionSharesOut, getPrice, getMultiOptionPrices } from "@/lib/amm";
 import { notifications } from "@/lib/notifications";
 import { createNotification } from "@/lib/notify";
-import { DEPOSITS_ENABLED } from "@/lib/featureFlags";
+import { DEPOSITS_ENABLED, TRADING_ENABLED, tradingDisabledLabel } from "@/lib/featureFlags";
 import { notifyTradePlaced } from "@/lib/push";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
 
@@ -17,6 +17,13 @@ const FEE_PERCENT = parseFloat(process.env.TRANSACTION_FEE_PERCENT || "5") / 100
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // New trades are paused for the sandbox review — the UI hides the buy
+  // buttons, but this stops anyone hitting the API directly too. Selling and
+  // redeeming existing positions go through other routes and aren't affected.
+  if (!TRADING_ENABLED) {
+    return NextResponse.json({ error: tradingDisabledLabel("en") }, { status: 403 });
+  }
 
   try {
     const body = await req.json();

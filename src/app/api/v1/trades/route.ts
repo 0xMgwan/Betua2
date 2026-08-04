@@ -10,6 +10,7 @@ import { ntzs } from "@/lib/ntzs";
 import { getSharesOut, getMultiOptionSharesOut } from "@/lib/amm";
 import { validateApiKey, checkRateLimit, logApiRequest, apiError, apiSuccess } from "@/lib/api-auth";
 import { getPartnerMarkup } from "@/lib/partnerFees";
+import { TRADING_ENABLED, tradingDisabledLabel } from "@/lib/featureFlags";
 
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
 const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
@@ -27,6 +28,11 @@ export async function POST(req: NextRequest) {
   if (!withinLimit) {
     await logApiRequest(partner.partnerId, "/api/v1/trades", "POST", 429, Date.now() - startTime, req);
     return apiError("Rate limit exceeded", 429);
+  }
+
+  if (!TRADING_ENABLED) {
+    await logApiRequest(partner.partnerId, "/api/v1/trades", "POST", 403, Date.now() - startTime, req);
+    return apiError(tradingDisabledLabel("en"), 403);
   }
 
   try {
