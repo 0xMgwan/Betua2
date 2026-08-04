@@ -19,6 +19,7 @@ import { useUser } from "@/store/useUser";
 import { ActivityTicker } from "@/components/ActivityTicker";
 import { QuickBuyModal } from "@/components/QuickBuyModal";
 import { DEPOSITS_ENABLED } from "@/lib/featureFlags";
+import { SandboxNotice } from "@/components/SandboxNotice";
 
 /* ─────────────────────────────────────────────────────────
    Live market mockup — animated YES/NO bar
@@ -281,6 +282,10 @@ export default function HomePage() {
       {/* Activity Ticker */}
       <div className="max-w-7xl mx-auto px-4 pt-4">
         <ActivityTicker />
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 pt-3">
+        <SandboxNotice />
       </div>
 
       {/* ══════════════════════════════════════════════
