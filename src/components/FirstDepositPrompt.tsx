@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useUser } from "@/store/useUser";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ArrowDownLeft, X, Sparkle } from "@phosphor-icons/react";
+import { DEPOSITS_ENABLED } from "@/lib/featureFlags";
 
 // Prompts a logged-in user with no balance to make their first deposit.
 // Dismissible per-session. Terminal aesthetic with accent border.
@@ -20,6 +21,8 @@ export function FirstDepositPrompt() {
     }
   }, []);
 
+  // Nothing to prompt for while deposits are paused.
+  if (!DEPOSITS_ENABLED) return null;
   if (!mounted || !user || dismissed) return null;
   // Only show when balance is empty (hasn't deposited / spent everything)
   const balance = user.balanceTzs || 0;

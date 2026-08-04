@@ -14,6 +14,8 @@ import {
   CurrencyCircleDollar, SmileySad, PaperPlaneRight, Gift, ArrowsLeftRight,
 } from "@phosphor-icons/react";
 import { useCurrency } from "@/store/useCurrency";
+import { DEPOSITS_ENABLED, depositsDisabledLabel } from "@/lib/featureFlags";
+import { SandboxNotice } from "@/components/SandboxNotice";
 
 interface Transaction {
   id: string;
@@ -48,10 +50,11 @@ const QUICK_AMOUNTS_KES = [100, 500, 1000, 5000];
 
 export default function WalletPage() {
   const { user, fetchUser } = useUser();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"deposit" | "withdraw" | "send">("deposit");
+  // Deposits are paused for regulatory review — don't land users on a tab they can't use.
+  const [tab, setTab] = useState<"deposit" | "withdraw" | "send">(DEPOSITS_ENABLED ? "deposit" : "withdraw");
   const [amount, setAmount] = useState("");
   const [phone, setPhone] = useState("");
   const [recipient, setRecipient] = useState("");
@@ -353,28 +356,36 @@ export default function WalletPage() {
             <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl overflow-hidden">
               {/* Tabs */}
               <div className="flex">
-                {(["deposit", "withdraw", "send"] as const).map((tb) => (
+                {(["deposit", "withdraw", "send"] as const).map((tb) => {
+                  const locked = tb === "deposit" && !DEPOSITS_ENABLED;
+                  return (
                   <button
                     key={tb}
-                    onClick={() => { setTab(tb); setMessage(null); }}
+                    disabled={locked}
+                    title={locked ? depositsDisabledLabel(locale) : undefined}
+                    onClick={() => { if (locked) return; setTab(tb); setMessage(null); }}
                     className={cn(
                       "flex-1 py-3.5 text-sm font-semibold capitalize transition-all flex items-center justify-center gap-2",
-                      tab === tb
+                      locked
+                        ? "text-[var(--muted)] opacity-40 cursor-not-allowed"
+                        : tab === tb
                         ? "bg-[var(--background)] text-[var(--foreground)] border-b-2 border-[var(--accent)]"
                         : "text-[var(--muted)] hover:text-[var(--foreground)]"
                     )}
                   >
                     {tb === "deposit"
-                      ? <ArrowDownLeft size={16} weight="bold" className="text-[var(--accent)]" />
+                      ? <ArrowDownLeft size={16} weight="bold" className={locked ? "" : "text-[var(--accent)]"} />
                       : tb === "withdraw"
                       ? <ArrowUpRight size={16} weight="bold" className="text-red-400" />
                       : <ArrowUpRight size={16} weight="bold" className="text-blue-400" />}
                     {tb === "deposit" ? t.wallet.deposit : tb === "withdraw" ? t.wallet.withdraw : t.wallet.send}
                   </button>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="p-5">
+                {!DEPOSITS_ENABLED && <SandboxNotice className="mb-4" />}
                 <p className="text-xs text-[var(--muted)] mb-4 leading-relaxed">
                   {tab === "deposit"
                     ? displayCurrency === 'USDC'

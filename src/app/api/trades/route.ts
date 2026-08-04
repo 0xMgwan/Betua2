@@ -6,6 +6,7 @@ import { bkes } from "@/lib/bkes";
 import { getSharesOut, getMultiOptionSharesOut, getPrice, getMultiOptionPrices } from "@/lib/amm";
 import { notifications } from "@/lib/notifications";
 import { createNotification } from "@/lib/notify";
+import { DEPOSITS_ENABLED } from "@/lib/featureFlags";
 import { notifyTradePlaced } from "@/lib/push";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
 
@@ -106,6 +107,14 @@ export async function POST(req: NextRequest) {
         }
         if (!PLATFORM_NTZS_USER_ID) {
           return NextResponse.json({ error: "Insufficient balance. Please deposit funds first." }, { status: 400 });
+        }
+        // Trading past your balance auto-triggers an STK push, which is a
+        // deposit by another name — so it has to honour the deposit pause too,
+        // or users get a payment prompt on their phone with no button involved.
+        if (!DEPOSITS_ENABLED) {
+          return NextResponse.json({
+            error: "Insufficient balance. Deposits are paused during regulatory review.",
+          }, { status: 400 });
         }
         try {
           // Trigger STK push — nTZS minted to settlement pool on confirmation

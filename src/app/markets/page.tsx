@@ -18,6 +18,8 @@ import { useCart } from "@/store/useCart";
 import { Footer } from "@/components/Footer";
 import { ActivityTicker } from "@/components/ActivityTicker";
 import { FirstDepositPrompt } from "@/components/FirstDepositPrompt";
+import { SandboxNotice } from "@/components/SandboxNotice";
+import { DEPOSITS_ENABLED, depositsDisabledLabel } from "@/lib/featureFlags";
 import { FeaturedDeck } from "@/components/FeaturedDeck";
 import { ReferralBanner } from "@/components/ReferralBanner";
 import { CreatorRewardsBanner } from "@/components/CreatorRewardsBanner";
@@ -591,6 +593,8 @@ function MarketsContent() {
         {/* First-deposit prompt for funded-less users */}
         <FirstDepositPrompt />
 
+        <SandboxNotice className="mb-6" />
+
         {/* Header — title on left, Deposit + Create inline on the right */}
         <div className="flex items-start justify-between gap-2 mb-8">
           <div className="min-w-0">
@@ -598,13 +602,24 @@ function MarketsContent() {
             <p className="text-[var(--muted)] text-xs sm:text-sm mt-1">{markets.length} {locale === "sw" ? "masoko" : "markets found"}</p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            <Link
-              href="/wallet"
-              className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 bg-[#00e5a0] text-black font-black text-xs sm:text-sm hover:opacity-90 transition-all font-mono tracking-wider uppercase active:scale-95 shadow-[0_0_15px_rgba(0,229,160,0.25)]"
-            >
-              <ArrowDownLeft size={15} weight="bold" />
-              {locale === "sw" ? "Weka" : "Deposit"}
-            </Link>
+            {DEPOSITS_ENABLED ? (
+              <Link
+                href="/wallet"
+                className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 bg-[#00e5a0] text-black font-black text-xs sm:text-sm hover:opacity-90 transition-all font-mono tracking-wider uppercase active:scale-95 shadow-[0_0_15px_rgba(0,229,160,0.25)]"
+              >
+                <ArrowDownLeft size={15} weight="bold" />
+                {locale === "sw" ? "Weka" : "Deposit"}
+              </Link>
+            ) : (
+              <span
+                aria-disabled="true"
+                title={depositsDisabledLabel(locale)}
+                className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 bg-[var(--card-border)] text-[var(--muted)] font-black text-xs sm:text-sm font-mono tracking-wider uppercase cursor-not-allowed opacity-60"
+              >
+                <ArrowDownLeft size={15} weight="bold" />
+                {locale === "sw" ? "Weka" : "Deposit"}
+              </span>
+            )}
             <Link
               href="/markets/create"
               className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 border-2 border-[var(--foreground)] text-[var(--foreground)] font-bold text-xs sm:text-sm hover:bg-[var(--foreground)] hover:text-[var(--background)] transition-all font-mono tracking-wider uppercase"
