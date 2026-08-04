@@ -17,6 +17,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/store/useCurrency";
 import { useCart } from "@/store/useCart";
 import { formatTZS, formatNumber, timeUntil, timeAgo, cn, SPORTS_SUBCATEGORIES } from "@/lib/utils";
+import { TRADING_ENABLED, tradingDisabledLabel } from "@/lib/featureFlags";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock, TrendUp, ChartLineUp, Lightning, CaretRight,
@@ -576,13 +577,15 @@ function MarketRow({
   const isResolved = market.status === "RESOLVED";
 
   const handleBuyClick = (side: string, optionIdx?: number) => {
+    if (!TRADING_ENABLED) return;
     setSelectedSide(side);
     setSelectedOptionIndex(optionIdx);
     setQuickBuyOpen(true);
   };
 
   const handleAddToCart = (side: string, optionIdx?: number) => {
-    const price = optionIdx !== undefined 
+    if (!TRADING_ENABLED) return;
+    const price = optionIdx !== undefined
       ? (market.optionPrices?.[optionIdx] || 0.25)
       : (side === "YES" ? market.price.yes : market.price.no);
     
@@ -642,7 +645,10 @@ function MarketRow({
                       {(price * 100) % 1 === 0 ? Math.round(price * 100) : (price * 100).toFixed(1)}%
                     </span>
                     {!isResolved && (
-                      <>
+                      <div
+                        className={cn("flex items-center gap-1", !TRADING_ENABLED && "opacity-40 grayscale pointer-events-none")}
+                        title={!TRADING_ENABLED ? tradingDisabledLabel(locale) : undefined}
+                      >
                         <button
                           onClick={() => handleBuyClick(`option_${i}`, i)}
                           className="px-2 py-1 text-[10px] font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30 hover:bg-purple-500/30 transition-colors"
@@ -661,7 +667,7 @@ function MarketRow({
                         >
                           {addedToCart === `${market.id}-option_${i}` ? <Check size={12} weight="bold" /> : <ShoppingCart size={12} />}
                         </button>
-                      </>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -694,7 +700,10 @@ function MarketRow({
                 </div>
               </div>
               {!isResolved && (
-                <div className="flex border-t border-[#00e5a0]/30">
+                <div
+                  className={cn("flex border-t border-[#00e5a0]/30", !TRADING_ENABLED && "opacity-40 grayscale pointer-events-none")}
+                  title={!TRADING_ENABLED ? tradingDisabledLabel(locale) : undefined}
+                >
                   <button
                     onClick={() => handleBuyClick("YES")}
                     className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] font-bold bg-[#00e5a0]/20 text-[#00e5a0] hover:bg-[#00e5a0]/30 transition-colors"
@@ -734,7 +743,10 @@ function MarketRow({
                 </div>
               </div>
               {!isResolved && (
-                <div className="flex border-t border-red-500/30">
+                <div
+                  className={cn("flex border-t border-red-500/30", !TRADING_ENABLED && "opacity-40 grayscale pointer-events-none")}
+                  title={!TRADING_ENABLED ? tradingDisabledLabel(locale) : undefined}
+                >
                   <button
                     onClick={() => handleBuyClick("NO")}
                     className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] font-bold bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"

@@ -7,6 +7,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ntzs } from "@/lib/ntzs";
 import { validateApiKey, checkRateLimit, logApiRequest, apiError, apiSuccess } from "@/lib/api-auth";
+import { SELLING_ENABLED, sellingDisabledLabel } from "@/lib/featureFlags";
 
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
 const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
@@ -28,6 +29,11 @@ export async function POST(
   if (!withinLimit) {
     await logApiRequest(partner.partnerId, `/api/v1/positions/${positionId}/redeem`, "POST", 429, Date.now() - startTime, req);
     return apiError("Rate limit exceeded", 429);
+  }
+
+  if (!SELLING_ENABLED) {
+    await logApiRequest(partner.partnerId, `/api/v1/positions/${positionId}/redeem`, "POST", 403, Date.now() - startTime, req);
+    return apiError(sellingDisabledLabel("en"), 403);
   }
 
   try {

@@ -7,6 +7,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getPayoutForShares, getMultiOptionPayoutForShares } from "@/lib/amm";
 import { validateApiKey, checkRateLimit, logApiRequest, apiError, apiSuccess } from "@/lib/api-auth";
+import { SELLING_ENABLED, sellingDisabledLabel } from "@/lib/featureFlags";
 
 // Early-exit fee on sells (default 50%) — matches /api/sell.
 const SELL_FEE_PERCENT = parseFloat(process.env.SELL_FEE_PERCENT || "50") / 100;
@@ -21,6 +22,11 @@ export async function POST(req: NextRequest) {
   if (!withinLimit) {
     await logApiRequest(partner.partnerId, "/api/v1/positions/sell", "POST", 429, Date.now() - startTime, req);
     return apiError("Rate limit exceeded", 429);
+  }
+
+  if (!SELLING_ENABLED) {
+    await logApiRequest(partner.partnerId, "/api/v1/positions/sell", "POST", 403, Date.now() - startTime, req);
+    return apiError(sellingDisabledLabel("en"), 403);
   }
 
   try {

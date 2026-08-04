@@ -27,6 +27,7 @@ import { LogoUploadSlot } from "@/components/LogoUploadSlot";
 import { UserProfileModal } from "@/components/UserProfileModal";
 import { Footer } from "@/components/Footer";
 import { PriceChart } from "@/components/PriceChart";
+import { TRADING_ENABLED, tradingDisabledLabel, SELLING_ENABLED, sellingDisabledLabel } from "@/lib/featureFlags";
 
 interface MarketData {
   id: string;
@@ -316,6 +317,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   async function handleTrade(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
+    if (!TRADING_ENABLED) { setTradeError(tradingDisabledLabel(locale)); return; }
     setTradeLoading(true);
     setTradeError("");
     setTradeSuccess("");
@@ -369,6 +371,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
   async function handleSell(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
+    if (!SELLING_ENABLED) { setSellError(sellingDisabledLabel(locale)); return; }
     setSellLoading(true);
     setSellError("");
     setSellSuccess("");
@@ -1137,7 +1140,11 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                 </div>
               ) : (<>
                 {tradeMode === "buy" ? (
-                <form onSubmit={handleTrade} className="space-y-4">
+                <form
+                  onSubmit={handleTrade}
+                  className={cn("space-y-4", !TRADING_ENABLED && "opacity-40 grayscale pointer-events-none")}
+                  title={!TRADING_ENABLED ? tradingDisabledLabel(locale) : undefined}
+                >
                   {/* Side selector */}
                   {isMultiOption && displayOptions && market.optionPrices ? (
                     <div className="space-y-2">
@@ -1459,7 +1466,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
                   <button
                     type="submit"
-                    disabled={tradeLoading || !amount || Number(amount) < (displayCurrency === 'USDC' ? 0.5 : displayCurrency === 'KES' ? 50 : 100)}
+                    disabled={!TRADING_ENABLED || tradeLoading || !amount || Number(amount) < (displayCurrency === 'USDC' ? 0.5 : displayCurrency === 'KES' ? 50 : 100)}
                     className={cn(
                       "w-full py-3.5 font-bold rounded-xl transition-all disabled:opacity-50 text-sm",
                       isMultiOption
@@ -1469,7 +1476,9 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                           : "bg-red-500 text-white hover:opacity-90"
                     )}
                   >
-                    {tradeLoading
+                    {!TRADING_ENABLED
+                      ? (locale === "sw" ? "Imesimamishwa" : "Paused")
+                      : tradeLoading
                       ? (locale === "sw" ? "Inachakata…" : "Processing…")
                       : isMultiOption
                         ? `${t.market.buy} ${displayOptions![selectedOption]}`
@@ -1486,7 +1495,11 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                 </form>
                 ) : (
                 /* ═══ SELL FORM ═══ */
-                <form onSubmit={handleSell} className="space-y-4">
+                <form
+                  onSubmit={handleSell}
+                  className={cn("space-y-4", !SELLING_ENABLED && "opacity-40 grayscale pointer-events-none")}
+                  title={!SELLING_ENABLED ? sellingDisabledLabel(locale) : undefined}
+                >
                   {/* Side selector (same as buy) */}
                   {isMultiOption && displayOptions && market.optionPrices ? (
                     <div className="space-y-2">
@@ -1623,10 +1636,12 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
                       <button
                         type="submit"
-                        disabled={sellLoading || !sellShares || Number(sellShares) < 1 || Number(sellShares) > mySharesForSide}
+                        disabled={!SELLING_ENABLED || sellLoading || !sellShares || Number(sellShares) < 1 || Number(sellShares) > mySharesForSide}
                         className="w-full py-3.5 font-bold rounded-xl transition-all disabled:opacity-50 text-sm bg-[#ff4d6a] text-white hover:opacity-90"
                       >
-                        {sellLoading
+                        {!SELLING_ENABLED
+                          ? (locale === "sw" ? "Imesimamishwa" : "Paused")
+                          : sellLoading
                           ? (locale === "sw" ? "Inachakata…" : "Processing…")
                           : locale === "sw"
                             ? `Uza hisa ${sellShares || 0}`

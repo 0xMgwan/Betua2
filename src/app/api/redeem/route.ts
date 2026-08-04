@@ -5,6 +5,7 @@ import { ntzs } from "@/lib/ntzs";
 import { bkes } from "@/lib/bkes";
 import { createNotification } from "@/lib/notify";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
+import { SELLING_ENABLED, sellingDisabledLabel } from "@/lib/featureFlags";
 
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
 const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
@@ -12,6 +13,10 @@ const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!SELLING_ENABLED) {
+    return NextResponse.json({ error: sellingDisabledLabel("en") }, { status: 403 });
+  }
 
   try {
     const { positionId } = await req.json();

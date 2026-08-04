@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { getPayoutForShares, getMultiOptionPayoutForShares } from "@/lib/amm";
 import { createNotification } from "@/lib/notify";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
+import { SELLING_ENABLED, sellingDisabledLabel } from "@/lib/featureFlags";
 
 // Early-exit fee on sells (default 50%): sellers receive half the AMM value;
 // the haircut stays in the settlement pool. Override via SELL_FEE_PERCENT env.
@@ -12,6 +13,10 @@ const SELL_FEE_PERCENT = parseFloat(process.env.SELL_FEE_PERCENT || "50") / 100;
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!SELLING_ENABLED) {
+    return NextResponse.json({ error: sellingDisabledLabel("en") }, { status: 403 });
+  }
 
   try {
     const { marketId, side, sharesToSell, optionIndex } = await req.json();

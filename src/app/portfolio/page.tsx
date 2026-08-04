@@ -18,6 +18,7 @@ import {
 import { getPayoutForShares, getMultiOptionPayoutForShares, getPrice, getMultiOptionPrices } from "@/lib/amm";
 import { cn } from "@/lib/utils";
 import { ShareCardButton } from "@/components/ShareCard";
+import { SELLING_ENABLED, sellingDisabledLabel } from "@/lib/featureFlags";
 
 interface Position {
   id: string;
@@ -120,6 +121,7 @@ export default function PortfolioPage() {
   usePolling(loadPortfolio, 60000);
 
   const handleRedeem = async (positionId: string, marketTitle: string) => {
+    if (!SELLING_ENABLED) { setRedeemError(sellingDisabledLabel(locale)); return; }
     setRedeeming(positionId);
     try {
       const res = await fetch("/api/redeem", {
@@ -166,6 +168,7 @@ export default function PortfolioPage() {
   };
 
   const handleSell = async (position: Position) => {
+    if (!SELLING_ENABLED) { setSellError(sellingDisabledLabel(locale)); return; }
     if (!sellShares || Number(sellShares) < 1) return;
     setSellLoading(true);
     setSellError("");
@@ -608,6 +611,7 @@ export default function PortfolioPage() {
                                       <button
                                         onClick={(e) => {
                                           e.preventDefault();
+                                          if (!SELLING_ENABLED) return;
                                           if (sellOpen === p.id) {
                                             setSellOpen(null);
                                           } else {
@@ -624,9 +628,14 @@ export default function PortfolioPage() {
                                             }
                                           }
                                         }}
-                                        className="py-1.5 px-3 border-2 border-[#ff4d6a] text-[#ff4d6a] font-mono font-bold text-[10px] hover:bg-[#ff4d6a] hover:text-white transition-all tracking-wider uppercase"
+                                        disabled={!SELLING_ENABLED}
+                                        title={!SELLING_ENABLED ? sellingDisabledLabel(locale) : undefined}
+                                        className={cn(
+                                          "py-1.5 px-3 border-2 border-[#ff4d6a] text-[#ff4d6a] font-mono font-bold text-[10px] hover:bg-[#ff4d6a] hover:text-white transition-all tracking-wider uppercase",
+                                          !SELLING_ENABLED && "opacity-40 grayscale pointer-events-none"
+                                        )}
                                       >
-                                        {locale === "sw" ? "UZA" : "SELL"}
+                                        {!SELLING_ENABLED ? (locale === "sw" ? "IMESIMAMISHWA" : "PAUSED") : (locale === "sw" ? "UZA" : "SELL")}
                                       </button>
                                       <div className="text-right">
                                         <div className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
@@ -671,10 +680,16 @@ export default function PortfolioPage() {
                                               e.preventDefault();
                                               handleRedeem(p.id, p.market.title);
                                             }}
-                                            disabled={redeeming === p.id}
-                                            className="py-1.5 px-4 border-2 border-[var(--accent)] text-[var(--accent)] font-mono font-bold text-xs hover:bg-[var(--accent)] hover:text-[var(--background)] transition-all disabled:opacity-50 tracking-wider uppercase shadow-[0_0_15px_rgba(0,229,160,0.1)]"
+                                            disabled={!SELLING_ENABLED || redeeming === p.id}
+                                            title={!SELLING_ENABLED ? sellingDisabledLabel(locale) : undefined}
+                                            className={cn(
+                                              "py-1.5 px-4 border-2 border-[var(--accent)] text-[var(--accent)] font-mono font-bold text-xs hover:bg-[var(--accent)] hover:text-[var(--background)] transition-all disabled:opacity-50 tracking-wider uppercase shadow-[0_0_15px_rgba(0,229,160,0.1)]",
+                                              !SELLING_ENABLED && "grayscale pointer-events-none"
+                                            )}
                                           >
-                                            {redeeming === p.id
+                                            {!SELLING_ENABLED
+                                              ? (locale === "sw" ? "IMESIMAMISHWA" : "PAUSED")
+                                              : redeeming === p.id
                                               ? (locale === "sw" ? "INAKOMBOA..." : "REDEEMING...")
                                               : (locale === "sw" ? "KOMBOA" : "REDEEM")}
                                           </button>
@@ -929,10 +944,12 @@ export default function PortfolioPage() {
                                     {/* Sell button */}
                                     <button
                                       onClick={() => handleSell(p)}
-                                      disabled={sellLoading || !sellShares || Number(sellShares) < 1 || Number(sellShares) > availShares}
+                                      disabled={!SELLING_ENABLED || sellLoading || !sellShares || Number(sellShares) < 1 || Number(sellShares) > availShares}
                                       className="w-full py-2.5 font-mono font-bold text-xs bg-[#ff4d6a] text-white hover:opacity-90 transition-all disabled:opacity-50 tracking-wider uppercase"
                                     >
-                                      {sellLoading
+                                      {!SELLING_ENABLED
+                                        ? (locale === "sw" ? "IMESIMAMISHWA" : "PAUSED")
+                                        : sellLoading
                                         ? (locale === "sw" ? "INACHAKATA..." : "SELLING...")
                                         : `${locale === "sw" ? "UZA" : "SELL"} ${sellShares || 0} ${sideLabel}`
                                       }
