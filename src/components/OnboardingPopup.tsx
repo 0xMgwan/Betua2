@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Wallet, TrendUp, Trophy, ArrowRight, DeviceMobile } from "@phosphor-icons/react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { DEPOSITS_ENABLED } from "@/lib/featureFlags";
 
 export function OnboardingPopup() {
   const [isVisible, setIsVisible] = useState(false);
@@ -22,15 +23,25 @@ export function OnboardingPopup() {
   const t = {
     title: isSw ? "Karibu Guap!" : "Welcome to Guap!",
     subtitle: isSw ? "Biashara kwenye matukio ya kweli na ushinde" : "Trade on real-world events and win big",
-    step1: isSw ? "Weka Pesa" : "Fund Wallet",
-    step1Desc: isSw ? "Weka TZS kupitia M-Pesa kuanza kubiashara." : "Deposit TZS via M-Pesa to start trading.",
+    // While deposits are paused for the sandbox review, step 1 explains the
+    // pause instead of inviting a deposit the user can't actually make.
+    step1: DEPOSITS_ENABLED
+      ? (isSw ? "Weka Pesa" : "Fund Wallet")
+      : (isSw ? "Mapitio ya Udhibiti" : "Sandbox Review"),
+    step1Desc: DEPOSITS_ENABLED
+      ? (isSw ? "Weka TZS kupitia M-Pesa kuanza kubiashara." : "Deposit TZS via M-Pesa to start trading.")
+      : (isSw
+        ? "GUAP iko chini ya mapitio ya udhibiti. Kuweka pesa kumesimamishwa kwa sasa."
+        : "GUAP is under regulatory sandbox review. New deposits are paused for now."),
     step2: isSw ? "Chagua Soko" : "Pick Market",
     step2Desc: isSw ? "Tazama masoko ya michezo, crypto, siasa. Chagua NDIYO au HAPANA." : "Browse sports, crypto, politics. Choose YES or NO.",
     step3: isSw ? "Shinda & Toa" : "Win & Withdraw",
     step3Desc: isSw ? "Ukishinda, dai pesa yako. Toa wakati wowote kwa M-Pesa." : "If you win, claim it. Withdraw anytime to M-Pesa.",
     step4: isSw ? "Ongeza Kwenye Skrini" : "Add to Home Screen",
     step4Desc: isSw ? "Bonyeza ⋮ au Share → 'Add to Home Screen' kwa ufikiaji wa haraka." : "Tap ⋮ or Share → 'Add to Home Screen' for quick access.",
-    cta: isSw ? "Anza Kubiashara" : "Start Trading",
+    cta: DEPOSITS_ENABLED
+      ? (isSw ? "Anza Kubiashara" : "Start Trading")
+      : (isSw ? "Tazama Masoko" : "Explore Markets"),
   };
 
   return (

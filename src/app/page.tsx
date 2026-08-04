@@ -18,6 +18,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useUser } from "@/store/useUser";
 import { ActivityTicker } from "@/components/ActivityTicker";
 import { QuickBuyModal } from "@/components/QuickBuyModal";
+import { DEPOSITS_ENABLED } from "@/lib/featureFlags";
 
 /* ─────────────────────────────────────────────────────────
    Live market mockup — animated YES/NO bar
@@ -645,7 +646,7 @@ export default function HomePage() {
                 {/* Transaction list */}
                 <div className="space-y-1.5">
                   {[
-                    { label: "Deposit via M-Pesa", amount: "+50,000", color: "#00e5a0", delay: 0.5 },
+                    { label: DEPOSITS_ENABLED ? "Deposit via M-Pesa" : "Opening balance", amount: "+50,000", color: "#00e5a0", delay: 0.5 },
                     { label: "Buy YES · CCM Election", amount: "-5,000", color: "var(--muted)", delay: 0.65 },
                     { label: "Market Won!", amount: "+9,200", color: "#00e5a0", delay: 0.8 },
                   ].map((tx, i) => (

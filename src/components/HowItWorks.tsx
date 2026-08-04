@@ -7,6 +7,8 @@ import { X, CaretUp, DeviceMobile, CheckCircle, Trophy, Lightning, Question, Car
 import { useUser } from "@/store/useUser";
 import { useCart } from "@/store/useCart";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { DEPOSITS_ENABLED } from "@/lib/featureFlags";
+import { SandboxNotice } from "@/components/SandboxNotice";
 
 const DISMISS_KEY = "guap_hiw_dismissed";
 
@@ -64,8 +66,9 @@ export function HowItWorks() {
   if (!mounted || user || dismissed || items.length > 0 || pathname?.startsWith("/auth")) return null;
 
   const sw = locale === "sw";
-  const steps = [
+  const allSteps = [
     {
+      id: "fund",
       title: sw ? "Weka Pesa" : "Fund Your Account",
       desc: sw
         ? "Weka TZS kupitia M-Pesa au Mix by Yas — salio lako liko tayari kwa sekunde."
@@ -96,6 +99,7 @@ export function HowItWorks() {
       ),
     },
     {
+      id: "pick",
       title: sw ? "Chagua Upande" : "Pick a Side",
       desc: sw
         ? "Tabiri YES au NO kwenye michezo, siasa, biashara na zaidi — uwezekano mdogo, malipo makubwa."
@@ -135,6 +139,7 @@ export function HowItWorks() {
       ),
     },
     {
+      id: "win",
       title: sw ? "Shinda na Utoe" : "Win & Withdraw",
       desc: sw
         ? "Ukishinda unalipwa mara moja — toa moja kwa moja hadi kwenye simu yako."
@@ -162,8 +167,12 @@ export function HowItWorks() {
     },
   ];
 
-  const s = steps[step];
-  const isLast = step === steps.length - 1;
+  // While deposits are paused for the sandbox review, drop the funding step
+  // rather than walk new users through an M-Pesa deposit they can't complete.
+  const steps = DEPOSITS_ENABLED ? allSteps : allSteps.filter((x) => x.id !== "fund");
+
+  const s = steps[Math.min(step, steps.length - 1)];
+  const isLast = step >= steps.length - 1;
 
   return (
     <>
@@ -219,6 +228,8 @@ export function HowItWorks() {
                       {step + 1}. {s.title}
                     </p>
                     <p className="text-[12px] text-[var(--muted)] leading-snug mt-1">{s.desc}</p>
+                    {/* Explains why there's no funding step right now. */}
+                    {!DEPOSITS_ENABLED && isLast && <SandboxNotice className="mt-3" />}
                   </motion.div>
                 </AnimatePresence>
               </div>
