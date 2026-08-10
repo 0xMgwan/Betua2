@@ -5,6 +5,7 @@ import { getSharesOut, getMultiOptionSharesOut, getPrice, getMultiOptionPrices }
 import { ntzs, NtzsApiError } from "@/lib/ntzs";
 import { createNotification } from "@/lib/notify";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
+import { TRADING_ENABLED, tradingDisabledLabel } from "@/lib/featureFlags";
 
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
 const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
@@ -22,6 +23,11 @@ interface BatchTradeItem {
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Cart checkout is a buy path like any other — honour the trading pause.
+  if (!TRADING_ENABLED) {
+    return NextResponse.json({ error: tradingDisabledLabel("en") }, { status: 403 });
+  }
 
   try {
     const { trades } = await req.json() as { trades: BatchTradeItem[] };

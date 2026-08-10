@@ -8,6 +8,7 @@ import { formatTZS } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/store/useUser";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
+import { TRADING_ENABLED, tradingDisabledLabel } from "@/lib/featureFlags";
 
 export function CartButton() {
   const { items, toggleCart, getTotalAmount } = useCart();
@@ -85,6 +86,7 @@ export function CartModal() {
 
   const handleCheckout = async () => {
     if (items.length === 0) return;
+    if (!TRADING_ENABLED) { setError(tradingDisabledLabel(locale)); return; }
 
     setLoading(true);
     setError("");
@@ -348,10 +350,13 @@ export function CartModal() {
                   </button>
                   <button
                     onClick={handleCheckout}
-                    disabled={loading}
-                    className="flex-1 px-4 py-3 bg-[var(--accent)] text-[var(--background)] font-mono font-bold text-sm uppercase tracking-wider hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    disabled={!TRADING_ENABLED || loading}
+                    title={!TRADING_ENABLED ? tradingDisabledLabel(locale) : undefined}
+                    className={`flex-1 px-4 py-3 bg-[var(--accent)] text-[var(--background)] font-mono font-bold text-sm uppercase tracking-wider hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2${!TRADING_ENABLED ? " grayscale pointer-events-none" : ""}`}
                   >
-                    {loading ? (
+                    {!TRADING_ENABLED ? (
+                      <span>{locale === "sw" ? "Imesimamishwa" : "Paused"}</span>
+                    ) : loading ? (
                       <span>{locale === "sw" ? "Inachakata..." : "Processing..."}</span>
                     ) : (
                       <>
