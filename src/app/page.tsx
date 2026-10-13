@@ -13,7 +13,8 @@ import {
   UserPlus, Wallet, Crosshair, WhatsappLogo, Terminal,
 } from "@phosphor-icons/react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { CountUp, Tilt, Callout } from "@/components/bongo/Motion";
+import { CountUp, Tilt } from "@/components/bongo/Motion";
+import { LiveMarketDeck } from "@/components/bongo/LiveMarketDeck";
 import { OddsCanvas } from "@/components/bongo/OddsCanvas";
 import { useUser } from "@/store/useUser";
 import { ActivityTicker } from "@/components/ActivityTicker";
@@ -298,29 +299,8 @@ export default function HomePage() {
         <OddsCanvas className="absolute inset-0 -z-20 w-full h-full" />
         <div className="absolute inset-0 -z-10" style={{ background: "linear-gradient(180deg, rgba(10,10,10,.5) 0%, rgba(10,10,10,.1) 38%, rgba(10,10,10,.5) 70%, rgba(10,10,10,.92) 100%)" }} />
 
-        {/* Market callouts — drift until you click one, then they hold and explain themselves */}
-        <div className="absolute inset-y-0 right-0 w-[44%] z-20 hidden lg:block pointer-events-none">
-          <Callout
-            style={{ top: "17%", right: "6%" }}
-            title="Simba vs Yanga"
-            sub="Kariakoo derby · YES 2.2×"
-            detail="TSh 1,000 on Simba returns 2,200 if they win. Settles minutes after the final whistle."
-          />
-          <Callout
-            delay={-1.6}
-            style={{ top: "42%", right: "32%" }}
-            title="CCM holds Dodoma"
-            sub="Politics · 61% YES"
-            detail="The crowd has moved 9 points this week. Resolution follows the official NEC result."
-          />
-          <Callout
-            delay={-3.2}
-            style={{ top: "66%", right: "4%" }}
-            title="TSh / USD"
-            sub="FX · closes Friday"
-            detail="Will the shilling hold under 2,650? Priced live off the interbank rate."
-          />
-        </div>
+        {/* Live markets drifting down the right — real open markets, rotating */}
+        <LiveMarketDeck />
 
         <div className="relative flex flex-col justify-end px-4 sm:px-8 lg:px-16 pt-32 pb-10" style={{ minHeight: "100svh" }}>
           <div className="max-w-[1160px] mx-auto w-full">

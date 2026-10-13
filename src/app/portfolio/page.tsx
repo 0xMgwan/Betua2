@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { ShareCardButton } from "@/components/ShareCard";
 import { SELLING_ENABLED, sellingDisabledLabel } from "@/lib/featureFlags";
 import { CountUp } from "@/components/bongo/Motion";
+import { payoutLabel } from "@/lib/settlement";
 
 interface Position {
   id: string;
@@ -640,7 +641,7 @@ export default function PortfolioPage() {
                                       </button>
                                       <div className="text-right">
                                         <div className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
-                                          {locale === "sw" ? "Malipo" : "If correct"}
+                                          {payoutLabel(locale)}
                                         </div>
                                         <div className="text-base font-mono font-bold tabular-nums text-yellow-600 dark:text-yellow-400">
                                           {formatAmount(Math.round(positionPayout))}

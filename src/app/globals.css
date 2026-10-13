@@ -214,6 +214,14 @@ button, input, textarea, select {
 .bl-bump { animation: bl-bump .45s ease; }
 .bl-nudge { animation: bl-nudge 1.4s infinite; }
 
+/* Drifting live-market cards in the hero */
+@keyframes bl-drift { 0%,100% { transform: translateY(0) rotate(-.4deg); } 50% { transform: translateY(-14px) rotate(.4deg); } }
+.bl-drift { animation: bl-drift 8s ease-in-out infinite; will-change: transform; }
+@keyframes bl-swapin { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }
+.bl-mkt { animation: bl-swapin .45s cubic-bezier(.2,.8,.2,1) both; transition: box-shadow .15s, transform .15s; }
+.bl-drift:hover { animation-play-state: paused; }
+.bl-drift:hover .bl-mkt { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 #141414; }
+
 /* Live dot */
 .bl-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px rgba(18,128,92,.25); animation: bl-pulse 1.6s infinite; display: inline-block; }
 
@@ -227,7 +235,7 @@ button, input, textarea, select {
 .bl-tilt { transition: transform .25s cubic-bezier(.2,.8,.2,1); will-change: transform; }
 
 @media (prefers-reduced-motion: reduce) {
-  .bl-marquee-track, .bl-callout, .bl-dot, .bl-cue, .bl-bump, .bl-nudge { animation: none !important; }
+  .bl-marquee-track, .bl-callout, .bl-dot, .bl-cue, .bl-bump, .bl-nudge, .bl-drift, .bl-mkt { animation: none !important; }
   .bl-reveal { opacity: 1; transform: none; transition: none; }
   .bl-btn:hover, .bl-tilt { transform: none !important; }
 }

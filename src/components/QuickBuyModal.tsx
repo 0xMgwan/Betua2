@@ -12,6 +12,7 @@ import { useCart } from "@/store/useCart";
 import { notifications } from "@/lib/notifications";
 import { getSharesOut, getMultiOptionSharesOut, getPrice, getMultiOptionPrices } from "@/lib/amm";
 import { TRADING_ENABLED, tradingDisabledLabel } from "@/lib/featureFlags";
+import { payoutLabel, payoutNote, PARIMUTUEL_UI } from "@/lib/settlement";
 
 interface QuickBuyModalProps {
   isOpen: boolean;
@@ -436,10 +437,13 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
 
                   {/* Payout if win */}
                   <div className="flex items-center justify-between text-xs font-mono">
-                    <span className="text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Ukishinda" : "If you win"}</span>
+                    <span className="text-[var(--muted)] uppercase tracking-wider">{payoutLabel(locale)}</span>
                     <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
                     <span className="font-bold tabular-nums text-[#12805c]">{formatAmount(payoutIfWin)}</span>
                   </div>
+                  {payoutNote(locale) && (
+                    <p className="text-[10px] leading-snug text-[var(--muted)] mt-1.5">{payoutNote(locale)}</p>
+                  )}
                 </div>
               )}
 
@@ -677,7 +681,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                         </div>
                       </div>
                       <div className="mt-2 p-2 bg-[var(--background)] border border-[var(--accent)]/20 flex items-center justify-between font-mono text-[10px]">
-                        <span className="text-[var(--muted)] uppercase">If correct, you get</span>
+                        <span className="text-[var(--muted)] uppercase">{PARIMUTUEL_UI ? "Est. payout" : "If correct, you get"}</span>
                         <div className="text-right">
                           <span className="font-black text-[#12805c]">{formatTZS(sharePayload.payoutIfWin)}</span>
                           <span className={`ml-2 ${sharePayload.payoutIfWin > sharePayload.amountTzs ? "text-[#12805c]" : "text-[var(--muted)]"}`}>

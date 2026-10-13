@@ -6,7 +6,7 @@ import { bkes } from "@/lib/bkes";
 import { createNotification } from "@/lib/notify";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
 import { SELLING_ENABLED, sellingDisabledLabel } from "@/lib/featureFlags";
-import { usesParimutuel, parimutuelPayout } from "@/lib/settlement";
+import { usesParimutuel, parimutuelPayout, RAKE_PERCENT } from "@/lib/settlement";
 
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
 const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
         winningShares,
         totalWinningShares,
         seedAmount,
-        feePercent: FEE_PERCENT,
+        feePercent: RAKE_PERCENT,
       });
       payoutTzs = r.payoutTzs;
       settlementFee = r.feeTzs;

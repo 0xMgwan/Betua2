@@ -23,6 +23,15 @@
 
 export type PayoutModel = "fixed" | "parimutuel";
 
+/**
+ * Platform rake, as a fraction. 9.75% is deliberate and matches what the
+ * platform has effectively been charging: the old parimutuel branch deducted
+ * a nominal 5% twice (1 − 0.95 × 0.95 = 9.75%). That is now a single, explicit
+ * rate rather than a compounding accident, so it is visible and tunable.
+ * Applies to settlements and to sell proceeds.
+ */
+export const RAKE_PERCENT = parseFloat(process.env.SETTLEMENT_RAKE_PERCENT || "9.75") / 100;
+
 export const PAYOUT_MODEL: PayoutModel =
   (process.env.PAYOUT_MODEL || "fixed").toLowerCase() === "parimutuel" ? "parimutuel" : "fixed";
 
@@ -90,4 +99,28 @@ export function parimutuelPayout(i: ParimutuelInput): ParimutuelResult {
   const feeTzs = Math.round(share * rake);
 
   return { payoutTzs, feeTzs, bettorPot };
+}
+
+// ── Client-side copy ──────────────────────────────────────────────────────
+// PAYOUT_MODEL is server-only, so the UI reads a public mirror. Set
+// NEXT_PUBLIC_PAYOUT_MODEL=parimutuel alongside PAYOUT_MODEL so the wording
+// matches how markets actually settle.
+export const PARIMUTUEL_UI =
+  (process.env.NEXT_PUBLIC_PAYOUT_MODEL || "").toLowerCase() === "parimutuel";
+
+/**
+ * Under parimutuel a quoted return is an estimate — the final figure depends
+ * on how the pool splits at close — so the UI must not state it as a promise.
+ */
+export function payoutLabel(locale: string): string {
+  const sw = locale === "sw";
+  if (PARIMUTUEL_UI) return sw ? "Makadirio ya malipo" : "Est. payout";
+  return sw ? "Ukishinda" : "If you win";
+}
+
+export function payoutNote(locale: string): string | null {
+  if (!PARIMUTUEL_UI) return null;
+  return locale === "sw"
+    ? "Makadirio. Malipo ya mwisho hutegemea jumla ya michango wakati soko linafungwa."
+    : "Estimate. The final payout depends on the pool when the market closes.";
 }

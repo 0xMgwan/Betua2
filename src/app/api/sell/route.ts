@@ -5,6 +5,7 @@ import { getPayoutForShares, getMultiOptionPayoutForShares } from "@/lib/amm";
 import { createNotification } from "@/lib/notify";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
 import { SELLING_ENABLED, sellingDisabledLabel } from "@/lib/featureFlags";
+import { RAKE_PERCENT } from "@/lib/settlement";
 
 // Early-exit fee on sells (default 50%): sellers receive half the AMM value;
 // the haircut stays in the settlement pool. Override via SELL_FEE_PERCENT env.
@@ -108,7 +109,11 @@ export async function POST(req: NextRequest) {
     // the haircut stays in the settlement pool backing user balances. Deliberately
     // steep to discourage buy→sell flips that extract value from thin markets
     // (stale-odds sniping); holding to resolution pays the normal 5% fee instead.
-    const feeAmount = Math.round(grossPayout * SELL_FEE_PERCENT);
+    const haircut = Math.round(grossPayout * SELL_FEE_PERCENT);
+    // The platform rake applies to sells as well as to settlements, so an early
+    // exit is charged the same commission a win would be.
+    const rake = Math.round((grossPayout - haircut) * RAKE_PERCENT);
+    const feeAmount = haircut + rake;
     const netPayout = grossPayout - feeAmount;
 
     // Pooled custodial model: sell proceeds are credited to the user's DB balance
