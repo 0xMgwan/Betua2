@@ -6,6 +6,7 @@ import { bkes } from "@/lib/bkes";
 import { createNotification } from "@/lib/notify";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
 import { SELLING_ENABLED, sellingDisabledLabel } from "@/lib/featureFlags";
+import { usesParimutuel, parimutuelPayout } from "@/lib/settlement";
 
 const PLATFORM_NTZS_USER_ID = process.env.PLATFORM_NTZS_USER_ID || "";
 const SETTLEMENT_FEE_NTZS_USER_ID = process.env.SETTLEMENT_FEE_NTZS_USER_ID || "";
@@ -107,7 +108,12 @@ export async function POST(req: NextRequest) {
     // already baked into payoutIfWin at trade time, so no separate fee transfer needed.
     let settlementFee = 0;
 
-    if (storedImpliedPayout > 0) {
+    // Markets created on/after the parimutuel cutover settle from the pot that
+    // was actually staked. Earlier markets keep the fixed odds their bettors
+    // were shown at trade time.
+    const parimutuel = usesParimutuel(position.market.createdAt);
+
+    if (!parimutuel && storedImpliedPayout > 0) {
       // ── Fixed-odds path: pay the stored guaranteed amount ────────────────
       // payoutIfWin was already net of both fees when stored, so pay it directly.
       payoutTzs = Math.round(storedImpliedPayout);
@@ -143,17 +149,15 @@ export async function POST(req: NextRequest) {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const seedAmount = (position.market as any).seedAmount ?? 0;
-      const pot = Math.round(position.market.totalVolume * (1 - FEE_PERCENT));
-      const lpPotClaim = seedAmount > 0 && position.market.totalVolume > 0
-        ? Math.round((seedAmount / position.market.totalVolume) * pot)
-        : 0;
-      const regularPot = Math.max(0, pot - lpPotClaim);
-
-      const grossPayout = totalWinningShares > 0
-        ? Math.round((winningShares / totalWinningShares) * regularPot)
-        : 0;
-      settlementFee = Math.round(grossPayout * FEE_PERCENT);
-      payoutTzs = grossPayout - settlementFee;
+      const r = parimutuelPayout({
+        totalVolume: position.market.totalVolume,
+        winningShares,
+        totalWinningShares,
+        seedAmount,
+        feePercent: FEE_PERCENT,
+      });
+      payoutTzs = r.payoutTzs;
+      settlementFee = r.feeTzs;
     }
 
     // Get user
