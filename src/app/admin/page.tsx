@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { usePolling } from "@/hooks/usePolling";
+import { CountUp, Tilt } from "@/components/bongo/Motion";
 import { useUser } from "@/store/useUser";
 import { useRouter } from "next/navigation";
 import { formatTZS } from "@/lib/utils";
@@ -264,7 +265,7 @@ export default function AdminPage() {
           <p className="text-[10px] text-[var(--muted)] mt-0.5 flex items-center gap-2">
             Guap Platform · {new Date().toLocaleDateString()}
             <span className="flex items-center gap-1">
-              <span className={`w-1.5 h-1.5 rounded-full ${refreshing ? "bg-[#00e5a0] animate-pulse" : "bg-[#00e5a0]/50"}`} />
+              <span className={`w-1.5 h-1.5 rounded-full ${refreshing ? "bg-[#12805c] animate-pulse" : "bg-[#12805c]/50"}`} />
               {refreshing ? "Updating…" : lastUpdated ? `Live · updated ${lastUpdated.toLocaleTimeString()}` : "Live"}
             </span>
           </p>
@@ -280,7 +281,7 @@ export default function AdminPage() {
           <button
             onClick={handleReconcile}
             disabled={reconciling}
-            className="px-3 py-1.5 text-[10px] font-bold border border-orange-500/40 text-orange-400 hover:bg-orange-500/10 transition-colors disabled:opacity-50"
+            className="px-3 py-1.5 text-[10px] font-bold border border-orange-500/40 text-orange-600 dark:text-orange-400 hover:bg-orange-500/10 transition-colors disabled:opacity-50"
           >
             {reconciling ? "Reconciling..." : "⟳ Reconcile Balances"}
           </button>
@@ -312,28 +313,30 @@ export default function AdminPage() {
             {/* KPI grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { label: "Total Users", value: s.totalUsers.toLocaleString(), color: "text-[var(--accent)]" },
-                { label: "User Balances (DB)", value: formatTZS(s.totalBalanceTzs), color: "text-[var(--accent)]" },
-                { label: "Platform Volume", value: formatTZS(s.totalVolume), color: "text-blue-400" },
-                { label: "Total Trades", value: s.totalTrades.toLocaleString(), color: "text-purple-400" },
-                { label: "Open Markets", value: s.openMarkets.toLocaleString(), color: "text-[#00e5a0]" },
-                { label: "Resolved Markets", value: s.resolvedMarkets.toLocaleString(), color: "text-[var(--muted)]" },
-                { label: "Total Deposits", value: formatTZS(s.totalDeposits), color: "text-[#00e5a0]" },
-                { label: "Total Withdrawals", value: formatTZS(s.totalWithdrawals), color: "text-red-400" },
+                { label: "Total Users", to: s.totalUsers, fmt: (n: number) => n.toLocaleString(), color: "text-[var(--accent)]" },
+                { label: "User Balances (DB)", to: s.totalBalanceTzs, fmt: formatTZS, color: "text-[var(--accent)]" },
+                { label: "Platform Volume", to: s.totalVolume, fmt: formatTZS, color: "text-blue-600 dark:text-blue-400" },
+                { label: "Total Trades", to: s.totalTrades, fmt: (n: number) => n.toLocaleString(), color: "text-purple-600 dark:text-purple-400" },
+                { label: "Open Markets", to: s.openMarkets, fmt: (n: number) => n.toLocaleString(), color: "text-[#12805c]" },
+                { label: "Resolved Markets", to: s.resolvedMarkets, fmt: (n: number) => n.toLocaleString(), color: "text-[var(--muted)]" },
+                { label: "Total Deposits", to: s.totalDeposits, fmt: formatTZS, color: "text-[#12805c]" },
+                { label: "Total Withdrawals", to: s.totalWithdrawals, fmt: formatTZS, color: "text-red-600 dark:text-red-400" },
               ].map(kpi => (
-                <div key={kpi.label} className="p-4 bg-[var(--card)] border border-[var(--card-border)]">
-                  <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider mb-1">{kpi.label}</p>
-                  <p className={`text-xl font-black tabular-nums ${kpi.color}`}>{kpi.value}</p>
-                </div>
+                <Tilt key={kpi.label}>
+                  <div className="p-4 bl-card bl-card-sm bl-reveal h-full">
+                    <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider mb-1">{kpi.label}</p>
+                    <CountUp to={kpi.to} format={kpi.fmt} duration={900} className={`block text-xl font-black tabular-nums ${kpi.color}`} />
+                  </div>
+                </Tilt>
               ))}
             </div>
 
             {/* Settlement pool info */}
             <div className="p-4 bg-orange-500/5 border border-orange-500/20">
-              <p className="text-[10px] text-orange-400 uppercase font-bold mb-2">Settlement Pool (on-chain)</p>
+              <p className="text-[10px] text-orange-600 dark:text-orange-400 uppercase font-bold mb-2">Settlement Pool (on-chain)</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px]">
                 <div><span className="text-[var(--muted)]">Pool wallet: </span><span className="text-[var(--foreground)] text-[10px]">f09f1742-4919-4e11-8591-583a1af280e6</span></div>
-                <div><span className="text-[var(--muted)]">Live nTZS balance: </span><span className="font-bold text-[#00e5a0]">{formatTZS(s.poolBalanceTzs)}</span></div>
+                <div><span className="text-[var(--muted)]">Live nTZS balance: </span><span className="font-bold text-[#12805c]">{formatTZS(s.poolBalanceTzs)}</span></div>
                 <div><span className="text-[var(--muted)]">Live USDC: </span><span className="font-bold">{s.poolBalanceUsdc > 0 ? `$${s.poolBalanceUsdc.toFixed(2)}` : "—"}</span></div>
               </div>
             </div>
@@ -351,25 +354,25 @@ export default function AdminPage() {
               const healthy   = coverage >= 100;
               const warning   = coverage >= 70 && coverage < 100;
               return (
-                <div className={`p-4 border ${healthy ? "bg-[#00e5a0]/5 border-[#00e5a0]/20" : warning ? "bg-yellow-500/5 border-yellow-500/20" : "bg-red-500/5 border-red-500/30"}`}>
+                <div className={`p-4 border ${healthy ? "bg-[#12805c]/5 border-[#12805c]/20" : warning ? "bg-yellow-500/5 border-yellow-500/20" : "bg-red-500/5 border-red-500/30"}`}>
                   <div className="flex items-center justify-between mb-2">
-                    <p className={`text-[10px] uppercase font-bold ${healthy ? "text-[#00e5a0]" : warning ? "text-yellow-400" : "text-red-400"}`}>
+                    <p className={`text-[10px] uppercase font-bold ${healthy ? "text-[#12805c]" : warning ? "text-yellow-600 dark:text-yellow-400" : "text-red-600 dark:text-red-400"}`}>
                       {healthy ? "✓ Pool Health: Solvent" : warning ? "⚠ Pool Health: Watch" : "✗ Pool Health: At Risk"}
                     </p>
-                    <span className={`text-lg font-black tabular-nums ${healthy ? "text-[#00e5a0]" : warning ? "text-yellow-400" : "text-red-400"}`}>{coverage >= 999 ? "∞" : `${coverage}%`}</span>
+                    <span className={`text-lg font-black tabular-nums ${healthy ? "text-[#12805c]" : warning ? "text-yellow-600 dark:text-yellow-400" : "text-red-600 dark:text-red-400"}`}>{coverage >= 999 ? "∞" : `${coverage}%`}</span>
                   </div>
                   <div className="w-full bg-[var(--card-border)] h-1.5 mb-3">
-                    <div className={`h-full transition-all ${healthy ? "bg-[#00e5a0]" : warning ? "bg-yellow-400" : "bg-red-400"}`} style={{ width: `${Math.min(100, coverage)}%` }} />
+                    <div className={`h-full transition-all ${healthy ? "bg-[#12805c]" : warning ? "bg-yellow-400" : "bg-red-400"}`} style={{ width: `${Math.min(100, coverage)}%` }} />
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[11px]">
-                    <div><span className="text-[var(--muted)]">Pool balance (real): </span><span className="font-bold text-[#00e5a0]">{formatTZS(poolReal)}</span></div>
+                    <div><span className="text-[var(--muted)]">Pool balance (real): </span><span className="font-bold text-[#12805c]">{formatTZS(poolReal)}</span></div>
                     <div><span className="text-[var(--muted)]">User balances (DB): </span><span className="font-bold">{formatTZS(s.totalBalanceTzs)}</span></div>
-                    <div><span className="text-[var(--muted)]">Open payouts: </span><span className="font-bold text-orange-400">{formatTZS(s.totalImpliedLiability)}</span></div>
-                    <div><span className="text-[var(--muted)]">Locked seed: </span><span className="font-bold text-orange-400">{formatTZS(s.openSeedLiability)}</span></div>
+                    <div><span className="text-[var(--muted)]">Open payouts: </span><span className="font-bold text-orange-600 dark:text-orange-400">{formatTZS(s.totalImpliedLiability)}</span></div>
+                    <div><span className="text-[var(--muted)]">Locked seed: </span><span className="font-bold text-orange-600 dark:text-orange-400">{formatTZS(s.openSeedLiability)}</span></div>
                   </div>
                   <div className="mt-2 pt-2 border-t border-[var(--card-border)] flex items-center justify-between text-[11px]">
                     <span className="text-[var(--muted)]">Total liability: <span className="font-bold text-[var(--foreground)]">{formatTZS(liability)}</span></span>
-                    <span className="text-[var(--muted)]">Surplus / (deficit): <span className={`font-bold ${surplus >= 0 ? "text-[#00e5a0]" : "text-red-400"}`}>{formatTZS(surplus)}</span></span>
+                    <span className="text-[var(--muted)]">Surplus / (deficit): <span className={`font-bold ${surplus >= 0 ? "text-[#12805c]" : "text-red-600 dark:text-red-400"}`}>{formatTZS(surplus)}</span></span>
                   </div>
                   <p className="text-[9px] text-[var(--muted)] mt-2">
                     Coverage = real on-chain pool balance ÷ (user balances + open payout obligations + locked seed). Pool needs ≥ 100% to guarantee all payouts. Reads live from nTZS wallet f09f1742.
@@ -398,7 +401,7 @@ export default function AdminPage() {
 
                 {/* Buy/sell split + new vs returning */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-[var(--card)] border border-[var(--card-border)]">
+                  <div className="p-4 bl-card bl-card-sm bl-reveal">
                     <p className="text-[10px] font-mono text-[var(--muted)] uppercase mb-3">Buys vs Sells</p>
                     {(() => {
                       const b = analytics.buySell.buys, sl = analytics.buySell.sells;
@@ -406,18 +409,18 @@ export default function AdminPage() {
                       return (
                         <>
                           <div className="flex h-3 overflow-hidden mb-2">
-                            <div className="bg-[#00e5a0]" style={{ width: `${(b.volume / tot) * 100}%` }} />
+                            <div className="bg-[#12805c]" style={{ width: `${(b.volume / tot) * 100}%` }} />
                             <div className="bg-red-400" style={{ width: `${(sl.volume / tot) * 100}%` }} />
                           </div>
                           <div className="flex justify-between text-[11px] font-mono">
-                            <span className="text-[#00e5a0]">Buys: {formatTZS(b.volume)} · {b.count}</span>
-                            <span className="text-red-400">Sells: {formatTZS(sl.volume)} · {sl.count}</span>
+                            <span className="text-[#12805c]">Buys: {formatTZS(b.volume)} · {b.count}</span>
+                            <span className="text-red-600 dark:text-red-400">Sells: {formatTZS(sl.volume)} · {sl.count}</span>
                           </div>
                         </>
                       );
                     })()}
                   </div>
-                  <div className="p-4 bg-[var(--card)] border border-[var(--card-border)]">
+                  <div className="p-4 bl-card bl-card-sm bl-reveal">
                     <p className="text-[10px] font-mono text-[var(--muted)] uppercase mb-3">New vs Returning Traders {analyticsDays === 0 && <span className="opacity-60">(n/a all-time)</span>}</p>
                     {(() => {
                       const n = analytics.newTraders, r = analytics.returningTraders;
@@ -429,8 +432,8 @@ export default function AdminPage() {
                             <div className="bg-purple-400" style={{ width: `${(r / tot) * 100}%` }} />
                           </div>
                           <div className="flex justify-between text-[11px] font-mono">
-                            <span className="text-blue-400">New: {n}</span>
-                            <span className="text-purple-400">Returning: {r}</span>
+                            <span className="text-blue-600 dark:text-blue-400">New: {n}</span>
+                            <span className="text-purple-600 dark:text-purple-400">Returning: {r}</span>
                           </div>
                         </>
                       );
@@ -442,11 +445,11 @@ export default function AdminPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {[
                     { label: "Avg Trade", value: formatTZS(analytics.avgTrade), color: "text-[var(--accent)]" },
-                    { label: `Trades (${analyticsDays === 0 ? "all" : analyticsDays + "d"})`, value: analytics.totalTrades.toLocaleString(), color: "text-blue-400" },
-                    { label: `Volume (${analyticsDays === 0 ? "all" : analyticsDays + "d"})`, value: formatTZS(analytics.totalVolume), color: "text-[#00e5a0]" },
-                    { label: "Active Traders", value: analytics.uniqueTraders.toLocaleString(), color: "text-purple-400" },
+                    { label: `Trades (${analyticsDays === 0 ? "all" : analyticsDays + "d"})`, value: analytics.totalTrades.toLocaleString(), color: "text-blue-600 dark:text-blue-400" },
+                    { label: `Volume (${analyticsDays === 0 ? "all" : analyticsDays + "d"})`, value: formatTZS(analytics.totalVolume), color: "text-[#12805c]" },
+                    { label: "Active Traders", value: analytics.uniqueTraders.toLocaleString(), color: "text-purple-600 dark:text-purple-400" },
                   ].map(k => (
-                    <div key={k.label} className="p-4 bg-[var(--card)] border border-[var(--card-border)]">
+                    <div key={k.label} className="p-4 bl-card bl-card-sm bl-reveal">
                       <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider mb-1">{k.label}</p>
                       <p className={`text-xl font-black tabular-nums ${k.color}`}>{k.value}</p>
                     </div>
@@ -455,7 +458,7 @@ export default function AdminPage() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* Volume by category */}
-                  <div className="p-4 bg-[var(--card)] border border-[var(--card-border)]">
+                  <div className="p-4 bl-card bl-card-sm bl-reveal">
                     <p className="text-[10px] font-mono text-[var(--muted)] uppercase mb-3">Volume by Category</p>
                     <div className="space-y-2">
                       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
@@ -478,7 +481,7 @@ export default function AdminPage() {
                   </div>
 
                   {/* Top markets */}
-                  <div className="p-4 bg-[var(--card)] border border-[var(--card-border)]">
+                  <div className="p-4 bl-card bl-card-sm bl-reveal">
                     <p className="text-[10px] font-mono text-[var(--muted)] uppercase mb-3">Top Markets by Volume</p>
                     <div className="space-y-2">
                       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
@@ -502,7 +505,7 @@ export default function AdminPage() {
                 </div>
 
                 {/* Trades by hour of day (EAT) */}
-                <div className="p-4 bg-[var(--card)] border border-[var(--card-border)]">
+                <div className="p-4 bl-card bl-card-sm bl-reveal">
                   <p className="text-[10px] font-mono text-[var(--muted)] uppercase mb-3">When Users Trade (hour of day · EAT)</p>
                   <div className="flex items-end gap-0.5 h-28">
                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
@@ -521,7 +524,7 @@ export default function AdminPage() {
                 </div>
 
                 {/* Daily volume (last 14d) */}
-                <div className="p-4 bg-[var(--card)] border border-[var(--card-border)]">
+                <div className="p-4 bl-card bl-card-sm bl-reveal">
                   <p className="text-[10px] font-mono text-[var(--muted)] uppercase mb-3">Daily Volume (last 14 days)</p>
                   <div className="flex items-end gap-1 h-28">
                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
@@ -529,7 +532,7 @@ export default function AdminPage() {
                       const max = Math.max(...analytics.days.map((x: any) => x.volume), 1);
                       return (
                         <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
-                          <div className="w-full bg-[#00e5a0]/80 hover:bg-[#00e5a0] transition-colors" style={{ height: `${(d.volume / max) * 100}%` }} title={`${d.date} — ${formatTZS(d.volume)} · ${d.count} trades`} />
+                          <div className="w-full bg-[#12805c]/80 hover:bg-[#12805c] transition-colors" style={{ height: `${(d.volume / max) * 100}%` }} title={`${d.date} — ${formatTZS(d.volume)} · ${d.count} trades`} />
                           <span className="text-[7px] font-mono text-[var(--muted)] mt-1 rotate-0">{d.date}</span>
                         </div>
                       );
@@ -565,7 +568,7 @@ export default function AdminPage() {
                     <tr key={u.id} className={`border-b border-[var(--card-border)]/40 transition-colors ${u.systemWallet ? "bg-orange-500/5 hover:bg-orange-500/10" : "hover:bg-[var(--card)]"}`}>
                       <td className="px-3 py-2 font-bold text-[var(--accent)]">
                         @{u.username}
-                        {u.systemWallet && <span className="ml-1.5 text-[8px] font-mono px-1 py-0.5 bg-orange-500/20 text-orange-400 align-middle">{u.systemWallet.toUpperCase()}</span>}
+                        {u.systemWallet && <span className="ml-1.5 text-[8px] font-mono px-1 py-0.5 bg-orange-500/20 text-orange-600 dark:text-orange-400 align-middle">{u.systemWallet.toUpperCase()}</span>}
                       </td>
                       <td className="px-3 py-2 text-[var(--muted)]">{u.email}</td>
                       <td className="px-3 py-2 text-[var(--muted)]">{u.phone || "—"}</td>
@@ -576,7 +579,7 @@ export default function AdminPage() {
                             reference since it inflates (deposits credit it, payouts don't). */}
                         {u.systemWallet && u.onchainBalanceTzs != null ? (
                           <>
-                            <span className={u.onchainBalanceTzs > 0 ? "text-[#00e5a0]" : "text-[var(--muted)]"}>
+                            <span className={u.onchainBalanceTzs > 0 ? "text-[#12805c]" : "text-[var(--muted)]"}>
                               {formatTZS(u.onchainBalanceTzs)}
                             </span>
                             <div className="text-[9px] text-[var(--muted)]/70 font-normal mt-0.5" title="DB accounting figure (inflates; not the real pool)">
@@ -584,28 +587,28 @@ export default function AdminPage() {
                             </div>
                           </>
                         ) : (
-                          <span className={(u.balanceTzs || 0) > 0 ? "text-[#00e5a0]" : "text-[var(--muted)]"}>
+                          <span className={(u.balanceTzs || 0) > 0 ? "text-[#12805c]" : "text-[var(--muted)]"}>
                             {formatTZS(Math.max(0, u.balanceTzs || 0))}
                           </span>
                         )}
                       </td>
                       {/* Net stake locked in open markets — 0 balance + big "in positions" = fully invested, not broke */}
                       <td className="px-3 py-2 tabular-nums text-right">
-                        <span className={(u.inPositionsTzs || 0) > 0 ? "text-yellow-400" : "text-[var(--muted)]"}>
+                        <span className={(u.inPositionsTzs || 0) > 0 ? "text-yellow-600 dark:text-yellow-400" : "text-[var(--muted)]"}>
                           {(u.inPositionsTzs || 0) > 0 ? formatTZS(u.inPositionsTzs || 0) : "—"}
                         </span>
                       </td>
                       {/* Lifetime real money in (deposits) and out (withdrawals) */}
                       <td className="px-3 py-2 tabular-nums text-right">
                         {(u.depositedTzs || 0) > 0 ? (
-                          <span className="text-[#00e5a0]" title={`${u.depositCount || 0} deposit(s)`}>
+                          <span className="text-[#12805c]" title={`${u.depositCount || 0} deposit(s)`}>
                             {formatTZS(u.depositedTzs || 0)}
                           </span>
                         ) : <span className="text-[var(--muted)]">—</span>}
                       </td>
                       <td className="px-3 py-2 tabular-nums text-right">
                         {(u.withdrawnTzs || 0) > 0 ? (
-                          <span className="text-red-400" title={`${u.withdrawCount || 0} withdrawal(s)`}>
+                          <span className="text-red-600 dark:text-red-400" title={`${u.withdrawCount || 0} withdrawal(s)`}>
                             {formatTZS(u.withdrawnTzs || 0)}
                           </span>
                         ) : <span className="text-[var(--muted)]">—</span>}
@@ -615,7 +618,7 @@ export default function AdminPage() {
                       <td className="px-3 py-2 text-center">{u._count.marketsCreated}</td>
                       <td className="px-3 py-2 text-center">{u._count.positions}</td>
                       <td className="px-3 py-2 text-[var(--muted)] text-[9px]">
-                        {u.systemWallet ? <span className="text-orange-400">⚙ house</span> : u.ntzsUserId ? <span className="text-[#00e5a0]">✓ wallet</span> : <span className="text-[var(--muted)]">DB only</span>}
+                        {u.systemWallet ? <span className="text-orange-600 dark:text-orange-400">⚙ house</span> : u.ntzsUserId ? <span className="text-[#12805c]">✓ wallet</span> : <span className="text-[var(--muted)]">DB only</span>}
                       </td>
                       <td className="px-3 py-2 text-[var(--muted)]">{new Date(u.createdAt).toLocaleDateString()}</td>
                     </tr>
@@ -670,8 +673,8 @@ export default function AdminPage() {
                       <td className="px-3 py-2">@{m.creator?.username}</td>
                       <td className="px-3 py-2">
                         <span className={`px-1.5 py-0.5 text-[9px] font-bold ${
-                          m.status === "OPEN" ? "bg-[#00e5a0]/10 text-[#00e5a0]" :
-                          m.status === "RESOLVED" ? "bg-blue-500/10 text-blue-400" :
+                          m.status === "OPEN" ? "bg-[#12805c]/10 text-[#12805c]" :
+                          m.status === "RESOLVED" ? "bg-blue-500/10 text-blue-600 dark:text-blue-400" :
                           "bg-[var(--muted)]/10 text-[var(--muted)]"
                         }`}>{m.status}</span>
                       </td>
@@ -685,7 +688,7 @@ export default function AdminPage() {
                         {m.status === "RESOLVED" && m.seedAmount > 0 && (
                           <button
                             onClick={() => { setLpMarketId(m.id); setTab("tools"); }}
-                            className="text-[9px] font-mono font-bold px-2 py-1 border border-orange-500/30 text-orange-400 hover:bg-orange-500/10 transition-colors whitespace-nowrap"
+                            className="text-[9px] font-mono font-bold px-2 py-1 border border-orange-500/30 text-orange-600 dark:text-orange-400 hover:bg-orange-500/10 transition-colors whitespace-nowrap"
                           >
                             LP Repair →
                           </button>
@@ -711,7 +714,7 @@ export default function AdminPage() {
               partners.map((p) => {
                 const open = expandedPartner === p.id;
                 return (
-                  <div key={p.id} className="border border-[var(--card-border)] bg-[var(--card)]">
+                  <div key={p.id} className="bl-card bl-card-sm bl-reveal">
                     {/* Partner header row */}
                     <button
                       onClick={() => setExpandedPartner(open ? null : p.id)}
@@ -794,7 +797,7 @@ export default function AdminPage() {
                       <button
                         onClick={handleRetryReferrals}
                         disabled={retryingRef}
-                        className="px-3 py-1.5 text-[10px] font-mono font-bold border border-orange-500/40 text-orange-400 hover:bg-orange-500/10 disabled:opacity-50 transition-colors"
+                        className="px-3 py-1.5 text-[10px] font-mono font-bold border border-orange-500/40 text-orange-600 dark:text-orange-400 hover:bg-orange-500/10 disabled:opacity-50 transition-colors"
                       >
                         {retryingRef ? "Paying…" : `Pay owed (${formatTZS(referrals.summary.owedTzs)})`}
                       </button>
@@ -805,11 +808,11 @@ export default function AdminPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {[
                     { label: "Referred Users", value: referrals.summary.referredUsers.toLocaleString(), color: "text-[var(--accent)]" },
-                    { label: "Deposited", value: referrals.summary.depositedCount.toLocaleString(), color: "text-blue-400" },
-                    { label: "Paid Out", value: formatTZS(referrals.summary.paidTzs), color: "text-[#00e5a0]" },
-                    { label: "Owed", value: formatTZS(referrals.summary.owedTzs), color: "text-orange-400" },
+                    { label: "Deposited", value: referrals.summary.depositedCount.toLocaleString(), color: "text-blue-600 dark:text-blue-400" },
+                    { label: "Paid Out", value: formatTZS(referrals.summary.paidTzs), color: "text-[#12805c]" },
+                    { label: "Owed", value: formatTZS(referrals.summary.owedTzs), color: "text-orange-600 dark:text-orange-400" },
                   ].map(k => (
-                    <div key={k.label} className="p-4 bg-[var(--card)] border border-[var(--card-border)]">
+                    <div key={k.label} className="p-4 bl-card bl-card-sm bl-reveal">
                       <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider mb-1">{k.label}</p>
                       <p className={`text-lg font-black tabular-nums ${k.color}`}>{k.value}</p>
                     </div>
@@ -817,7 +820,7 @@ export default function AdminPage() {
                 </div>
 
                 {/* Top referrers */}
-                <div className="border border-[var(--card-border)] bg-[var(--card)]">
+                <div className="bl-card bl-card-sm bl-reveal">
                   <div className="px-4 py-2 border-b border-[var(--card-border)] bg-[var(--background)]"><span className="text-[10px] font-mono text-[var(--muted)] uppercase">Top Referrers</span></div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs font-mono">
@@ -837,8 +840,8 @@ export default function AdminPage() {
                             <td className="px-4 py-2">@{r.username}</td>
                             <td className="px-4 py-2 text-right tabular-nums">{r.referrals}</td>
                             <td className="px-4 py-2 text-right tabular-nums">{r.deposited}</td>
-                            <td className="px-4 py-2 text-right tabular-nums text-[#00e5a0]">{formatTZS(r.paid)}</td>
-                            <td className={`px-4 py-2 text-right tabular-nums ${r.owed > 0 ? "text-orange-400" : "text-[var(--muted)]"}`}>{formatTZS(r.owed)}</td>
+                            <td className="px-4 py-2 text-right tabular-nums text-[#12805c]">{formatTZS(r.paid)}</td>
+                            <td className={`px-4 py-2 text-right tabular-nums ${r.owed > 0 ? "text-orange-600 dark:text-orange-400" : "text-[var(--muted)]"}`}>{formatTZS(r.owed)}</td>
                           </tr>
                         ))}
                         {referrals.topReferrers.length === 0 && <tr><td colSpan={5} className="text-center text-[var(--muted)] py-6">No referrals yet</td></tr>}
@@ -848,7 +851,7 @@ export default function AdminPage() {
                 </div>
 
                 {/* Referred users — deposit status */}
-                <div className="border border-[var(--card-border)] bg-[var(--card)]">
+                <div className="bl-card bl-card-sm bl-reveal">
                   <div className="px-4 py-2 border-b border-[var(--card-border)] bg-[var(--background)]"><span className="text-[10px] font-mono text-[var(--muted)] uppercase">Referred Users · Deposit Status</span></div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs font-mono">
@@ -865,9 +868,9 @@ export default function AdminPage() {
                         {referrals.referredUsers.map((r: any, i: number) => (
                           <tr key={i} className="border-b border-[var(--card-border)]/40">
                             <td className="px-4 py-2">@{r.referrer} <span className="text-[var(--muted)]">→</span> @{r.referred}</td>
-                            <td className={`px-4 py-2 text-right ${r.deposited ? "text-[#00e5a0]" : "text-[var(--muted)]"}`}>{r.deposited ? "yes" : "no"}</td>
+                            <td className={`px-4 py-2 text-right ${r.deposited ? "text-[#12805c]" : "text-[var(--muted)]"}`}>{r.deposited ? "yes" : "no"}</td>
                             <td className="px-4 py-2 text-right tabular-nums">{r.deposited ? formatTZS(r.depositedTzs) : "—"}</td>
-                            <td className={`px-4 py-2 text-right tabular-nums ${r.rewardStatus === "COMPLETED" ? "text-[#00e5a0]" : r.rewardStatus ? "text-orange-400" : "text-[var(--muted)]"}`}>
+                            <td className={`px-4 py-2 text-right tabular-nums ${r.rewardStatus === "COMPLETED" ? "text-[#12805c]" : r.rewardStatus ? "text-orange-600 dark:text-orange-400" : "text-[var(--muted)]"}`}>
                               {r.rewardStatus ? `${formatTZS(r.rewardTzs)} ${r.rewardStatus === "COMPLETED" ? "paid" : "owed"}` : "—"}
                             </td>
                           </tr>
@@ -911,7 +914,7 @@ export default function AdminPage() {
               {cashflow && (
                 <span className="text-[11px] font-mono text-[var(--muted)] ml-auto">
                   {cashKind === "deposit" ? "Total deposited" : "Total withdrawn"}:{" "}
-                  <span className={cashKind === "deposit" ? "text-[#00e5a0] font-bold" : "text-red-400 font-bold"}>
+                  <span className={cashKind === "deposit" ? "text-[#12805c] font-bold" : "text-red-600 dark:text-red-400 font-bold"}>
                     {formatTZS(cashflow.totalCompletedTzs)}
                   </span>{" "}
                   · {cashflow.count} {cashKind}s
@@ -939,9 +942,9 @@ export default function AdminPage() {
                       <td className="px-3 py-2 tabular-nums font-bold text-right">{formatTZS(it.amountTzs)}</td>
                       <td className="px-3 py-2">
                         <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full border ${
-                          it.status === "COMPLETED" ? "text-[#00e5a0] border-[#00e5a0]/30 bg-[#00e5a0]/10"
-                          : it.status === "PENDING" ? "text-yellow-400 border-yellow-400/30 bg-yellow-400/10"
-                          : "text-red-400 border-red-400/30 bg-red-400/10"
+                          it.status === "COMPLETED" ? "text-[#12805c] border-[#12805c]/30 bg-[#12805c]/10"
+                          : it.status === "PENDING" ? "text-yellow-600 dark:text-yellow-400 border-yellow-400/30 bg-yellow-400/10"
+                          : "text-red-600 dark:text-red-400 border-red-400/30 bg-red-400/10"
                         }`}>{it.status}</span>
                       </td>
                       <td className="px-3 py-2 font-mono text-[var(--muted)]" title={it.ntzsId || ""}>{it.ntzsId ? `${it.ntzsId.slice(0, 10)}…` : "—"}</td>
@@ -963,7 +966,7 @@ export default function AdminPage() {
 
             {/* Balance Audit — verify a user's balance against their ledger */}
             <div className="space-y-4 lg:col-span-2">
-              <div className="border border-[var(--card-border)] bg-[var(--card)]">
+              <div className="bl-card bl-card-sm bl-reveal">
                 <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--card-border)] bg-[var(--background)]">
                   <div className="flex gap-1"><div className="w-2.5 h-2.5 rounded-full bg-red-500/70"/><div className="w-2.5 h-2.5 rounded-full bg-yellow-500/70"/><div className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]/70"/></div>
                   <span className="text-[10px] font-mono text-[var(--muted)]">admin::audit_balance.sh</span>
@@ -996,14 +999,14 @@ export default function AdminPage() {
                     </button>
                   </div>
                   {auditResult && (auditResult.error ? (
-                    <p className="text-[11px] font-mono text-red-400">❌ {auditResult.error}</p>
+                    <p className="text-[11px] font-mono text-red-600 dark:text-red-400">❌ {auditResult.error}</p>
                   ) : (
                     <div className="space-y-2 text-[11px] font-mono">
                       <div className="flex flex-wrap gap-x-6 gap-y-1">
                         <span>@{auditResult.username}</span>
                         <span className="text-[var(--muted)]">Stored: <span className="font-bold text-[var(--foreground)]">{formatTZS(auditResult.storedTzs)}</span></span>
                         <span className="text-[var(--muted)]">Ledger: <span className="font-bold text-[var(--foreground)]">{formatTZS(auditResult.computedTzs)}</span></span>
-                        <span className={auditResult.match ? "text-[#00e5a0] font-bold" : "text-red-400 font-bold"}>{auditResult.match ? "✓ matches" : "✗ MISMATCH"}</span>
+                        <span className={auditResult.match ? "text-[#12805c] font-bold" : "text-red-600 dark:text-red-400 font-bold"}>{auditResult.match ? "✓ matches" : "✗ MISMATCH"}</span>
                         {auditResult.rawComputed < 0 && <span className="text-yellow-500">(raw {formatTZS(auditResult.rawComputed)} — spent phantom funds)</span>}
                       </div>
                       <table className="w-full text-[10px]">
@@ -1015,7 +1018,7 @@ export default function AdminPage() {
                               <td className="py-1">{b.type}</td>
                               <td className="py-1 text-right">{b.count}</td>
                               <td className="py-1 text-right tabular-nums">{formatTZS(b.total)}</td>
-                              <td className={`py-1 text-right ${b.direction === "credit" ? "text-[#00e5a0]" : b.direction === "debit" ? "text-red-400" : "text-[var(--muted)]"}`}>{b.direction}</td>
+                              <td className={`py-1 text-right ${b.direction === "credit" ? "text-[#12805c]" : b.direction === "debit" ? "text-red-600 dark:text-red-400" : "text-[var(--muted)]"}`}>{b.direction}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1028,7 +1031,7 @@ export default function AdminPage() {
 
             {/* LP Repair */}
             <div className="space-y-4">
-              <div className="border border-[var(--card-border)] bg-[var(--card)]">
+              <div className="bl-card bl-card-sm bl-reveal">
                 <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--card-border)] bg-[var(--background)]">
                   <div className="flex gap-1"><div className="w-2.5 h-2.5 rounded-full bg-red-500/70"/><div className="w-2.5 h-2.5 rounded-full bg-yellow-500/70"/><div className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]/70"/></div>
                   <span className="text-[10px] font-mono text-[var(--muted)]">admin::lp_repair.sh</span>
@@ -1073,7 +1076,7 @@ export default function AdminPage() {
                     </button>
                   </div>
 
-                  {lpError && <p className="text-[10px] font-mono text-red-400 bg-red-500/10 px-2 py-1">{lpError}</p>}
+                  {lpError && <p className="text-[10px] font-mono text-red-600 dark:text-red-400 bg-red-500/10 px-2 py-1">{lpError}</p>}
 
                   {lpDiagnosis && (() => {
                     const d = lpDiagnosis.diagnosis;
@@ -1083,7 +1086,7 @@ export default function AdminPage() {
                       <div className="border border-[var(--card-border)] bg-[var(--background)] p-3 space-y-2">
                         <div className="flex items-center justify-between">
                           <p className="text-[11px] font-mono font-bold truncate">{lpDiagnosis.market.title}</p>
-                          <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 ${stuck ? "bg-red-500/10 text-red-400" : d.hasLpRedeemTx ? "bg-[#00e5a0]/10 text-[#00e5a0]" : "bg-yellow-500/10 text-yellow-400"}`}>
+                          <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 ${stuck ? "bg-red-500/10 text-red-600 dark:text-red-400" : d.hasLpRedeemTx ? "bg-[#12805c]/10 text-[#12805c]" : "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"}`}>
                             {stuck ? "⚠ STUCK" : d.hasLpRedeemTx ? "✓ OK" : "? UNKNOWN"}
                           </span>
                         </div>
@@ -1111,7 +1114,7 @@ export default function AdminPage() {
                           </button>
                         )}
                         {lpStatus === "done" && lpRepairResult && (
-                          <div className="text-[10px] font-mono text-[#00e5a0] bg-[#00e5a0]/10 px-2 py-1">
+                          <div className="text-[10px] font-mono text-[#12805c] bg-[#12805c]/10 px-2 py-1">
                             ✅ Sent {formatTZS(lpRepairResult.payoutTzs || 0)} · {lpRepairResult.note || "Balance credited"}
                           </div>
                         )}
@@ -1124,17 +1127,17 @@ export default function AdminPage() {
 
             {/* Quick Actions */}
             <div className="space-y-4">
-              <div className="border border-[var(--card-border)] bg-[var(--card)]">
+              <div className="bl-card bl-card-sm bl-reveal">
                 <div className="px-4 py-2 border-b border-[var(--card-border)] bg-[var(--background)]">
                   <span className="text-[10px] font-mono text-[var(--muted)]">admin::quick_actions.sh</span>
                 </div>
                 <div className="p-4 space-y-2">
                   <p className="text-[11px] font-mono font-bold text-[var(--accent)] uppercase tracking-wider mb-3">Quick Actions</p>
                   {[
-                    { label: "Reconcile All Balances", desc: "Recalculate balanceTzs from tx history", action: () => handleReconcile(), loading: reconciling, msg: reconcileMsg, color: "border-orange-500/40 text-orange-400 hover:bg-orange-500/10" },
+                    { label: "Reconcile All Balances", desc: "Recalculate balanceTzs from tx history", action: () => handleReconcile(), loading: reconciling, msg: reconcileMsg, color: "border-orange-500/40 text-orange-600 dark:text-orange-400 hover:bg-orange-500/10" },
                     { label: "Preview due Pyth (dry run)", desc: "Show what WOULD resolve — live price vs target, no settling", action: () => handleResolvePyth(true), loading: resolvingPyth, msg: resolvePythMsg, color: "border-[var(--card-border)] text-[var(--muted)] hover:bg-[var(--card)]" },
                     { label: "Resolve due Pyth now", desc: "Settle expired gold/FX/commodity markets from live Pyth prices", action: () => handleResolvePyth(false), loading: resolvingPyth, msg: resolvePythMsg, color: "border-[#00b4d8]/40 text-[#00b4d8] hover:bg-[#00b4d8]/10" },
-                    { label: "Backfill fixed-odds payouts", desc: "Set locked-in payouts on legacy open positions (shares × 0.95)", action: () => handleBackfillImplied(), loading: backfilling, msg: backfillMsg, color: "border-purple-500/40 text-purple-400 hover:bg-purple-500/10" },
+                    { label: "Backfill fixed-odds payouts", desc: "Set locked-in payouts on legacy open positions (shares × 0.95)", action: () => handleBackfillImplied(), loading: backfilling, msg: backfillMsg, color: "border-purple-500/40 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10" },
                   ].map(a => (
                     <div key={a.label} className="border border-[var(--card-border)] p-3 space-y-1">
                       <div className="flex items-center justify-between">

@@ -41,7 +41,7 @@ interface Market {
 // probability, colored by likelihood, with the % and side label beneath.
 function ProbGauge({ pct }: { pct: number }) {
   const rounded = Math.round(pct); // whole numbers only — decimals overflow the dial
-  const color = rounded >= 50 ? "#00e5a0" : rounded >= 34 ? "#fbbf24" : "#f87171";
+  const color = rounded >= 50 ? "#12805c" : rounded >= 34 ? "#fbbf24" : "#f87171";
   const arcLen = Math.PI * 16; // r=16 semicircle length
   return (
     <div className="shrink-0 flex flex-col items-center w-[52px]" aria-label={`YES ${rounded}%`}>
@@ -74,7 +74,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   Geopolitics: "#6366f1",
   Sports: "#00b4d8",
   Entertainment: "#ec4899",
-  Crypto: "#00e5a0",
+  Crypto: "#12805c",
   Business: "#8b5cf6",
   Science: "#14b8a6",
   Weather: "#818cf8",
@@ -228,7 +228,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
          full market for the rest. */
       <div className={cn("space-y-1.5 mb-2", !canBuy && buyLockedCls)} title={!canBuy ? tradingDisabledLabel(locale) : undefined}>
         {displayOptions!.slice(0, 4).map((option, idx) => {
-          const colors = ["#00e5a0", "#00b4d8", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#84cc16"];
+          const colors = ["#12805c", "#00b4d8", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#84cc16"];
           const c = colors[idx % colors.length];
           const optPrice = market.optionPrices?.[idx] || 0;
           const pct = Math.round(optPrice * 100);
@@ -264,7 +264,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
               <span
                 onClick={(e) => handleAddToCart(e, originalOption, idx)}
                 className="shrink-0 p-1.5 rounded-lg border transition-all active:scale-95"
-                style={{ borderColor: isAdded ? '#00e5a0' : `${c}44`, color: isAdded ? '#000' : c, backgroundColor: isAdded ? '#00e5a0' : 'transparent' }}
+                style={{ borderColor: isAdded ? '#12805c' : `${c}44`, color: isAdded ? '#000' : c, backgroundColor: isAdded ? '#12805c' : 'transparent' }}
                 title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
               >
                 {isAdded ? <Check size={11} weight="bold" /> : <ShoppingCart size={11} weight="bold" />}
@@ -283,16 +283,16 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
         <div className="relative">
           <button
             onClick={(e) => handleQuickBuy(e, "YES")}
-            className="w-full py-3.5 px-3 rounded-xl bg-[#00e5a0]/10 border-2 border-[#00e5a0]/50 text-[#00e5a0] font-mono transition-all hover:bg-[#00e5a0]/20 hover:border-[#00e5a0] active:scale-[0.97] flex flex-col items-center gap-0.5"
+            className="w-full py-3.5 px-3 rounded-xl bg-[#12805c]/10 border-2 border-[#12805c]/50 text-[#12805c] font-mono transition-all hover:bg-[#12805c]/20 hover:border-[#12805c] active:scale-[0.97] flex flex-col items-center gap-0.5"
           >
-            {market.optionImages?.[0] && <img src={market.optionImages[0]} alt="" className="w-8 h-8 rounded-full object-cover border border-[#00e5a0]/30 mb-0.5" />}
+            {market.optionImages?.[0] && <img src={market.optionImages[0]} alt="" className="w-8 h-8 rounded-full object-cover border border-[#12805c]/30 mb-0.5" />}
             <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{locale === "sw" ? "Nunua" : "Buy"} YES ↑</span>
             <span className="text-xl font-black leading-none">{(1 / market.price.yes).toFixed(2)}<span className="text-xs">x</span></span>
             <span className="text-[10px] font-bold opacity-60">{yesPct}%</span>
           </button>
           <button
             onClick={(e) => handleAddToCart(e, "YES")}
-            className={`absolute top-1 right-1 p-1 border transition-all active:scale-95 ${cartAdded === 'YES' ? 'bg-[#00e5a0] border-[#00e5a0] text-black' : 'bg-[var(--background)]/60 border-[#00e5a0]/40 text-[#00e5a0] hover:bg-[#00e5a0]/15'}`}
+            className={`absolute top-1 right-1 p-1 border transition-all active:scale-95 ${cartAdded === 'YES' ? 'bg-[#12805c] border-[#12805c] text-black' : 'bg-[var(--background)]/60 border-[#12805c]/40 text-[#12805c] hover:bg-[#12805c]/15'}`}
             title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
           >
             {cartAdded === 'YES' ? <Check size={12} weight="bold" /> : <ShoppingCart size={12} weight="bold" />}
@@ -301,7 +301,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
         <div className="relative">
           <button
             onClick={(e) => handleQuickBuy(e, "NO")}
-            className="w-full py-3.5 px-3 rounded-xl bg-red-500/10 border-2 border-red-500/50 text-red-400 font-mono transition-all hover:bg-red-500/20 hover:border-red-500 active:scale-[0.97] flex flex-col items-center gap-0.5"
+            className="w-full py-3.5 px-3 rounded-xl bg-red-500/10 border-2 border-red-500/50 text-red-600 dark:text-red-400 font-mono transition-all hover:bg-red-500/20 hover:border-red-500 active:scale-[0.97] flex flex-col items-center gap-0.5"
           >
             {market.optionImages?.[1] && <img src={market.optionImages[1]} alt="" className="w-8 h-8 rounded-full object-cover border border-red-500/30 mb-0.5" />}
             <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{locale === "sw" ? "Nunua" : "Buy"} NO ↓</span>
@@ -310,7 +310,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
           </button>
           <button
             onClick={(e) => handleAddToCart(e, "NO")}
-            className={`absolute top-1 right-1 p-1 border transition-all active:scale-95 ${cartAdded === 'NO' ? 'bg-[#00e5a0] border-[#00e5a0] text-black' : 'bg-[var(--background)]/60 border-red-500/40 text-red-400 hover:bg-red-500/15'}`}
+            className={`absolute top-1 right-1 p-1 border transition-all active:scale-95 ${cartAdded === 'NO' ? 'bg-[#12805c] border-[#12805c] text-black' : 'bg-[var(--background)]/60 border-red-500/40 text-red-600 dark:text-red-400 hover:bg-red-500/15'}`}
             title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
           >
             {cartAdded === 'NO' ? <Check size={12} weight="bold" /> : <ShoppingCart size={12} weight="bold" />}
@@ -326,7 +326,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
       <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3 }}>
         <div
           onClick={() => router.push(`/markets/${market.id}`)}
-          className="group relative bg-[var(--card)] border-2 border-[var(--card-border)] overflow-hidden hover:border-[var(--accent)]/60 transition-all cursor-pointer rounded-2xl"
+          className="bl-card group relative overflow-hidden transition-all cursor-pointer hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[7px_7px_0_var(--line)]"
         >
           {/* Full-bleed hero image header (Limitless style) */}
           <div className="relative h-44 w-full overflow-hidden bg-[var(--background)]">
@@ -423,7 +423,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.03, duration: 0.25 }}>
         <div
           onClick={() => router.push(`/markets/${market.id}`)}
-          className="group relative bg-[var(--card)] border border-[var(--card-border)] hover:border-[var(--accent)]/50 transition-all cursor-pointer rounded-lg overflow-hidden"
+          className="bl-card bl-card-sm group relative overflow-hidden transition-all cursor-pointer hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[5px_5px_0_var(--line)]"
         >
           <div className="p-2.5">
             {/* Header: tags + timer */}
@@ -455,7 +455,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
                 /* Multi-option: tight horizontal scroll of small pills (label + odds) */
                 <div className={cn("flex gap-1.5 overflow-x-auto scrollbar-none -mx-0.5 px-0.5", !canBuy && buyLockedCls)} title={!canBuy ? tradingDisabledLabel(locale) : undefined}>
                   {displayOptions!.map((option, idx) => {
-                    const colors = ["#00e5a0", "#00b4d8", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
+                    const colors = ["#12805c", "#00b4d8", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
                     const c = colors[idx % colors.length];
                     const optPrice = market.optionPrices?.[idx] || 0;
                     const originalOption = market.options?.[idx] || option;
@@ -477,14 +477,14 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
                 <div className={cn("grid grid-cols-2 gap-1.5", !canBuy && buyLockedCls)} title={!canBuy ? tradingDisabledLabel(locale) : undefined}>
                   <button
                     onClick={(e) => handleQuickBuy(e, "YES")}
-                    className="py-1.5 bg-[#00e5a0]/10 border border-[#00e5a0]/50 text-[#00e5a0] font-mono transition-all hover:bg-[#00e5a0]/20 active:scale-[0.97] flex items-center justify-center gap-1.5"
+                    className="py-1.5 bg-[#12805c]/10 border border-[#12805c]/50 text-[#12805c] font-mono transition-all hover:bg-[#12805c]/20 active:scale-[0.97] flex items-center justify-center gap-1.5"
                   >
                     <span className="text-[9px] font-bold uppercase">YES</span>
                     <span className="text-sm font-black leading-none">{(1 / market.price.yes).toFixed(2)}<span className="text-[8px]">x</span></span>
                   </button>
                   <button
                     onClick={(e) => handleQuickBuy(e, "NO")}
-                    className="py-1.5 bg-red-500/10 border border-red-500/50 text-red-400 font-mono transition-all hover:bg-red-500/20 active:scale-[0.97] flex items-center justify-center gap-1.5"
+                    className="py-1.5 bg-red-500/10 border border-red-500/50 text-red-600 dark:text-red-400 font-mono transition-all hover:bg-red-500/20 active:scale-[0.97] flex items-center justify-center gap-1.5"
                   >
                     <span className="text-[9px] font-bold uppercase">NO</span>
                     <span className="text-sm font-black leading-none">{(1 / market.price.no).toFixed(2)}<span className="text-[8px]">x</span></span>
@@ -536,7 +536,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
     const dateStr = matchDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
     const timeStr = matchDate.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 
-    const teamColors = ["#00e5a0", "#00b4d8"];
+    const teamColors = ["#12805c", "#00b4d8"];
     const drawColor = "#94a3b8";
 
     // One outcome cell: %-box (button when tradeable) + multiplier underneath
@@ -557,7 +557,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
               <span
                 onClick={(e) => handleAddToCart(e, o.original, o.idx)}
                 className="absolute top-0.5 right-0.5 p-0.5 border transition-all active:scale-95"
-                style={{ borderColor: isAdded ? "#00e5a0" : `${color}40`, color: isAdded ? "#000" : color, backgroundColor: isAdded ? "#00e5a0" : "transparent" }}
+                style={{ borderColor: isAdded ? "#12805c" : `${color}40`, color: isAdded ? "#000" : color, backgroundColor: isAdded ? "#12805c" : "transparent" }}
                 title={locale === "sw" ? "Ongeza kwenye mkoba" : "Add to cart"}
               >
                 {isAdded ? <Check size={10} weight="bold" /> : <ShoppingCart size={10} weight="bold" />}
@@ -589,7 +589,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
                 <span className="text-sm font-mono font-black leading-tight">{timeStr}</span>
               </>
             ) : (
-              <span className="text-[11px] font-mono font-bold text-blue-400 leading-tight">{market.status === "RESOLVED" ? (locale === "sw" ? "Imekamilika" : "Resolved") : (locale === "sw" ? "Imeisha" : "Ended")}</span>
+              <span className="text-[11px] font-mono font-bold text-blue-600 dark:text-blue-400 leading-tight">{market.status === "RESOLVED" ? (locale === "sw" ? "Imekamilika" : "Resolved") : (locale === "sw" ? "Imeisha" : "Ended")}</span>
             )}
           </div>
           <div className="flex flex-col items-center text-center gap-1.5">
@@ -615,7 +615,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
     >
       <div
         onClick={() => router.push(`/markets/${market.id}`)}
-        className="group relative bg-[var(--card)] border border-[var(--card-border)] rounded-xl overflow-hidden hover:border-[var(--accent)]/60 transition-all duration-200 hover:shadow-[0_0_20px_rgba(0,229,160,0.1)] cursor-pointer"
+        className="bl-card bl-card-sm group relative overflow-hidden transition-all duration-200 cursor-pointer hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[5px_5px_0_var(--line)]"
       >
           {/* Accent top line */}
           <div className="h-[2px] w-full" style={{ background: `linear-gradient(90deg, ${catColor}, transparent)` }} />
@@ -637,7 +637,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
                   {market.category}
                 </a>
                 {market.status === "RESOLVED" && (
-                  <span className="text-[9px] font-mono font-bold text-blue-400 uppercase tracking-wider px-1.5 py-0.5 border border-blue-400/30 bg-blue-400/10">
+                  <span className="text-[9px] font-mono font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider px-1.5 py-0.5 border border-blue-400/30 bg-blue-400/10">
                     Resolved
                   </span>
                 )}
@@ -668,7 +668,7 @@ export function MarketCard({ market, index = 0, hero = false, compact = false }:
               </div>
               <span className={cn(
                 "flex items-center gap-1 text-[9px] font-mono",
-                endingSoon ? "text-amber-400 font-bold" : market.status === "OPEN" ? "text-[var(--muted)]" : "text-blue-400"
+                endingSoon ? "text-amber-400 font-bold" : market.status === "OPEN" ? "text-[var(--muted)]" : "text-blue-600 dark:text-blue-400"
               )}>
                 {endingSoon && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />}
                 <Timer size={10} weight="bold" />

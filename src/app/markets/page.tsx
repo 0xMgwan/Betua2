@@ -188,13 +188,13 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
       >
         {/* Tags row */}
         <div className="px-3 pt-3 flex flex-wrap items-center gap-1.5">
-          <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 bg-orange-500/20 text-orange-400 border border-orange-500/30">
+          <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-500/30">
             <Stack size={10} weight="fill" className="inline mr-1" />
             {markets.length} markets
           </span>
           <Link 
             href={`/markets?category=${category}`}
-            className="text-[10px] font-mono uppercase px-1.5 py-0.5 bg-[#00e5a0]/10 text-[#00e5a0] border border-[#00e5a0]/30 hover:bg-[#00e5a0]/20 transition-colors"
+            className="text-[10px] font-mono uppercase px-1.5 py-0.5 bg-[#12805c]/10 text-[#12805c] border border-[#12805c]/30 hover:bg-[#12805c]/20 transition-colors"
           >
             {category}
           </Link>
@@ -203,7 +203,7 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
             return (
               <Link 
                 href={`/markets?category=${category}&subCategory=${subCategory}`}
-                className="text-[10px] font-mono uppercase px-1.5 py-0.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/20 transition-colors flex items-center gap-1"
+                className="text-[10px] font-mono uppercase px-1.5 py-0.5 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/20 transition-colors flex items-center gap-1"
               >
                 {subCatInfo?.icon?.startsWith('/') ? (
                   <Image src={subCatInfo.icon} alt={subCategory} width={12} height={12} className="object-contain" />
@@ -230,7 +230,7 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
                 />
               </div>
             )}
-            <h3 className="font-bold text-sm group-hover:text-orange-400 transition-colors line-clamp-2 flex-1">
+            <h3 className="font-bold text-sm group-hover:text-orange-600 dark:text-orange-400 transition-colors line-clamp-2 flex-1">
               {eventTitle}
             </h3>
           </div>
@@ -260,10 +260,10 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
                       onClick={(e) => toggleExpand(m.id, e)}
                       className="w-full flex items-center justify-between px-2 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded text-xs"
                     >
-                      <span className="text-purple-400 font-mono">{m.options?.length} options</span>
+                      <span className="text-purple-600 dark:text-purple-400 font-mono">{m.options?.length} options</span>
                       <CaretDown 
                         size={12} 
-                        className={cn("text-purple-400 transition-transform", isExpanded && "rotate-180")} 
+                        className={cn("text-purple-600 dark:text-purple-400 transition-transform", isExpanded && "rotate-180")} 
                       />
                     </button>
                     <AnimatePresence>
@@ -281,11 +281,11 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
                                 <div key={i} className="flex items-center justify-between gap-2 text-[10px]">
                                   {m.optionImages?.[i] && <img src={m.optionImages[i]} alt="" className="w-4 h-4 rounded-full object-cover shrink-0" />}
                                   <span className="truncate flex-1 text-[var(--muted)]">{opt}</span>
-                                  <span className="font-mono text-purple-400 tabular-nums">{Math.round(optPrice * 100)}%</span>
-                                  <span className="font-mono text-[9px] font-bold text-purple-400/80 bg-purple-500/10 border border-purple-500/20 rounded px-1 leading-tight tabular-nums">{fmtMult(optPrice)}</span>
+                                  <span className="font-mono text-purple-600 dark:text-purple-400 tabular-nums">{Math.round(optPrice * 100)}%</span>
+                                  <span className="font-mono text-[9px] font-bold text-purple-600 dark:text-purple-400/80 bg-purple-500/10 border border-purple-500/20 rounded px-1 leading-tight tabular-nums">{fmtMult(optPrice)}</span>
                                   <button
                                     onClick={(e) => handleBuyClick(m, `option_${i}`, i, e)}
-                                    className="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 border border-purple-500/30 hover:bg-purple-500/30 font-bold"
+                                    className="px-1.5 py-0.5 bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30 hover:bg-purple-500/30 font-bold"
                                   >
                                     BUY
                                   </button>
@@ -294,8 +294,8 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
                                     className={cn(
                                       "p-0.5 rounded transition-all",
                                       addedToCart === `${m.id}-option_${i}-${i}`
-                                        ? "bg-green-500/30 text-green-400"
-                                        : "text-purple-400 hover:bg-purple-500/20"
+                                        ? "bg-green-500/30 text-green-600 dark:text-green-400"
+                                        : "text-purple-600 dark:text-purple-400 hover:bg-purple-500/20"
                                     )}
                                   >
                                     {addedToCart === `${m.id}-option_${i}-${i}` ? <Check size={10} weight="bold" /> : <ShoppingCart size={10} />}
@@ -315,7 +315,7 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
                       {m.optionImages?.[0] && <img src={m.optionImages[0]} alt="" className="w-5 h-5 rounded-full object-cover shrink-0" />}
                       <button
                         onClick={(e) => handleBuyClick(m, "yes", undefined, e)}
-                        className="flex-1 py-1 text-[10px] font-bold bg-[#00e5a0]/20 text-[#00e5a0] border border-[#00e5a0]/30 hover:bg-[#00e5a0]/30"
+                        className="flex-1 py-1 text-[10px] font-bold bg-[#12805c]/20 text-[#12805c] border border-[#12805c]/30 hover:bg-[#12805c]/30"
                       >
                         YES {Math.round(yesPrice * 100)}% <span className="opacity-60 font-mono">· {fmtMult(yesPrice)}</span>
                       </button>
@@ -324,8 +324,8 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
                         className={cn(
                           "p-1 border transition-all",
                           addedToCart === `${m.id}-yes-`
-                            ? "bg-green-500/30 text-green-400 border-green-500/30"
-                            : "bg-[#00e5a0]/10 text-[#00e5a0] hover:bg-[#00e5a0]/20 border-[#00e5a0]/30"
+                            ? "bg-green-500/30 text-green-600 dark:text-green-400 border-green-500/30"
+                            : "bg-[#12805c]/10 text-[#12805c] hover:bg-[#12805c]/20 border-[#12805c]/30"
                         )}
                       >
                         {addedToCart === `${m.id}-yes-` ? <Check size={10} weight="bold" /> : <ShoppingCart size={10} />}
@@ -335,7 +335,7 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
                       {m.optionImages?.[1] && <img src={m.optionImages[1]} alt="" className="w-5 h-5 rounded-full object-cover shrink-0" />}
                       <button
                         onClick={(e) => handleBuyClick(m, "no", undefined, e)}
-                        className="flex-1 py-1 text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
+                        className="flex-1 py-1 text-[10px] font-bold bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30 hover:bg-red-500/30"
                       >
                         NO {Math.round(noPrice * 100)}% <span className="opacity-60 font-mono">· {fmtMult(noPrice)}</span>
                       </button>
@@ -344,8 +344,8 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
                         className={cn(
                           "p-1 border transition-all",
                           addedToCart === `${m.id}-no-`
-                            ? "bg-green-500/30 text-green-400 border-green-500/30"
-                            : "bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/30"
+                            ? "bg-green-500/30 text-green-600 dark:text-green-400 border-green-500/30"
+                            : "bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 border-red-500/30"
                         )}
                       >
                         {addedToCart === `${m.id}-no-` ? <Check size={10} weight="bold" /> : <ShoppingCart size={10} />}
@@ -357,7 +357,7 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
             );
           })}
           {markets.length > 3 && (
-            <Link href={`/events/${eventId}`} className="block text-[10px] text-orange-400 text-center hover:underline">
+            <Link href={`/events/${eventId}`} className="block text-[10px] text-orange-600 dark:text-orange-400 text-center hover:underline">
               +{markets.length - 3} more markets →
             </Link>
           )}
@@ -375,20 +375,20 @@ function EventCard({ eventId, eventTitle, markets, category, subCategory, imageU
               {formatVolume(totalVolume)}
             </span>
             <span className="flex items-center gap-1">
-              <Lightning size={10} weight="fill" className="text-yellow-400" />
+              <Lightning size={10} weight="fill" className="text-yellow-600 dark:text-yellow-400" />
               {totalTrades}
             </span>
           </div>
           <div className="flex items-center gap-1">
             <button
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowQR(true); }}
-              className="p-1 rounded text-[var(--muted)] hover:text-orange-400 hover:bg-orange-400/10 transition-all"
+              className="p-1 rounded text-[var(--muted)] hover:text-orange-600 dark:text-orange-400 hover:bg-orange-400/10 transition-all"
               title="Get QR code"
             >
               <QrCode size={13} weight="bold" />
             </button>
             <Link href={`/events/${eventId}`}>
-              <CaretRight size={14} className="text-orange-400 hover:translate-x-1 transition-transform" />
+              <CaretRight size={14} className="text-orange-600 dark:text-orange-400 hover:translate-x-1 transition-transform" />
             </Link>
           </div>
         </div>
@@ -605,7 +605,7 @@ function MarketsContent() {
             {DEPOSITS_ENABLED ? (
               <Link
                 href="/wallet"
-                className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 bg-[#00e5a0] text-black font-black text-xs sm:text-sm hover:opacity-90 transition-all font-mono tracking-wider uppercase active:scale-95 shadow-[0_0_15px_rgba(0,229,160,0.25)]"
+                className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 bg-[#12805c] text-black font-black text-xs sm:text-sm hover:opacity-90 transition-all font-mono tracking-wider uppercase active:scale-95 shadow-[0_0_15px_rgba(0,229,160,0.25)]"
               >
                 <ArrowDownLeft size={15} weight="bold" />
                 {locale === "sw" ? "Weka" : "Deposit"}

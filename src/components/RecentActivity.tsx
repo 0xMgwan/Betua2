@@ -141,8 +141,8 @@ function ActivityItem({
 
   // Determine colors based on side
   const sideColors: Record<string, string> = {
-    YES: "text-[#00e5a0] border-[#00e5a0]/30",
-    NO: "text-red-400 border-red-500/30",
+    YES: "text-[#12805c] border-[#12805c]/30",
+    NO: "text-red-600 dark:text-red-400 border-red-500/30",
   };
   const sideColor = sideColors[side] || "text-[#00b4d8] border-[#00b4d8]/30";
 
@@ -152,7 +152,7 @@ function ActivityItem({
         {isTrade ? (
           <>
             <span className="text-[var(--muted)]">@{activity.user.username}</span>
-            <span className={cn("font-bold", isBuy ? "text-[var(--accent)]" : "text-red-400")}>
+            <span className={cn("font-bold", isBuy ? "text-[var(--accent)]" : "text-red-600 dark:text-red-400")}>
               {isBuy ? (locale === "sw" ? "alinunua" : "bought") : (locale === "sw" ? "aliuza" : "sold")}
             </span>
             <span className={cn("px-1 py-0.5 border text-[9px]", sideColor)}>
@@ -185,7 +185,7 @@ function ActivityItem({
             <span className="text-[11px] text-[var(--foreground)] font-medium truncate">
               @{activity.user.username}
             </span>
-            <span className={cn("text-[11px] font-bold", isBuy ? "text-[var(--accent)]" : "text-red-400")}>
+            <span className={cn("text-[11px] font-bold", isBuy ? "text-[var(--accent)]" : "text-red-600 dark:text-red-400")}>
               {isTrade 
                 ? (isBuy ? (locale === "sw" ? "alinunua" : "bought") : (locale === "sw" ? "aliuza" : "sold"))
                 : (locale === "sw" ? "alitatua" : "resolved")
@@ -194,7 +194,7 @@ function ActivityItem({
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {isTrade && activity.details.amountTzs && (
-              <span className={cn("text-[11px] font-bold", isBuy ? "text-[var(--accent)]" : "text-red-400")}>
+              <span className={cn("text-[11px] font-bold", isBuy ? "text-[var(--accent)]" : "text-red-600 dark:text-red-400")}>
                 {isBuy ? "+" : "-"}{formatTZS(activity.details.amountTzs)}
               </span>
             )}
@@ -214,7 +214,7 @@ function ActivityItem({
               {side}
             </span>
           ) : (
-            <span className="px-1.5 py-0.5 border border-purple-500/30 text-purple-400 text-[9px] font-bold shrink-0">
+            <span className="px-1.5 py-0.5 border border-purple-500/30 text-purple-600 dark:text-purple-400 text-[9px] font-bold shrink-0">
               {activity.details.outcome}
             </span>
           )}

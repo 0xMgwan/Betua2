@@ -111,7 +111,7 @@ export function NotificationSettings() {
       {/* Permission Status */}
       {permissionStatus !== "granted" && (
         <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-          <p className="text-sm text-yellow-400 mb-3">
+          <p className="text-sm text-yellow-600 dark:text-yellow-400 mb-3">
             {isSw
               ? "Ruhusu arifa kupokea taarifa kwenye simu yako"
               : "Enable notifications to receive alerts on your phone"}

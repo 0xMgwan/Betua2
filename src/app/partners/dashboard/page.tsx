@@ -152,7 +152,7 @@ export default function PartnerDashboard() {
   const logs: AnyObj[] = stats?.recentLogs || [];
 
   const statusColor = (code: number) =>
-    code < 300 ? "text-green-500" : code < 400 ? "text-blue-400" : code < 500 ? "text-yellow-500" : "text-red-500";
+    code < 300 ? "text-green-500" : code < 400 ? "text-blue-600 dark:text-blue-400" : code < 500 ? "text-yellow-500" : "text-red-500";
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">

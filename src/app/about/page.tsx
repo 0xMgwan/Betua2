@@ -139,7 +139,7 @@ export default function AboutPage() {
           <div className="space-y-6 border-l-2 border-[var(--card-border)] pl-6">
             <motion.p variants={fadeUp} className="text-lg text-[var(--muted)] font-mono leading-relaxed">{t.what.p1}</motion.p>
             <motion.p variants={fadeUp} className="text-lg text-[var(--muted)] font-mono leading-relaxed">
-              {t.what.p2} <span className="text-green-400 font-bold">YES</span> / <span className="text-red-400 font-bold">NO</span>
+              {t.what.p2} <span className="text-green-600 dark:text-green-400 font-bold">YES</span> / <span className="text-red-600 dark:text-red-400 font-bold">NO</span>
             </motion.p>
             <motion.p variants={fadeUp} className="text-lg text-[var(--muted)] font-mono leading-relaxed">{t.what.p3}</motion.p>
           </div>

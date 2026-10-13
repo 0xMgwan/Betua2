@@ -46,7 +46,7 @@ export default function DeleteAccountPage() {
           </div>
 
           {done ? (
-            <div className="p-3 bg-[#00e5a0]/10 border border-[#00e5a0]/30 rounded text-[13px] text-center">
+            <div className="p-3 bg-[#12805c]/10 border border-[#12805c]/30 rounded text-[13px] text-center">
               Your account has been deleted. <Link href="/" className="underline font-bold">Return home</Link>.
             </div>
           ) : user ? (

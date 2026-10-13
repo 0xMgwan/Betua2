@@ -189,7 +189,7 @@ export default function CreateEventPage() {
                     {m.type === "binary" ? "YES/NO" : `${m.options?.length} options`}
                   </span>
                 </div>
-                <button onClick={() => removeMarket(m.id)} className="text-red-400">
+                <button onClick={() => removeMarket(m.id)} className="text-red-600 dark:text-red-400">
                   <X size={16} />
                 </button>
               </div>
@@ -198,7 +198,7 @@ export default function CreateEventPage() {
             <AddMarketForm onAdd={addMarket} />
           </div>
 
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+          {error && <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>}
 
           <button
             onClick={handleSubmit}

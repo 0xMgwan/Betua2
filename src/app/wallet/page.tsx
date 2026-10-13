@@ -16,6 +16,7 @@ import {
 import { useCurrency } from "@/store/useCurrency";
 import { DEPOSITS_ENABLED, depositsDisabledLabel } from "@/lib/featureFlags";
 import { SandboxNotice } from "@/components/SandboxNotice";
+import { CountUp } from "@/components/bongo/Motion";
 
 interface Transaction {
   id: string;
@@ -288,7 +289,7 @@ export default function WalletPage() {
           {/* ── Left column ─────────────────────────────── */}
           <div className="lg:col-span-2 space-y-4">
             {/* Balance card */}
-            <div className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-br from-[#00e5a0]/20 via-[#00c896]/10 to-[#00b4d8]/15 border border-[var(--accent)]/25">
+            <div className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-br from-[#12805c]/20 via-[#00c896]/10 to-[#00b4d8]/15 border border-[var(--accent)]/25">
               <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-[var(--accent)]/10 blur-2xl pointer-events-none" />
               <div className="relative">
                 <div className="flex items-center justify-between mb-3">
@@ -304,7 +305,7 @@ export default function WalletPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     {pendingCount > 0 && (
-                      <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/20 animate-pulse">
+                      <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-600 dark:text-yellow-400 border border-yellow-500/20 animate-pulse">
                         <Clock size={10} weight="fill" />
                         {pendingCount}
                       </span>
@@ -324,7 +325,7 @@ export default function WalletPage() {
                   </div>
                 </div>
                 <div className="text-4xl font-black mb-0.5 tabular-nums">
-                  {formatRaw(balance)}
+                  <CountUp key={`${displayCurrency}-${balance}`} to={balance} format={formatRaw} duration={900} />
                 </div>
                 {(displayCurrency === 'TZS') && (
                   <p className="text-xs text-[var(--muted)]">{t.wallet.tanzanianShillings} (DB)</p>
@@ -353,7 +354,7 @@ export default function WalletPage() {
             </div>
 
             {/* Deposit / Withdraw panel */}
-            <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl overflow-hidden">
+            <div className="bl-card bl-reveal overflow-hidden">
               {/* Tabs */}
               <div className="flex">
                 {(["deposit", "withdraw", "send"] as const).map((tb) => {
@@ -376,8 +377,8 @@ export default function WalletPage() {
                     {tb === "deposit"
                       ? <ArrowDownLeft size={16} weight="bold" className={locked ? "" : "text-[var(--accent)]"} />
                       : tb === "withdraw"
-                      ? <ArrowUpRight size={16} weight="bold" className="text-red-400" />
-                      : <ArrowUpRight size={16} weight="bold" className="text-blue-400" />}
+                      ? <ArrowUpRight size={16} weight="bold" className="text-red-600 dark:text-red-400" />
+                      : <ArrowUpRight size={16} weight="bold" className="text-blue-600 dark:text-blue-400" />}
                     {tb === "deposit" ? t.wallet.deposit : tb === "withdraw" ? t.wallet.withdraw : t.wallet.send}
                   </button>
                   );
@@ -413,7 +414,7 @@ export default function WalletPage() {
                         "mb-4 p-3.5 rounded-xl text-sm leading-relaxed",
                         message.type === "success"
                           ? "bg-[var(--accent)]/10 border border-[var(--accent)]/25 text-[var(--accent)]"
-                          : "bg-red-500/10 border border-red-500/20 text-red-400"
+                          : "bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400"
                       )}
                     >
                       {message.text}
@@ -453,7 +454,7 @@ export default function WalletPage() {
                 ) : displayCurrency === 'USDC' && tab === "withdraw" ? (
                   <div className="space-y-4">
                     <div className="p-4 bg-red-500/5 border border-red-500/20 rounded-xl">
-                      <p className="text-xs font-semibold text-red-400 mb-2 uppercase tracking-wide">
+                      <p className="text-xs font-semibold text-red-600 dark:text-red-400 mb-2 uppercase tracking-wide">
                         Withdraw USDC on Base
                       </p>
                       <p className="text-xs text-[var(--muted)] mb-3">
@@ -624,7 +625,7 @@ export default function WalletPage() {
                       (!!quote && !quote.sufficient)
                     }
                     className={cn(
-                      "w-full py-3.5 font-black rounded-xl transition-all disabled:opacity-40 text-sm flex items-center justify-center gap-2",
+                      "bl-press w-full py-3.5 font-black rounded-xl transition-all disabled:opacity-40 text-sm flex items-center justify-center gap-2",
                       tab === "deposit"
                         ? "bg-[var(--foreground)] text-[var(--background)] hover:opacity-80"
                         : tab === "withdraw"
@@ -676,7 +677,7 @@ export default function WalletPage() {
               )}
             </div>
 
-            <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl overflow-hidden">
+            <div className="bl-card bl-reveal overflow-hidden">
               {loading ? (
                 <div className="space-y-px p-1">
                   {[...Array(6)].map((_, i) => (
@@ -723,8 +724,8 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
 
   const statusConfig = {
     COMPLETED: { icon: <CheckCircle size={13} weight="fill" className="text-[var(--accent)]" />, label: locale === "sw" ? "Imethibitishwa" : "Confirmed", color: "text-[var(--accent)]" },
-    FAILED: { icon: <XCircle size={13} weight="fill" className="text-red-400" />, label: locale === "sw" ? "Imeshindwa" : "Failed", color: "text-red-400" },
-    PENDING: { icon: <Clock size={13} weight="fill" className="text-yellow-400 animate-pulse" />, label: locale === "sw" ? "Inasubiri" : "Pending", color: "text-yellow-400" },
+    FAILED: { icon: <XCircle size={13} weight="fill" className="text-red-600 dark:text-red-400" />, label: locale === "sw" ? "Imeshindwa" : "Failed", color: "text-red-600 dark:text-red-400" },
+    PENDING: { icon: <Clock size={13} weight="fill" className="text-yellow-600 dark:text-yellow-400 animate-pulse" />, label: locale === "sw" ? "Inasubiri" : "Pending", color: "text-yellow-600 dark:text-yellow-400" },
   }[tx.status] ?? { icon: <Clock size={13} />, label: tx.status, color: "text-[var(--muted)]" };
 
   return (
@@ -751,10 +752,10 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
             : isDeposit || isReceive || isRedeem
             ? <ArrowDownLeft size={18} weight="bold" className="text-[var(--accent)]" />
             : isCreateMarket
-            ? <PaperPlaneRight size={18} weight="bold" className="text-purple-400" />
+            ? <PaperPlaneRight size={18} weight="bold" className="text-purple-600 dark:text-purple-400" />
             : isSend || isBuyShares || isSellShares
-            ? <PaperPlaneRight size={18} weight="bold" className="text-blue-400" />
-            : <ArrowUpRight size={18} weight="bold" className="text-red-400" />}
+            ? <PaperPlaneRight size={18} weight="bold" className="text-blue-600 dark:text-blue-400" />
+            : <ArrowUpRight size={18} weight="bold" className="text-red-600 dark:text-red-400" />}
         </div>
         <div>
           <p className="text-sm font-semibold">
@@ -785,9 +786,9 @@ function TxRow({ tx, index }: { tx: Transaction; index: number }) {
       <div className="text-right">
         <p className={cn("font-black text-sm tabular-nums",
           isDeposit || isReceive || isRedeem || isReferral || isCreatorFee || isLpRedeem ? "text-[var(--accent)]" :
-          isCreateMarket ? "text-purple-400" :
-          isSend || isBuyShares || isSellShares || isSeedLiquidity ? "text-blue-400" :
-          "text-red-400")}>
+          isCreateMarket ? "text-purple-600 dark:text-purple-400" :
+          isSend || isBuyShares || isSellShares || isSeedLiquidity ? "text-blue-600 dark:text-blue-400" :
+          "text-red-600 dark:text-red-400")}>
           {isDeposit || isReceive || isRedeem || isReferral || isCreatorFee || isLpRedeem ? "+" : "−"}
           {displayCurrency === 'USDC' 
             ? `$${((tx.amountUsdc || 0) > 1000 ? (tx.amountUsdc || 0) / 1_000_000 : (tx.amountUsdc || 0)).toFixed(2)}`

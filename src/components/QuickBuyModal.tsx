@@ -350,7 +350,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
               {/* ── Awaiting payment confirmation ── */}
               {awaitingPayment && !success && (
                 <div className="mb-4 p-4 border-2 border-orange-500/40 bg-orange-500/5 space-y-3">
-                  <div className="flex items-center gap-2 text-orange-400 font-mono font-bold text-xs uppercase tracking-wider">
+                  <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 font-mono font-bold text-xs uppercase tracking-wider">
                     <span className="animate-pulse">●</span>
                     <span>{locale === "sw" ? "Subiri Uthibitisho wa Malipo" : "Waiting for Payment"}</span>
                   </div>
@@ -366,7 +366,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                   <button
                     type="button"
                     onClick={() => { setAwaitingPayment(null); pendingTradeBodyRef.current = null; }}
-                    className="text-[10px] font-mono text-[var(--muted)] hover:text-red-400 transition-colors underline"
+                    className="text-[10px] font-mono text-[var(--muted)] hover:text-red-600 dark:text-red-400 transition-colors underline"
                   >
                     {locale === "sw" ? "Ghairi" : "Cancel"}
                   </button>
@@ -438,7 +438,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                   <div className="flex items-center justify-between text-xs font-mono">
                     <span className="text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Ukishinda" : "If you win"}</span>
                     <div className="flex-1 mx-2 border-b border-dashed border-[var(--card-border)]"></div>
-                    <span className="font-bold tabular-nums text-[#00e5a0]">{formatAmount(payoutIfWin)}</span>
+                    <span className="font-bold tabular-nums text-[#12805c]">{formatAmount(payoutIfWin)}</span>
                   </div>
                 </div>
               )}
@@ -484,7 +484,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                     <button
                       type="button"
                       onClick={() => setShowHedge(!showHedge)}
-                      className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-mono font-bold text-orange-400 uppercase tracking-wider hover:bg-orange-500/10 transition-colors"
+                      className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-mono font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider hover:bg-orange-500/10 transition-colors"
                     >
                       <span>⚖ {sw ? "KIKOKOTOO CHA HEDGING" : "HEDGE CALCULATOR"}</span>
                       <span>{showHedge ? "▲" : "▼"}</span>
@@ -499,11 +499,11 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                             <label className="text-[9px] font-mono text-[var(--muted)] uppercase tracking-wider">
                               {sw ? "Mwanga wangu" : "My exposure"} ({hedgeCurrency})
                             </label>
-                            <span className="text-[9px] font-mono text-orange-400/60 border border-orange-500/20 px-1 leading-tight cursor-default" title={sw ? "Ingiza kiasi unachohitaji kubadilisha au kupokea. Haujui? Ingiza 0 kuuza bila hedging." : "Enter the amount you need to convert or receive. Not sure? Enter 0 to trade without hedging."}>?</span>
+                            <span className="text-[9px] font-mono text-orange-600 dark:text-orange-400/60 border border-orange-500/20 px-1 leading-tight cursor-default" title={sw ? "Ingiza kiasi unachohitaji kubadilisha au kupokea. Haujui? Ingiza 0 kuuza bila hedging." : "Enter the amount you need to convert or receive. Not sure? Enter 0 to trade without hedging."}>?</span>
                           </div>
                           {/* Pro tip info strip */}
                           <div className="flex items-start gap-1.5 mb-2 text-[9px] font-mono text-[var(--muted)]/70 border border-orange-500/10 bg-[var(--background)] px-2 py-1.5">
-                            <span className="text-orange-400/60 shrink-0">ⓘ</span>
+                            <span className="text-orange-600 dark:text-orange-400/60 shrink-0">ⓘ</span>
                             <span>
                               {sw
                                 ? "Ingiza kiasi unachohitaji kubadilisha au kupokea. Haujui? Ingiza 0 kuuza bila hedging."
@@ -525,7 +525,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                               <button
                                 type="button"
                                 onClick={() => setHedgeCurrencyOpen(!hedgeCurrencyOpen)}
-                                className="flex items-center gap-1 px-2 py-1.5 bg-[var(--card)] border-2 border-orange-500/30 hover:border-orange-500/60 text-[10px] font-mono font-bold text-orange-400 transition-colors min-w-[52px] justify-between"
+                                className="flex items-center gap-1 px-2 py-1.5 bg-[var(--card)] border-2 border-orange-500/30 hover:border-orange-500/60 text-[10px] font-mono font-bold text-orange-600 dark:text-orange-400 transition-colors min-w-[52px] justify-between"
                               >
                                 <span>{hedgeCurrency}</span>
                                 <span className="text-[8px]">{hedgeCurrencyOpen ? "▲" : "▼"}</span>
@@ -539,8 +539,8 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                                       onClick={() => { setHedgeCurrency(c); setHedgeCurrencyOpen(false); }}
                                       className={`w-full text-left px-2 py-1.5 text-[10px] font-mono font-bold transition-colors ${
                                         c === hedgeCurrency
-                                          ? "bg-orange-500/20 text-orange-400"
-                                          : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-orange-400"
+                                          ? "bg-orange-500/20 text-orange-600 dark:text-orange-400"
+                                          : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-orange-600 dark:text-orange-400"
                                       }`}
                                     >
                                       {c}
@@ -555,7 +555,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                               <p className="text-[9px] font-mono text-[var(--muted)]">
                                 ≈ TSh {exposureTzs.toLocaleString()} {sw ? "kwa kiwango cha sasa" : "at current rate"}
                               </p>
-                              <p className="text-[9px] font-mono text-orange-400/60">
+                              <p className="text-[9px] font-mono text-orange-600 dark:text-orange-400/60">
                                 {sw ? "Kiwango" : "Rate"}: {rate.toLocaleString()} TZS/{hedgeCurrency} ({rateSource})
                               </p>
                             </div>
@@ -569,7 +569,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                               <label className="text-[9px] font-mono text-[var(--muted)] uppercase tracking-wider">
                                 {sw ? "Kiwango cha ulinzi" : "Coverage level"}
                               </label>
-                              <span className="text-[10px] font-mono font-bold text-orange-400">{hedgeCoverage}%</span>
+                              <span className="text-[10px] font-mono font-bold text-orange-600 dark:text-orange-400">{hedgeCoverage}%</span>
                             </div>
                             <input
                               type="range"
@@ -581,7 +581,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                               className="w-full accent-orange-400 h-1.5 cursor-pointer"
                             />
                             <p className="text-[9px] font-mono text-[var(--muted)] mt-1">{coverageHint}</p>
-                            <p className="text-[9px] font-mono text-orange-400/80 mt-0.5">
+                            <p className="text-[9px] font-mono text-orange-600 dark:text-orange-400/80 mt-0.5">
                               {sw ? "Kulinda kila kitu? Sogeza hadi 100%." : "Hedge everything? Move to 100%."}{" "}
                               {sw ? "Bafa ndogo tu? Sogeza hadi 10%." : "Just a small buffer? Move to 10%."}
                             </p>
@@ -592,22 +592,22 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                         {exposureAmt > 0 && coverageTzs > 0 && (
                           <div className="space-y-2">
                             {/* BUY YES */}
-                            <div className="p-2 bg-[var(--background)] border border-[#00e5a0]/20 space-y-1">
-                              <div className="text-[9px] font-mono font-bold text-[#00e5a0] uppercase mb-1">
+                            <div className="p-2 bg-[var(--background)] border border-[#12805c]/20 space-y-1">
+                              <div className="text-[9px] font-mono font-bold text-[#12805c] uppercase mb-1">
                                 {sw ? "NUNUA NDIYO (Hedge)" : "BUY YES hedge"}
                               </div>
                               <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] font-mono">
                                 <span className="text-[var(--muted)]">{sw ? "Gharama" : "Total cost"}</span>
                                 <span className="text-right font-bold">TSh {yesCostGross.toLocaleString()}</span>
                                 <span className="text-[var(--muted)]">{sw ? "Malipo kama NDIYO" : "Payout if YES wins"}</span>
-                                <span className="text-right font-bold text-[#00e5a0]">TSh {yesPayoutFinal.toLocaleString()}</span>
+                                <span className="text-right font-bold text-[#12805c]">TSh {yesPayoutFinal.toLocaleString()}</span>
                                 <span className="text-[var(--muted)]">{sw ? "Ada ya bima" : "Insurance premium"}</span>
-                                <span className="text-right text-orange-400">TSh {yesCostGross.toLocaleString()}</span>
+                                <span className="text-right text-orange-600 dark:text-orange-400">TSh {yesCostGross.toLocaleString()}</span>
                               </div>
                               <button
                                 type="button"
                                 onClick={() => { setAmount(String(yesCostGross)); setShowHedge(false); }}
-                                className="w-full mt-1.5 py-1.5 bg-[#00e5a0] text-black text-[10px] font-mono font-bold uppercase tracking-wider hover:opacity-90 transition-opacity"
+                                className="w-full mt-1.5 py-1.5 bg-[#12805c] text-black text-[10px] font-mono font-bold uppercase tracking-wider hover:opacity-90 transition-opacity"
                               >
                                 {sw ? "Tumia → Nunua NDIYO" : "Apply → Buy YES"}
                               </button>
@@ -615,16 +615,16 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
 
                             {/* BUY NO */}
                             <div className="p-2 bg-[var(--background)] border border-red-500/20 space-y-1">
-                              <div className="text-[9px] font-mono font-bold text-red-400 uppercase mb-1">
+                              <div className="text-[9px] font-mono font-bold text-red-600 dark:text-red-400 uppercase mb-1">
                                 {sw ? "NUNUA HAPANA (Hedge)" : "BUY NO hedge"}
                               </div>
                               <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] font-mono">
                                 <span className="text-[var(--muted)]">{sw ? "Gharama" : "Total cost"}</span>
                                 <span className="text-right font-bold">TSh {noCostGross.toLocaleString()}</span>
                                 <span className="text-[var(--muted)]">{sw ? "Malipo kama HAPANA" : "Payout if NO wins"}</span>
-                                <span className="text-right font-bold text-red-400">TSh {noPayoutFinal.toLocaleString()}</span>
+                                <span className="text-right font-bold text-red-600 dark:text-red-400">TSh {noPayoutFinal.toLocaleString()}</span>
                                 <span className="text-[var(--muted)]">{sw ? "Ada ya bima" : "Insurance premium"}</span>
-                                <span className="text-right text-orange-400">TSh {noCostGross.toLocaleString()}</span>
+                                <span className="text-right text-orange-600 dark:text-orange-400">TSh {noCostGross.toLocaleString()}</span>
                               </div>
                               <button
                                 type="button"
@@ -657,8 +657,8 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                 return (
                   <div className="mb-4 space-y-3">
                     {/* Confirmed bar */}
-                    <div className="p-3 bg-[#00e5a0]/10 border-2 border-[#00e5a0] shadow-[0_0_20px_rgba(0,229,160,0.2)]">
-                      <div className="flex items-center gap-2 text-[#00e5a0] mb-2 font-mono">
+                    <div className="p-3 bg-[#12805c]/10 border-2 border-[#12805c] shadow-[0_0_20px_rgba(0,229,160,0.2)]">
+                      <div className="flex items-center gap-2 text-[#12805c] mb-2 font-mono">
                         <CheckCircle size={16} weight="fill" />
                         <span className="font-bold uppercase tracking-wider text-xs">Trade Confirmed</span>
                       </div>
@@ -679,8 +679,8 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                       <div className="mt-2 p-2 bg-[var(--background)] border border-[var(--accent)]/20 flex items-center justify-between font-mono text-[10px]">
                         <span className="text-[var(--muted)] uppercase">If correct, you get</span>
                         <div className="text-right">
-                          <span className="font-black text-[#00e5a0]">{formatTZS(sharePayload.payoutIfWin)}</span>
-                          <span className={`ml-2 ${sharePayload.payoutIfWin > sharePayload.amountTzs ? "text-[#00e5a0]" : "text-[var(--muted)]"}`}>
+                          <span className="font-black text-[#12805c]">{formatTZS(sharePayload.payoutIfWin)}</span>
+                          <span className={`ml-2 ${sharePayload.payoutIfWin > sharePayload.amountTzs ? "text-[#12805c]" : "text-[var(--muted)]"}`}>
                             ({sharePayload.payoutIfWin > sharePayload.amountTzs ? "+" : ""}{formatTZS(sharePayload.payoutIfWin - sharePayload.amountTzs)})
                           </span>
                         </div>
@@ -717,7 +717,7 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
 
               {/* Error - Terminal Style */}
               {error && !success && (
-                <div className="mb-4 p-3 bg-red-500/10 border-2 border-red-500 text-red-400 text-xs font-mono shadow-[0_0_10px_rgba(239,68,68,0.2)]">
+                <div className="mb-4 p-3 bg-red-500/10 border-2 border-red-500 text-red-600 dark:text-red-400 text-xs font-mono shadow-[0_0_10px_rgba(239,68,68,0.2)]">
                   <span className="font-bold">ERROR:</span> {error}
                 </div>
               )}
@@ -738,11 +738,11 @@ export function QuickBuyModal({ isOpen, onClose, onSuccess, market, side, option
                       onClick={handleBuy}
                       disabled={!TRADING_ENABLED || loading || !amount || Number(amount) < minAmount || !isTradeable}
                       title={!TRADING_ENABLED ? tradingDisabledLabel(locale) : undefined}
-                      className={`flex-1 py-4 px-3 rounded-none font-mono font-black text-sm uppercase tracking-wider transition-all disabled:opacity-40 border-2 active:scale-95 ${
+                      className={`bl-press flex-1 py-4 px-3 rounded-none font-mono font-black text-sm uppercase tracking-wider transition-all disabled:opacity-40 border-2 ${
                         isMultiOption
-                          ? "bg-[#00e5a0] border-[#00e5a0] text-black hover:opacity-90 hover:shadow-[0_0_20px_rgba(0,229,160,0.4)]"
+                          ? "bg-[#12805c] border-[#12805c] text-black hover:opacity-90 hover:shadow-[0_0_20px_rgba(0,229,160,0.4)]"
                         : side === "YES"
-                        ? "bg-[#00e5a0] border-[#00e5a0] text-black hover:opacity-90 hover:shadow-[0_0_20px_rgba(0,229,160,0.4)]"
+                        ? "bg-[#12805c] border-[#12805c] text-black hover:opacity-90 hover:shadow-[0_0_20px_rgba(0,229,160,0.4)]"
                         : "bg-red-500 border-red-500 text-white hover:opacity-90 hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]"
                     }`}
                   >

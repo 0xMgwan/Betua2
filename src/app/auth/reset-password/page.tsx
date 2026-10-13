@@ -114,7 +114,7 @@ function ResetPasswordForm() {
                 </div>
 
                 {error && (
-                  <p className="text-xs text-red-400 font-mono bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</p>
+                  <p className="text-xs text-red-600 dark:text-red-400 font-mono bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</p>
                 )}
 
                 <button

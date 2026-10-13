@@ -151,8 +151,8 @@ export default function LpRepairPage() {
               exit={{ opacity: 0 }}
               className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start gap-3"
             >
-              <XCircle size={18} className="text-red-400 mt-0.5 shrink-0" />
-              <p className="text-sm font-mono text-red-400">{errorMsg}</p>
+              <XCircle size={18} className="text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
+              <p className="text-sm font-mono text-red-600 dark:text-red-400">{errorMsg}</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -170,10 +170,10 @@ export default function LpRepairPage() {
                 <span className="text-[10px] font-mono text-[var(--muted)]">diagnosis.output</span>
                 <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
                   isStuck
-                    ? "bg-red-500/10 text-red-400"
+                    ? "bg-red-500/10 text-red-600 dark:text-red-400"
                     : d?.hasLpRedeemTx
-                      ? "bg-green-500/10 text-green-400"
-                      : "bg-yellow-500/10 text-yellow-400"
+                      ? "bg-green-500/10 text-green-600 dark:text-green-400"
+                      : "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
                 }`}>
                   {isStuck ? "⚠ STUCK" : d?.hasLpRedeemTx ? "✓ HEALTHY" : "? UNKNOWN"}
                 </span>
@@ -228,8 +228,8 @@ export default function LpRepairPage() {
                   ].map(({ label, ok }) => (
                     <div key={label} className="flex items-center gap-2">
                       {ok
-                        ? <CheckCircle size={14} className="text-green-400 shrink-0" />
-                        : <XCircle size={14} className="text-red-400 shrink-0" />}
+                        ? <CheckCircle size={14} className="text-green-600 dark:text-green-400 shrink-0" />
+                        : <XCircle size={14} className="text-red-600 dark:text-red-400 shrink-0" />}
                       <span className={`text-xs font-mono ${ok ? "text-[var(--foreground)]" : "text-[var(--muted)]"}`}>
                         {label}
                       </span>
@@ -240,7 +240,7 @@ export default function LpRepairPage() {
                 {/* Stuck explanation */}
                 {isStuck && (
                   <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 flex items-start gap-2">
-                    <WarningCircle size={16} className="text-yellow-400 mt-0.5 shrink-0" />
+                    <WarningCircle size={16} className="text-yellow-600 dark:text-yellow-400 mt-0.5 shrink-0" />
                     <p className="text-xs font-mono text-yellow-300">
                       Position is locked as redeemed but no LP_REDEEM transaction found.
                       The nTZS transfer failed after the position was marked. Click Repair to re-send funds.
@@ -250,7 +250,7 @@ export default function LpRepairPage() {
 
                 {!isStuck && d?.hasLpRedeemTx && (
                   <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex items-start gap-2">
-                    <CheckCircle size={16} className="text-green-400 mt-0.5 shrink-0" />
+                    <CheckCircle size={16} className="text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
                     <p className="text-xs font-mono text-green-300">
                       LP already redeemed successfully. No action needed.
                     </p>

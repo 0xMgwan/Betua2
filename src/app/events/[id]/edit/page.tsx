@@ -233,7 +233,7 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
             {/* Title */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2">
-                Event Title <span className="text-red-400">*</span>
+                Event Title <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <input
                 type="text"
@@ -290,7 +290,7 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
                       className={cn(
                         "p-2 rounded-lg border text-sm transition-all flex items-center gap-2",
                         form.subCategory === sub.value
-                          ? "border-cyan-500 bg-cyan-500/10 text-cyan-400"
+                          ? "border-cyan-500 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400"
                           : "border-[var(--card-border)] hover:border-cyan-500/50"
                       )}
                     >
@@ -359,7 +359,7 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold flex items-center gap-2">
-                <ListBullets size={16} className="text-purple-400" />
+                <ListBullets size={16} className="text-purple-600 dark:text-purple-400" />
                 Markets ({event.markets.length})
               </h3>
               <Link
@@ -398,7 +398,7 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
 
           {/* Error */}
           {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-600 dark:text-red-400 text-sm">
               {error}
             </div>
           )}

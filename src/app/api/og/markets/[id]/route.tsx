@@ -132,7 +132,7 @@ export async function GET(
             right: 0,
             height: 4,
             background:
-              "linear-gradient(90deg,transparent,#00e5a0 40%,#00e5a0 60%,transparent)",
+              "linear-gradient(90deg,transparent,#12805c 40%,#12805c 60%,transparent)",
             display: "flex",
           }}
         />
@@ -165,7 +165,7 @@ export async function GET(
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#00e5a0",
+                color: "#12805c",
                 fontSize: 22,
                 fontWeight: 900,
                 marginRight: 14,
@@ -188,7 +188,7 @@ export async function GET(
             <div
               style={{
                 fontSize: 11,
-                color: "#00e5a0",
+                color: "#12805c",
                 border: "1px solid rgba(0,229,160,0.4)",
                 padding: "3px 10px",
                 letterSpacing: "0.15em",
@@ -283,7 +283,7 @@ export async function GET(
                       style={{
                         fontSize: 36,
                         fontWeight: 900,
-                        color: leading ? "#00e5a0" : "#ffffff",
+                        color: leading ? "#12805c" : "#ffffff",
                         display: "flex",
                       }}
                     >
@@ -329,7 +329,7 @@ export async function GET(
                   style={{
                     fontSize: 60,
                     fontWeight: 900,
-                    color: "#00e5a0",
+                    color: "#12805c",
                     display: "flex",
                   }}
                 >

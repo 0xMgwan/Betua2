@@ -15,7 +15,7 @@ interface PriceChartProps {
 }
 
 const COLORS = [
-  "#00e5a0",
+  "#12805c",
   "#ff4d6a",
   "#00b4d8",
   "#f59e0b",
@@ -213,7 +213,7 @@ export function PriceChart({ marketId, className, displayOptions }: PriceChartPr
         </div>
         <div className="flex items-center gap-2">
           {hIdx !== null && <span className="text-[8px] font-mono text-[var(--muted)]">{fmtTime(dp.t)}</span>}
-          <span className="text-[10px] font-mono text-[#00e5a0]" style={{ opacity: cursorOn ? 1 : 0 }}>▮</span>
+          <span className="text-[10px] font-mono text-[#12805c]" style={{ opacity: cursorOn ? 1 : 0 }}>▮</span>
         </div>
       </div>
 
@@ -338,7 +338,7 @@ export function PriceChart({ marketId, className, displayOptions }: PriceChartPr
         <span className="text-[8px] font-mono text-[var(--foreground)] opacity-20 uppercase tracking-widest">
           {points.length} TICKS · LIVE
         </span>
-        <span className="text-[8px] font-mono text-[#00e5a0]" style={{ opacity: cursorOn ? 0.6 : 0.15 }}>▮ STREAMING</span>
+        <span className="text-[8px] font-mono text-[#12805c]" style={{ opacity: cursorOn ? 0.6 : 0.15 }}>▮ STREAMING</span>
       </div>
     </div>
   );

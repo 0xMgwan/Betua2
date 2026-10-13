@@ -47,7 +47,7 @@ export function QRCodeModal({ isOpen, onClose, url, title }: QRCodeModalProps) {
     ctx.drawImage(canvas, padding, padding);
 
     // Brand label
-    ctx.fillStyle = "#00e5a0";
+    ctx.fillStyle = "#12805c";
     ctx.font = "bold 18px monospace";
     ctx.textAlign = "center";
     ctx.fillText("GUAP", out.width / 2, canvas.height + padding * 2 + 20);

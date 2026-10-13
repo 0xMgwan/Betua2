@@ -19,7 +19,7 @@ function Content() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-white font-mono">
       {status === "loading" && <p>Processing...</p>}
-      {status === "success" && <p className="text-[#00e5a0]">✓ Unsubscribed successfully</p>}
+      {status === "success" && <p className="text-[#12805c]">✓ Unsubscribed successfully</p>}
       {status === "error" && <p className="text-red-500">Failed to unsubscribe</p>}
     </div>
   );

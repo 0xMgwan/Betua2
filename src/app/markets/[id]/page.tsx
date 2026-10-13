@@ -681,7 +681,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
           <div className="lg:col-span-2 space-y-4 sm:space-y-5">
 
             {/* ── Compact header: image + title + meta ── */}
-            <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-xl overflow-hidden">
+            <div className="bl-card bl-card-sm bl-reveal overflow-hidden">
               <div className="flex items-start gap-3 sm:gap-4 p-4 sm:p-5">
                 {market.imageUrl ? (
                   <Image
@@ -724,7 +724,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       </Link>
                     )}
                     {isResolved && (
-                      <span className="px-1.5 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-mono rounded border border-blue-500/20">
+                      <span className="px-1.5 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-mono rounded border border-blue-500/20">
                         {t.market.resolved}: {isMultiOption ? market.outcomeLabel : (market.outcome === 1 ? t.market.yes : t.market.no)}
                       </span>
                     )}
@@ -743,7 +743,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       Created {timeAgo(market.createdAt)}
                     </span>
                     {market.status === "OPEN" && (
-                      <span className="flex items-center gap-0.5 text-[#00e5a0]">
+                      <span className="flex items-center gap-0.5 text-[#12805c]">
                         <CheckCircle size={10} weight="fill" />
                         ACTIVE
                       </span>
@@ -753,7 +753,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       {formatAmount(market.totalVolume)} vol
                       {market.seedAmount && market.seedAmount > 0 ? (
                         <span
-                          className="text-[#00e5a0] text-[9px] font-mono border border-[#00e5a0]/30 rounded px-1 py-0.5 leading-none"
+                          className="text-[#12805c] text-[9px] font-mono border border-[#12805c]/30 rounded px-1 py-0.5 leading-none"
                           title="Creator backed this market with real liquidity"
                         >
                           💧 LP
@@ -795,7 +795,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                 {formatAmount(market.totalVolume)} vol
                 {market.seedAmount && market.seedAmount > 0 ? (
                   <span
-                    className="text-[#00e5a0] text-[9px] border border-[#00e5a0]/30 rounded px-1 py-0.5 leading-none"
+                    className="text-[#12805c] text-[9px] border border-[#12805c]/30 rounded px-1 py-0.5 leading-none"
                     title="Creator backed this market with real liquidity"
                   >
                     💧 LP
@@ -806,7 +806,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
             </div>
 
             {/* ── Options / Chance table (like Kalshi's list below chart) ── */}
-            <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-xl overflow-hidden">
+            <div className="bl-card bl-card-sm bl-reveal overflow-hidden">
               {/* Table header */}
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--card-border)]">
                 <span className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
@@ -822,12 +822,12 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   {displayOptions.map((opt, i) => {
                     const pct = Math.round((market.optionPrices![i] || 0) * 100);
                     const dotColors = [
-                      "bg-[#00e5a0]", "bg-[#00b4d8]", "bg-[#f59e0b]", "bg-[#ef4444]",
+                      "bg-[#12805c]", "bg-[#00b4d8]", "bg-[#f59e0b]", "bg-[#ef4444]",
                       "bg-[#8b5cf6]", "bg-[#ec4899]", "bg-[#14b8a6]", "bg-[#f97316]",
                       "bg-[#6366f1]", "bg-[#84cc16]",
                     ];
                     const textColors = [
-                      "text-[#00e5a0]", "text-[#00b4d8]", "text-[#f59e0b]", "text-red-400",
+                      "text-[#12805c]", "text-[#00b4d8]", "text-[#f59e0b]", "text-red-600 dark:text-red-400",
                       "text-[#8b5cf6]", "text-[#ec4899]", "text-[#14b8a6]", "text-[#f97316]",
                       "text-[#6366f1]", "text-[#84cc16]",
                     ];
@@ -848,10 +848,10 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                 <div className="divide-y divide-[var(--card-border)]">
                   <div className="flex items-center justify-between px-4 py-3">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-2.5 h-2.5 rounded-full bg-[#00e5a0]" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#12805c]" />
                       <span className="text-sm font-medium">YES</span>
                     </div>
-                    <span className="text-sm font-bold font-mono text-[#00e5a0]">{yesPct}%</span>
+                    <span className="text-sm font-bold font-mono text-[#12805c]">{yesPct}%</span>
                   </div>
                   <div className="flex items-center justify-between px-4 py-3">
                     <div className="flex items-center gap-2.5">
@@ -865,7 +865,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
             </div>
 
             {/* ── Description ── */}
-            <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-xl overflow-hidden">
+            <div className="bl-card bl-card-sm bl-reveal overflow-hidden">
               <div className="px-4 py-2.5 border-b border-[var(--card-border)]">
                 <span className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
                   {locale === "sw" ? "MAELEZO" : "DESCRIPTION"}
@@ -911,7 +911,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     </div>
                     <button
                       onClick={() => handleResolveOption(-1)}
-                      className="w-full flex items-center justify-center gap-2 py-2.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl font-semibold text-sm hover:bg-red-500/20 transition-all"
+                      className="w-full flex items-center justify-center gap-2 py-2.5 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 rounded-xl font-semibold text-sm hover:bg-red-500/20 transition-all"
                     >
                       <XCircle size={16} />
                       {locale === "sw" ? "Hakuna (Hakuna mshindi)" : "None (No winner)"}
@@ -925,8 +925,8 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       className={cn(
                         "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all",
                         resolveConfirm === "YES"
-                          ? "bg-[#00e5a0] text-black animate-pulse"
-                          : "bg-[#00e5a0]/10 border border-[#00e5a0]/30 text-[#00e5a0] hover:bg-[#00e5a0]/20"
+                          ? "bg-[#12805c] text-black animate-pulse"
+                          : "bg-[#12805c]/10 border border-[#12805c]/30 text-[#12805c] hover:bg-[#12805c]/20"
                       )}
                     >
                       <CheckCircle size={16} />
@@ -941,7 +941,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                         "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all",
                         resolveConfirm === "NO"
                           ? "bg-red-500 text-white animate-pulse"
-                          : "bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20"
+                          : "bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-500/20"
                       )}
                     >
                       <XCircle size={16} />
@@ -955,7 +955,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
             )}
 
             {/* Activity tabs */}
-            <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-xl overflow-hidden">
+            <div className="bl-card bl-card-sm bl-reveal overflow-hidden">
               <div className="flex border-b border-[var(--card-border)]">
                 {(["trades", "comments"] as const).map((tb) => (
                   <button
@@ -1014,7 +1014,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                         <button
                           type="submit"
                           disabled={commentLoading || !comment.trim()}
-                          className="p-2 bg-[#00e5a0] text-black rounded-xl disabled:opacity-50 hover:opacity-90 transition-all"
+                          className="p-2 bg-[#12805c] text-black rounded-xl disabled:opacity-50 hover:opacity-90 transition-all"
                         >
                           <PaperPlaneTilt size={16} />
                         </button>
@@ -1045,10 +1045,10 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
           {/* ═══ Right: Trade panel ═══ */}
           <div className="space-y-4">
-            <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-xl overflow-hidden">
+            <div className="bl-card bl-card-sm bl-reveal overflow-hidden">
               {/* Terminal header */}
               <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--card-border)]">
-                <div className="w-1.5 h-1.5 bg-[#00e5a0]" />
+                <div className="w-1.5 h-1.5 bg-[#12805c]" />
                 <span className="text-[9px] font-mono text-[var(--muted)] uppercase tracking-wider">TRADE.PANEL</span>
               </div>
               <div className="p-4 sm:p-5">
@@ -1060,7 +1060,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   className={cn(
                     "flex-1 py-2 text-sm font-bold font-mono rounded-lg transition-all",
                     tradeMode === "buy"
-                      ? "bg-[#00e5a0] text-black"
+                      ? "bg-[#12805c] text-black"
                       : "text-[var(--muted)] hover:text-[var(--foreground)]"
                   )}
                 >
@@ -1090,7 +1090,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   </p>
                   {isResolved && (
                     <p className="text-sm mt-1">
-                      {t.market.outcome}: <strong className="text-[#00e5a0]">
+                      {t.market.outcome}: <strong className="text-[#12805c]">
                         {isMultiOption ? market.outcomeLabel : (market.outcome === 1 ? t.market.yes : t.market.no)}
                       </strong>
                     </p>
@@ -1151,7 +1151,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       {displayOptions.map((opt, i) => {
                         const pct = Math.round((market.optionPrices![i] || 0) * 100);
                         const bgColors = [
-                          "bg-[#00e5a0]", "bg-[#00b4d8]", "bg-[#f59e0b]", "bg-[#ef4444]",
+                          "bg-[#12805c]", "bg-[#00b4d8]", "bg-[#f59e0b]", "bg-[#ef4444]",
                           "bg-[#8b5cf6]", "bg-[#ec4899]", "bg-[#14b8a6]", "bg-[#f97316]",
                           "bg-[#6366f1]", "bg-[#84cc16]",
                         ];
@@ -1184,7 +1184,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                             "py-3 rounded-xl font-bold text-sm transition-all",
                             side === s
                               ? s === "YES"
-                                ? "bg-[#00e5a0] text-black"
+                                ? "bg-[#12805c] text-black"
                                 : "bg-red-500 text-white"
                               : "bg-[var(--background)] border border-[var(--card-border)] text-[var(--muted)] hover:border-current"
                           )}
@@ -1268,7 +1268,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                         <span className="text-[var(--muted)] flex items-center gap-1">
                           {locale === "sw" ? "Ukishinda utapata" : "If correct, you get"}
                         </span>
-                        <span className="font-bold text-[#00e5a0]">{formatAmount(payoutIfWin)}</span>
+                        <span className="font-bold text-[#12805c]">{formatAmount(payoutIfWin)}</span>
                       </div>
                     </div>
                     );
@@ -1301,7 +1301,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                         <button
                           type="button"
                           onClick={() => setShowHedge(!showHedge)}
-                          className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-mono font-bold text-orange-400 uppercase tracking-wider hover:bg-orange-500/10 transition-colors"
+                          className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-mono font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider hover:bg-orange-500/10 transition-colors"
                         >
                           <span>⚖ {sw ? "KIKOKOTOO CHA HEDGING" : "HEDGE CALCULATOR"}</span>
                           <span>{showHedge ? "▲" : "▼"}</span>
@@ -1314,10 +1314,10 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                                 <label className="text-[9px] font-mono text-[var(--muted)] uppercase tracking-wider">
                                   {sw ? "Mwanga wangu" : "My exposure"} ({hedgeCurrency})
                                 </label>
-                                <span className="text-[9px] font-mono text-orange-400/60 border border-orange-500/20 px-1 leading-tight cursor-default" title={sw ? "Ingiza kiasi unachohitaji kubadilisha au kupokea." : "Enter the amount you need to convert or receive. Not sure? Enter 0 to trade without hedging."}>?</span>
+                                <span className="text-[9px] font-mono text-orange-600 dark:text-orange-400/60 border border-orange-500/20 px-1 leading-tight cursor-default" title={sw ? "Ingiza kiasi unachohitaji kubadilisha au kupokea." : "Enter the amount you need to convert or receive. Not sure? Enter 0 to trade without hedging."}>?</span>
                               </div>
                               <div className="flex items-start gap-1.5 mb-2 text-[9px] font-mono text-[var(--muted)]/70 border border-orange-500/10 bg-[var(--background)] px-2 py-1.5">
-                                <span className="text-orange-400/60 shrink-0">ⓘ</span>
+                                <span className="text-orange-600 dark:text-orange-400/60 shrink-0">ⓘ</span>
                                 <span>{sw ? "Ingiza kiasi unachohitaji kubadilisha au kupokea. Haujui? Ingiza 0 kuuza bila hedging." : "Enter the amount you need to convert or receive. Not sure? Enter 0 to trade without hedging."}</span>
                               </div>
                               <div className="flex gap-1">
@@ -1335,7 +1335,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                                   <button
                                     type="button"
                                     onClick={() => setHedgeCurrencyOpen(!hedgeCurrencyOpen)}
-                                    className="flex items-center gap-1 px-2 py-1.5 bg-[var(--card)] border-2 border-orange-500/30 hover:border-orange-500/60 text-[10px] font-mono font-bold text-orange-400 transition-colors min-w-[52px] justify-between"
+                                    className="flex items-center gap-1 px-2 py-1.5 bg-[var(--card)] border-2 border-orange-500/30 hover:border-orange-500/60 text-[10px] font-mono font-bold text-orange-600 dark:text-orange-400 transition-colors min-w-[52px] justify-between"
                                   >
                                     <span>{hedgeCurrency}</span>
                                     <span className="text-[8px]">{hedgeCurrencyOpen ? "▲" : "▼"}</span>
@@ -1349,8 +1349,8 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                                           onClick={() => { setHedgeCurrency(c); setHedgeCurrencyOpen(false); }}
                                           className={`w-full text-left px-2 py-1.5 text-[10px] font-mono font-bold transition-colors ${
                                             c === hedgeCurrency
-                                              ? "bg-orange-500/20 text-orange-400"
-                                              : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-orange-400"
+                                              ? "bg-orange-500/20 text-orange-600 dark:text-orange-400"
+                                              : "text-[var(--muted)] hover:bg-[var(--background)] hover:text-orange-600 dark:text-orange-400"
                                           }`}
                                         >
                                           {c}
@@ -1363,7 +1363,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                               {exposureAmt > 0 && hedgeCurrency !== "TZS" && (
                                 <div className="mt-1 space-y-0.5">
                                   <p className="text-[9px] font-mono text-[var(--muted)]">≈ TSh {exposureTzs.toLocaleString()} {sw ? "kwa kiwango cha sasa" : "at current rate"}</p>
-                                  <p className="text-[9px] font-mono text-orange-400/60">{sw ? "Kiwango" : "Rate"}: {rate.toLocaleString()} TZS/{hedgeCurrency} ({rateSource})</p>
+                                  <p className="text-[9px] font-mono text-orange-600 dark:text-orange-400/60">{sw ? "Kiwango" : "Rate"}: {rate.toLocaleString()} TZS/{hedgeCurrency} ({rateSource})</p>
                                 </div>
                               )}
                             </div>
@@ -1372,11 +1372,11 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                               <div>
                                 <div className="flex items-center justify-between mb-1">
                                   <label className="text-[9px] font-mono text-[var(--muted)] uppercase tracking-wider">{sw ? "Kiwango cha ulinzi" : "Coverage level"}</label>
-                                  <span className="text-[10px] font-mono font-bold text-orange-400">{hedgeCoverage}%</span>
+                                  <span className="text-[10px] font-mono font-bold text-orange-600 dark:text-orange-400">{hedgeCoverage}%</span>
                                 </div>
                                 <input type="range" min={5} max={100} step={5} value={hedgeCoverage} onChange={(e) => setHedgeCoverage(Number(e.target.value))} className="w-full accent-orange-400 h-1.5 cursor-pointer" />
                                 <p className="text-[9px] font-mono text-[var(--muted)] mt-1">{coverageHint}</p>
-                                <p className="text-[9px] font-mono text-orange-400/80 mt-0.5">
+                                <p className="text-[9px] font-mono text-orange-600 dark:text-orange-400/80 mt-0.5">
                                   {sw ? "Kulinda kila kitu? Sogeza hadi 100%." : "Hedge everything? Move to 100%."}{" "}
                                   {sw ? "Bafa ndogo? Sogeza hadi 10%." : "Just a buffer? Move to 10%."}
                                 </p>
@@ -1385,29 +1385,29 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                             {/* YES / NO blocks */}
                             {exposureAmt > 0 && coverageTzs > 0 && (
                               <div className="space-y-2">
-                                <div className="p-2 bg-[var(--background)] border border-[#00e5a0]/20 space-y-1">
-                                  <div className="text-[9px] font-mono font-bold text-[#00e5a0] uppercase mb-1">{sw ? "NUNUA NDIYO (Hedge)" : "BUY YES hedge"}</div>
+                                <div className="p-2 bg-[var(--background)] border border-[#12805c]/20 space-y-1">
+                                  <div className="text-[9px] font-mono font-bold text-[#12805c] uppercase mb-1">{sw ? "NUNUA NDIYO (Hedge)" : "BUY YES hedge"}</div>
                                   <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] font-mono">
                                     <span className="text-[var(--muted)]">{sw ? "Gharama" : "Total cost"}</span>
                                     <span className="text-right font-bold">TSh {yesCostGross.toLocaleString()}</span>
                                     <span className="text-[var(--muted)]">{sw ? "Malipo kama NDIYO" : "Payout if YES wins"}</span>
-                                    <span className="text-right font-bold text-[#00e5a0]">TSh {coverageTzs.toLocaleString()}</span>
+                                    <span className="text-right font-bold text-[#12805c]">TSh {coverageTzs.toLocaleString()}</span>
                                     <span className="text-[var(--muted)]">{sw ? "Ada ya bima" : "Insurance premium"}</span>
-                                    <span className="text-right text-orange-400">TSh {yesCostGross.toLocaleString()}</span>
+                                    <span className="text-right text-orange-600 dark:text-orange-400">TSh {yesCostGross.toLocaleString()}</span>
                                   </div>
-                                  <button type="button" onClick={() => { setSide("YES"); setAmount(String(yesCostGross)); setShowHedge(false); }} className="w-full mt-1.5 py-1.5 bg-[#00e5a0] text-black text-[10px] font-mono font-bold uppercase tracking-wider hover:opacity-90 transition-opacity">
+                                  <button type="button" onClick={() => { setSide("YES"); setAmount(String(yesCostGross)); setShowHedge(false); }} className="w-full mt-1.5 py-1.5 bg-[#12805c] text-black text-[10px] font-mono font-bold uppercase tracking-wider hover:opacity-90 transition-opacity">
                                     {sw ? "Tumia → Nunua NDIYO" : "Apply → Buy YES"}
                                   </button>
                                 </div>
                                 <div className="p-2 bg-[var(--background)] border border-red-500/20 space-y-1">
-                                  <div className="text-[9px] font-mono font-bold text-red-400 uppercase mb-1">{sw ? "NUNUA HAPANA (Hedge)" : "BUY NO hedge"}</div>
+                                  <div className="text-[9px] font-mono font-bold text-red-600 dark:text-red-400 uppercase mb-1">{sw ? "NUNUA HAPANA (Hedge)" : "BUY NO hedge"}</div>
                                   <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] font-mono">
                                     <span className="text-[var(--muted)]">{sw ? "Gharama" : "Total cost"}</span>
                                     <span className="text-right font-bold">TSh {noCostGross.toLocaleString()}</span>
                                     <span className="text-[var(--muted)]">{sw ? "Malipo kama HAPANA" : "Payout if NO wins"}</span>
-                                    <span className="text-right font-bold text-red-400">TSh {coverageTzs.toLocaleString()}</span>
+                                    <span className="text-right font-bold text-red-600 dark:text-red-400">TSh {coverageTzs.toLocaleString()}</span>
                                     <span className="text-[var(--muted)]">{sw ? "Ada ya bima" : "Insurance premium"}</span>
-                                    <span className="text-right text-orange-400">TSh {noCostGross.toLocaleString()}</span>
+                                    <span className="text-right text-orange-600 dark:text-orange-400">TSh {noCostGross.toLocaleString()}</span>
                                   </div>
                                   <button type="button" onClick={() => { setSide("NO"); setAmount(String(noCostGross)); setShowHedge(false); }} className="w-full mt-1.5 py-1.5 bg-red-500 text-white text-[10px] font-mono font-bold uppercase tracking-wider hover:opacity-90 transition-opacity">
                                     {sw ? "Tumia → Nunua HAPANA" : "Apply → Buy NO"}
@@ -1424,7 +1424,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   {/* Awaiting STK payment confirmation */}
                   {awaitingPayment && (
                     <div className="p-3 border border-orange-500/40 bg-orange-500/5 rounded-xl space-y-2">
-                      <div className="flex items-center gap-2 text-orange-400 text-xs font-bold">
+                      <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 text-xs font-bold">
                         <span className="animate-pulse">●</span>
                         <span>{locale === "sw" ? "Subiri Uthibitisho" : "Awaiting Payment"}</span>
                       </div>
@@ -1438,14 +1438,14 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                         <span>{locale === "sw" ? "Inangoja..." : "Checking confirmation..."}</span>
                       </div>
                       <button type="button" onClick={() => setAwaitingPayment(null)}
-                        className="text-[10px] text-[var(--muted)] hover:text-red-400 underline transition-colors">
+                        className="text-[10px] text-[var(--muted)] hover:text-red-600 dark:text-red-400 underline transition-colors">
                         {locale === "sw" ? "Ghairi" : "Cancel"}
                       </button>
                     </div>
                   )}
 
                   {tradeError && (
-                    <p className="text-red-400 text-sm text-center bg-red-500/10 border border-red-500/20 rounded-xl py-2">
+                    <p className="text-red-600 dark:text-red-400 text-sm text-center bg-red-500/10 border border-red-500/20 rounded-xl py-2">
                       {tradeError}
                     </p>
                   )}
@@ -1456,7 +1456,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0 }}
-                        className="text-[#00e5a0] text-sm text-center bg-[#00e5a0]/10 border border-[#00e5a0]/20 rounded-xl py-2 flex items-center justify-center gap-1.5"
+                        className="text-[#12805c] text-sm text-center bg-[#12805c]/10 border border-[#12805c]/20 rounded-xl py-2 flex items-center justify-center gap-1.5"
                       >
                         <CheckCircle size={14} />
                         {tradeSuccess}
@@ -1468,11 +1468,11 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                     type="submit"
                     disabled={!TRADING_ENABLED || tradeLoading || !amount || Number(amount) < (displayCurrency === 'USDC' ? 0.5 : displayCurrency === 'KES' ? 50 : 100)}
                     className={cn(
-                      "w-full py-3.5 font-bold rounded-xl transition-all disabled:opacity-50 text-sm",
+                      "bl-press w-full py-3.5 font-bold rounded-xl transition-all disabled:opacity-50 text-sm",
                       isMultiOption
                         ? "bg-[var(--accent)] text-[var(--background)] hover:opacity-90"
                         : side === "YES"
-                          ? "bg-[#00e5a0] text-black hover:opacity-90"
+                          ? "bg-[#12805c] text-black hover:opacity-90"
                           : "bg-red-500 text-white hover:opacity-90"
                     )}
                   >
@@ -1506,7 +1506,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       {displayOptions.map((opt, i) => {
                         const pct = Math.round((market.optionPrices![i] || 0) * 100);
                         const bgColors = [
-                          "bg-[#00e5a0]", "bg-[#00b4d8]", "bg-[#f59e0b]", "bg-[#ef4444]",
+                          "bg-[#12805c]", "bg-[#00b4d8]", "bg-[#f59e0b]", "bg-[#ef4444]",
                           "bg-[#8b5cf6]", "bg-[#ec4899]", "bg-[#14b8a6]", "bg-[#f97316]",
                           "bg-[#6366f1]", "bg-[#84cc16]",
                         ];
@@ -1539,7 +1539,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                             "py-3 rounded-xl font-bold text-sm transition-all",
                             side === s
                               ? s === "YES"
-                                ? "bg-[#00e5a0] text-black"
+                                ? "bg-[#12805c] text-black"
                                 : "bg-red-500 text-white"
                               : "bg-[var(--background)] border border-[var(--card-border)] text-[var(--muted)] hover:border-current"
                           )}
@@ -1601,7 +1601,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                         <div className="p-3 bg-[var(--background)] rounded-xl text-sm space-y-1.5">
                           <div className="flex justify-between">
                             <span className="text-[var(--muted)]">{locale === "sw" ? "Utapata" : "You receive"}</span>
-                            <span className="font-bold text-[#00e5a0]">{formatAmount(estimatedPayout)}</span>
+                            <span className="font-bold text-[#12805c]">{formatAmount(estimatedPayout)}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-[var(--muted)]">{locale === "sw" ? "Bei ya wastani" : "Avg price"}</span>
@@ -1615,7 +1615,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       )}
 
                       {sellError && (
-                        <p className="text-red-400 text-sm text-center bg-red-500/10 border border-red-500/20 rounded-xl py-2">
+                        <p className="text-red-600 dark:text-red-400 text-sm text-center bg-red-500/10 border border-red-500/20 rounded-xl py-2">
                           {sellError}
                         </p>
                       )}
@@ -1626,7 +1626,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0 }}
-                            className="text-[#00e5a0] text-sm text-center bg-[#00e5a0]/10 border border-[#00e5a0]/20 rounded-xl py-2 flex items-center justify-center gap-1.5"
+                            className="text-[#12805c] text-sm text-center bg-[#12805c]/10 border border-[#12805c]/20 rounded-xl py-2 flex items-center justify-center gap-1.5"
                           >
                             <CheckCircle size={14} />
                             {sellSuccess}
@@ -1637,7 +1637,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       <button
                         type="submit"
                         disabled={!SELLING_ENABLED || sellLoading || !sellShares || Number(sellShares) < 1 || Number(sellShares) > mySharesForSide}
-                        className="w-full py-3.5 font-bold rounded-xl transition-all disabled:opacity-50 text-sm bg-[#ff4d6a] text-white hover:opacity-90"
+                        className="bl-press w-full py-3.5 font-bold rounded-xl transition-all disabled:opacity-50 text-sm bg-[#ff4d6a] text-white hover:opacity-90"
                       >
                         {!SELLING_ENABLED
                           ? (locale === "sw" ? "Imesimamishwa" : "Paused")
@@ -1673,7 +1673,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
             {/* ── Related Markets (desktop: under trade panel) ── */}
             {relatedMarkets.length > 0 && (
-              <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-xl overflow-hidden">
+              <div className="bl-card bl-card-sm bl-reveal overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--card-border)]">
                   <div className="w-1.5 h-1.5 bg-[var(--accent)]/50" />
                   <span className="text-[9px] font-mono text-[var(--muted)] uppercase tracking-wider">
@@ -1838,9 +1838,9 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                             )}
                           >
                             <div className="flex items-center justify-center gap-1.5">
-                              <span className={editMarketType === "binary" ? "text-[#00e5a0]" : ""}>YES</span>
+                              <span className={editMarketType === "binary" ? "text-[#12805c]" : ""}>YES</span>
                               <span className="text-[var(--muted)]">/</span>
-                              <span className={editMarketType === "binary" ? "text-red-400" : ""}>NO</span>
+                              <span className={editMarketType === "binary" ? "text-red-600 dark:text-red-400" : ""}>NO</span>
                             </div>
                           </button>
                           <button
@@ -1854,7 +1854,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                             )}
                           >
                             <div className="flex items-center justify-center gap-1.5">
-                              <span className={editMarketType === "multi" ? "text-purple-400" : ""}>
+                              <span className={editMarketType === "multi" ? "text-purple-600 dark:text-purple-400" : ""}>
                                 {locale === "sw" ? "CHAGUZI" : "MULTI"}
                               </span>
                             </div>
@@ -1863,7 +1863,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
                         {editMarketType === "multi" && (
                           <div className="mt-3 space-y-2">
-                            <label className="text-[10px] font-mono text-purple-400 uppercase tracking-wider">
+                            <label className="text-[10px] font-mono text-purple-600 dark:text-purple-400 uppercase tracking-wider">
                               {locale === "sw" ? "Chaguzi" : "Options"} ({editCustomOptions.filter(o => o.trim()).length}/{editCustomOptions.length})
                             </label>
                             {editCustomOptions.map((opt, i) => (
@@ -1889,7 +1889,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                                   <button
                                     type="button"
                                     onClick={() => { setEditCustomOptions(editCustomOptions.filter((_, j) => j !== i)); setEditOptionImages(editOptionImages.filter((_, j) => j !== i)); setEditOptionImageFiles(editOptionImageFiles.filter((_, j) => j !== i)); }}
-                                    className="p-1.5 text-red-400 hover:bg-red-500/10 transition-colors rounded"
+                                    className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors rounded"
                                   >
                                     <XCircle size={14} />
                                   </button>
@@ -1900,7 +1900,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                               <button
                                 type="button"
                                 onClick={() => { setEditCustomOptions([...editCustomOptions, ""]); setEditOptionImages([...editOptionImages, ""]); setEditOptionImageFiles([...editOptionImageFiles, null]); }}
-                                className="w-full py-2 border border-dashed border-purple-500/30 text-purple-400 text-xs font-mono hover:bg-purple-500/5 transition-colors rounded-lg"
+                                className="w-full py-2 border border-dashed border-purple-500/30 text-purple-600 dark:text-purple-400 text-xs font-mono hover:bg-purple-500/5 transition-colors rounded-lg"
                               >
                                 + {locale === "sw" ? "Ongeza chaguo" : "Add option"}
                               </button>
@@ -1920,11 +1920,11 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
                           <LogoUploadSlot url={editOptionImages[0]} letter="Y" title="YES logo" onFile={(f) => { const files = [...editOptionImageFiles]; files[0] = f; setEditOptionImageFiles(files); if (f) { const imgs = [...editOptionImages]; imgs[0] = URL.createObjectURL(f); setEditOptionImages(imgs); } }} />
-                          <span className="text-[11px] font-mono font-bold text-[#00e5a0]">YES</span>
+                          <span className="text-[11px] font-mono font-bold text-[#12805c]">YES</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <LogoUploadSlot url={editOptionImages[1]} letter="N" title="NO logo" onFile={(f) => { const files = [...editOptionImageFiles]; files[1] = f; setEditOptionImageFiles(files); if (f) { const imgs = [...editOptionImages]; imgs[1] = URL.createObjectURL(f); setEditOptionImages(imgs); } }} />
-                          <span className="text-[11px] font-mono font-bold text-red-400">NO</span>
+                          <span className="text-[11px] font-mono font-bold text-red-600 dark:text-red-400">NO</span>
                         </div>
                       </div>
                     </div>
@@ -2049,7 +2049,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   </div>
 
                   {editError && (
-                    <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl">
+                    <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-sm rounded-xl">
                       {editError}
                     </div>
                   )}
@@ -2143,13 +2143,13 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   const yesP = Math.round(market.price.yes * 100);
                   return (
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-[#00e5a0]/5 border border-[#00e5a0]/20 rounded-xl p-3 text-center font-mono">
+                      <div className="bg-[#12805c]/5 border border-[#12805c]/20 rounded-xl p-3 text-center font-mono">
                         <p className="text-[10px] text-[var(--muted)] uppercase mb-1">YES</p>
-                        <p className="text-2xl font-black text-[#00e5a0]">{yesP}%</p>
+                        <p className="text-2xl font-black text-[#12805c]">{yesP}%</p>
                       </div>
                       <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-3 text-center font-mono">
                         <p className="text-[10px] text-[var(--muted)] uppercase mb-1">NO</p>
-                        <p className="text-2xl font-black text-red-400">{100 - yesP}%</p>
+                        <p className="text-2xl font-black text-red-600 dark:text-red-400">{100 - yesP}%</p>
                       </div>
                     </div>
                   );

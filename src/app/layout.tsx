@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Archivo, Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { NotificationProvider } from "@/components/NotificationProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -8,9 +8,25 @@ import { CartButton, CartModal } from "@/components/Cart";
 import { BottomNav } from "@/components/BottomNav";
 import { HowItWorks } from "@/components/HowItWorks";
 import { HapticProvider } from "@/components/HapticProvider";
+import { RevealProvider } from "@/components/bongo/Motion";
 import "./globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+// Bongo Life type system: Archivo as the condensed poster display face (the
+// variable width axis is what gives headlines their squeeze), Plus Jakarta Sans
+// for running text. Geist Mono is kept for figures and tickers, where tabular
+// digits still matter more than personality.
+const archivo = Archivo({
+  variable: "--font-display",
+  subsets: ["latin"],
+  // Full variable font: the wdth axis is what lets headlines squeeze, and Next
+  // only allows axes to be requested when the weight stays variable.
+  axes: ["wdth"],
+});
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-body",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+});
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 // Native-app-like viewport: lock scale so the UI never appears zoomed (and iOS
@@ -67,13 +83,15 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="sw" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${archivo.variable} ${jakarta.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider>
           <LanguageProvider>
             <UserProvider>
               <NotificationProvider>
                 {/* Global haptics: vibrate on touch taps of any button/link */}
                 <HapticProvider />
+                {/* Scroll-staging for every screen, not just the landing */}
+                <RevealProvider />
                 {/* Status-bar filler: covers the notch/status-bar area with a solid
                     bar in the installed (standalone) app so page content scrolling
                     behind it isn't visible under the status bar. 0px in the browser. */}

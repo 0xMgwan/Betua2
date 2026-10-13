@@ -138,7 +138,7 @@ export function Navbar() {
 
   return (
     <nav
-      className="sticky z-50 border-b border-[var(--card-border)] bg-[var(--background)]/80 backdrop-blur-xl"
+      className="sticky z-50 border-b-[2.5px] border-[var(--line)] bg-[var(--background)]/85 backdrop-blur-xl"
       style={{ top: "env(safe-area-inset-top)" }}
     >
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -229,7 +229,7 @@ export function Navbar() {
                           )}
                           <button
                             onClick={clearAll}
-                            className="text-[10px] font-mono font-bold text-red-400 hover:underline uppercase tracking-wider"
+                            className="text-[10px] font-mono font-bold text-red-600 dark:text-red-400 hover:underline uppercase tracking-wider"
                           >
                             Clear all
                           </button>

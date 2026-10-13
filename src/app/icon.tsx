@@ -15,7 +15,7 @@ export default function Icon() {
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: "#000000",
-          border: "2px solid #00e5a0",
+          border: "2px solid #12805c",
         }}
       >
         <div
@@ -23,7 +23,7 @@ export default function Icon() {
             fontSize: 20,
             fontFamily: "monospace",
             fontWeight: 900,
-            color: "#00e5a0",
+            color: "#12805c",
           }}
         >
           G

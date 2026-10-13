@@ -128,7 +128,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             left: 0,
             right: 0,
             height: 4,
-            background: "linear-gradient(90deg, transparent, #00e5a0, transparent)",
+            background: "linear-gradient(90deg, transparent, #12805c, transparent)",
             display: "flex",
           }}
         />
@@ -154,7 +154,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#00e5a0",
+                color: "#12805c",
                 fontSize: 22,
                 fontWeight: 900,
                 marginRight: 14,
@@ -169,7 +169,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
               style={{
                 marginLeft: 16,
                 fontSize: 12,
-                color: "#00e5a0",
+                color: "#12805c",
                 border: "1px solid rgba(0,229,160,0.4)",
                 padding: "3px 10px",
                 letterSpacing: "0.15em",
@@ -241,7 +241,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
                       style={{
                         fontSize: 34,
                         fontWeight: 900,
-                        color: isLeading ? "#00e5a0" : "#ffffff",
+                        color: isLeading ? "#12805c" : "#ffffff",
                         display: "flex",
                       }}
                     >
@@ -276,7 +276,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
                 }}
               >
                 <div style={{ fontSize: 16, color: "rgba(255,255,255,0.4)", marginBottom: 6, display: "flex" }}>YES</div>
-                <div style={{ fontSize: 60, fontWeight: 900, color: "#00e5a0", display: "flex" }}>{yesProb}%</div>
+                <div style={{ fontSize: 60, fontWeight: 900, color: "#12805c", display: "flex" }}>{yesProb}%</div>
               </div>
               <div
                 style={{

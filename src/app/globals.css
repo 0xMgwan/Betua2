@@ -1,30 +1,53 @@
 @import "tailwindcss";
 
+/* ── Bongo Life design language ───────────────────────────────────────────
+   Warm paper ground, ink-black hard outlines, offset solid shadows and a gold
+   primary. The existing --background/--card/--accent names are kept so every
+   screen in the app inherits the new palette without being rewritten; the
+   --gold/--line/--shadow tokens below are the Bongo primitives on top. */
 :root {
-  --background: #ffffff;
-  --foreground: #000000;
-  --card: #fafafa;
-  --card-border: #e5e5e5;
-  --muted: #737373;
-  --accent: #000000;
-  --accent-dark: #1a1a1a;
+  /* Bongo palette */
+  --gold: #f5b800;
+  --gold-2: #ffcf33;
+  --red: #e5452b;
+  --green: #12805c;
+  --blue: #1f6feb;
+  --soft: #e9e2d3;
+  --line: #141414;
+  --shadow: 5px 5px 0 var(--line);
+  --shadow-sm: 3px 3px 0 var(--line);
+
+  /* Mapped onto the app's existing token names */
+  --background: #f6f1e6;
+  --foreground: #141414;
+  --card: #fffdf8;
+  --card-border: #141414;
+  --muted: #7a746a;
+  --accent: #f5b800;
+  --accent-dark: #d9a300;
+  --ink-2: #3d3a35;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
   --font-mono: var(--font-geist-mono);
 }
 
 .dark {
-  --background: #000000;
-  --foreground: #ffffff;
-  --card: #0a0a0a;
-  --card-border: #1a1a1a;
-  --muted: #a3a3a3;
-  --accent: #ffffff;
-  --accent-dark: #e5e5e5;
+  --soft: #2a2825;
+  --line: #f6f1e6;
+
+  --background: #111110;
+  --foreground: #f6f1e6;
+  --card: #1b1a18;
+  --card-border: #f6f1e6;
+  --muted: #9b9488;
+  --accent: #f5b800;
+  --accent-dark: #ffcf33;
+  --ink-2: #d6d0c4;
 }
 
 * {
@@ -48,8 +71,8 @@ body {
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: var(--font-geist-mono), 'Courier New', monospace;
-  letter-spacing: 0.02em;
+  font-family: var(--font-body), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  letter-spacing: 0;
   transition: background-color 0.2s, color 0.2s;
   /* Respect the notch / home indicator so fixed UI isn't clipped. env() is 0 on
      desktop and in a normal mobile browser, so this is a no-op there — it only
@@ -89,13 +112,124 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-geist-mono), 'Courier New', monospace;
-  letter-spacing: 0.05em;
-  font-weight: 700;
+  font-family: var(--font-display), 'Arial Narrow', system-ui, sans-serif;
+  font-stretch: 88%;
+  letter-spacing: -0.01em;
+  font-weight: 800;
+  text-wrap: balance;
 }
 
 button, input, textarea, select {
-  font-family: var(--font-geist-mono), 'Courier New', monospace;
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+/* ── Bongo primitives ──────────────────────────────────────────────────────
+   Ported from the Bongo Life landing: hard 2.5px outline, generous radius and
+   a solid offset shadow instead of a blur. Buttons lift toward the light on
+   hover and press into the page on click. */
+.bl-card {
+  background: var(--card);
+  border: 2.5px solid var(--line);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+}
+.bl-card-sm { border-radius: 16px; border-width: 2px; box-shadow: var(--shadow-sm); }
+
+.bl-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border-radius: 999px; padding: 15px 24px;
+  font-weight: 800; font-size: 16px; text-decoration: none;
+  border: 2.5px solid var(--line); cursor: pointer;
+  transition: transform .12s, box-shadow .12s, background .15s;
+}
+.bl-btn:hover { transform: translate(-2px, -2px); box-shadow: 4px 4px 0 var(--line); }
+.bl-btn:active { transform: translate(1px, 1px); box-shadow: none; }
+.bl-btn-gold { background: var(--gold); color: #141414; }
+.bl-btn-ink  { background: var(--line); color: var(--background); }
+.bl-btn-line { background: var(--card); color: var(--foreground); }
+.bl-btn-sm   { padding: 9px 16px; font-size: 14px; }
+
+.bl-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--gold); color: #141414;
+  font-weight: 800; font-size: 13px; letter-spacing: .08em; text-transform: uppercase;
+  border: 2px solid #141414; border-radius: 999px; padding: 6px 12px;
+}
+
+.bl-display {
+  font-family: var(--font-display), 'Arial Narrow', system-ui, sans-serif;
+  font-stretch: 70%;
+  font-weight: 900;
+  line-height: .86;
+  letter-spacing: -.01em;
+}
+/* Gold word inside a headline, stamped against an ink shadow. */
+.bl-pop { color: var(--gold); text-shadow: 5px 5px 0 var(--line); font-style: normal; }
+
+/* ── Motion ────────────────────────────────────────────────────────────────
+   Ported from the Bongo Life landing, including its timings: the marquee runs
+   slow (50s) and parks on hover, floats drift 8px over 5s, and the press
+   states move the element rather than fading it. */
+
+/* Scroll reveal — a transition the observer flips, not an animation, so
+   nothing moves until the section is actually on screen. */
+.bl-reveal { opacity: 0; transform: translateY(28px); transition: opacity .7s, transform .7s cubic-bezier(.2,.8,.2,1); }
+.bl-reveal.in { opacity: 1; transform: none; }
+
+@keyframes bl-marquee { to { transform: translateX(-50%); } }
+.bl-marquee { overflow: hidden; background: var(--gold); border-block: 2.5px solid #141414; color: #141414; }
+.bl-marquee-track { display: flex; width: max-content; animation: bl-marquee 50s linear infinite; }
+.bl-marquee:hover .bl-marquee-track { animation-play-state: paused; }
+.bl-marquee-track span {
+  padding: 13px 20px; white-space: nowrap; text-transform: uppercase;
+  font-family: var(--font-display), 'Arial Narrow', sans-serif;
+  font-stretch: 80%; font-weight: 900; font-size: 20px;
+}
+.bl-marquee-track span::after { content: '✦'; margin-left: 40px; }
+
+@keyframes bl-floaty { 50% { transform: translateY(-8px); } }
+@keyframes bl-bob    { 50% { transform: translateY(6px); } }
+@keyframes bl-nudge  { 50% { transform: translateY(-3px); } }
+@keyframes bl-bump   { 40% { transform: scale(1.08) rotate(-1deg); } }
+@keyframes bl-pulse  { 50% { box-shadow: 0 0 0 6px rgba(18,128,92,.05); } }
+
+/* Speech-bubble callout pin: floats until opened, then holds still and grows. */
+.bl-callout {
+  position: absolute; z-index: 2; pointer-events: auto; text-align: left; cursor: pointer; max-width: 250px;
+  background: rgba(255,253,248,.96); color: #141414;
+  border: 2.5px solid #141414; border-radius: 16px; padding: 10px 14px;
+  box-shadow: 4px 4px 0 #141414;
+  transition: transform .2s; animation: bl-floaty 5s ease-in-out infinite;
+}
+.bl-callout::after {
+  content: ''; position: absolute; left: 22px; bottom: -12px; width: 14px; height: 14px;
+  background: inherit; border: inherit; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg);
+}
+.bl-callout b { display: block; font-family: var(--font-display), sans-serif; font-stretch: 80%; font-weight: 900; font-size: 20px; }
+.bl-callout span { font-size: 12.5px; font-weight: 700; color: #6b655b; }
+.bl-callout em { display: none; font-style: normal; font-size: 13.5px; margin-top: 6px; line-height: 1.45; }
+.bl-callout.open { animation: none; transform: scale(1.04); z-index: 3; }
+.bl-callout.open em { display: block; }
+
+.bl-bump { animation: bl-bump .45s ease; }
+.bl-nudge { animation: bl-nudge 1.4s infinite; }
+
+/* Live dot */
+.bl-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px rgba(18,128,92,.25); animation: bl-pulse 1.6s infinite; display: inline-block; }
+
+/* Bobbing scroll cue */
+.bl-cue { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; border: 2px solid #fff; color: #fff; font-weight: 900; animation: bl-bob 1.8s infinite; }
+
+/* Physical press — the element sits on a 3px ledge and drops onto the page. */
+.bl-press { box-shadow: 0 3px 0 var(--line); transition: transform .08s, box-shadow .08s; }
+.bl-press:active { transform: translateY(3px); box-shadow: none; }
+
+.bl-tilt { transition: transform .25s cubic-bezier(.2,.8,.2,1); will-change: transform; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bl-marquee-track, .bl-callout, .bl-dot, .bl-cue, .bl-bump, .bl-nudge { animation: none !important; }
+  .bl-reveal { opacity: 1; transform: none; transition: none; }
+  .bl-btn:hover, .bl-tilt { transform: none !important; }
 }
 
 a {

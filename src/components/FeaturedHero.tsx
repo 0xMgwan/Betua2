@@ -76,23 +76,23 @@ export function FeaturedHero({
   return (
     <div className="relative overflow-hidden rounded-2xl border border-[var(--card-border)] mb-8">
       {/* Themed gradient band behind everything */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#00e5a0]/15 via-[var(--card)] to-[var(--background)]" />
-      <div className="absolute -left-16 -top-16 w-72 h-72 rounded-full bg-[#00e5a0]/15 blur-3xl pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#12805c]/15 via-[var(--card)] to-[var(--background)]" />
+      <div className="absolute -left-16 -top-16 w-72 h-72 rounded-full bg-[#12805c]/15 blur-3xl pointer-events-none" />
 
       <div className="relative grid lg:grid-cols-[300px_1fr] gap-6 p-6">
         {/* Promo panel */}
         <div className="flex flex-col justify-between min-h-[260px]">
           <div>
-            <div className="w-12 h-12 rounded-xl bg-[#00e5a0]/15 border border-[#00e5a0]/40 flex items-center justify-center mb-4">
-              <Trophy size={26} weight="fill" className="text-[#00e5a0]" />
+            <div className="w-12 h-12 rounded-xl bg-[#12805c]/15 border border-[#12805c]/40 flex items-center justify-center mb-4">
+              <Trophy size={26} weight="fill" className="text-[#12805c]" />
             </div>
-            <p className="text-[11px] font-mono font-black uppercase tracking-widest text-[#00e5a0] mb-2">★ {eyebrow}</p>
+            <p className="text-[11px] font-mono font-black uppercase tracking-widest text-[#12805c] mb-2">★ {eyebrow}</p>
             <h2 className="font-mono text-2xl xl:text-3xl font-black leading-tight min-h-[2.4em]">{liveHeadline}</h2>
             <p className="text-sm text-[var(--muted)] mt-2">{subhead}</p>
           </div>
           <Link
             href={ctaHref}
-            className="mt-4 inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#00e5a0] text-black font-mono font-black text-sm uppercase tracking-wider rounded-xl hover:opacity-90 transition-opacity w-full sm:w-auto shadow-[0_4px_20px_rgba(0,229,160,0.35)]"
+            className="mt-4 inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#12805c] text-black font-mono font-black text-sm uppercase tracking-wider rounded-xl hover:opacity-90 transition-opacity w-full sm:w-auto shadow-[0_4px_20px_rgba(0,229,160,0.35)]"
           >
             {ctaLabel}
             <ArrowRight size={16} weight="bold" />

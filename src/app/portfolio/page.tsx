@@ -19,6 +19,7 @@ import { getPayoutForShares, getMultiOptionPayoutForShares, getPrice, getMultiOp
 import { cn } from "@/lib/utils";
 import { ShareCardButton } from "@/components/ShareCard";
 import { SELLING_ENABLED, sellingDisabledLabel } from "@/lib/featureFlags";
+import { CountUp } from "@/components/bongo/Motion";
 
 interface Position {
   id: string;
@@ -340,8 +341,8 @@ export default function PortfolioPage() {
               <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-6">
                 {[
                   { label: t.portfolio.walletBalance, value: formatRaw(displayCurrency === 'USDC' ? (user.balanceUsdc || 0) : displayCurrency === 'KES' ? (user.balanceKes || 0) : (user.balanceTzs || 0)), color: "text-[var(--accent)]", border: "border-[var(--accent)]/30", icon: <Wallet size={12} weight="fill" className="text-[var(--accent)]" /> },
-                  { label: t.portfolio.totalInvested, value: formatAmount(totalInvested), color: "text-[var(--foreground)]", border: "border-[var(--card-border)]", icon: <CurrencyDollar size={12} weight="fill" className="text-orange-400" /> },
-                  { label: t.portfolio.openPositionsValue, value: formatAmount(Math.round(totalValue)), color: "text-yellow-400", border: "border-yellow-500/30", icon: <ChartLineUp size={12} weight="fill" className="text-yellow-400" /> },
+                  { label: t.portfolio.totalInvested, value: formatAmount(totalInvested), color: "text-[var(--foreground)]", border: "border-[var(--card-border)]", icon: <CurrencyDollar size={12} weight="fill" className="text-orange-600 dark:text-orange-400" /> },
+                  { label: t.portfolio.openPositionsValue, value: formatAmount(Math.round(totalValue)), color: "text-yellow-600 dark:text-yellow-400", border: "border-yellow-500/30", icon: <ChartLineUp size={12} weight="fill" className="text-yellow-600 dark:text-yellow-400" /> },
                 ].map((s, i) => (
                   <motion.div
                     key={s.label}
@@ -523,7 +524,7 @@ export default function PortfolioPage() {
                         >
                           <Link href={`/markets/${p.market.id}`}>
                             <div className={cn(
-                              "bg-[var(--background)] border border-[var(--card-border)] border-l-4 hover:border-[var(--accent)]/40 hover:shadow-[0_0_15px_rgba(0,229,160,0.05)] transition-all",
+                              "bl-card bl-card-sm border-l-[6px] transition-all hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[5px_5px_0_var(--line)]",
                               accentColor
                             )}>
                               {/* Position header */}
@@ -537,18 +538,18 @@ export default function PortfolioPage() {
                                       {isResolved ? (
                                         <span className={cn(
                                           "text-[10px] font-mono font-bold px-1.5 py-0.5 border uppercase tracking-wider flex items-center gap-1",
-                                          won ? "border-[var(--accent)]/30 text-[var(--accent)]" : "border-red-500/30 text-red-400"
+                                          won ? "border-[var(--accent)]/30 text-[var(--accent)]" : "border-red-500/30 text-red-600 dark:text-red-400"
                                         )}>
                                           {won ? <CheckCircle size={10} weight="fill" /> : <XCircle size={10} weight="fill" />}
                                           {won ? t.portfolio.won : t.portfolio.lost}
                                         </span>
                                       ) : isExpired ? (
-                                        <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 border border-orange-500/30 text-orange-400 uppercase tracking-wider flex items-center gap-1">
+                                        <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 border border-orange-500/30 text-orange-600 dark:text-orange-400 uppercase tracking-wider flex items-center gap-1">
                                           <Pulse size={10} weight="fill" />
                                           {locale === "sw" ? "IMEKWISHA" : "EXPIRED"}
                                         </span>
                                       ) : (
-                                        <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 border border-yellow-500/30 text-yellow-400 uppercase tracking-wider flex items-center gap-1">
+                                        <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 border border-yellow-500/30 text-yellow-600 dark:text-yellow-400 uppercase tracking-wider flex items-center gap-1">
                                           <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
                                           {t.portfolio.open}
                                         </span>
@@ -562,7 +563,7 @@ export default function PortfolioPage() {
                                 <div className="flex flex-wrap gap-1.5 mt-2">
                                   {isMultiOpt && p.optionShares ? (
                                     Object.entries(p.optionShares).filter(([, s]) => s > 0).map(([idx, shares]) => {
-                                      const pillColors = ["text-[#00e5a0] border-[#00e5a0]/30", "text-[#00b4d8] border-[#00b4d8]/30", "text-orange-400 border-orange-500/30", "text-pink-400 border-pink-500/30", "text-purple-400 border-purple-500/30"];
+                                      const pillColors = ["text-[#12805c] border-[#12805c]/30", "text-[#00b4d8] border-[#00b4d8]/30", "text-orange-600 dark:text-orange-400 border-orange-500/30", "text-pink-600 dark:text-pink-400 border-pink-500/30", "text-purple-600 dark:text-purple-400 border-purple-500/30"];
                                       return (
                                         <span key={idx} className={cn("px-2 py-0.5 text-[10px] font-mono font-bold border", pillColors[Number(idx) % pillColors.length])}>
                                           {formatNumber(shares)} {p.market.options![Number(idx)] || `OPT_${idx}`}
@@ -572,12 +573,12 @@ export default function PortfolioPage() {
                                   ) : (
                                     <>
                                       {p.yesShares > 0 && (
-                                        <span className="px-2 py-0.5 text-[10px] font-mono font-bold border border-[#00e5a0]/30 text-[#00e5a0]">
+                                        <span className="px-2 py-0.5 text-[10px] font-mono font-bold border border-[#12805c]/30 text-[#12805c]">
                                           {formatNumber(p.yesShares)} YES
                                         </span>
                                       )}
                                       {p.noShares > 0 && (
-                                        <span className="px-2 py-0.5 text-[10px] font-mono font-bold border border-red-500/30 text-red-400">
+                                        <span className="px-2 py-0.5 text-[10px] font-mono font-bold border border-red-500/30 text-red-600 dark:text-red-400">
                                           {formatNumber(p.noShares)} NO
                                         </span>
                                       )}
@@ -641,7 +642,7 @@ export default function PortfolioPage() {
                                         <div className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
                                           {locale === "sw" ? "Malipo" : "If correct"}
                                         </div>
-                                        <div className="text-base font-mono font-bold tabular-nums text-yellow-400">
+                                        <div className="text-base font-mono font-bold tabular-nums text-yellow-600 dark:text-yellow-400">
                                           {formatAmount(Math.round(positionPayout))}
                                         </div>
                                       </div>
@@ -748,7 +749,7 @@ export default function PortfolioPage() {
                                             .filter(([, s]) => s > 0)
                                             .map(([idx, s]) => ({ label: p.market.options?.[Number(idx)] || `Opt ${idx}`, shares: s, color: "#00b4d8" }))
                                         : [
-                                            ...(p.yesShares > 0 ? [{ label: "YES", shares: p.yesShares, color: "#00e5a0" }] : []),
+                                            ...(p.yesShares > 0 ? [{ label: "YES", shares: p.yesShares, color: "#12805c" }] : []),
                                             ...(p.noShares > 0 ? [{ label: "NO", shares: p.noShares, color: "#f87171" }] : []),
                                           ]
                                       ).map((h, i) => (
@@ -775,8 +776,8 @@ export default function PortfolioPage() {
                                           <div className="flex items-center gap-2">
                                             <span className={cn(
                                               "px-1.5 py-0.5 text-[9px] font-bold border",
-                                              tr.side === "YES" ? "border-[#00e5a0]/30 text-[#00e5a0]"
-                                                : tr.side === "NO" ? "border-red-500/30 text-red-400"
+                                              tr.side === "YES" ? "border-[#12805c]/30 text-[#12805c]"
+                                                : tr.side === "NO" ? "border-red-500/30 text-red-600 dark:text-red-400"
                                                 : "border-[#00b4d8]/30 text-[#00b4d8]"
                                             )}>
                                               {tr.side}
@@ -873,7 +874,7 @@ export default function PortfolioPage() {
                                             className={cn(
                                               "flex-1 py-1.5 text-xs font-mono font-bold border transition-all",
                                               sellSide === "YES"
-                                                ? "border-[#00e5a0] text-[#00e5a0] bg-[#00e5a0]/10"
+                                                ? "border-[#12805c] text-[#12805c] bg-[#12805c]/10"
                                                 : "border-[var(--card-border)] text-[var(--muted)]"
                                             )}
                                           >
@@ -886,7 +887,7 @@ export default function PortfolioPage() {
                                             className={cn(
                                               "flex-1 py-1.5 text-xs font-mono font-bold border transition-all",
                                               sellSide === "NO"
-                                                ? "border-red-400 text-red-400 bg-red-500/10"
+                                                ? "border-red-400 text-red-600 dark:text-red-400 bg-red-500/10"
                                                 : "border-[var(--card-border)] text-[var(--muted)]"
                                             )}
                                           >
@@ -928,14 +929,14 @@ export default function PortfolioPage() {
                                     {estPayout > 0 && (
                                       <div className="flex justify-between text-xs font-mono">
                                         <span className="text-[var(--muted)]">{locale === "sw" ? "Utapata" : "You receive"}</span>
-                                        <span className="font-bold text-[#00e5a0]">{formatAmount(estPayout)}</span>
+                                        <span className="font-bold text-[#12805c]">{formatAmount(estPayout)}</span>
                                       </div>
                                     )}
 
                                     {/* Error / Success */}
-                                    {sellError && <p className="text-red-400 text-xs font-mono text-center">{sellError}</p>}
+                                    {sellError && <p className="text-red-600 dark:text-red-400 text-xs font-mono text-center">{sellError}</p>}
                                     {sellSuccess && (
-                                      <p className="text-[#00e5a0] text-xs font-mono text-center flex items-center justify-center gap-1">
+                                      <p className="text-[#12805c] text-xs font-mono text-center flex items-center justify-center gap-1">
                                         <CheckCircle size={12} weight="fill" />
                                         {sellSuccess}
                                       </p>
@@ -945,7 +946,7 @@ export default function PortfolioPage() {
                                     <button
                                       onClick={() => handleSell(p)}
                                       disabled={!SELLING_ENABLED || sellLoading || !sellShares || Number(sellShares) < 1 || Number(sellShares) > availShares}
-                                      className="w-full py-2.5 font-mono font-bold text-xs bg-[#ff4d6a] text-white hover:opacity-90 transition-all disabled:opacity-50 tracking-wider uppercase"
+                                      className="bl-press w-full py-2.5 font-mono font-bold text-xs bg-[#ff4d6a] text-white hover:opacity-90 transition-all disabled:opacity-50 tracking-wider uppercase"
                                     >
                                       {!SELLING_ENABLED
                                         ? (locale === "sw" ? "IMESIMAMISHWA" : "PAUSED")
@@ -964,9 +965,9 @@ export default function PortfolioPage() {
                     })}
 
                     {/* ═══ Total Payout Summary ═══ */}
-                    <div className="mt-4 bg-[var(--background)] border-2 border-[var(--card-border)] p-4">
+                    <div className="mt-4 bl-card bl-card-sm bl-reveal p-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <Trophy size={16} weight="fill" className="text-yellow-400" />
+                        <Trophy size={16} weight="fill" className="text-yellow-600 dark:text-yellow-400" />
                         <span className="text-xs font-mono font-bold uppercase tracking-wider text-[var(--muted)]">
                           {locale === "sw" ? "Muhtasari wa Malipo" : "Payout Summary"}
                         </span>
@@ -982,7 +983,7 @@ export default function PortfolioPage() {
                         </div>
                         <div className="flex justify-between text-sm font-mono">
                           <span className="text-[var(--muted)]">{locale === "sw" ? "Malipo (ukiuza sasa)" : "Max payout (if you sell now)"}</span>
-                          <span className="font-bold text-yellow-400">{formatAmount(Math.round(totalPayout))}</span>
+                          <span className="font-bold text-yellow-600 dark:text-yellow-400">{formatAmount(Math.round(totalPayout))}</span>
                         </div>
                       </div>
                     </div>
@@ -1075,10 +1076,10 @@ export default function PortfolioPage() {
                                       <span className={cn(
                                         "text-[10px] font-mono font-bold px-1.5 py-0.5 border uppercase tracking-wider",
                                         market.status === "RESOLVED" 
-                                          ? "border-blue-500/30 text-blue-400"
+                                          ? "border-blue-500/30 text-blue-600 dark:text-blue-400"
                                           : market.status === "OPEN"
                                           ? "border-[var(--accent)]/30 text-[var(--accent)]"
-                                          : "border-yellow-500/30 text-yellow-400"
+                                          : "border-yellow-500/30 text-yellow-600 dark:text-yellow-400"
                                       )}>
                                         {market.status}
                                       </span>
@@ -1162,7 +1163,7 @@ export default function PortfolioPage() {
                                   <span
                                     className={cn(
                                       "px-2 py-0.5 text-[10px] font-mono font-bold border",
-                                      displaySide === "YES" ? "text-[#00e5a0] border-[#00e5a0]/30" : displaySide === "NO" ? "text-red-400 border-red-500/30" : "text-purple-400 border-purple-500/30"
+                                      displaySide === "YES" ? "text-[#12805c] border-[#12805c]/30" : displaySide === "NO" ? "text-red-600 dark:text-red-400 border-red-500/30" : "text-purple-600 dark:text-purple-400 border-purple-500/30"
                                     )}
                                   >
                                     {displaySide}
@@ -1266,7 +1267,7 @@ export default function PortfolioPage() {
                     {locale === "sw" ? "Malipo Yako" : "Your Payout"}
                   </p>
                   <p className="text-3xl font-mono font-bold text-[var(--accent)] tabular-nums">
-                    {formatAmount(redeemPopup.payout)}
+                    <CountUp to={redeemPopup.payout} format={formatAmount} duration={1100} />
                   </p>
                 </motion.div>
 
@@ -1331,7 +1332,7 @@ export default function PortfolioPage() {
                   <div className="w-3 h-3 rounded-full bg-red-500/50" />
                   <div className="w-3 h-3 rounded-full bg-red-500/30" />
                 </div>
-                <span className="text-[10px] font-mono text-red-400 uppercase tracking-wider ml-2">
+                <span className="text-[10px] font-mono text-red-600 dark:text-red-400 uppercase tracking-wider ml-2">
                   REDEEM.ERROR
                 </span>
               </div>
@@ -1339,10 +1340,10 @@ export default function PortfolioPage() {
               {/* Content */}
               <div className="p-6 text-center">
                 <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-red-500/10 border-2 border-red-500/40 flex items-center justify-center">
-                  <WarningCircle size={28} weight="fill" className="text-red-400" />
+                  <WarningCircle size={28} weight="fill" className="text-red-600 dark:text-red-400" />
                 </div>
 
-                <p className="text-red-400 font-mono font-bold text-sm mb-2 uppercase tracking-wide">
+                <p className="text-red-600 dark:text-red-400 font-mono font-bold text-sm mb-2 uppercase tracking-wide">
                   {locale === "sw" ? "IMESHINDWA" : "TRANSFER ERROR"}
                 </p>
                 <p className="text-[var(--muted)] font-mono text-xs leading-relaxed mb-5">
@@ -1351,7 +1352,7 @@ export default function PortfolioPage() {
 
                 <button
                   onClick={() => setRedeemError(null)}
-                  className="w-full py-3 border border-red-500/40 text-red-400 font-mono font-bold text-sm uppercase tracking-wider hover:bg-red-500/10 transition-all"
+                  className="w-full py-3 border border-red-500/40 text-red-600 dark:text-red-400 font-mono font-bold text-sm uppercase tracking-wider hover:bg-red-500/10 transition-all"
                 >
                   {locale === "sw" ? "FUNGA" : "CLOSE"}
                 </button>
@@ -1360,7 +1361,7 @@ export default function PortfolioPage() {
               {/* Terminal footer */}
               <div className="bg-[var(--background)] border-t border-red-500/20 px-4 py-2 flex items-center justify-between">
                 <span className="text-[9px] font-mono text-[var(--muted)]">[TXN_STATUS]</span>
-                <span className="text-[9px] font-mono text-red-400 flex items-center gap-1">
+                <span className="text-[9px] font-mono text-red-600 dark:text-red-400 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
                   CONTACT SUPPORT
                 </span>
@@ -1436,7 +1437,7 @@ export default function PortfolioPage() {
                     {locale === "sw" ? "Umepokea" : "You Received"}
                   </p>
                   <p className="text-3xl font-mono font-bold text-[var(--accent)] tabular-nums">
-                    {formatAmount(sellPopup.payout)}
+                    <CountUp to={sellPopup.payout} format={formatAmount} duration={1100} />
                   </p>
                 </motion.div>
 

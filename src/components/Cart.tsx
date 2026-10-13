@@ -25,7 +25,7 @@ export function CartButton() {
         animate={{ y: 0 }}
         onClick={toggleCart}
         style={{ bottom: "calc(4rem + env(safe-area-inset-bottom))" }}
-        className="md:hidden fixed left-0 right-0 z-40 bg-[#00e5a0] text-black flex items-center justify-between px-4 py-3 border-t-2 border-black/10 active:opacity-90"
+        className="md:hidden fixed left-0 right-0 z-40 bg-[#12805c] text-black flex items-center justify-between px-4 py-3 border-t-2 border-black/10 active:opacity-90"
       >
         <span className="flex items-center gap-2 font-mono font-black text-sm uppercase tracking-wider">
           <ShoppingCart size={18} weight="fill" />
@@ -275,14 +275,14 @@ export function CartModal() {
                           <span className="text-[10px] sm:text-xs font-mono text-[var(--muted)]">
                             ~{(item.estimatedShares || 0).toFixed(0)} {locale === "sw" ? "hisa" : "shares"}
                           </span>
-                          <span className="text-[10px] sm:text-xs font-mono text-[#00e5a0]">
+                          <span className="text-[10px] sm:text-xs font-mono text-[#12805c]">
                             → {formatAmount(Math.round((item.estimatedShares || 0) * 0.95))}
                           </span>
                         </div>
                       </div>
                       <button
                         onClick={() => removeItem(item.id)}
-                        className="p-1 hover:bg-red-500/10 rounded transition-colors text-red-400"
+                        className="p-1 hover:bg-red-500/10 rounded transition-colors text-red-600 dark:text-red-400"
                       >
                         <Trash size={16} />
                       </button>
@@ -318,7 +318,7 @@ export function CartModal() {
                 style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
               >
                 {error && (
-                  <div className="text-xs font-mono text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded">
+                  <div className="text-xs font-mono text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded">
                     {error}
                   </div>
                 )}
@@ -336,7 +336,7 @@ export function CartModal() {
                   <span className="text-xs sm:text-sm text-[var(--muted)]">
                     {locale === "sw" ? "Ukishinda" : "If correct"}
                   </span>
-                  <span className="text-base sm:text-lg font-bold text-[#00e5a0]">
+                  <span className="text-base sm:text-lg font-bold text-[#12805c]">
                     {formatAmount(Math.round(items.reduce((sum, item) => sum + (item.estimatedShares || 0) * 0.95, 0)))}
                   </span>
                 </div>

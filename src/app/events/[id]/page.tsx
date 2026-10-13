@@ -180,7 +180,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
           <div className="flex items-center gap-1.5 mb-2 flex-wrap">
             <Link 
               href={`/markets?category=${event.category}`}
-              className="px-2 py-0.5 text-[10px] font-bold uppercase bg-[#00e5a0]/20 text-[#00e5a0] border border-[#00e5a0]/30"
+              className="px-2 py-0.5 text-[10px] font-bold uppercase bg-[#12805c]/20 text-[#12805c] border border-[#12805c]/30"
             >
               {event.category}
             </Link>
@@ -189,7 +189,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
               return (
                 <Link 
                   href={`/markets?category=${event.category}&subCategory=${event.subCategory}`}
-                  className="px-2 py-0.5 text-[10px] font-bold uppercase bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center gap-1"
+                  className="px-2 py-0.5 text-[10px] font-bold uppercase bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 flex items-center gap-1"
                 >
                   {subCatInfo?.icon?.startsWith('/') ? (
                     <Image src={subCatInfo.icon} alt={event.subCategory} width={12} height={12} className="object-contain" />
@@ -201,12 +201,12 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
               );
             })()}
             {isLive && (
-              <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1">
+              <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30 flex items-center gap-1">
                 <Pulse size={10} weight="fill" className="animate-pulse" /> LIVE
               </span>
             )}
             {isUpcoming && (
-              <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-blue-500/20 text-blue-400 border border-blue-500/30">
+              <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30">
                 UPCOMING
               </span>
             )}
@@ -293,7 +293,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
                   {formatVolume(event.totalVolume)}
                 </span>
                 <span className="flex items-center gap-1">
-                  <Lightning size={12} weight="fill" className="text-yellow-400" />
+                  <Lightning size={12} weight="fill" className="text-yellow-600 dark:text-yellow-400" />
                   {event.totalTrades}
                 </span>
               </div>
@@ -516,23 +516,23 @@ function ActivitySidebar({ marketIds, compact }: { marketIds: string[]; compact?
                     </span>
                     {isTrade ? (
                       <>
-                        <span className={cn("text-[9px] font-bold", isBuy ? "text-[var(--accent)]" : "text-red-400")}>
+                        <span className={cn("text-[9px] font-bold", isBuy ? "text-[var(--accent)]" : "text-red-600 dark:text-red-400")}>
                           {isBuy ? (locale === "sw" ? "alinunua" : "bought") : (locale === "sw" ? "aliuza" : "sold")}
                         </span>
                         <span className={cn(
                           "px-1 border text-[8px] font-bold",
-                          side === "YES" ? "border-[#00e5a0]/30 text-[#00e5a0]"
-                            : side === "NO" ? "border-red-500/30 text-red-400"
+                          side === "YES" ? "border-[#12805c]/30 text-[#12805c]"
+                            : side === "NO" ? "border-red-500/30 text-red-600 dark:text-red-400"
                             : "border-[#00b4d8]/30 text-[#00b4d8]"
                         )}>{side}</span>
                         {a.details.amountTzs && (
-                          <span className={cn("text-[9px] font-bold ml-auto", isBuy ? "text-[var(--accent)]" : "text-red-400")}>
+                          <span className={cn("text-[9px] font-bold ml-auto", isBuy ? "text-[var(--accent)]" : "text-red-600 dark:text-red-400")}>
                             {isBuy ? "+" : "-"}{fmtAmt(a.details.amountTzs)}
                           </span>
                         )}
                       </>
                     ) : (
-                      <span className="text-[9px] text-purple-400 font-bold">
+                      <span className="text-[9px] text-purple-600 dark:text-purple-400 font-bold">
                         resolved → {a.details.outcome}
                       </span>
                     )}
@@ -633,15 +633,15 @@ function MarketRow({
                   key={i}
                   className={cn(
                     "flex items-center justify-between text-sm px-2 py-1.5 rounded",
-                    isWinner ? "bg-[#00e5a0]/20" : "bg-[var(--background)]"
+                    isWinner ? "bg-[#12805c]/20" : "bg-[var(--background)]"
                   )}
                 >
-                  <span className={cn("truncate flex-1", isWinner && "text-[#00e5a0] font-medium")}>
+                  <span className={cn("truncate flex-1", isWinner && "text-[#12805c] font-medium")}>
                     {isWinner && <CheckCircle size={12} className="inline mr-1" />}
                     {opt}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className={cn("font-mono text-xs", isWinner ? "text-[#00e5a0]" : "text-[var(--muted)]")}>
+                    <span className={cn("font-mono text-xs", isWinner ? "text-[#12805c]" : "text-[var(--muted)]")}>
                       {(price * 100) % 1 === 0 ? Math.round(price * 100) : (price * 100).toFixed(1)}%
                     </span>
                     {!isResolved && (
@@ -651,7 +651,7 @@ function MarketRow({
                       >
                         <button
                           onClick={() => handleBuyClick(`option_${i}`, i)}
-                          className="px-2 py-1 text-[10px] font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30 hover:bg-purple-500/30 transition-colors"
+                          className="px-2 py-1 text-[10px] font-bold bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30 hover:bg-purple-500/30 transition-colors"
                         >
                           BUY
                         </button>
@@ -660,8 +660,8 @@ function MarketRow({
                           className={cn(
                             "p-1 rounded transition-all",
                             addedToCart === `${market.id}-option_${i}`
-                              ? "bg-green-500/30 text-green-400"
-                              : "text-purple-400 hover:bg-purple-500/20"
+                              ? "bg-green-500/30 text-green-600 dark:text-green-400"
+                              : "text-purple-600 dark:text-purple-400 hover:bg-purple-500/20"
                           )}
                           title="Add to cart"
                         >
@@ -686,7 +686,7 @@ function MarketRow({
               className={cn(
                 "flex-1 rounded-lg overflow-hidden",
                 isResolved && market.outcome === 1
-                  ? "bg-[#00e5a0]/20 border border-[#00e5a0]/30"
+                  ? "bg-[#12805c]/20 border border-[#12805c]/30"
                   : "bg-[var(--background)]"
               )}
             >
@@ -694,19 +694,19 @@ function MarketRow({
                 <div className="text-xs text-[var(--muted)] mb-0.5">YES</div>
                 <div className={cn(
                   "font-bold",
-                  isResolved && market.outcome === 1 ? "text-[#00e5a0]" : ""
+                  isResolved && market.outcome === 1 ? "text-[#12805c]" : ""
                 )}>
                   {(market.price.yes * 100) % 1 === 0 ? Math.round(market.price.yes * 100) : (market.price.yes * 100).toFixed(1)}%
                 </div>
               </div>
               {!isResolved && (
                 <div
-                  className={cn("flex border-t border-[#00e5a0]/30", !TRADING_ENABLED && "opacity-40 grayscale pointer-events-none")}
+                  className={cn("flex border-t border-[#12805c]/30", !TRADING_ENABLED && "opacity-40 grayscale pointer-events-none")}
                   title={!TRADING_ENABLED ? tradingDisabledLabel(locale) : undefined}
                 >
                   <button
                     onClick={() => handleBuyClick("YES")}
-                    className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] font-bold bg-[#00e5a0]/20 text-[#00e5a0] hover:bg-[#00e5a0]/30 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] font-bold bg-[#12805c]/20 text-[#12805c] hover:bg-[#12805c]/30 transition-colors"
                   >
                     BUY
                   </button>
@@ -715,8 +715,8 @@ function MarketRow({
                     className={cn(
                       "px-2 py-1.5 transition-all border-l",
                       addedToCart === `${market.id}-YES`
-                        ? "bg-green-500/30 text-green-400 border-green-500/30"
-                        : "bg-[#00e5a0]/10 text-[#00e5a0] hover:bg-[#00e5a0]/20 border-[#00e5a0]/30"
+                        ? "bg-green-500/30 text-green-600 dark:text-green-400 border-green-500/30"
+                        : "bg-[#12805c]/10 text-[#12805c] hover:bg-[#12805c]/20 border-[#12805c]/30"
                     )}
                     title="Add to cart"
                   >
@@ -737,7 +737,7 @@ function MarketRow({
                 <div className="text-xs text-[var(--muted)] mb-0.5">NO</div>
                 <div className={cn(
                   "font-bold",
-                  isResolved && market.outcome === 0 ? "text-red-400" : ""
+                  isResolved && market.outcome === 0 ? "text-red-600 dark:text-red-400" : ""
                 )}>
                   {(market.price.no * 100) % 1 === 0 ? Math.round(market.price.no * 100) : (market.price.no * 100).toFixed(1)}%
                 </div>
@@ -749,7 +749,7 @@ function MarketRow({
                 >
                   <button
                     onClick={() => handleBuyClick("NO")}
-                    className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] font-bold bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] font-bold bg-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-500/30 transition-colors"
                   >
                     BUY
                   </button>
@@ -758,8 +758,8 @@ function MarketRow({
                     className={cn(
                       "px-2 py-1.5 transition-all border-l",
                       addedToCart === `${market.id}-NO`
-                        ? "bg-green-500/30 text-green-400 border-green-500/30"
-                        : "bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/30"
+                        ? "bg-green-500/30 text-green-600 dark:text-green-400 border-green-500/30"
+                        : "bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 border-red-500/30"
                     )}
                     title="Add to cart"
                   >
@@ -783,7 +783,7 @@ function MarketRow({
             {formatVolume(market.totalVolume)}
           </span>
           <span className="flex items-center gap-1">
-            <Lightning size={12} weight="fill" className="text-yellow-400" />
+            <Lightning size={12} weight="fill" className="text-yellow-600 dark:text-yellow-400" />
             {market._count.trades}
           </span>
           {!isResolved && (
@@ -793,7 +793,7 @@ function MarketRow({
             </span>
           )}
           {isResolved && (
-            <span className="text-[#00e5a0] flex items-center gap-1">
+            <span className="text-[#12805c] flex items-center gap-1">
               <CheckCircle size={12} /> Resolved
             </span>
           )}

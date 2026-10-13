@@ -228,7 +228,7 @@ export default function ProfilePage() {
                     )}
                   </div>
                 ) : (
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#00e5a0] to-[#00b4d8] flex items-center justify-center text-black font-black text-3xl">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#12805c] to-[#00b4d8] flex items-center justify-center text-black font-black text-3xl">
                     {user.username[0].toUpperCase()}
                   </div>
                 )}
@@ -270,8 +270,8 @@ export default function ProfilePage() {
                 <>
                   <div className="border-t border-[var(--card-border)] pt-3 mt-1">
                     <div className="flex items-center gap-1.5 mb-2">
-                      <Star size={12} weight="fill" className="text-yellow-400" />
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-yellow-400">
+                      <Star size={12} weight="fill" className="text-yellow-600 dark:text-yellow-400" />
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-yellow-600 dark:text-yellow-400">
                         {locale === "sw" ? "Zawadi za Muundaji" : "Creator Rewards"}
                       </span>
                     </div>
@@ -286,7 +286,7 @@ export default function ProfilePage() {
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-[var(--muted)]">{locale === "sw" ? "Jumla Iliyoingizwa" : "Total Earned"}</span>
-                        <span className="font-bold text-yellow-400">{format(creatorRewards.totalEarned)}</span>
+                        <span className="font-bold text-yellow-600 dark:text-yellow-400">{format(creatorRewards.totalEarned)}</span>
                       </div>
                     </div>
                   </div>
@@ -393,7 +393,7 @@ export default function ProfilePage() {
 
                 {/* Pending */}
                 {referral.pendingEarnings > 0 && (
-                  <p className="text-[10px] text-yellow-400 font-mono text-center">
+                  <p className="text-[10px] text-yellow-600 dark:text-yellow-400 font-mono text-center">
                     ⏳ {formatTZS(referral.pendingEarnings)} {locale === "sw" ? "inasubiri" : "pending"}
                   </p>
                 )}
@@ -422,7 +422,7 @@ export default function ProfilePage() {
             {creatorRewards && creatorRewards.marketsCreated > 0 && (
               <div className="bg-[var(--card)] border border-[var(--card-border)] rounded-2xl p-4 space-y-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <Star size={16} weight="fill" className="text-yellow-400" />
+                  <Star size={16} weight="fill" className="text-yellow-600 dark:text-yellow-400" />
                   <h3 className="font-bold text-sm">{locale === "sw" ? "Zawadi za Muundaji" : "Creator Rewards"}</h3>
                 </div>
                 <p className="text-xs text-[var(--muted)]">
@@ -442,16 +442,16 @@ export default function ProfilePage() {
                   </div>
                   <div className="bg-[var(--background)] rounded-lg p-2 text-center">
                     <div className="flex items-center justify-center gap-0.5 mb-0.5">
-                      <Lightning size={10} weight="fill" className="text-blue-400" />
+                      <Lightning size={10} weight="fill" className="text-blue-600 dark:text-blue-400" />
                     </div>
                     <p className="font-bold text-sm">{creatorRewards.marketsResolved}</p>
                     <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Yaliotatuliwa" : "Resolved"}</p>
                   </div>
                   <div className="bg-[var(--background)] rounded-lg p-2 text-center">
                     <div className="flex items-center justify-center gap-0.5 mb-0.5">
-                      <TrendUp size={10} className="text-yellow-400" />
+                      <TrendUp size={10} className="text-yellow-600 dark:text-yellow-400" />
                     </div>
-                    <p className="font-bold text-sm text-yellow-400">{creatorRewards.rewardCount}</p>
+                    <p className="font-bold text-sm text-yellow-600 dark:text-yellow-400">{creatorRewards.rewardCount}</p>
                     <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider">{locale === "sw" ? "Malipo" : "Payouts"}</p>
                   </div>
                 </div>
@@ -459,7 +459,7 @@ export default function ProfilePage() {
                 {/* Total earned */}
                 <div className="flex items-center justify-between bg-yellow-400/10 border border-yellow-400/20 rounded-lg px-3 py-2">
                   <span className="text-xs text-[var(--muted)]">{locale === "sw" ? "Jumla Iliyoingizwa" : "Total Earned"}</span>
-                  <span className="font-bold text-sm text-yellow-400">
+                  <span className="font-bold text-sm text-yellow-600 dark:text-yellow-400">
                     {format(creatorRewards.totalEarned)}
                   </span>
                 </div>
@@ -486,7 +486,7 @@ export default function ProfilePage() {
                           <div className="flex items-center gap-1.5 shrink-0">
                             {m.status === "RESOLVED" ? (
                               m.creatorFeeEarned !== null ? (
-                                <span className="font-mono text-yellow-400 text-[10px]">
+                                <span className="font-mono text-yellow-600 dark:text-yellow-400 text-[10px]">
                                   +{format(m.creatorFeeEarned)}
                                 </span>
                               ) : (
@@ -548,7 +548,7 @@ export default function ProfilePage() {
                         <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider">Resolved</p>
                       </div>
                       <div className="bg-[var(--background)] rounded-lg p-2 text-center">
-                        <p className={`font-bold text-sm ${lpRewards.netPnl >= 0 ? "text-[var(--accent)]" : "text-orange-400"}`}>
+                        <p className={`font-bold text-sm ${lpRewards.netPnl >= 0 ? "text-[var(--accent)]" : "text-orange-600 dark:text-orange-400"}`}>
                           {lpRewards.netPnl >= 0 ? "+" : ""}{format(lpRewards.netPnl)}
                         </p>
                         <p className="text-[9px] text-[var(--muted)] uppercase tracking-wider">Net P&L</p>
@@ -586,7 +586,7 @@ export default function ProfilePage() {
                               {m.status === "RESOLVED" ? (
                                 m.returned !== null ? (
                                   <div className="text-right">
-                                    <span className={`font-mono text-[10px] block ${(m.pnl ?? 0) >= 0 ? "text-[var(--accent)]" : "text-orange-400"}`}>
+                                    <span className={`font-mono text-[10px] block ${(m.pnl ?? 0) >= 0 ? "text-[var(--accent)]" : "text-orange-600 dark:text-orange-400"}`}>
                                       {(m.pnl ?? 0) >= 0 ? "+" : ""}{format(m.pnl ?? 0)}
                                     </span>
                                     <span className="text-[9px] text-[var(--muted)]">{m.outcomeLabel ?? "resolved"}</span>

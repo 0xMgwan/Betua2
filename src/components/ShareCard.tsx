@@ -192,7 +192,7 @@ function ShareCardModal({
           {/* Glow effect */}
           <div
             className="absolute top-0 right-0 w-48 h-48 rounded-full blur-[80px] opacity-30"
-            style={{ background: won ? "#00e5a0" : "#ef4444" }}
+            style={{ background: won ? "#12805c" : "#ef4444" }}
           />
           <div
             className="absolute bottom-0 left-0 w-32 h-32 rounded-full blur-[60px] opacity-20"
@@ -229,20 +229,20 @@ function ShareCardModal({
               <div
                 className={cn(
                   "w-12 h-12 flex items-center justify-center border-2",
-                  won ? "border-[#00e5a0]/50 bg-[#00e5a0]/10" : "border-red-500/50 bg-red-500/10"
+                  won ? "border-[#12805c]/50 bg-[#12805c]/10" : "border-red-500/50 bg-red-500/10"
                 )}
               >
                 {won ? (
-                  <Trophy size={24} weight="fill" className="text-[#00e5a0]" />
+                  <Trophy size={24} weight="fill" className="text-[#12805c]" />
                 ) : (
-                  <XCircle size={24} weight="fill" className="text-red-400" />
+                  <XCircle size={24} weight="fill" className="text-red-600 dark:text-red-400" />
                 )}
               </div>
               <div>
                 <div
                   className={cn(
                     "text-xs font-mono font-black tracking-[0.2em] uppercase",
-                    won ? "text-[#00e5a0]" : "text-red-400"
+                    won ? "text-[#12805c]" : "text-red-600 dark:text-red-400"
                   )}
                 >
                   {won ? (isSw ? "UTABIRI UMESHINDA" : "PREDICTION WON") : (isSw ? "UTABIRI UMESHINDWA" : "PREDICTION LOST")}
@@ -278,7 +278,7 @@ function ShareCardModal({
                 </div>
                 <div className={cn(
                   "text-sm font-mono font-black",
-                  won ? "text-[#00e5a0]" : "text-red-400"
+                  won ? "text-[#12805c]" : "text-red-600 dark:text-red-400"
                 )}>
                   {outcome}
                 </div>
@@ -297,7 +297,7 @@ function ShareCardModal({
                 </div>
                 <div className={cn(
                   "text-sm font-mono font-black",
-                  won ? "text-[#00e5a0]" : "text-white"
+                  won ? "text-[#12805c]" : "text-white"
                 )}>
                   {won ? formatTZS(payout) : formatTZS(invested)}
                 </div>
@@ -308,7 +308,7 @@ function ShareCardModal({
                 </div>
                 <div className={cn(
                   "text-sm font-mono font-black",
-                  won ? "text-[#00e5a0]" : "text-red-400"
+                  won ? "text-[#12805c]" : "text-red-600 dark:text-red-400"
                 )}>
                   {won ? "+" : ""}{profitPct}%
                 </div>
@@ -319,7 +319,7 @@ function ShareCardModal({
             <div className="border-t border-white/10 pt-3">
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-1.5">
-                  <Lightning size={10} weight="fill" className={won ? "text-[#00e5a0]" : "text-red-400"} />
+                  <Lightning size={10} weight="fill" className={won ? "text-[#12805c]" : "text-red-600 dark:text-red-400"} />
                   <span className="text-white/30 text-[9px] font-mono tracking-wider">
                     {isSw ? "TABIRI · BIASHARA · SHINDA" : "PREDICT · TRADE · WIN"}
                   </span>

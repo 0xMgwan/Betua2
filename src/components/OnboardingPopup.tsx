@@ -59,48 +59,45 @@ export function OnboardingPopup() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] max-w-md bg-black border border-[var(--accent)] z-50 font-mono text-sm"
+            className="bl-card fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] max-w-md z-50 text-sm overflow-hidden"
           >
             {/* Terminal header */}
-            <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--accent)]/50 bg-[var(--accent)]/10">
-              <span className="text-[var(--accent)] text-xs">guap@terminal:~$</span>
-              <button onClick={handleClose} className="text-[var(--muted)] hover:text-white">
+            <div className="flex items-center justify-between px-4 py-2.5 border-b-[2.5px] border-[var(--line)]" style={{ background: "var(--gold)" }}>
+              <span className="text-[12px] font-extrabold uppercase tracking-[.08em]" style={{ color: "#141414" }}>Karibu GUAP</span>
+              <button onClick={handleClose} aria-label="Close" style={{ color: "#141414" }} className="hover:opacity-70">
                 <X size={16} weight="bold" />
               </button>
             </div>
 
             {/* Content */}
             <div className="p-4 space-y-3">
-              <div className="text-[var(--accent)]">
-                <span className="text-white">$</span> cat welcome.txt
-              </div>
-              <div className="text-white font-bold text-lg">{t.title} 🎯</div>
-              <div className="text-[var(--muted)] text-xs">{t.subtitle}</div>
+                            <div className="text-[22px] font-black leading-tight" style={{ fontFamily: "var(--font-display)", fontStretch: "80%" }}>{t.title} 🎯</div>
+              <div className="text-[var(--muted)] text-[13px]">{t.subtitle}</div>
 
               <div className="border-t border-[var(--card-border)] pt-3 space-y-2">
-                <div className="flex gap-2">
-                  <span className="text-[var(--accent)]">[1]</span>
-                  <div><span className="text-white">{t.step1}</span> <span className="text-[var(--muted)]">- {t.step1Desc}</span></div>
+                <div className="flex gap-2.5 items-start">
+                  <span className="shrink-0 w-6 h-6 rounded-full border-2 border-[var(--line)] grid place-items-center text-[11px] font-black" style={{ background: "var(--gold)", color: "#141414" }}>1</span>
+                  <div><span className="font-extrabold">{t.step1}</span> <span className="text-[var(--muted)]">- {t.step1Desc}</span></div>
                 </div>
-                <div className="flex gap-2">
-                  <span className="text-[var(--accent)]">[2]</span>
-                  <div><span className="text-white">{t.step2}</span> <span className="text-[var(--muted)]">- {t.step2Desc}</span></div>
+                <div className="flex gap-2.5 items-start">
+                  <span className="shrink-0 w-6 h-6 rounded-full border-2 border-[var(--line)] grid place-items-center text-[11px] font-black" style={{ background: "var(--gold)", color: "#141414" }}>2</span>
+                  <div><span className="font-extrabold">{t.step2}</span> <span className="text-[var(--muted)]">- {t.step2Desc}</span></div>
                 </div>
-                <div className="flex gap-2">
-                  <span className="text-[var(--accent)]">[3]</span>
-                  <div><span className="text-white">{t.step3}</span> <span className="text-[var(--muted)]">- {t.step3Desc}</span></div>
+                <div className="flex gap-2.5 items-start">
+                  <span className="shrink-0 w-6 h-6 rounded-full border-2 border-[var(--line)] grid place-items-center text-[11px] font-black" style={{ background: "var(--gold)", color: "#141414" }}>3</span>
+                  <div><span className="font-extrabold">{t.step3}</span> <span className="text-[var(--muted)]">- {t.step3Desc}</span></div>
                 </div>
-                <div className="flex gap-2">
-                  <span className="text-[var(--accent)]">[4]</span>
-                  <div><span className="text-white">{t.step4}</span> <span className="text-[var(--muted)]">- {t.step4Desc}</span></div>
+                <div className="flex gap-2.5 items-start">
+                  <span className="shrink-0 w-6 h-6 rounded-full border-2 border-[var(--line)] grid place-items-center text-[11px] font-black" style={{ background: "var(--gold)", color: "#141414" }}>4</span>
+                  <div><span className="font-extrabold">{t.step4}</span> <span className="text-[var(--muted)]">- {t.step4Desc}</span></div>
                 </div>
               </div>
 
               <button
                 onClick={handleClose}
-                className="w-full mt-4 px-4 py-2 border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-black transition-all flex items-center justify-center gap-2 uppercase tracking-wider text-xs"
+                className="bl-btn bl-btn-gold bl-btn-sm w-full mt-4"
               >
-                <span>$</span> {t.cta} <ArrowRight size={14} />
+                {t.cta} <ArrowRight size={14} weight="bold" />
               </button>
             </div>
           </motion.div>

@@ -31,7 +31,7 @@ export function UserAvatar({ username, avatarUrl, size = "sm", onClick, classNam
     <div
       className={cn(
         sizeClass,
-        "rounded-full bg-gradient-to-br from-[#00e5a0] to-[#00b4d8] flex items-center justify-center text-black font-bold",
+        "rounded-full bg-gradient-to-br from-[#12805c] to-[#00b4d8] flex items-center justify-center text-black font-bold",
         onClick && "cursor-pointer",
         className
       )}

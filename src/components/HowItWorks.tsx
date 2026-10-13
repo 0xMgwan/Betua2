@@ -14,11 +14,11 @@ const DISMISS_KEY = "guap_hiw_dismissed";
 
 // Deterministic confetti (no Math.random → no hydration drift)
 const CONFETTI = [
-  { x: "6%",  y: "12%", r: 24,  c: "#00e5a0" }, { x: "16%", y: "70%", r: -18, c: "#a78bfa" },
+  { x: "6%",  y: "12%", r: 24,  c: "#12805c" }, { x: "16%", y: "70%", r: -18, c: "#a78bfa" },
   { x: "24%", y: "28%", r: 40,  c: "#fbbf24" }, { x: "34%", y: "85%", r: -30, c: "#f87171" },
-  { x: "44%", y: "8%",  r: 12,  c: "#60a5fa" }, { x: "56%", y: "90%", r: 28,  c: "#00e5a0" },
+  { x: "44%", y: "8%",  r: 12,  c: "#60a5fa" }, { x: "56%", y: "90%", r: 28,  c: "#12805c" },
   { x: "66%", y: "14%", r: -22, c: "#f87171" }, { x: "74%", y: "76%", r: 16,  c: "#fbbf24" },
-  { x: "84%", y: "30%", r: -36, c: "#a78bfa" }, { x: "92%", y: "64%", r: 20,  c: "#00e5a0" },
+  { x: "84%", y: "30%", r: -36, c: "#a78bfa" }, { x: "92%", y: "64%", r: 20,  c: "#12805c" },
   { x: "10%", y: "45%", r: 8,   c: "#60a5fa" }, { x: "88%", y: "9%",  r: -14, c: "#fbbf24" },
 ];
 
@@ -75,22 +75,22 @@ export function HowItWorks() {
         : "Deposit TZS via M-Pesa or Mix by Yas — your balance is ready in seconds.",
       visual: (
         <div className="relative h-44 flex items-center justify-center overflow-hidden rounded-xl bg-[var(--background)] border border-[var(--card-border)]">
-          <div className="absolute w-44 h-44 rounded-full bg-[#00e5a0]/10 blur-2xl" />
-          <div className="absolute top-3 left-4 w-1.5 h-3 rounded-[1px] bg-[#00e5a0]/50 rotate-12" />
+          <div className="absolute w-44 h-44 rounded-full bg-[#12805c]/10 blur-2xl" />
+          <div className="absolute top-3 left-4 w-1.5 h-3 rounded-[1px] bg-[#12805c]/50 rotate-12" />
           <div className="absolute bottom-4 right-5 w-1.5 h-3 rounded-[1px] bg-[#a78bfa]/50 -rotate-12" />
           {/* Phone deposit receipt */}
           <div className="relative w-56 bg-[var(--card)] border-2 border-[var(--card-border)] rounded-2xl shadow-2xl p-4 space-y-1.5">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-[#00e5a0]/15 border border-[#00e5a0]/30 flex items-center justify-center">
-                <DeviceMobile size={16} weight="fill" className="text-[#00e5a0]" />
+              <div className="w-8 h-8 rounded-full bg-[#12805c]/15 border border-[#12805c]/30 flex items-center justify-center">
+                <DeviceMobile size={16} weight="fill" className="text-[#12805c]" />
               </div>
               <div className="flex-1">
                 <p className="text-[10px] font-mono font-bold uppercase">M-PESA</p>
                 <p className="text-[9px] font-mono text-[var(--muted)]">STK Push · {sw ? "sasa hivi" : "just now"}</p>
               </div>
             </div>
-            <p className="text-2xl font-mono font-black text-[#00e5a0] tabular-nums">+ TSh 5,000</p>
-            <p className="flex items-center gap-1 text-[10px] font-mono font-bold text-[#00e5a0] uppercase">
+            <p className="text-2xl font-mono font-black text-[#12805c] tabular-nums">+ TSh 5,000</p>
+            <p className="flex items-center gap-1 text-[10px] font-mono font-bold text-[#12805c] uppercase">
               <CheckCircle size={12} weight="fill" /> {sw ? "Imekamilika" : "Completed"}
               <span className="text-[var(--muted)] normal-case font-normal">· GUAP {sw ? "salio" : "balance"}</span>
             </p>
@@ -108,11 +108,11 @@ export function HowItWorks() {
         <div className="relative h-44 flex items-center justify-center overflow-hidden rounded-xl bg-[var(--background)] border border-[var(--card-border)]">
           <div className="absolute w-44 h-44 rounded-full bg-purple-500/10 blur-2xl" />
           <div className="absolute top-4 right-6 w-1.5 h-3 rounded-[1px] bg-[#fbbf24]/50 rotate-45" />
-          <div className="absolute bottom-3 left-5 w-1.5 h-3 rounded-[1px] bg-[#00e5a0]/50 -rotate-6" />
+          <div className="absolute bottom-3 left-5 w-1.5 h-3 rounded-[1px] bg-[#12805c]/50 -rotate-6" />
           {/* Mini market card with sparkline */}
           <div className="relative w-64 bg-[var(--card)] border-2 border-[var(--card-border)] rounded-2xl shadow-2xl p-3.5">
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="w-7 h-7 rounded-lg bg-[#00e5a0]/10 border border-[#00e5a0]/20 flex items-center justify-center text-sm">⚽</span>
+              <span className="w-7 h-7 rounded-lg bg-[#12805c]/10 border border-[#12805c]/20 flex items-center justify-center text-sm">⚽</span>
               <p className="text-[11px] font-mono font-bold leading-tight">
                 {sw ? "Je, Simba itashinda derby?" : "Will Simba win the derby?"}
               </p>
@@ -120,14 +120,14 @@ export function HowItWorks() {
             <svg viewBox="0 0 220 24" className="w-full h-5 mb-1.5">
               <polyline
                 points="0,18 30,16 55,19 80,12 110,14 140,8 170,10 200,4 220,6"
-                fill="none" stroke="#00e5a0" strokeWidth="2" strokeLinecap="round"
+                fill="none" stroke="#12805c" strokeWidth="2" strokeLinecap="round"
               />
             </svg>
             <div className="flex gap-1.5">
-              <span className="flex-1 py-1.5 text-center text-[10px] font-mono font-black bg-[#00e5a0]/20 text-[#00e5a0] border border-[#00e5a0]/40 rounded-lg">
+              <span className="flex-1 py-1.5 text-center text-[10px] font-mono font-black bg-[#12805c]/20 text-[#12805c] border border-[#12805c]/40 rounded-lg">
                 YES 45% · 2.2×
               </span>
-              <span className="flex-1 py-1.5 text-center text-[10px] font-mono font-black bg-red-500/15 text-red-400 border border-red-500/30 rounded-lg">
+              <span className="flex-1 py-1.5 text-center text-[10px] font-mono font-black bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 rounded-lg">
                 NO 55% · 1.8×
               </span>
             </div>
@@ -147,18 +147,18 @@ export function HowItWorks() {
       visual: (
         <div className="relative h-44 flex items-center justify-center overflow-hidden rounded-xl bg-[var(--background)] border border-[var(--card-border)]">
           <Confetti />
-          <div className="absolute w-44 h-44 rounded-full bg-[#00e5a0]/15 blur-2xl" />
+          <div className="absolute w-44 h-44 rounded-full bg-[#12805c]/15 blur-2xl" />
           {/* Winning ticket */}
-          <div className="relative w-60 bg-[var(--card)] border-2 border-[#00e5a0]/40 rounded-2xl shadow-2xl p-4">
+          <div className="relative w-60 bg-[var(--card)] border-2 border-[#12805c]/40 rounded-2xl shadow-2xl p-4">
             <div className="flex items-center justify-between mb-0.5">
               <p className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">{sw ? "Ukishinda" : "To Win"}</p>
-              <span className="text-[9px] font-mono font-bold text-[#00e5a0] uppercase">✓ {sw ? "Umeshinda" : "You Won"}</span>
+              <span className="text-[9px] font-mono font-bold text-[#12805c] uppercase">✓ {sw ? "Umeshinda" : "You Won"}</span>
             </div>
-            <p className="text-3xl font-mono font-black text-[#00e5a0] tabular-nums leading-none">TSh 11,000</p>
+            <p className="text-3xl font-mono font-black text-[#12805c] tabular-nums leading-none">TSh 11,000</p>
             <p className="text-[9px] font-mono text-[var(--muted)] mt-1 border-b border-dashed border-[var(--card-border)] pb-2">
               Simba YES · TSh 5,000 @ 2.2×
             </p>
-            <div className="mt-2.5 w-full py-2 flex items-center justify-center gap-1.5 bg-[#00e5a0] text-black rounded-lg text-[11px] font-mono font-black uppercase tracking-wider">
+            <div className="mt-2.5 w-full py-2 flex items-center justify-center gap-1.5 bg-[#12805c] text-black rounded-lg text-[11px] font-mono font-black uppercase tracking-wider">
               <Trophy size={13} weight="fill" /> {sw ? "Lipwa Sasa" : "Cash Out"}
             </div>
           </div>
@@ -205,7 +205,7 @@ export function HowItWorks() {
               {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--card-border)]">
                 <p className="text-xs font-mono font-black uppercase tracking-wider flex items-center gap-1.5">
-                  <Lightning size={13} weight="fill" className="text-[#00e5a0]" />
+                  <Lightning size={13} weight="fill" className="text-[#12805c]" />
                   {sw ? "GUAP Inavyofanya Kazi" : "How GUAP Works"}
                 </p>
                 <button onClick={dismiss} aria-label="Close" className="p-1.5 text-[var(--muted)] hover:text-[var(--foreground)] transition-colors">
@@ -244,7 +244,7 @@ export function HowItWorks() {
                       aria-label={`Step ${i + 1}`}
                       className={
                         i === step
-                          ? "w-5 h-1.5 rounded-full bg-[#00e5a0] transition-all"
+                          ? "w-5 h-1.5 rounded-full bg-[#12805c] transition-all"
                           : "w-1.5 h-1.5 rounded-full bg-[var(--card-border)] transition-all"
                       }
                     />
@@ -264,7 +264,7 @@ export function HowItWorks() {
                     <Link
                       href="/auth/register"
                       onClick={() => setExpanded(false)}
-                      className="flex-1 py-3 text-center bg-[#00e5a0] text-black font-mono font-black text-xs uppercase tracking-wider rounded-xl active:opacity-90"
+                      className="flex-1 py-3 text-center bg-[#12805c] text-black font-mono font-black text-xs uppercase tracking-wider rounded-xl active:opacity-90"
                     >
                       {sw ? "Jisajili Bure →" : "Get Started — It's Free →"}
                     </Link>
@@ -289,7 +289,7 @@ export function HowItWorks() {
             >
               <button onClick={open} className="flex-1 flex items-center justify-between px-4 py-2.5">
                 <span className="flex items-center gap-2 text-[11px] font-mono font-black uppercase tracking-wider">
-                  <Question size={14} weight="fill" className="text-[#00e5a0]" />
+                  <Question size={14} weight="fill" className="text-[#12805c]" />
                   {sw ? "GUAP inavyofanya kazi" : "How GUAP works"}
                 </span>
                 <CaretUp size={13} weight="bold" className="text-[var(--muted)]" />

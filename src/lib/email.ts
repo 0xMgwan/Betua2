@@ -40,16 +40,16 @@ export async function sendNewMarketsEmail(to: string, markets: Market[], locale:
     const img = m.imageUrl || 'https://guap.gold/og-image.png';
     return `<tr><td style="padding:16px;border-bottom:1px solid #333;">
       ${i === 0 ? `<img src="${img}" width="100%" height="140" style="display:block;object-fit:cover;border-radius:8px;margin-bottom:12px;" />` : ''}
-      <p style="margin:0 0 4px;font-size:11px;color:#00e5a0;">${getEmoji(m.category)} ${m.category}</p>
+      <p style="margin:0 0 4px;font-size:11px;color:#12805c;">${getEmoji(m.category)} ${m.category}</p>
       <p style="margin:0 0 12px;font-size:17px;font-weight:bold;color:#fff;">${m.title}</p>
-      <a href="${BASE_URL}/markets/${m.id}" style="display:inline-block;padding:10px 24px;background:#00e5a0;color:#000;text-decoration:none;font-weight:bold;border-radius:6px;">${isSw ? '🎯 TABIRI' : '🎯 PREDICT'}</a>
+      <a href="${BASE_URL}/markets/${m.id}" style="display:inline-block;padding:10px 24px;background:#12805c;color:#000;text-decoration:none;font-weight:bold;border-radius:6px;">${isSw ? '🎯 TABIRI' : '🎯 PREDICT'}</a>
     </td></tr>`;
   }).join('');
 
   const html = `<!DOCTYPE html><html><body style="margin:0;padding:40px 20px;background:#0a0a0a;font-family:sans-serif;">
   <table width="600" style="margin:0 auto;background:#111;border-radius:12px;overflow:hidden;">
-    <tr><td style="padding:28px;text-align:center;border-bottom:2px solid #00e5a0;">
-      <h1 style="margin:0;color:#00e5a0;font-size:32px;">GUAP</h1>
+    <tr><td style="padding:28px;text-align:center;border-bottom:2px solid #12805c;">
+      <h1 style="margin:0;color:#12805c;font-size:32px;">GUAP</h1>
       <p style="margin:6px 0 0;color:#666;font-size:11px;">${isSw ? 'TABIRI • BIASHARA • SHINDA' : 'PREDICT • TRADE • WIN'}</p>
     </td></tr>
     <tr><td style="padding:24px;">
@@ -58,7 +58,7 @@ export async function sendNewMarketsEmail(to: string, markets: Market[], locale:
     </td></tr>
     <tr><td style="padding:0 24px;"><table width="100%">${cards}</table></td></tr>
     <tr><td style="padding:24px;text-align:center;">
-      <a href="${BASE_URL}/markets" style="display:inline-block;padding:14px 32px;border:2px solid #00e5a0;color:#00e5a0;text-decoration:none;font-weight:bold;border-radius:8px;">${isSw ? '👀 TAZAMA YOTE' : '👀 VIEW ALL'}</a>
+      <a href="${BASE_URL}/markets" style="display:inline-block;padding:14px 32px;border:2px solid #12805c;color:#12805c;text-decoration:none;font-weight:bold;border-radius:8px;">${isSw ? '👀 TAZAMA YOTE' : '👀 VIEW ALL'}</a>
     </td></tr>
     <tr><td style="padding:20px;text-align:center;border-top:1px solid #333;">
       <a href="${BASE_URL}/unsubscribe?token=${unsubscribeToken}" style="color:#666;font-size:11px;">${isSw ? 'Jiondoe' : 'Unsubscribe'}</a>
@@ -110,7 +110,7 @@ export async function sendWelcomeEmail(to: string, locale: string = 'en', unsubs
 <body style="margin:0;padding:0;background:#000;font-family:'Courier New',monospace;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#000;padding:20px;">
     <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="background:#0a0a0a;border:1px solid #00e5a0;">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#0a0a0a;border:1px solid #12805c;">
         
         <tr><td style="background:#1a1a1a;padding:12px 20px;border-bottom:1px solid #333;">
           <span style="display:inline-block;width:12px;height:12px;background:#ff5f56;border-radius:50%;margin-right:8px;"></span>
@@ -119,33 +119,33 @@ export async function sendWelcomeEmail(to: string, locale: string = 'en', unsubs
         </td></tr>
         
         <tr><td style="padding:40px;text-align:center;background:linear-gradient(180deg,#0a0a0a,#111);">
-          <h1 style="margin:0;color:#00e5a0;font-size:48px;font-weight:900;letter-spacing:-2px;">GUAP</h1>
-          <p style="margin:8px 0 0;color:#00e5a0;font-size:11px;letter-spacing:4px;">${tagline}</p>
+          <h1 style="margin:0;color:#12805c;font-size:48px;font-weight:900;letter-spacing:-2px;">GUAP</h1>
+          <p style="margin:8px 0 0;color:#12805c;font-size:11px;letter-spacing:4px;">${tagline}</p>
         </td></tr>
         
         <tr><td style="padding:30px 40px;">
-          <p style="margin:0 0 8px;color:#00e5a0;font-size:12px;font-family:monospace;">$ ./welcome --user="${name}"</p>
+          <p style="margin:0 0 8px;color:#12805c;font-size:12px;font-family:monospace;">$ ./welcome --user="${name}"</p>
           <h2 style="margin:0 0 16px;color:#fff;font-size:26px;">${welcomeTitle}</h2>
           <p style="margin:0;color:#aaa;font-size:15px;line-height:1.7;">${welcomeText}</p>
         </td></tr>
         
         <tr><td style="padding:0 40px 30px;">
-          <p style="margin:0 0 16px;color:#00e5a0;font-size:12px;font-family:monospace;">$ cat how_it_works.txt</p>
+          <p style="margin:0 0 16px;color:#12805c;font-size:12px;font-family:monospace;">$ cat how_it_works.txt</p>
           <table width="100%" style="background:#111;border:1px solid #333;border-radius:8px;">
             <tr>
               <td style="padding:20px;text-align:center;border-right:1px solid #333;">
-                <div style="width:50px;height:50px;margin:0 auto 12px;background:#1a1a1a;border:2px solid #00e5a0;border-radius:50%;line-height:50px;font-size:24px;">💰</div>
-                <p style="margin:0;color:#00e5a0;font-size:14px;font-weight:bold;">${step1Title}</p>
+                <div style="width:50px;height:50px;margin:0 auto 12px;background:#1a1a1a;border:2px solid #12805c;border-radius:50%;line-height:50px;font-size:24px;">💰</div>
+                <p style="margin:0;color:#12805c;font-size:14px;font-weight:bold;">${step1Title}</p>
                 <p style="margin:8px 0 0;color:#888;font-size:12px;">${step1Desc}</p>
               </td>
               <td style="padding:20px;text-align:center;border-right:1px solid #333;">
-                <div style="width:50px;height:50px;margin:0 auto 12px;background:#1a1a1a;border:2px solid #00e5a0;border-radius:50%;line-height:50px;font-size:24px;">🎯</div>
-                <p style="margin:0;color:#00e5a0;font-size:14px;font-weight:bold;">${step2Title}</p>
+                <div style="width:50px;height:50px;margin:0 auto 12px;background:#1a1a1a;border:2px solid #12805c;border-radius:50%;line-height:50px;font-size:24px;">🎯</div>
+                <p style="margin:0;color:#12805c;font-size:14px;font-weight:bold;">${step2Title}</p>
                 <p style="margin:8px 0 0;color:#888;font-size:12px;">${step2Desc}</p>
               </td>
               <td style="padding:20px;text-align:center;">
-                <div style="width:50px;height:50px;margin:0 auto 12px;background:#1a1a1a;border:2px solid #00e5a0;border-radius:50%;line-height:50px;font-size:24px;">🏆</div>
-                <p style="margin:0;color:#00e5a0;font-size:14px;font-weight:bold;">${step3Title}</p>
+                <div style="width:50px;height:50px;margin:0 auto 12px;background:#1a1a1a;border:2px solid #12805c;border-radius:50%;line-height:50px;font-size:24px;">🏆</div>
+                <p style="margin:0;color:#12805c;font-size:14px;font-weight:bold;">${step3Title}</p>
                 <p style="margin:8px 0 0;color:#888;font-size:12px;">${step3Desc}</p>
               </td>
             </tr>
@@ -153,7 +153,7 @@ export async function sendWelcomeEmail(to: string, locale: string = 'en', unsubs
         </td></tr>
         
         <tr><td style="padding:0 40px 30px;">
-          <p style="margin:0 0 16px;color:#00e5a0;font-size:12px;font-family:monospace;">$ ls /markets/categories/</p>
+          <p style="margin:0 0 16px;color:#12805c;font-size:12px;font-family:monospace;">$ ls /markets/categories/</p>
           <table width="100%"><tr>
             <td style="padding:8px;text-align:center;"><span style="display:inline-block;padding:8px 16px;background:#1a1a1a;border:1px solid #333;border-radius:4px;color:#fff;font-size:13px;">⚽ ${cat1}</span></td>
             <td style="padding:8px;text-align:center;"><span style="display:inline-block;padding:8px 16px;background:#1a1a1a;border:1px solid #333;border-radius:4px;color:#fff;font-size:13px;">🏛️ ${cat2}</span></td>
@@ -163,14 +163,14 @@ export async function sendWelcomeEmail(to: string, locale: string = 'en', unsubs
         </td></tr>
         
         <tr><td style="padding:0 40px 40px;text-align:center;">
-          <a href="${BASE_URL}/markets" style="display:inline-block;padding:18px 50px;background:linear-gradient(135deg,#00e5a0,#00b4d8);color:#000;text-decoration:none;font-weight:bold;font-size:16px;border-radius:8px;box-shadow:0 4px 15px rgba(0,229,160,0.3);">${ctaText}</a>
+          <a href="${BASE_URL}/markets" style="display:inline-block;padding:18px 50px;background:linear-gradient(135deg,#12805c,#00b4d8);color:#000;text-decoration:none;font-weight:bold;font-size:16px;border-radius:8px;box-shadow:0 4px 15px rgba(0,229,160,0.3);">${ctaText}</a>
         </td></tr>
         
         <tr><td style="padding:20px 40px;background:#111;border-top:1px solid #333;">
           <table width="100%"><tr>
-            <td style="text-align:center;"><p style="margin:0;color:#00e5a0;font-size:20px;">🎁</p><p style="margin:4px 0 0;color:#fff;font-size:13px;font-weight:bold;">${bonus1}</p><p style="margin:4px 0 0;color:#888;font-size:11px;">${bonus1Desc}</p></td>
-            <td style="text-align:center;"><p style="margin:0;color:#00e5a0;font-size:20px;">📊</p><p style="margin:4px 0 0;color:#fff;font-size:13px;font-weight:bold;">Leaderboard</p><p style="margin:4px 0 0;color:#888;font-size:11px;">${bonus2Desc}</p></td>
-            <td style="text-align:center;"><p style="margin:0;color:#00e5a0;font-size:20px;">⚡</p><p style="margin:4px 0 0;color:#fff;font-size:13px;font-weight:bold;">${bonus3}</p><p style="margin:4px 0 0;color:#888;font-size:11px;">${bonus3Desc}</p></td>
+            <td style="text-align:center;"><p style="margin:0;color:#12805c;font-size:20px;">🎁</p><p style="margin:4px 0 0;color:#fff;font-size:13px;font-weight:bold;">${bonus1}</p><p style="margin:4px 0 0;color:#888;font-size:11px;">${bonus1Desc}</p></td>
+            <td style="text-align:center;"><p style="margin:0;color:#12805c;font-size:20px;">📊</p><p style="margin:4px 0 0;color:#fff;font-size:13px;font-weight:bold;">Leaderboard</p><p style="margin:4px 0 0;color:#888;font-size:11px;">${bonus2Desc}</p></td>
+            <td style="text-align:center;"><p style="margin:0;color:#12805c;font-size:20px;">⚡</p><p style="margin:4px 0 0;color:#fff;font-size:13px;font-weight:bold;">${bonus3}</p><p style="margin:4px 0 0;color:#888;font-size:11px;">${bonus3Desc}</p></td>
           </tr></table>
         </td></tr>
         
@@ -198,7 +198,7 @@ export async function sendPasswordResetEmail(to: string, resetToken: string) {
 <body style="margin:0;padding:0;background:#000;font-family:'Courier New',monospace;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#000;padding:20px;">
     <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#0a0a0a;border:1px solid #00e5a0;">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#0a0a0a;border:1px solid #12805c;">
         <tr><td style="background:#1a1a1a;padding:12px 20px;border-bottom:1px solid #333;">
           <span style="display:inline-block;width:12px;height:12px;background:#ff5f56;border-radius:50%;margin-right:8px;"></span>
           <span style="display:inline-block;width:12px;height:12px;background:#ffbd2e;border-radius:50%;margin-right:8px;"></span>
@@ -206,18 +206,18 @@ export async function sendPasswordResetEmail(to: string, resetToken: string) {
           <span style="margin-left:12px;color:#666;font-size:11px;">password_reset.sh</span>
         </td></tr>
         <tr><td style="padding:40px;text-align:center;">
-          <h1 style="margin:0 0 4px;color:#00e5a0;font-size:40px;font-weight:900;letter-spacing:-2px;">GUAP</h1>
+          <h1 style="margin:0 0 4px;color:#12805c;font-size:40px;font-weight:900;letter-spacing:-2px;">GUAP</h1>
           <p style="margin:0;color:#555;font-size:11px;letter-spacing:4px;">PREDICT • TRADE • WIN</p>
         </td></tr>
         <tr><td style="padding:0 40px 32px;">
-          <p style="margin:0 0 6px;color:#00e5a0;font-size:11px;">$ ./reset_password --user="${name}"</p>
+          <p style="margin:0 0 6px;color:#12805c;font-size:11px;">$ ./reset_password --user="${name}"</p>
           <h2 style="margin:0 0 12px;color:#fff;font-size:22px;">Password Reset Request</h2>
           <p style="margin:0 0 24px;color:#aaa;font-size:14px;line-height:1.7;">
             Hey <strong style="color:#fff;">${name}</strong>, we received a request to reset your GUAP password.<br>
-            Click the button below — this link expires in <strong style="color:#00e5a0;">1 hour</strong>.
+            Click the button below — this link expires in <strong style="color:#12805c;">1 hour</strong>.
           </p>
           <div style="text-align:center;">
-            <a href="${resetUrl}" style="display:inline-block;padding:16px 48px;background:#00e5a0;color:#000;text-decoration:none;font-weight:900;font-size:15px;letter-spacing:1px;border-radius:6px;">
+            <a href="${resetUrl}" style="display:inline-block;padding:16px 48px;background:#12805c;color:#000;text-decoration:none;font-weight:900;font-size:15px;letter-spacing:1px;border-radius:6px;">
               RESET MY PASSWORD
             </a>
           </div>

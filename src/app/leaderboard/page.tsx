@@ -25,7 +25,7 @@ interface LeaderEntry {
 }
 
 const RANK_ICONS = [
-  <Crown key={1} size={18} className="text-yellow-400" />,
+  <Crown key={1} size={18} className="text-yellow-600 dark:text-yellow-400" />,
   <Medal key={2} size={18} className="text-gray-300" />,
   <Medal key={3} size={18} className="text-amber-600" />,
 ];
@@ -55,7 +55,7 @@ export default function LeaderboardPage() {
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="text-center mb-10">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-400/20 to-yellow-600/10 flex items-center justify-center mx-auto mb-4">
-            <Trophy size={32} className="text-yellow-400" />
+            <Trophy size={32} className="text-yellow-600 dark:text-yellow-400" />
           </div>
           <h1 className="text-3xl font-bold mb-2">{t.leaderboard.title}</h1>
           <p className="text-[var(--muted)]">{t.leaderboard.subtitle}</p>

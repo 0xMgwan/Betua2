@@ -73,7 +73,7 @@ export function UserProfileModal({ username, onClose }: UserProfileModalProps) {
           {/* Terminal header */}
           <div className="flex items-center justify-between px-4 py-2.5 border-b-2 border-[var(--card-border)] bg-[var(--card)]">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-[#00e5a0]" />
+              <div className="w-2 h-2 bg-[#12805c]" />
               <span className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">USER.PROFILE</span>
             </div>
             <button onClick={onClose} className="p-1 hover:bg-[var(--background)] transition-colors border border-transparent hover:border-[var(--card-border)]">
@@ -94,7 +94,7 @@ export function UserProfileModal({ username, onClose }: UserProfileModalProps) {
             </div>
           ) : error ? (
             <div className="p-8 text-center font-mono text-sm text-[var(--muted)]">
-              <span className="text-red-400">ERR:</span> {error}
+              <span className="text-red-600 dark:text-red-400">ERR:</span> {error}
             </div>
           ) : profile ? (
             <div>
@@ -181,7 +181,7 @@ export function UserProfileModal({ username, onClose }: UserProfileModalProps) {
               <div className="px-4 py-2 border-t border-[var(--card-border)] flex items-center justify-between">
                 <span className="text-[8px] font-mono text-[var(--muted)]/50 uppercase">GUAP.PROFILE.V1</span>
                 <div className="flex gap-1">
-                  <div className="w-1 h-1 bg-[#00e5a0] animate-pulse" />
+                  <div className="w-1 h-1 bg-[#12805c] animate-pulse" />
                   <div className="w-1 h-1 bg-[var(--muted)]/30" />
                   <div className="w-1 h-1 bg-[var(--muted)]/30" />
                 </div>

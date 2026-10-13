@@ -89,14 +89,14 @@ export function ActivityTicker({ className, marketIds, compact }: { className?: 
               <span className="text-[var(--muted)] shrink-0">·</span>
               <span className="text-[var(--foreground)] font-bold shrink-0">@{activity.user.username}</span>
               {isTrade ? (
-                <span className={cn("font-bold shrink-0", isBuy ? "text-[var(--accent)]" : "text-red-400")}>
+                <span className={cn("font-bold shrink-0", isBuy ? "text-[var(--accent)]" : "text-red-600 dark:text-red-400")}>
                   {isBuy ? (locale === "sw" ? "alinunua" : "bought") : (locale === "sw" ? "aliuza" : "sold")} {side}
                 </span>
               ) : (
-                <span className="text-purple-400 font-bold shrink-0">{locale === "sw" ? "alitatua" : "resolved"} → {activity.details.outcome}</span>
+                <span className="text-purple-600 dark:text-purple-400 font-bold shrink-0">{locale === "sw" ? "alitatua" : "resolved"} → {activity.details.outcome}</span>
               )}
               {isTrade && activity.details.amountTzs && (
-                <span className={cn("font-bold shrink-0", isBuy ? "text-[var(--accent)]" : "text-red-400")}>
+                <span className={cn("font-bold shrink-0", isBuy ? "text-[var(--accent)]" : "text-red-600 dark:text-red-400")}>
                   {isBuy ? "+" : "-"}{formatTZS(activity.details.amountTzs)}
                 </span>
               )}
@@ -142,26 +142,26 @@ export function ActivityTicker({ className, marketIds, compact }: { className?: 
                 </span>
                 {isTrade ? (
                   <>
-                    <span className={cn("text-[11px] font-bold shrink-0", isBuy ? "text-[var(--accent)]" : "text-red-400")}>
+                    <span className={cn("text-[11px] font-bold shrink-0", isBuy ? "text-[var(--accent)]" : "text-red-600 dark:text-red-400")}>
                       {isBuy ? (locale === "sw" ? "alinunua" : "bought") : (locale === "sw" ? "aliuza" : "sold")}
                     </span>
                     <span className={cn(
                       "px-1 py-0.5 border text-[8px] font-bold shrink-0",
-                      side === "YES" ? "border-[#00e5a0]/30 text-[#00e5a0]"
-                        : side === "NO" ? "border-red-500/30 text-red-400"
+                      side === "YES" ? "border-[#12805c]/30 text-[#12805c]"
+                        : side === "NO" ? "border-red-500/30 text-red-600 dark:text-red-400"
                         : "border-[#00b4d8]/30 text-[#00b4d8]"
                     )}>
                       {side}
                     </span>
                   </>
                 ) : (
-                  <span className="text-[11px] text-purple-400 font-bold shrink-0">
+                  <span className="text-[11px] text-purple-600 dark:text-purple-400 font-bold shrink-0">
                     {locale === "sw" ? "alitatua" : "resolved"} → {activity.details.outcome}
                   </span>
                 )}
               </div>
               {isTrade && activity.details.amountTzs && (
-                <span className={cn("text-[11px] font-bold shrink-0", isBuy ? "text-[var(--accent)]" : "text-red-400")}>
+                <span className={cn("text-[11px] font-bold shrink-0", isBuy ? "text-[var(--accent)]" : "text-red-600 dark:text-red-400")}>
                   {isBuy ? "+" : "-"}{formatTZS(activity.details.amountTzs)}
                 </span>
               )}

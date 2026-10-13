@@ -29,7 +29,7 @@ interface EventChartProps {
 }
 
 const COLORS = [
-  "#00e5a0", "#00b4d8", "#f59e0b", "#a78bfa", 
+  "#12805c", "#00b4d8", "#f59e0b", "#a78bfa", 
   "#fb923c", "#34d399", "#f472b6", "#ef4444"
 ];
 
@@ -299,7 +299,7 @@ export function EventChart({ markets, className }: EventChartProps) {
         </div>
         <div className="flex items-center gap-2">
           {hoverTime !== null && <span className="text-[8px] font-mono text-[var(--muted)]">{fmtTime(hoverTime)}</span>}
-          <span className="text-[10px] font-mono text-[#00e5a0]" style={{ opacity: cursorOn ? 1 : 0 }}>▮</span>
+          <span className="text-[10px] font-mono text-[#12805c]" style={{ opacity: cursorOn ? 1 : 0 }}>▮</span>
         </div>
       </div>
 
@@ -397,7 +397,7 @@ export function EventChart({ markets, className }: EventChartProps) {
         <span className="text-[8px] font-mono text-[var(--foreground)] opacity-20 uppercase tracking-widest">
           {markets.length} MARKETS · LIVE
         </span>
-        <span className="text-[8px] font-mono text-[#00e5a0]" style={{ opacity: cursorOn ? 0.6 : 0.15 }}>▮ STREAMING</span>
+        <span className="text-[8px] font-mono text-[#12805c]" style={{ opacity: cursorOn ? 0.6 : 0.15 }}>▮ STREAMING</span>
       </div>
     </div>
   );

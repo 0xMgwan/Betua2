@@ -36,8 +36,8 @@ interface EndpointProps {
 function Endpoint({ method, path, description, auth = true, body, query, response, example }: EndpointProps) {
   const [expanded, setExpanded] = useState(false);
   const methodColors = {
-    GET: "bg-green-500/20 text-green-400 border-green-500/30",
-    POST: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+    GET: "bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30",
+    POST: "bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30",
   };
 
   return (
@@ -67,7 +67,7 @@ function Endpoint({ method, path, description, auth = true, body, query, respons
               <div className="bg-[var(--background)] p-3 font-mono text-xs space-y-1">
                 {Object.entries(query).map(([key, desc]) => (
                   <div key={key}>
-                    <span className="text-purple-400">{key}</span>
+                    <span className="text-purple-600 dark:text-purple-400">{key}</span>
                     <span className="text-[var(--muted)]"> — {desc}</span>
                   </div>
                 ))}
@@ -81,7 +81,7 @@ function Endpoint({ method, path, description, auth = true, body, query, respons
               <div className="bg-[var(--background)] p-3 font-mono text-xs space-y-1">
                 {Object.entries(body).map(([key, desc]) => (
                   <div key={key}>
-                    <span className="text-orange-400">{key}</span>
+                    <span className="text-orange-600 dark:text-orange-400">{key}</span>
                     <span className="text-[var(--muted)]"> — {desc}</span>
                   </div>
                 ))}
@@ -135,7 +135,7 @@ function CodeBlock({ code, language = "bash" }: { code: string; language?: strin
         onClick={copyToClipboard}
         className="absolute top-2 right-2 p-1.5 bg-[var(--card)] border border-[var(--card-border)] opacity-0 group-hover:opacity-100 transition-opacity"
       >
-        {copied ? <CheckCircle size={14} className="text-green-400" /> : <Copy size={14} />}
+        {copied ? <CheckCircle size={14} className="text-green-600 dark:text-green-400" /> : <Copy size={14} />}
       </button>
     </div>
   );
@@ -183,15 +183,15 @@ export default function DevelopersPage() {
             className="flex flex-wrap justify-center gap-4"
           >
             <div className="flex items-center gap-2 px-4 py-2 bg-[var(--card)] border border-[var(--card-border)]">
-              <Globe size={16} className="text-blue-400" />
+              <Globe size={16} className="text-blue-600 dark:text-blue-400" />
               <span className="text-sm font-mono">REST API</span>
             </div>
             <div className="flex items-center gap-2 px-4 py-2 bg-[var(--card)] border border-[var(--card-border)]">
-              <ShieldCheck size={16} className="text-yellow-400" />
+              <ShieldCheck size={16} className="text-yellow-600 dark:text-yellow-400" />
               <span className="text-sm font-mono">API Key Auth</span>
             </div>
             <div className="flex items-center gap-2 px-4 py-2 bg-[var(--card)] border border-[var(--card-border)]">
-              <Gauge size={16} className="text-green-400" />
+              <Gauge size={16} className="text-green-600 dark:text-green-400" />
               <span className="text-sm font-mono">Rate Limited</span>
             </div>
           </motion.div>
@@ -204,7 +204,7 @@ export default function DevelopersPage() {
           {/* Quick Start */}
           <div className="mb-12">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <Lightning size={20} className="text-yellow-400" />
+              <Lightning size={20} className="text-yellow-600 dark:text-yellow-400" />
               Quick Start
             </h2>
 
@@ -253,7 +253,7 @@ export default function DevelopersPage() {
           {/* Authentication */}
           <div className="mb-12">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <Key size={20} className="text-yellow-400" />
+              <Key size={20} className="text-yellow-600 dark:text-yellow-400" />
               Authentication
             </h2>
 
@@ -266,9 +266,9 @@ export default function DevelopersPage() {
               <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
                   { tier: "FREE", limit: "100/min", color: "text-gray-400" },
-                  { tier: "BASIC", limit: "500/min", color: "text-blue-400" },
-                  { tier: "PRO", limit: "2,000/min", color: "text-purple-400" },
-                  { tier: "ENTERPRISE", limit: "10,000/min", color: "text-yellow-400" },
+                  { tier: "BASIC", limit: "500/min", color: "text-blue-600 dark:text-blue-400" },
+                  { tier: "PRO", limit: "2,000/min", color: "text-purple-600 dark:text-purple-400" },
+                  { tier: "ENTERPRISE", limit: "10,000/min", color: "text-yellow-600 dark:text-yellow-400" },
                 ].map((t) => (
                   <div key={t.tier} className="p-3 bg-[var(--background)] border border-[var(--card-border)] text-center">
                     <div className={`text-xs font-mono font-bold ${t.color}`}>{t.tier}</div>
@@ -287,7 +287,7 @@ export default function DevelopersPage() {
             </h2>
 
             {/* Users */}
-            <h3 className="text-sm font-mono font-bold text-purple-400 mb-3 flex items-center gap-2 mt-6">
+            <h3 className="text-sm font-mono font-bold text-purple-600 dark:text-purple-400 mb-3 flex items-center gap-2 mt-6">
               <Users size={16} />
               Users
             </h3>
@@ -318,7 +318,7 @@ export default function DevelopersPage() {
             />
 
             {/* Wallet */}
-            <h3 className="text-sm font-mono font-bold text-green-400 mb-3 flex items-center gap-2 mt-6">
+            <h3 className="text-sm font-mono font-bold text-green-600 dark:text-green-400 mb-3 flex items-center gap-2 mt-6">
               <Wallet size={16} />
               Wallet
             </h3>
@@ -380,7 +380,7 @@ export default function DevelopersPage() {
             />
 
             {/* Markets */}
-            <h3 className="text-sm font-mono font-bold text-blue-400 mb-3 flex items-center gap-2 mt-6">
+            <h3 className="text-sm font-mono font-bold text-blue-600 dark:text-blue-400 mb-3 flex items-center gap-2 mt-6">
               <ChartLine size={16} />
               Markets
             </h3>
@@ -473,7 +473,7 @@ export default function DevelopersPage() {
             />
 
             {/* Trading */}
-            <h3 className="text-sm font-mono font-bold text-orange-400 mb-3 flex items-center gap-2 mt-6">
+            <h3 className="text-sm font-mono font-bold text-orange-600 dark:text-orange-400 mb-3 flex items-center gap-2 mt-6">
               <ArrowsLeftRight size={16} />
               Trading
             </h3>
@@ -525,7 +525,7 @@ export default function DevelopersPage() {
             />
 
             {/* Positions */}
-            <h3 className="text-sm font-mono font-bold text-pink-400 mb-3 flex items-center gap-2 mt-6">
+            <h3 className="text-sm font-mono font-bold text-pink-600 dark:text-pink-400 mb-3 flex items-center gap-2 mt-6">
               <CheckCircle size={16} />
               Positions & Redemption
             </h3>
@@ -580,7 +580,7 @@ export default function DevelopersPage() {
           {/* Webhooks */}
           <div className="mb-12">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <Lightning size={20} className="text-yellow-400" />
+              <Lightning size={20} className="text-yellow-600 dark:text-yellow-400" />
               Webhooks
             </h2>
             <div className="p-4 bg-[var(--card)] border border-[var(--card-border)] space-y-4">
@@ -600,7 +600,7 @@ export default function DevelopersPage() {
                   ["market.resolved", "One of your markets resolved (includes outcome)."],
                 ].map(([k, v]) => (
                   <div key={k} className="flex gap-3 p-2 bg-[var(--background)] border border-[var(--card-border)]">
-                    <span className="text-yellow-400 font-bold shrink-0 w-44">{k}</span>
+                    <span className="text-yellow-600 dark:text-yellow-400 font-bold shrink-0 w-44">{k}</span>
                     <span className="text-[var(--muted)]">{v}</span>
                   </div>
                 ))}
@@ -625,7 +625,7 @@ Verify: HMAC-SHA256(rawBody, yourSigningSecret) === signature`}</div>
           {/* Money model */}
           <div className="mb-12">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <Wallet size={20} className="text-green-400" />
+              <Wallet size={20} className="text-green-600 dark:text-green-400" />
               How Money Works
             </h2>
 
@@ -674,7 +674,7 @@ Verify: HMAC-SHA256(rawBody, yourSigningSecret) === signature`}</div>
           {/* Fees */}
           <div className="mb-12">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <Wallet size={20} className="text-green-400" />
+              <Wallet size={20} className="text-green-600 dark:text-green-400" />
               Fee Structure
             </h2>
 
@@ -691,7 +691,7 @@ Verify: HMAC-SHA256(rawBody, yourSigningSecret) === signature`}</div>
                   <div className="text-[10px] text-[var(--muted)] mt-1">Deducted at redemption</div>
                 </div>
                 <div className="p-4 bg-[var(--background)] border border-[var(--card-border)] text-center">
-                  <div className="text-2xl font-bold text-orange-400">~9.75%</div>
+                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">~9.75%</div>
                   <div className="text-xs text-[var(--muted)]">Total Per Cycle</div>
                   <div className="text-[10px] text-[var(--muted)] mt-1">All fees go to platform.</div>
                 </div>
@@ -712,12 +712,12 @@ Verify: HMAC-SHA256(rawBody, yourSigningSecret) === signature`}</div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {[
-                { code: 400, desc: "Bad Request", color: "text-yellow-400" },
-                { code: 401, desc: "Unauthorized", color: "text-red-400" },
-                { code: 403, desc: "Forbidden", color: "text-red-400" },
-                { code: 404, desc: "Not Found", color: "text-orange-400" },
-                { code: 429, desc: "Rate Limited", color: "text-purple-400" },
-                { code: 500, desc: "Server Error", color: "text-red-400" },
+                { code: 400, desc: "Bad Request", color: "text-yellow-600 dark:text-yellow-400" },
+                { code: 401, desc: "Unauthorized", color: "text-red-600 dark:text-red-400" },
+                { code: 403, desc: "Forbidden", color: "text-red-600 dark:text-red-400" },
+                { code: 404, desc: "Not Found", color: "text-orange-600 dark:text-orange-400" },
+                { code: 429, desc: "Rate Limited", color: "text-purple-600 dark:text-purple-400" },
+                { code: 500, desc: "Server Error", color: "text-red-600 dark:text-red-400" },
               ].map((e) => (
                 <div key={e.code} className="p-3 bg-[var(--card)] border border-[var(--card-border)]">
                   <span className={`font-mono font-bold ${e.color}`}>{e.code}</span>

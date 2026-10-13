@@ -194,11 +194,11 @@ export default function AddMarketToEventPage({ params }: { params: Promise<{ id:
               <p className="text-xs text-[var(--muted)] mb-1">Adding market to:</p>
               <h2 className="font-bold">{event.title}</h2>
               <div className="flex gap-2 mt-1">
-                <span className="text-[10px] px-1.5 py-0.5 bg-[#00e5a0]/10 text-[#00e5a0] border border-[#00e5a0]/30">
+                <span className="text-[10px] px-1.5 py-0.5 bg-[#12805c]/10 text-[#12805c] border border-[#12805c]/30">
                   {event.category}
                 </span>
                 {event.subCategory && (
-                  <span className="text-[10px] px-1.5 py-0.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                  <span className="text-[10px] px-1.5 py-0.5 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30">
                     {event.subCategory}
                   </span>
                 )}
@@ -247,7 +247,7 @@ export default function AddMarketToEventPage({ params }: { params: Promise<{ id:
                       : "border-[var(--card-border)] hover:border-purple-500/50"
                   )}
                 >
-                  <ListBullets size={20} className={marketType === "multi" ? "text-purple-400" : "text-[var(--muted)]"} />
+                  <ListBullets size={20} className={marketType === "multi" ? "text-purple-600 dark:text-purple-400" : "text-[var(--muted)]"} />
                   <p className="font-medium mt-1">Multiple Choice</p>
                   <p className="text-xs text-[var(--muted)]">Custom options</p>
                 </button>
@@ -257,7 +257,7 @@ export default function AddMarketToEventPage({ params }: { params: Promise<{ id:
             {/* Market Question */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2">
-                Market Question <span className="text-red-400">*</span>
+                Market Question <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <input
                 type="text"
@@ -273,7 +273,7 @@ export default function AddMarketToEventPage({ params }: { params: Promise<{ id:
             {marketType === "multi" && (
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">
-                  Options <span className="text-red-400">*</span>
+                  Options <span className="text-red-600 dark:text-red-400">*</span>
                 </label>
                 <div className="space-y-2">
                   {customOptions.map((opt, i) => (
@@ -289,7 +289,7 @@ export default function AddMarketToEventPage({ params }: { params: Promise<{ id:
                         <button
                           type="button"
                           onClick={() => removeOption(i)}
-                          className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg"
+                          className="p-2 text-red-600 dark:text-red-400 hover:bg-red-500/10 rounded-lg"
                         >
                           <Trash size={16} />
                         </button>
@@ -300,7 +300,7 @@ export default function AddMarketToEventPage({ params }: { params: Promise<{ id:
                     <button
                       type="button"
                       onClick={addOption}
-                      className="flex items-center gap-2 text-sm text-purple-400 hover:text-purple-300"
+                      className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-300"
                     >
                       <Plus size={14} /> Add Option
                     </button>
@@ -324,7 +324,7 @@ export default function AddMarketToEventPage({ params }: { params: Promise<{ id:
             {/* Resolution Date */}
             <div>
               <label className="block text-sm font-medium mb-2">
-                Resolution Date <span className="text-red-400">*</span>
+                Resolution Date <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <TerminalDatePicker
                 selected={form.resolvesAt ? new Date(form.resolvesAt) : null}
@@ -336,7 +336,7 @@ export default function AddMarketToEventPage({ params }: { params: Promise<{ id:
 
           {/* Error */}
           {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-600 dark:text-red-400 text-sm">
               {error}
             </div>
           )}

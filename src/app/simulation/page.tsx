@@ -15,7 +15,7 @@ interface SimTrade {
 }
 
 // ── Chart internals (same as PriceChart) ───────────────────────────────
-const COLORS = ["#00e5a0", "#ff4d6a", "#00b4d8", "#f59e0b", "#a78bfa"];
+const COLORS = ["#12805c", "#ff4d6a", "#00b4d8", "#f59e0b", "#a78bfa"];
 
 interface ChartPoint {
   t: number;
@@ -234,7 +234,7 @@ function SimChart({ points, opts }: { points: ChartPoint[]; opts: string[] }) {
         </div>
         <div className="flex items-center gap-2">
           {hIdx !== null && <span className="text-[8px] font-mono text-[var(--muted)]">{fmtTime(dp.t)}</span>}
-          <span className="text-[10px] font-mono text-[#00e5a0]" style={{ opacity: cursorOn ? 1 : 0 }}>▮</span>
+          <span className="text-[10px] font-mono text-[#12805c]" style={{ opacity: cursorOn ? 1 : 0 }}>▮</span>
         </div>
       </div>
 
@@ -345,7 +345,7 @@ function SimChart({ points, opts }: { points: ChartPoint[]; opts: string[] }) {
         <span className="text-[8px] font-mono text-[var(--foreground)] opacity-20 uppercase tracking-widest">
           {points.length} TICKS · SIMULATION
         </span>
-        <span className="text-[8px] font-mono text-[#00e5a0]" style={{ opacity: cursorOn ? 0.6 : 0.15 }}>▮ SIMULATED</span>
+        <span className="text-[8px] font-mono text-[#12805c]" style={{ opacity: cursorOn ? 0.6 : 0.15 }}>▮ SIMULATED</span>
       </div>
     </div>
   );

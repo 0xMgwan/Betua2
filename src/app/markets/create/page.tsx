@@ -474,18 +474,18 @@ export default function CreateMarketPage() {
 
   // Category config with Phosphor icons and terminal colors
   const catConfig: Record<string, { icon: React.ReactNode; color: string; border: string; activeBg: string }> = {
-    Politics: { icon: <Bank size={16} weight="fill" />, color: "text-purple-400", border: "border-purple-500/40", activeBg: "bg-purple-500/80" },
+    Politics: { icon: <Bank size={16} weight="fill" />, color: "text-purple-600 dark:text-purple-400", border: "border-purple-500/40", activeBg: "bg-purple-500/80" },
     Geopolitics: { icon: <Globe size={16} weight="fill" />, color: "text-indigo-400", border: "border-indigo-500/40", activeBg: "bg-indigo-500/80" },
-    Sports: { icon: <SoccerBall size={16} weight="fill" />, color: "text-[#00e5a0]", border: "border-[#00e5a0]/40", activeBg: "bg-[#00e5a0]" },
-    Entertainment: { icon: <FilmSlate size={16} weight="fill" />, color: "text-pink-400", border: "border-pink-500/40", activeBg: "bg-pink-500/80" },
-    "FX & Commodities": { icon: <ChartLine size={16} weight="fill" />, color: "text-orange-400", border: "border-orange-500/40", activeBg: "bg-orange-500/80" },
+    Sports: { icon: <SoccerBall size={16} weight="fill" />, color: "text-[#12805c]", border: "border-[#12805c]/40", activeBg: "bg-[#12805c]" },
+    Entertainment: { icon: <FilmSlate size={16} weight="fill" />, color: "text-pink-600 dark:text-pink-400", border: "border-pink-500/40", activeBg: "bg-pink-500/80" },
+    "FX & Commodities": { icon: <ChartLine size={16} weight="fill" />, color: "text-orange-600 dark:text-orange-400", border: "border-orange-500/40", activeBg: "bg-orange-500/80" },
     Business: { icon: <Briefcase size={16} weight="fill" />, color: "text-[#00b4d8]", border: "border-[#00b4d8]/40", activeBg: "bg-[#00b4d8]" },
     Science: { icon: <Flask size={16} weight="fill" />, color: "text-teal-400", border: "border-teal-500/40", activeBg: "bg-teal-500/80" },
     Weather: { icon: <CloudSun size={16} weight="fill" />, color: "text-sky-400", border: "border-sky-500/40", activeBg: "bg-sky-500/80" },
     Other: { icon: <Crosshair size={16} weight="fill" />, color: "text-gray-400", border: "border-gray-500/40", activeBg: "bg-gray-500/80" },
   };
 
-  const optColors = ["text-[#00e5a0] border-[#00e5a0]/40", "text-[#00b4d8] border-[#00b4d8]/40", "text-orange-400 border-orange-500/40", "text-pink-400 border-pink-500/40", "text-purple-400 border-purple-500/40", "text-teal-400 border-teal-500/40", "text-yellow-400 border-yellow-500/40", "text-red-400 border-red-500/40", "text-sky-400 border-sky-500/40", "text-indigo-400 border-indigo-500/40"];
+  const optColors = ["text-[#12805c] border-[#12805c]/40", "text-[#00b4d8] border-[#00b4d8]/40", "text-orange-600 dark:text-orange-400 border-orange-500/40", "text-pink-600 dark:text-pink-400 border-pink-500/40", "text-purple-600 dark:text-purple-400 border-purple-500/40", "text-teal-400 border-teal-500/40", "text-yellow-600 dark:text-yellow-400 border-yellow-500/40", "text-red-600 dark:text-red-400 border-red-500/40", "text-sky-400 border-sky-500/40", "text-indigo-400 border-indigo-500/40"];
 
   return (
     <div className="min-h-screen">
@@ -546,13 +546,13 @@ export default function CreateMarketPage() {
                 <div className="flex items-center gap-2">
                   <CurrencyDollar size={14} weight="fill" className="text-yellow-500" />
                   <span className="text-xs font-mono text-yellow-500">
-                    [FEE] {t.markets.createMarket.fee}: <span className="font-bold text-yellow-400">{CREATION_FEE_DISPLAY}</span>
+                    [FEE] {t.markets.createMarket.fee}: <span className="font-bold text-yellow-600 dark:text-yellow-400">{CREATION_FEE_DISPLAY}</span>
                   </span>
                 </div>
                 <p className="text-[10px] font-mono text-[var(--muted)] mt-1 ml-6">
                   {t.markets.createMarket.feeDescription}
                 </p>
-                <p className="text-[10px] font-mono text-green-400/80 mt-1 ml-6">
+                <p className="text-[10px] font-mono text-green-600 dark:text-green-400/80 mt-1 ml-6">
                   💰 Earn 30% of the trading fees collected on your market when it resolves!
                 </p>
               </motion.div>
@@ -563,7 +563,7 @@ export default function CreateMarketPage() {
                   animate={{ opacity: 1 }}
                   className="mb-6 p-3 border border-red-500/40 bg-red-500/5"
                 >
-                  <div className="flex items-center gap-2 text-xs font-mono text-red-400">
+                  <div className="flex items-center gap-2 text-xs font-mono text-red-600 dark:text-red-400">
                     <Info size={14} weight="fill" />
                     <span>[ERR] {error}</span>
                   </div>
@@ -619,9 +619,9 @@ export default function CreateMarketPage() {
                   <motion.div
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="border border-[#00e5a0]/20 bg-[#00e5a0]/5 p-4"
+                    className="border border-[#12805c]/20 bg-[#12805c]/5 p-4"
                   >
-                    <label className="flex items-center gap-2 text-[10px] font-mono text-[#00e5a0] mb-3 uppercase tracking-wider">
+                    <label className="flex items-center gap-2 text-[10px] font-mono text-[#12805c] mb-3 uppercase tracking-wider">
                       <SoccerBall size={10} weight="bold" />
                       {locale === "sw" ? "Ligi" : "League"}
                     </label>
@@ -636,8 +636,8 @@ export default function CreateMarketPage() {
                             className={cn(
                               "py-2.5 px-3 text-xs font-mono font-bold transition-all flex items-center gap-2",
                               isActive
-                                ? "border-2 border-[#00e5a0]/50 bg-[#00e5a0] text-white shadow-[0_0_15px_rgba(0,229,160,0.15)]"
-                                : "border border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[#00e5a0]/30 bg-[var(--background)]"
+                                ? "border-2 border-[#12805c]/50 bg-[#12805c] text-white shadow-[0_0_15px_rgba(0,229,160,0.15)]"
+                                : "border border-[var(--card-border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[#12805c]/30 bg-[var(--background)]"
                             )}
                           >
                             {sub.icon.startsWith('/') ? (
@@ -676,9 +676,9 @@ export default function CreateMarketPage() {
                     >
                       <div className="flex items-center justify-center gap-1.5">
                         <CheckSquare size={14} weight="fill" className={marketType === "binary" ? "text-[var(--accent)]" : ""} />
-                        <span className={marketType === "binary" ? "text-[#00e5a0]" : ""}>YES</span>
+                        <span className={marketType === "binary" ? "text-[#12805c]" : ""}>YES</span>
                         <span className="text-[var(--muted)]">/</span>
-                        <span className={marketType === "binary" ? "text-red-400" : ""}>NO</span>
+                        <span className={marketType === "binary" ? "text-red-600 dark:text-red-400" : ""}>NO</span>
                       </div>
                     </button>
                     <button
@@ -692,8 +692,8 @@ export default function CreateMarketPage() {
                       )}
                     >
                       <div className="flex items-center justify-center gap-1.5">
-                        <ListBullets size={14} weight="fill" className={marketType === "multi" ? "text-purple-400" : ""} />
-                        <span className={marketType === "multi" ? "text-purple-400" : ""}>
+                        <ListBullets size={14} weight="fill" className={marketType === "multi" ? "text-purple-600 dark:text-purple-400" : ""} />
+                        <span className={marketType === "multi" ? "text-purple-600 dark:text-purple-400" : ""}>
                           {locale === "sw" ? "CHAGUZI" : "MULTI"}
                         </span>
                       </div>
@@ -709,15 +709,15 @@ export default function CreateMarketPage() {
                       )}
                     >
                       <div className="flex items-center justify-center gap-1.5">
-                        <Stack size={14} weight="fill" className={marketType === "event" ? "text-orange-400" : ""} />
-                        <span className={marketType === "event" ? "text-orange-400" : ""}>
+                        <Stack size={14} weight="fill" className={marketType === "event" ? "text-orange-600 dark:text-orange-400" : ""} />
+                        <span className={marketType === "event" ? "text-orange-600 dark:text-orange-400" : ""}>
                           {locale === "sw" ? "TUKIO" : "EVENT"}
                         </span>
                       </div>
                     </button>
                   </div>
                   {marketType === "event" && (
-                    <p className="text-[10px] font-mono text-orange-400/80 mt-2">
+                    <p className="text-[10px] font-mono text-orange-600 dark:text-orange-400/80 mt-2">
                       {locale === "sw" 
                         ? "Unda tukio lenye masoko mengi (mfano: Liverpool vs Fulham → nani atashinda, goli la kwanza, n.k.)"
                         : "Create an event with multiple markets (e.g., Liverpool vs Fulham → who wins, first goal, etc.)"}
@@ -750,7 +750,7 @@ export default function CreateMarketPage() {
                         max={99}
                         value={initialProb}
                         onChange={(e) => setInitialProb(Number(e.target.value))}
-                        className="w-full accent-[#00e5a0] h-1 cursor-pointer"
+                        className="w-full accent-[#12805c] h-1 cursor-pointer"
                       />
                       <div className="flex justify-between text-[9px] font-mono text-[var(--muted)]">
                         <span>1%</span>
@@ -761,17 +761,17 @@ export default function CreateMarketPage() {
 
                     {/* Multiplier display */}
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="p-2 bg-[var(--background)] border border-[#00e5a0]/20">
+                      <div className="p-2 bg-[var(--background)] border border-[#12805c]/20">
                         <p className="text-[10px] font-mono text-[var(--muted)] mb-0.5">YES</p>
-                        <p className="text-sm font-mono font-bold text-[#00e5a0]">{initialProb}%</p>
+                        <p className="text-sm font-mono font-bold text-[#12805c]">{initialProb}%</p>
                         <p className="text-[10px] font-mono text-[var(--accent)]">
                           ×{(100 / initialProb).toFixed(1)}x {locale === "sw" ? "kurudi" : "return"}
                         </p>
                       </div>
                       <div className="p-2 bg-[var(--background)] border border-red-500/20">
                         <p className="text-[10px] font-mono text-[var(--muted)] mb-0.5">NO</p>
-                        <p className="text-sm font-mono font-bold text-red-400">{100 - initialProb}%</p>
-                        <p className="text-[10px] font-mono text-red-400">
+                        <p className="text-sm font-mono font-bold text-red-600 dark:text-red-400">{100 - initialProb}%</p>
+                        <p className="text-[10px] font-mono text-red-600 dark:text-red-400">
                           ×{(100 / (100 - initialProb)).toFixed(1)}x {locale === "sw" ? "kurudi" : "return"}
                         </p>
                       </div>
@@ -791,11 +791,11 @@ export default function CreateMarketPage() {
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
                           <LogoUploadSlot url={optionImages[0]} letter="Y" title="YES logo" onFile={(f) => handleOptionImageSelect(0, f)} />
-                          <span className="text-[10px] font-mono font-bold text-[#00e5a0]">YES</span>
+                          <span className="text-[10px] font-mono font-bold text-[#12805c]">YES</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <LogoUploadSlot url={optionImages[1]} letter="N" title="NO logo" onFile={(f) => handleOptionImageSelect(1, f)} />
-                          <span className="text-[10px] font-mono font-bold text-red-400">NO</span>
+                          <span className="text-[10px] font-mono font-bold text-red-600 dark:text-red-400">NO</span>
                         </div>
                       </div>
                     </div>
@@ -811,14 +811,14 @@ export default function CreateMarketPage() {
                   >
                     {/* Header row */}
                     <div className="flex items-center justify-between mb-2">
-                      <label className="flex items-center gap-2 text-[10px] font-mono text-purple-400 uppercase tracking-wider">
+                      <label className="flex items-center gap-2 text-[10px] font-mono text-purple-600 dark:text-purple-400 uppercase tracking-wider">
                         <ListBullets size={10} weight="bold" />
                         {locale === "sw" ? "Chaguzi" : "Options"} ({customOptions.filter(o => o.trim()).length}/{customOptions.length})
                       </label>
                       <button
                         type="button"
                         onClick={distributeEvenly}
-                        className="text-[9px] font-mono text-purple-400 border border-purple-500/30 px-2 py-0.5 hover:bg-purple-500/10 transition-colors"
+                        className="text-[9px] font-mono text-purple-600 dark:text-purple-400 border border-purple-500/30 px-2 py-0.5 hover:bg-purple-500/10 transition-colors"
                       >
                         {locale === "sw" ? "GAWANYA SAWA" : "DISTRIBUTE_EVENLY"}
                       </button>
@@ -826,8 +826,8 @@ export default function CreateMarketPage() {
 
                     {/* Logo-upload hint — tapping each option's badge sets a per-team logo */}
                     <div className="flex items-center gap-1.5 mb-2 px-2 py-1.5 bg-purple-500/5 border border-purple-500/20 rounded-lg">
-                      <ImageIcon size={12} weight="bold" className="text-purple-400 shrink-0" />
-                      <span className="text-[10px] font-mono text-purple-400 leading-tight">
+                      <ImageIcon size={12} weight="bold" className="text-purple-600 dark:text-purple-400 shrink-0" />
+                      <span className="text-[10px] font-mono text-purple-600 dark:text-purple-400 leading-tight">
                         {locale === "sw"
                           ? "Gonga beji ya chaguo (A, B…) kupakia nembo ya timu."
                           : "Tap each option's badge (A, B…) to upload a team logo."}
@@ -916,7 +916,7 @@ export default function CreateMarketPage() {
                             ×{optionProbs[i] > 0 ? (100 / optionProbs[i]).toFixed(1) : "∞"}x
                           </span>
                           {customOptions.length > 2 && (
-                            <button type="button" onClick={() => removeOption(i)} className="w-7 p-1.5 text-red-400 hover:bg-red-500/10 transition-colors ml-auto sm:ml-0">
+                            <button type="button" onClick={() => removeOption(i)} className="w-7 p-1.5 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors ml-auto sm:ml-0">
                               <Trash size={14} />
                             </button>
                           )}
@@ -930,7 +930,7 @@ export default function CreateMarketPage() {
                       "flex items-center justify-between px-2 py-1.5 border text-[10px] font-mono mt-1",
                       Math.abs(optionProbsTotal - 100) <= 1
                         ? "border-[var(--accent)]/30 bg-[var(--accent)]/5 text-[var(--accent)]"
-                        : "border-red-500/30 bg-red-500/5 text-red-400"
+                        : "border-red-500/30 bg-red-500/5 text-red-600 dark:text-red-400"
                     )}>
                       <span>{locale === "sw" ? "Jumla ya Uwezekano" : "Total Probability"}</span>
                       <span className="font-bold">
@@ -942,7 +942,7 @@ export default function CreateMarketPage() {
                       <button
                         type="button"
                         onClick={addOption}
-                        className="flex items-center gap-1.5 px-3 py-2 border border-dashed border-purple-500/30 text-xs font-mono text-purple-400 hover:text-purple-300 hover:border-purple-500/50 transition-all w-full justify-center"
+                        className="flex items-center gap-1.5 px-3 py-2 border border-dashed border-purple-500/30 text-xs font-mono text-purple-600 dark:text-purple-400 hover:text-purple-300 hover:border-purple-500/50 transition-all w-full justify-center"
                       >
                         <Plus size={12} weight="bold" />
                         {locale === "sw" ? "ONGEZA" : "ADD_OPTION"}
@@ -958,7 +958,7 @@ export default function CreateMarketPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="border border-orange-500/20 bg-orange-500/5 p-4 space-y-3"
                   >
-                    <label className="flex items-center gap-2 text-[10px] font-mono text-orange-400 mb-2 uppercase tracking-wider">
+                    <label className="flex items-center gap-2 text-[10px] font-mono text-orange-600 dark:text-orange-400 mb-2 uppercase tracking-wider">
                       <Stack size={10} weight="bold" />
                       {locale === "sw" ? "Masoko ya Tukio" : "Event Markets"} ({eventMarkets.length})
                     </label>
@@ -966,7 +966,7 @@ export default function CreateMarketPage() {
                     {/* Existing markets */}
                     {eventMarkets.map((market, i) => (
                       <div key={market.id} className="flex items-center gap-2 p-2 bg-[var(--background)] border border-orange-500/20">
-                        <span className="w-6 h-6 flex items-center justify-center text-[10px] font-mono font-black border border-orange-500/40 text-orange-400">
+                        <span className="w-6 h-6 flex items-center justify-center text-[10px] font-mono font-black border border-orange-500/40 text-orange-600 dark:text-orange-400">
                           {i + 1}
                         </span>
                         <div className="flex-1 min-w-0">
@@ -980,7 +980,7 @@ export default function CreateMarketPage() {
                         <button
                           type="button"
                           onClick={() => setEventMarkets(eventMarkets.filter(m => m.id !== market.id))}
-                          className="p-1.5 text-red-400 hover:bg-red-500/10 transition-colors"
+                          className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors"
                         >
                           <Trash size={14} />
                         </button>
@@ -1015,7 +1015,7 @@ export default function CreateMarketPage() {
                           className={cn(
                             "flex-1 py-1.5 text-xs font-mono transition-all",
                             newEventMarket.type === "multi"
-                              ? "bg-purple-500/20 border border-purple-500/50 text-purple-400"
+                              ? "bg-purple-500/20 border border-purple-500/50 text-purple-600 dark:text-purple-400"
                               : "border border-[var(--card-border)] text-[var(--muted)]"
                           )}
                         >
@@ -1036,17 +1036,17 @@ export default function CreateMarketPage() {
                             max={99}
                             value={newEventMarket.initialProb}
                             onChange={(e) => setNewEventMarket({ ...newEventMarket, initialProb: Number(e.target.value) })}
-                            className="w-full accent-[#00e5a0]"
+                            className="w-full accent-[#12805c]"
                           />
                           {/* Optional YES / NO logos */}
                           <div className="flex items-center gap-3 pt-1">
                             <div className="flex items-center gap-1.5">
                               <LogoUploadSlot size={26} url={newEventMarket.optionImages[0]} letter="Y" title="YES logo" onFile={(f) => setEventMarketLogo(0, f)} />
-                              <span className="text-[9px] font-mono font-bold text-[#00e5a0]">YES</span>
+                              <span className="text-[9px] font-mono font-bold text-[#12805c]">YES</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                               <LogoUploadSlot size={26} url={newEventMarket.optionImages[1]} letter="N" title="NO logo" onFile={(f) => setEventMarketLogo(1, f)} />
-                              <span className="text-[9px] font-mono font-bold text-red-400">NO</span>
+                              <span className="text-[9px] font-mono font-bold text-red-600 dark:text-red-400">NO</span>
                             </div>
                           </div>
                         </div>
@@ -1095,7 +1095,7 @@ export default function CreateMarketPage() {
                                       optionProbs: newEventMarket.optionProbs.filter((_, j) => j !== i),
                                     });
                                   }}
-                                  className="p-1 text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
+                                  className="p-1 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
                                 >
                                   <Trash size={12} />
                                 </button>
@@ -1106,7 +1106,7 @@ export default function CreateMarketPage() {
                             "flex items-center justify-between px-2 py-1 border text-[10px] font-mono",
                             Math.abs(newEventProbsTotal - 100) <= 1
                               ? "border-[var(--accent)]/30 bg-[var(--accent)]/5 text-[var(--accent)]"
-                              : "border-red-500/30 bg-red-500/5 text-red-400"
+                              : "border-red-500/30 bg-red-500/5 text-red-600 dark:text-red-400"
                           )}>
                             <span>{locale === "sw" ? "Jumla" : "Total"}</span>
                             <span className="font-bold">{newEventProbsTotal}% {Math.abs(newEventProbsTotal - 100) <= 1 ? "✓" : ""}</span>
@@ -1114,7 +1114,7 @@ export default function CreateMarketPage() {
                           <button
                             type="button"
                             onClick={() => setNewEventMarket({ ...newEventMarket, options: [...newEventMarket.options, ""], optionProbs: [...newEventMarket.optionProbs, 0] })}
-                            className="text-[10px] text-purple-400 hover:underline"
+                            className="text-[10px] text-purple-600 dark:text-purple-400 hover:underline"
                           >
                             + {locale === "sw" ? "Ongeza chaguo" : "Add option"}
                           </button>
@@ -1169,7 +1169,7 @@ export default function CreateMarketPage() {
                           ]);
                           setNewEventMarket({ title: "", type: "binary", options: ["", ""], optionProbs: [50, 50], initialProb: 50, optionImages: ["", ""], optionImageFiles: [null, null] });
                         }}
-                        className="w-full py-2 border border-orange-500/50 text-orange-400 text-xs font-mono font-bold hover:bg-orange-500/10 transition-all flex items-center justify-center gap-1.5"
+                        className="w-full py-2 border border-orange-500/50 text-orange-600 dark:text-orange-400 text-xs font-mono font-bold hover:bg-orange-500/10 transition-all flex items-center justify-center gap-1.5"
                       >
                         <Plus size={12} weight="bold" />
                         {locale === "sw" ? "ONGEZA SOKO" : "ADD MARKET"}
@@ -1187,22 +1187,22 @@ export default function CreateMarketPage() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <ChartLine size={14} weight="fill" className="text-orange-400" />
-                        <span className="text-xs font-mono font-bold text-orange-400 uppercase tracking-wider">FX & Commodities</span>
+                        <ChartLine size={14} weight="fill" className="text-orange-600 dark:text-orange-400" />
+                        <span className="text-xs font-mono font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider">FX & Commodities</span>
                       </div>
                       {/* Mode toggle */}
                       <div className="flex gap-1">
                         <button
                           type="button"
                           onClick={() => setFxMode("pyth")}
-                          className={`px-2 py-1 text-[10px] font-mono font-bold uppercase transition-colors ${fxMode === "pyth" ? "bg-orange-500 text-black" : "border border-orange-500/30 text-orange-400 hover:border-orange-500/60"}`}
+                          className={`px-2 py-1 text-[10px] font-mono font-bold uppercase transition-colors ${fxMode === "pyth" ? "bg-orange-500 text-black" : "border border-orange-500/30 text-orange-600 dark:text-orange-400 hover:border-orange-500/60"}`}
                         >
                           Pyth Auto
                         </button>
                         <button
                           type="button"
                           onClick={() => setFxMode("custom")}
-                          className={`px-2 py-1 text-[10px] font-mono font-bold uppercase transition-colors ${fxMode === "custom" ? "bg-orange-500 text-black" : "border border-orange-500/30 text-orange-400 hover:border-orange-500/60"}`}
+                          className={`px-2 py-1 text-[10px] font-mono font-bold uppercase transition-colors ${fxMode === "custom" ? "bg-orange-500 text-black" : "border border-orange-500/30 text-orange-600 dark:text-orange-400 hover:border-orange-500/60"}`}
                         >
                           Custom
                         </button>
@@ -1220,7 +1220,7 @@ export default function CreateMarketPage() {
                             <select
                               value={pythConfig.symbol}
                               onChange={(e) => setPythConfig({ ...pythConfig, symbol: e.target.value })}
-                              className="w-full px-2 py-2 bg-[#0a0a0a] border border-orange-500/20 text-sm font-mono text-orange-400 focus:outline-none focus:border-orange-500/50 transition-colors cursor-pointer appearance-none"
+                              className="w-full px-2 py-2 bg-[#0a0a0a] border border-orange-500/20 text-sm font-mono text-orange-600 dark:text-orange-400 focus:outline-none focus:border-orange-500/50 transition-colors cursor-pointer appearance-none"
                               style={{
                                 backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23f97316' d='M2 4l4 4 4-4'/%3E%3C/svg%3E")`,
                                 backgroundRepeat: 'no-repeat',
@@ -1228,7 +1228,7 @@ export default function CreateMarketPage() {
                               }}
                             >
                               {ALL_PYTH_SYMBOLS.map((s) => (
-                                <option key={s.symbol} value={s.symbol} className="bg-[#0a0a0a] text-orange-400 py-2">{s.emoji} {s.label}</option>
+                                <option key={s.symbol} value={s.symbol} className="bg-[#0a0a0a] text-orange-600 dark:text-orange-400 py-2">{s.emoji} {s.label}</option>
                               ))}
                             </select>
                           </div>
@@ -1249,21 +1249,21 @@ export default function CreateMarketPage() {
                             <select
                               value={pythConfig.operator}
                               onChange={(e) => setPythConfig({ ...pythConfig, operator: e.target.value as "above" | "below" })}
-                              className="w-full px-2 py-2 bg-[#0a0a0a] border border-orange-500/20 text-sm font-mono text-orange-400 focus:outline-none focus:border-orange-500/50 transition-colors cursor-pointer appearance-none"
+                              className="w-full px-2 py-2 bg-[#0a0a0a] border border-orange-500/20 text-sm font-mono text-orange-600 dark:text-orange-400 focus:outline-none focus:border-orange-500/50 transition-colors cursor-pointer appearance-none"
                               style={{
                                 backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23f97316' d='M2 4l4 4 4-4'/%3E%3C/svg%3E")`,
                                 backgroundRepeat: 'no-repeat',
                                 backgroundPosition: 'right 8px center'
                               }}
                             >
-                              <option value="above" className="bg-[#0a0a0a] text-orange-400">Above / ≥</option>
-                              <option value="below" className="bg-[#0a0a0a] text-orange-400">Below / ≤</option>
+                              <option value="above" className="bg-[#0a0a0a] text-orange-600 dark:text-orange-400">Above / ≥</option>
+                              <option value="below" className="bg-[#0a0a0a] text-orange-600 dark:text-orange-400">Below / ≤</option>
                             </select>
                           </div>
                         </div>
                         {pythConfig.targetPrice && (
                           <div className="text-[10px] font-mono text-[var(--muted)] border border-orange-500/20 px-2 py-1.5 bg-[var(--background)]">
-                            <span className="text-orange-400">[AUTO] </span>
+                            <span className="text-orange-600 dark:text-orange-400">[AUTO] </span>
                             Will {pythConfig.symbol} be {pythConfig.operator === "above" ? "≥" : "≤"} ${parseFloat(pythConfig.targetPrice || "0").toLocaleString()} USD?
                           </div>
                         )}
@@ -1273,8 +1273,8 @@ export default function CreateMarketPage() {
                         <p className="text-[10px] font-mono text-[var(--muted)]">
                           Write your own FX or commodity question. You will resolve it manually.
                         </p>
-                        <div className="text-[10px] font-mono text-orange-400/70 border border-orange-500/20 px-2 py-1.5 bg-[var(--background)]">
-                          <span className="text-orange-400">[MANUAL] </span>
+                        <div className="text-[10px] font-mono text-orange-600 dark:text-orange-400/70 border border-orange-500/20 px-2 py-1.5 bg-[var(--background)]">
+                          <span className="text-orange-600 dark:text-orange-400">[MANUAL] </span>
                           E.g. &quot;Will USD/TZS exceed 2,600 by end of day?&quot;
                         </div>
                         {/* Current rate field */}
@@ -1292,7 +1292,7 @@ export default function CreateMarketPage() {
                               placeholder="e.g. 2650"
                               className="flex-1 px-2 py-2 bg-[var(--background)] border border-orange-500/20 text-sm font-mono focus:outline-none focus:border-orange-500/50 transition-colors"
                             />
-                            <span className="text-[10px] font-mono text-orange-400 shrink-0">TZS / unit</span>
+                            <span className="text-[10px] font-mono text-orange-600 dark:text-orange-400 shrink-0">TZS / unit</span>
                           </div>
                           <p className="text-[9px] font-mono text-[var(--muted)]/70 mt-1">
                             E.g. 2650 for USD/TZS at 2,650. Helps traders size their hedge correctly.
@@ -1336,7 +1336,7 @@ export default function CreateMarketPage() {
                     maxLength={200}
                     required={!(isFxCommodities && fxMode === "pyth")}
                   />
-                  <p className={cn("text-[10px] font-mono mt-1 text-right", form.title.length > 180 ? "text-red-400" : "text-[var(--muted)]")}>
+                  <p className={cn("text-[10px] font-mono mt-1 text-right", form.title.length > 180 ? "text-red-600 dark:text-red-400" : "text-[var(--muted)]")}>
                     {form.title.length}/200
                   </p>
                 </motion.div>
@@ -1494,10 +1494,10 @@ export default function CreateMarketPage() {
                         ? "bg-orange-500/5 border-orange-500/20" 
                         : "bg-[var(--accent)]/5 border-[var(--accent)]/20"
                     )}>
-                      <Eye size={12} weight="fill" className={marketType === "event" ? "text-orange-400" : "text-[var(--accent)]"} />
+                      <Eye size={12} weight="fill" className={marketType === "event" ? "text-orange-600 dark:text-orange-400" : "text-[var(--accent)]"} />
                       <span className={cn(
                         "text-[10px] font-mono uppercase tracking-wider",
-                        marketType === "event" ? "text-orange-400" : "text-[var(--accent)]"
+                        marketType === "event" ? "text-orange-600 dark:text-orange-400" : "text-[var(--accent)]"
                       )}>
                         {locale === "sw" ? "Hakiki" : "Preview"}
                         {marketType === "event" && ` · ${locale === "sw" ? "Tukio" : "Event"}`}
@@ -1509,15 +1509,15 @@ export default function CreateMarketPage() {
                           [{form.category}]
                         </span>
                         {marketType === "event" && (
-                          <span className="text-[10px] font-mono text-orange-400 border border-orange-500/30 px-1.5 py-0.5">
+                          <span className="text-[10px] font-mono text-orange-600 dark:text-orange-400 border border-orange-500/30 px-1.5 py-0.5">
                             {eventMarkets.length} {locale === "sw" ? "masoko" : "markets"}
                           </span>
                         )}
                         {isFxCommodities && fxMode === "pyth" && (
-                          <span className="text-[10px] font-mono text-orange-400 border border-orange-500/30 px-1.5 py-0.5">PYTH</span>
+                          <span className="text-[10px] font-mono text-orange-600 dark:text-orange-400 border border-orange-500/30 px-1.5 py-0.5">PYTH</span>
                         )}
                         {isFxCommodities && fxMode === "custom" && (
-                          <span className="text-[10px] font-mono text-orange-400 border border-orange-500/30 px-1.5 py-0.5">FX</span>
+                          <span className="text-[10px] font-mono text-orange-600 dark:text-orange-400 border border-orange-500/30 px-1.5 py-0.5">FX</span>
                         )}
                       </div>
                       <p className="font-bold text-sm mb-3">
@@ -1536,8 +1536,8 @@ export default function CreateMarketPage() {
                               <div className="flex flex-wrap gap-1.5">
                                 {market.type === "binary" ? (
                                   <>
-                                    <span className="px-1.5 py-0.5 text-[9px] border border-[#00e5a0]/30 text-[#00e5a0]">YES 50%</span>
-                                    <span className="px-1.5 py-0.5 text-[9px] border border-red-500/30 text-red-400">NO 50%</span>
+                                    <span className="px-1.5 py-0.5 text-[9px] border border-[#12805c]/30 text-[#12805c]">YES 50%</span>
+                                    <span className="px-1.5 py-0.5 text-[9px] border border-red-500/30 text-red-600 dark:text-red-400">NO 50%</span>
                                     <span className="px-1.5 py-0.5 text-[9px] border border-[var(--card-border)] text-[var(--muted)]">equal odds</span>
                                   </>
                                 ) : (
@@ -1568,10 +1568,10 @@ export default function CreateMarketPage() {
                             </>
                           ) : (
                             <>
-                              <span className="px-2 py-0.5 border border-[#00e5a0]/30 text-[#00e5a0]">
+                              <span className="px-2 py-0.5 border border-[#12805c]/30 text-[#12805c]">
                                 YES {initialProb}% · ×{(100 / initialProb).toFixed(1)}x
                               </span>
-                              <span className="px-2 py-0.5 border border-red-500/30 text-red-400">
+                              <span className="px-2 py-0.5 border border-red-500/30 text-red-600 dark:text-red-400">
                                 NO {100 - initialProb}% · ×{(100 / (100 - initialProb)).toFixed(1)}x
                               </span>
                             </>
@@ -1686,11 +1686,11 @@ export default function CreateMarketPage() {
                           </div>
                           <div className="flex justify-between">
                             <span>{locale === "sw" ? "Ada (azimio tu)" : "Fee (settlement only)"}</span>
-                            <span className="text-[#00e5a0]">5% <span className="text-[var(--muted)]">· no entry fee</span></span>
+                            <span className="text-[#12805c]">5% <span className="text-[var(--muted)]">· no entry fee</span></span>
                           </div>
                           <div className="flex justify-between">
                             <span>{locale === "sw" ? "Unapata baada ya azimio (wastani)" : "Avg return at resolution"}</span>
-                            <span className="text-[#00e5a0]">{returnDisplay} <span className="text-[var(--muted)]">({Math.round(winFraction * 95)}% of seed)</span></span>
+                            <span className="text-[#12805c]">{returnDisplay} <span className="text-[var(--muted)]">({Math.round(winFraction * 95)}% of seed)</span></span>
                           </div>
                           <p className="text-[var(--muted)] text-[10px] pt-1">
                             {locale === "sw"

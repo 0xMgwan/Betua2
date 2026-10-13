@@ -222,7 +222,7 @@ function EventCard({
                 </>
               )}
               {isLive && (
-                <span className="px-1.5 py-0.5 text-[10px] font-bold bg-red-500/20 text-red-400 rounded flex items-center gap-0.5">
+                <span className="px-1.5 py-0.5 text-[10px] font-bold bg-red-500/20 text-red-600 dark:text-red-400 rounded flex items-center gap-0.5">
                   <Pulse size={10} weight="fill" className="animate-pulse" /> LIVE
                 </span>
               )}
