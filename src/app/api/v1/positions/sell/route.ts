@@ -8,10 +8,8 @@ import { prisma } from "@/lib/prisma";
 import { getPayoutForShares, getMultiOptionPayoutForShares } from "@/lib/amm";
 import { validateApiKey, checkRateLimit, logApiRequest, apiError, apiSuccess } from "@/lib/api-auth";
 import { SELLING_ENABLED, sellingDisabledLabel } from "@/lib/featureFlags";
-import { RAKE_PERCENT } from "@/lib/settlement";
+import { CASHOUT_MARGIN, EARLY_EXIT_ENABLED, earlyExitDisabledLabel } from "@/lib/settlement";
 
-// Early-exit fee on sells (default 50%) — matches /api/sell.
-const SELL_FEE_PERCENT = parseFloat(process.env.SELL_FEE_PERCENT || "50") / 100;
 
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
@@ -28,6 +26,10 @@ export async function POST(req: NextRequest) {
   if (!SELLING_ENABLED) {
     await logApiRequest(partner.partnerId, "/api/v1/positions/sell", "POST", 403, Date.now() - startTime, req);
     return apiError(sellingDisabledLabel("en"), 403);
+  }
+  if (!EARLY_EXIT_ENABLED) {
+    await logApiRequest(partner.partnerId, "/api/v1/positions/sell", "POST", 403, Date.now() - startTime, req);
+    return apiError(earlyExitDisabledLabel("en"), 403);
   }
 
   try {
@@ -106,10 +108,8 @@ export async function POST(req: NextRequest) {
     // Early-exit (sell) fee — matches /api/sell: sellers receive the
     // SELL_FEE-complement of AMM value; the haircut stays in the settlement
     // pool (no on-chain transfer) to discourage buy→sell flips.
-    const haircut = Math.round(grossPayout * SELL_FEE_PERCENT);
-    // Platform rake applies to sells here too — keep this in step with /api/sell.
-    const rake = Math.round((grossPayout - haircut) * RAKE_PERCENT);
-    const feeAmount = haircut + rake;
+    // Cash out at current pool-implied value less the margin — in step with /api/sell.
+    const feeAmount = Math.round(grossPayout * CASHOUT_MARGIN);
     const netPayout = grossPayout - feeAmount;
 
     // Pooled model: the net proceeds stay in the settlement pool and are

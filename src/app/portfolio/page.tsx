@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import { ShareCardButton } from "@/components/ShareCard";
 import { SELLING_ENABLED, sellingDisabledLabel } from "@/lib/featureFlags";
 import { CountUp } from "@/components/bongo/Motion";
-import { payoutLabel } from "@/lib/settlement";
+import { payoutLabel, CASHOUT_MARGIN } from "@/lib/settlement";
 
 interface Position {
   id: string;
@@ -823,10 +823,9 @@ export default function PortfolioPage() {
                                 sideLabel = sellSide;
                               }
 
-                              // Estimate payout — early-exit fee matches /api/sell
-                              // (SELL_FEE_PERCENT, default 50%)
+                              // Estimate payout — mirrors CASHOUT_MARGIN in /api/sell
                               let estPayout = 0;
-                              const FEE = 0.5;
+                              const FEE = CASHOUT_MARGIN;
                               if (sellShares && Number(sellShares) >= 1) {
                                 try {
                                   if (isMultiOpt && p.market.optionPools) {

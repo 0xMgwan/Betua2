@@ -28,6 +28,7 @@ import { UserProfileModal } from "@/components/UserProfileModal";
 import { Footer } from "@/components/Footer";
 import { PriceChart } from "@/components/PriceChart";
 import { TRADING_ENABLED, tradingDisabledLabel, SELLING_ENABLED, sellingDisabledLabel } from "@/lib/featureFlags";
+import { CASHOUT_MARGIN } from "@/lib/settlement";
 
 interface MarketData {
   id: string;
@@ -566,8 +567,9 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
   // Estimate shares for current input (matching trade API: 5% fee then AMM)
   const FEE_PERCENT = 0.05;
-  // Early-exit fee on sells (matches /api/sell SELL_FEE_PERCENT default)
-  const SELL_FEE_PCT = 0.5;
+  // Cash-out margin on sells — mirrors CASHOUT_MARGIN in /api/sell so the
+  // quoted estimate matches what the API actually pays.
+  const SELL_FEE_PCT = CASHOUT_MARGIN;
   let estimatedShares = 0;
   let estimatedPrice = 0;
   const minTradeAmount = displayCurrency === 'USDC' ? 0.5 : displayCurrency === 'KES' ? 50 : 100;

@@ -124,3 +124,42 @@ export function payoutNote(locale: string): string | null {
     ? "Makadirio. Malipo ya mwisho hutegemea jumla ya michango wakati soko linafungwa."
     : "Estimate. The final payout depends on the pool when the market closes.";
 }
+
+// ── Early exit (cash out) ─────────────────────────────────────────────────
+/**
+ * Selling before resolution pays the position's current pool-implied value
+ * less a margin — the way a sportsbook cash-out works, and close to how
+ * Polymarket and Kalshi behave in practice: neither charges an exit penalty,
+ * you simply get the current market price (Kalshi adds its ordinary trading
+ * fee, Polymarket historically nothing).
+ *
+ * This replaces the previous 50% haircut. A flat 50% applied regardless of
+ * direction, so a user who had been proved right still surrendered half their
+ * position — no comparable venue does that, and it makes exiting pointless.
+ *
+ * Defaults to the same 9.75% charged elsewhere, so there is one platform fee
+ * rather than a special penalty for leaving. Tune with CASHOUT_MARGIN_PERCENT.
+ */
+// Read by both the API and the sell UI, so the quote always matches what is
+// actually paid. Prefer the NEXT_PUBLIC form — a server-only var reads as
+// undefined in the browser, which would silently desync the two.
+export const CASHOUT_MARGIN = parseFloat(
+  process.env.NEXT_PUBLIC_CASHOUT_MARGIN_PERCENT ||
+  process.env.CASHOUT_MARGIN_PERCENT ||
+  String(RAKE_PERCENT * 100)
+) / 100;
+
+/**
+ * Whether cashing out before resolution is offered at all. Classic parimutuel
+ * pools don't offer it, since a payout isn't knowable until the pool closes —
+ * set EARLY_EXIT_ENABLED=false to withdraw the feature without touching
+ * redemption of settled markets.
+ */
+export const EARLY_EXIT_ENABLED =
+  (process.env.EARLY_EXIT_ENABLED || "true").toLowerCase() !== "false";
+
+export function earlyExitDisabledLabel(locale: string): string {
+  return locale === "sw"
+    ? "Kuuza kabla ya matokeo hakupatikani. Shikilia hadi soko lifunge."
+    : "Cashing out early isn't available. Hold until the market settles.";
+}

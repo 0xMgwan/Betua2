@@ -5,11 +5,8 @@ import { getPayoutForShares, getMultiOptionPayoutForShares } from "@/lib/amm";
 import { createNotification } from "@/lib/notify";
 import { convertCurrency, getUserCurrency, type Currency } from "@/lib/currency";
 import { SELLING_ENABLED, sellingDisabledLabel } from "@/lib/featureFlags";
-import { RAKE_PERCENT } from "@/lib/settlement";
+import { CASHOUT_MARGIN, EARLY_EXIT_ENABLED, earlyExitDisabledLabel } from "@/lib/settlement";
 
-// Early-exit fee on sells (default 50%): sellers receive half the AMM value;
-// the haircut stays in the settlement pool. Override via SELL_FEE_PERCENT env.
-const SELL_FEE_PERCENT = parseFloat(process.env.SELL_FEE_PERCENT || "50") / 100;
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -17,6 +14,11 @@ export async function POST(req: NextRequest) {
 
   if (!SELLING_ENABLED) {
     return NextResponse.json({ error: sellingDisabledLabel("en") }, { status: 403 });
+  }
+  // Separate from SELLING_ENABLED so cash-out can be retired on its own while
+  // redemption of settled markets keeps working.
+  if (!EARLY_EXIT_ENABLED) {
+    return NextResponse.json({ error: earlyExitDisabledLabel("en") }, { status: 403 });
   }
 
   try {
@@ -105,15 +107,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Shares have no value at current price" }, { status: 400 });
     }
 
-    // Early-exit (sell) fee — users receive SELL_FEE-complement of the AMM value;
-    // the haircut stays in the settlement pool backing user balances. Deliberately
-    // steep to discourage buy→sell flips that extract value from thin markets
-    // (stale-odds sniping); holding to resolution pays the normal 5% fee instead.
-    const haircut = Math.round(grossPayout * SELL_FEE_PERCENT);
-    // The platform rake applies to sells as well as to settlements, so an early
-    // exit is charged the same commission a win would be.
-    const rake = Math.round((grossPayout - haircut) * RAKE_PERCENT);
-    const feeAmount = haircut + rake;
+    // Cash out at the position's current pool-implied value, less a margin.
+    // grossPayout is what the pool will pay for these shares right now, so a
+    // user who called it right exits with a profit and one who called it wrong
+    // takes the loss the market has already priced — the same way it works on
+    // Polymarket or Kalshi. The margin is the only charge; there is no
+    // separate exit penalty on top.
+    const feeAmount = Math.round(grossPayout * CASHOUT_MARGIN);
     const netPayout = grossPayout - feeAmount;
 
     // Pooled custodial model: sell proceeds are credited to the user's DB balance
