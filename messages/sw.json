@@ -16,7 +16,25 @@
       "subtitle": "SHINDA GUAP",
       "description": "Fanya biashara ya NDIO au HAPANA kwenye matukio ya Kiafrika. Siasa, michezo, biashara. Inaendeshwa na nTZS.",
       "createMarket": "UNDA SOKO",
-      "exploreMarkets": "TAZAMA MASOKO"
+      "exploreMarkets": "TAZAMA MASOKO",
+      "tag": "Soko la utabiri la Tanzania",
+      "pre": "TABIRI KESHO YA",
+      "pop": "BONGO",
+      "post": "",
+      "blurb": "Weka utabiri kwenye derby, shilingi, uchaguzi — na watu halisi, uwezekano halisi na M-Pesa mkononi. Masoko hulipwa kwa TSh, malipo yanafika kwenye simu yako.",
+      "ctaPrimary": "Anza kutabiri →",
+      "ctaSecondary": "Fungua akaunti bure",
+      "statVolume": "TSh zimefanyiwa biashara",
+      "statMarkets": "masoko wazi",
+      "statTraders": "watabiri",
+      "statTrades": "utabiri uliofanywa",
+      "ticker": [
+        "Simba vs Yanga — wiki ya derby",
+        "TSh/USD inafunga Ijumaa",
+        "Malipo yanafika M-Pesa",
+        "Mpya: soko la tuzo za Bongo Flava",
+        "Kujiunga ni bure"
+      ]
     },
     "liveMarket": {
       "politics": "SIASA",
@@ -69,17 +87,17 @@
       "title": "Imeundwa kwa watabiri makini",
       "subtitle": "Kila kipengele kimeundwa kukupa faida kwenye masoko ya utabiri ya Kiafrika.",
       "builtForAfrica": "Imeundwa kwa Afrika",
-      "builtForAfricaDesc": "Masoko yote yana bei kwa sarafu za ndani, kuanzia Shilingi za Kitanzania. Imeundwa kwa matukio ya Kiafrika \u2014 siasa, mpira, biashara, burudani na zaidi.",
+      "builtForAfricaDesc": "Masoko yote yana bei kwa sarafu za ndani, kuanzia Shilingi za Kitanzania. Imeundwa kwa matukio ya Kiafrika — siasa, mpira, biashara, burudani na zaidi.",
       "mobileMoney": "Pesa za Simu Asili",
       "mobileMoneyDesc": "Weka na utoe pesa mara moja kwa mitandao ya pesa za simu kama MTN, Airtel Money, Vodacom, na mingine kote Afrika. Hakuna akaunti ya benki inayohitajika.",
       "nonCustodial": "Mikoba Isiyo ya Uhifadhi",
-      "nonCustodialDesc": "TZS yako iko kwenye mkoba wako wa nTZS. GUAP haishiki pesa zako kamwe \u2014 wewe uko katika udhibiti daima.",
+      "nonCustodialDesc": "TZS yako iko kwenye mkoba wako wa nTZS. GUAP haishiki pesa zako kamwe — wewe uko katika udhibiti daima.",
       "instantPayouts": "Malipo ya Papo Hapo",
       "instantPayoutsDesc": "Masoko yanatatuliwa kwenye blockchain mara matokeo yanapothibitishwa. Ushindi unatumwa kwenye mkoba wako moja kwa moja.",
       "ammPriceDiscovery": "Ugunduzi wa Bei wa AMM",
       "ammPriceDiscoveryDesc": "Mfumo wetu wa Soko la Kiotomatiki unahakikisha unaweza kununua au kuuza daima. Bei za soko zinaonyesha uwezekano halisi ambao umati unaamini.",
       "sharpPredictions": "Utabiri Makini",
-      "sharpPredictionsDesc": "Chunguza masoko yako, jifunze mwenendo wa kiasi, na fanya biashara zenye habari. Taarifa ni faida yako \u2014 itumie."
+      "sharpPredictionsDesc": "Chunguza masoko yako, jifunze mwenendo wa kiasi, na fanya biashara zenye habari. Taarifa ni faida yako — itumie."
     },
     "testimonials": {
       "title": "Afrika inapenda GUAP",
@@ -102,7 +120,7 @@
     "cta": {
       "title1": "Uko tayari kufanya",
       "title2": "utabiri wako wa kwanza?",
-      "subtitle": "Jiunge na wafanyabiashara 12,000+ kote Afrika wanaofanya biashara kwenye GUAP. Fungua akaunti yako kwa chini ya sekunde 60 \u2014 bure kabisa.",
+      "subtitle": "Jiunge na wafanyabiashara 12,000+ kote Afrika wanaofanya biashara kwenye GUAP. Fungua akaunti yako kwa chini ya sekunde 60 — bure kabisa.",
       "button": "Fungua Akaunti Bure",
       "noKyc": "Hakuna KYC inayohitajika",
       "mpesaSupported": "Pesa za Simu zinasaidiwa",
@@ -122,7 +140,7 @@
       "aboutGuap": "Kuhusu GUAP",
       "ntzsNetwork": "Mtandao wa nTZS",
       "contact": "Wasiliana",
-      "copyright": "\u00a9 2025 GUAP. Inaendeshwa na",
+      "copyright": "© 2025 GUAP. Inaendeshwa na",
       "onBase": "kwenye Base.",
       "madeWith": "Imeundwa kwa",
       "forAfrica": "kwa Afrika"
@@ -228,8 +246,8 @@
     "depositSuccess": "Ombi la Pesa za Simu limetumwa! Kamilisha malipo kwenye simu yako. Hali inasasishwa moja kwa moja.",
     "withdrawSuccess": "Utoaji umeanzishwa. Pesa zitafika kupitia Pesa za Simu hivi karibuni.",
     "minDeposit": "Kiwango cha chini cha kuweka ni TZS 1,000",
-    "autoUpdating": "Inasasisha moja kwa moja\u2026",
-    "processing": "Inachakata\u2026"
+    "autoUpdating": "Inasasisha moja kwa moja…",
+    "processing": "Inachakata…"
   },
   "auth": {
     "signIn": "Ingia",

@@ -16,7 +16,25 @@
       "subtitle": "EARN GUAP",
       "description": "Trade YES or NO on African events. Politics, sports, business. Powered by nTZS.",
       "createMarket": "CREATE MARKET",
-      "exploreMarkets": "EXPLORE MARKETS"
+      "exploreMarkets": "EXPLORE MARKETS",
+      "tag": "Tanzania's prediction market",
+      "pre": "PREDICT THE",
+      "pop": "BONGO",
+      "post": "FUTURE.",
+      "blurb": "Bet on the derby, the shilling, the election — with real people, real odds and M-Pesa in your pocket. Markets settle in TSh, payouts land on your phone.",
+      "ctaPrimary": "Start predicting →",
+      "ctaSecondary": "Create free account",
+      "statVolume": "TSh traded",
+      "statMarkets": "open markets",
+      "statTraders": "predictors",
+      "statTrades": "predictions made",
+      "ticker": [
+        "Simba vs Yanga — derby week",
+        "TSh/USD closes Friday",
+        "Payouts land on M-Pesa",
+        "New: Bongo Flava awards market",
+        "Free to join"
+      ]
     },
     "liveMarket": {
       "politics": "POLITICS",

@@ -15,6 +15,7 @@ import {
 import { useLanguage } from "@/contexts/LanguageContext";
 import { CountUp, Tilt } from "@/components/bongo/Motion";
 import { LiveMarketDeck } from "@/components/bongo/LiveMarketDeck";
+import { GlitchHeadline } from "@/components/bongo/GlitchHeadline";
 import { OddsCanvas } from "@/components/bongo/OddsCanvas";
 import { useUser } from "@/store/useUser";
 import { ActivityTicker } from "@/components/ActivityTicker";
@@ -306,23 +307,25 @@ export default function HomePage() {
           <div className="max-w-[1160px] mx-auto w-full">
             <div className="max-w-[820px]">
               <span className="bl-tag">
-                <i className="bl-dot" /> Tanzania&apos;s prediction market
+                <i className="bl-dot" /> {t.landing.hero.tag}
               </span>
 
-              <h1 className="bl-display mt-5 mb-4" style={{ fontSize: "clamp(52px, 9vw, 132px)" }}>
-                PREDICT THE <em className="bl-pop">BONGO</em> FUTURE.
-              </h1>
+              <GlitchHeadline
+                className="bl-display mt-5 mb-4"
+                style={{ fontSize: "clamp(52px, 9vw, 132px)" }}
+                pre={t.landing.hero.pre}
+                pop={t.landing.hero.pop}
+                post={t.landing.hero.post}
+              />
 
               <p className="text-[16px] sm:text-[19px] leading-relaxed max-w-[620px]" style={{ color: "rgba(255,255,255,.88)" }}>
-                Bet on the derby, the shilling, the election — with real people, real
-                odds and M-Pesa in your pocket. Markets settle in TSh, payouts land on
-                your phone.
+{t.landing.hero.blurb}
               </p>
 
               <div className="flex flex-wrap gap-3 mt-7">
-                <Link href="/markets" className="bl-btn bl-btn-gold">Start predicting →</Link>
+                <Link href="/markets" className="bl-btn bl-btn-gold">{t.landing.hero.ctaPrimary}</Link>
                 <Link href="/auth/register" className="bl-btn" style={{ background: "rgba(255,255,255,.14)", color: "#fff", borderColor: "#fff", backdropFilter: "blur(6px)" }}>
-                  Create free account
+                  {t.landing.hero.ctaSecondary}
                 </Link>
               </div>
             </div>
@@ -330,10 +333,10 @@ export default function HomePage() {
             {/* Stat tiles — tilt to the pointer, numbers count up when they land */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-10">
               {[
-                { to: stats.totalVolume, fmt: formatVolume, l: "TSh traded" },
-                { to: stats.openMarkets, fmt: (n: number) => String(n), l: "open markets" },
-                { to: stats.totalTraders, fmt: formatVolume, l: "predictors" },
-                { to: stats.totalTrades, fmt: formatVolume, l: "predictions made" },
+                { to: stats.totalVolume, fmt: formatVolume, l: t.landing.hero.statVolume },
+                { to: stats.openMarkets, fmt: (n: number) => String(n), l: t.landing.hero.statMarkets },
+                { to: stats.totalTraders, fmt: formatVolume, l: t.landing.hero.statTraders },
+                { to: stats.totalTrades, fmt: formatVolume, l: t.landing.hero.statTrades },
               ].map((s) => (
                 <Tilt key={s.l}>
                   <div className="bl-card px-4 py-4" style={{ background: "#fffdf8", borderColor: "#141414" }}>
@@ -358,7 +361,7 @@ export default function HomePage() {
           <div className="bl-marquee-track">
             {[0, 1].map((dup) => (
               <div key={dup} className="flex shrink-0" aria-hidden={dup === 1}>
-                {["Simba vs Yanga — derby week", "TSh/USD closes Friday", "Payouts land on M-Pesa", "New: Bongo Flava awards market", "Free to join"].map((m) => (
+                {(t.landing.hero.ticker as string[]).map((m) => (
                   <span key={m}>{m}</span>
                 ))}
               </div>
